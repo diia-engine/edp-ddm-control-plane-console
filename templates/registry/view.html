@@ -1,0 +1,469 @@
+{{ define "registry/view.html" }}
+    {{template "header" .}}
+    <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/datatables.custom.css" />
+<div class="registry" id="registry-view">
+    <div class="registry-header">
+        <a href="{{ .BasePath }}/admin/registry/overview" class="registry-add">
+            <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
+            <span>НАЗАД</span>
+        </a>
+    </div>
+    <div class="registry-header registry-header-view">
+        <h1>Реєстр "{{.registry.Name}}"</h1>
+        {{if .allowedToEdit}}
+        <a href="{{ .BasePath }}/admin/registry/edit/{{.registry.Name}}" class="registry-add">
+            <img alt="add registry" src="{{ .BasePath }}/static/img/action-edit.png" />
+            <span>Редагувати</span>
+        </a>
+        {{end}}
+    </div>
+    <div class="registry-description">Інформація про реєстр.</div>
+
+    <div class="rg-info-block">
+        <div class="rg-info-block-header">
+            <span>Загальна інформація</span>
+            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+        </div>
+        <div class="rg-info-block-body">
+            <div class="rg-info-line-horizontal">
+                <span>Назва</span>
+                <span>{{ .registry.Name }}</span>
+            </div>
+            {{if .registry.Description}}
+            <div class="rg-info-line-horizontal">
+                <span>Опис</span>
+                <span>{{ .registry.Description }}</span>
+            </div>
+            {{end}}
+            {{if .admins }}
+                <div class="rg-info-line-horizontal">
+                    <span>Адміністратори</span>
+                    <span>
+                        {{range $index, $adm := .admins}}
+                            {{ $adm.email }}
+                        {{end}}
+                    </span>
+                </div>
+            {{end}}
+            <div class="rg-info-line-horizontal">
+                <span>Час створення</span>
+                <span>{{ .registry.FormattedCreatedAtTimezone $.timezone }}</span>
+            </div>
+            {{if .citizenPortalHost}}
+            <div class="rg-info-line-horizontal">
+                <span>DNS ім’я для портала громадянина</span>
+                <span>{{ .citizenPortalHost }}</span>
+            </div>
+            {{end}}
+            {{if .officerPortalHost}}
+                <div class="rg-info-line-horizontal">
+                    <span>DNS ім’я для портала чиновника</span>
+                    <span>{{ .officerPortalHost }}</span>
+                </div>
+            {{end}}
+            {{if .smtpType}}
+            <div class="rg-info-line-horizontal">
+                <span>Поштовий сервер</span>
+                <span>
+                {{if eq .smtpType "external"}}
+                    Зовнішній поштовий сервер
+                {{else}}
+                    Платформенний поштовий сервер
+                {{end}}
+                </span>
+
+            </div>
+            {{end}}
+
+            {{if .officerCIDR}}
+            <div class="rg-info-line-horizontal">
+                <span>CIDR для портала чиновника</span>
+                <span>
+                    {{range .officerCIDR}}
+                        <p class="view-cidr">{{ . }}</p>
+                    {{end}}
+                </span>
+            </div>
+            {{end}}
+            {{if .citizenCIDR}}
+            <div class="rg-info-line-horizontal">
+                <span>CIDR для портала громадянина</span>
+                <span>
+                    {{range .citizenCIDR}}
+                        <p class="view-cidr">{{ . }}</p>
+                    {{end}}
+                </span>
+            </div>
+            {{end}}
+            {{if .adminCIDR}}
+            <div class="rg-info-line-horizontal">
+                <span>CIDR для адміністративних компонент</span>
+                <span>
+                    {{range .adminCIDR}}
+                        <p class="view-cidr">{{ . }}</p>
+                    {{end}}
+                </span>
+            </div>
+            {{end}}
+
+        </div>
+    </div>
+    <div class="rg-info-block">
+        <div class="rg-info-block-header">
+            <span>Доступ для реєстрів платформи та зовнішніх систем</span>
+            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+        </div>
+        <div class="rg-info-block-body">
+            {{if .externalRegs}}
+            <table class="rg-info-table rg-info-table-config">
+                <thead>
+                <tr>
+                    <th>Статус</th>
+                    <th>Назва</th>
+                    <th>Тип системи</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                    {{range $index, $er := .externalRegs}}
+                    <tr>
+                        <td>
+                            <img alt="{{ i18n $er.Status}}" src="{{ $.BasePath }}/static/img/{{$er.Status}}.png"
+                            title="{{ i18n $er.Status}}"/>
+                        </td>
+                        <td class="ereg-name">
+                            {{ $er.Name }}
+                        </td>
+                        <td>
+                            {{if $er.External}}
+                            Зовнішня система
+                            {{else}}
+                            Реєстр платформи
+                            {{end}}
+                        </td>
+                        <td>
+                            <div class="rg-external-system-actions {{if eq "status-inactive" $er.Status}}inactive{{end}}" >
+                                {{if $er.External}}
+                                    <a @click="{{if eq "status-active" $er.Status}}showExternalKey('{{$er.Name}}', '{{$er.KeyValue}}', $event){{else}}disabledLink{{end}}" href="#">
+                                        <img title="Перевірити пароль" alt="key" src="{{ $.BasePath }}/static/img/key-{{$er.Status}}.png" />
+                                    </a>
+                                {{end}}
+
+                                <a status="{{$er.Inactive}}" @click="{{if $er.Inactive}}disabledLink{{else}}disableExternalReg('{{$er.Name}}', '{{$er.TypeStr}}', $event){{end}}" href="#">
+                                    <img
+                                            title="{{if eq "status-disabled" $er.Status}}Розблокувати доступ{{else}}Заблокувати доступ{{end}}"
+                                            alt="key" src="{{ $.BasePath }}/static/img/lock-{{$er.Status}}.png" />
+                                </a>
+                                <a @click="{{if $er.Inactive}}disabledLink{{else}}removeExternalReg('{{$er.Name}}', '{{$er.TypeStr}}', $event){{end}}" href="#">
+                                    <img title="Скасувати доступ" alt="key" src="{{ $.BasePath }}/static/img/disable-{{$er.Status}}.png" />
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+            {{else}}
+            <div class="rg-info-block-no-content">
+                Немає реєстрів або систем, що мають доступ до цього реєстра.
+            </div>
+            {{end}}
+            <div class="link-grant-access">
+                <a class="" href="#" @click="showExternalReg">
+                    <img alt="Надати доступ" src="{{ .BasePath }}/static/img/plus.png" />
+                    <span>Надати доступ</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <form id="disable-form" method="POST" action="{{ .BasePath }}/admin/registry/external-reg-disable/{{.registry.Name}}">
+        <input type="hidden" id="disable-form-value" :value="systemToDisable" name="reg-name" />
+        <input type="hidden" id="disable-form-type" :value="systemToDisableType" name="external-system-type" />
+    </form>
+
+    {{if .branches }}
+    <div class="rg-info-block">
+        <div class="rg-info-block-header">
+            <span>Конфігурація</span>
+            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+        </div>
+        <div class="rg-info-block-body">
+            <table class="rg-info-table rg-info-table-config">
+                <thead>
+                <tr>
+                    <th>Статус</th>
+                    <th>Конфігурація</th>
+                    <th>VCS</th>
+                    <th>CI</th>
+                    <th>Версія</th>
+                    <th>Номер збірки</th>
+                    <th>Остання вдала збірка</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range $index, $br := .branches}}
+                <tr>
+                    <td>
+                        <img title="{{ i18n $br.LocaleStatus }}"
+                                alt="{{ i18n $br.LocaleStatus }}"
+                                src="{{ $.BasePath }}/static/img/status-{{$br.Status.Value}}.png" />
+                    </td>
+                    <td>
+                        {{$br.Name}}
+                    </td>
+                    <td>
+                        <a href="{{ $br.CreateGerritLink $.gerritURL }}" target="_blank">
+                            <img alt="vcs" src="{{ $.BasePath }}/static/img/action-link.png" />
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{{ $br.CreateJenkinsLink $.jenkinsURL }}" target="_blank">
+                            <img alt="ci" src="{{ $.BasePath }}/static/img/action-link.png" />
+                        </a>
+                    </td>
+                    <td>{{$br.Spec.Version}}</td>
+                    <td>{{$br.Status.Build}}</td>
+                    <td>{{if $br.Status.LastSuccessfulBuild}}{{$br.Status.LastSuccessfulBuild}}{{else}}-{{end}}</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{end}}
+    {{if .actionLog}}
+    <div class="rg-info-block">
+        <div class="rg-info-block-header">
+            <span>Журнал подій</span>
+            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+        </div>
+        <div class="rg-info-block-body">
+            <table class="rg-info-table rg-info-table-config">
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Користувач</th>
+                    <th>Дія</th>
+                    <th>Результат</th>
+                    <th>Повідомлення</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range $index, $al := .registry.ActionLog}}
+                <tr>
+                    <td>{{$al.FormattedLastTimeUpdate}}</td>
+                    <td>{{$al.UserName}}</td>
+                    <td>{{$al.Action}}</td>
+                    <td>{{$al.Result}}</td>
+                    <td>{{$al.Message}}</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{end}}
+
+    <div class="rg-info-block">
+        <div class="rg-info-block-header">
+            <span>Запити на оновлення</span>
+            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+        </div>
+        <div class="rg-info-block-body mr-block-table">
+            {{ if .mergeRequests}}
+            <table class="rg-info-table rg-info-table-config" id="mr-table">
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Запит</th>
+                    <th>Операція</th>
+                    <th>Статус</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range $index, $al := .mergeRequests}}
+                    <tr>
+                        <td>{{$al.FormattedCreatedAt}}</td>
+                        <td>{{$al.RequestName}}</td>
+                        <td>{{ i18n $al.Action}}</td>
+                        <td class="mr-status">{{$al.Status.Value}}</td>
+                        <td class="mr-actions">
+                            {{if $al.Status.ChangeURL}}
+                                <a title="Переглянути"
+                                   @click="showMrView('/admin/registry/{{ $.registry.Name}}/change/{{ $al.Status.ChangeID }}', $event)"
+                                   href="/admin/registry/{{ $.registry.Name}}/change/{{ $al.Status.ChangeID }}">
+                                    <i class="fa-solid fa-eye fa-lg"></i>
+                                </a>
+
+                                <a href="{{$al.Status.ChangeURL}}" target="_blank">
+                                    <img style="vertical-align: sub;" title="Переглянути в Gerrit" alt="vcs"
+                                         src="{{ $.BasePath }}/static/img/action-link.png" />
+                                </a>
+                            {{end}}
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+            {{else}}
+                <div class="rg-info-block-no-content">
+                    Запитів немає
+                </div>
+            {{end}}
+        </div>
+    </div>
+
+    {{ if .edpComponents}}
+    <div class="dashboard-panel registry-dashboard-panel">
+        <ul>
+            {{range $index, $ec := .edpComponents}}
+            <li>
+                <img src="data:image/svg+xml;base64,{{$ec.Spec.Icon}}" alt="{{$ec.Spec.Type}} logo" />
+                <div class="dashboard-item-content">
+                    <a target="_blank" href="{{$ec.Spec.Url}}">{{$ec.Spec.Type}} <img src="{{$.BasePath}}/static/img/action-link.png"
+                                                                      alt="{{$ec.Spec.Type}} link"></a>
+                </div>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+    {{end}}
+
+
+    <div class="popup-backdrop visible" v-cloak v-if="backdropShow"></div>
+
+    <div style="width:80%;left:10%;height:80%;" class="popup-window admin-window visible" v-cloak v-if="mrView">
+        <div class="popup-header">
+            <p>Запит на оновлення</p>
+            <a href="#" @click="hideMrView" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+        <div class="popup-body mr-frame-body" style="border-bottom: none;">
+            <iframe id="mr-frame" :src="mrSrc" style="width:100%;"></iframe>
+        </div>
+    </div>
+
+    <div class="popup-window admin-window visible" v-cloak v-if="externalKey">
+        <div class="popup-header">
+            <p>Перевірити пароль для "[[ systemToShowKey ]]"</p>
+            <a href="#" @click="hideExternalKey" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+        <form method="POST" action="{{ .BasePath }}/admin/registry/external-reg-remove/{{.registry.Name}}">
+            <div class="popup-body">
+                Не передавайте пароль стороннім особам.
+                <div class="er-ex-key">
+                    <span id="key-value">[[ keyValue ]]</span>
+                    <a @click="showExternalKeyValue" href="#">
+                        <img title="Показати" v-cloak v-show="keyValue == '******'" alt="display password" src="/static/img/eye.png" />
+                        <img title="Приховати" v-cloak v-show="keyValue != '******'" alt="display password"
+                             style="height:20px;margin-top:2px;" src="/static/img/hide-eye.png" />
+                    </a>
+                </div>
+            </div>
+            <div class="popup-footer active">
+                <a href="#" class="hide-popup" @click="hideExternalKey">закрити</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="popup-window admin-window visible" v-cloak v-if="mrError">
+        <div class="popup-header">
+            <p>Помилка</p>
+            <a href="#" @click="hideMrError" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+        <div class="popup-body" style="border-bottom: none;">
+            Наразі у вас є відкриті запити на оновлення. Підтвердіть або відхиліть зміни щоб продовжити.
+        </div>
+    </div>
+
+    <div class="popup-window admin-window visible" v-cloak v-if="removeExternalRegPopupShow">
+        <div class="popup-header">
+            <p>Видалити "[[ systemToDelete ]]" з переліку ?</p>
+            <a href="#" @click="hideRemoveExternalReg" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+        <form method="POST" action="{{ .BasePath }}/admin/registry/external-reg-remove/{{.registry.Name}}">
+            <div class="popup-body">
+                Ви зможете надати доступ знову пізніше.
+            </div>
+            <input type="hidden" :value="systemToDelete" name="reg-name" />
+            <input type="hidden" id="delete-form-type" :value="systemToDeleteType" name="external-system-type" />
+            <div class="popup-footer active">
+                <a href="#" class="hide-popup" @click="hideRemoveExternalReg">відмінити</a>
+                <button value="submit" @click="addExternalReg" type="submit">Видалити</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="external-reg-popup" class="popup-window admin-window external-reg-window visible" v-cloak v-if="externalRegPopupShow">
+        <div class="popup-header">
+            <p>Надати доступ</p>
+            <a href="#" @click="hideExternalReg" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+        <form @submit="addExternalReg" id="external-reg-form" method="post"
+              action="{{ .BasePath }}/admin/registry/external-reg-add/{{.registry.Name}}">
+            <div class="popup-body">
+                <p class="popup-error" v-cloak v-if="accessGrantError">[[ accessGrantError ]]</p>
+
+                <p>
+                    Ви можете надати доступ до даних цього реєстру (master) іншим реєстрам на цій платформі або
+                    зовнішнім системам (clients). Для цього в мастер-реєстрі буде створено окремого користувача
+                    реєстра-клієнта, від імені якого здійснюватеметься доступ до мастер-реєстру.
+                </p>
+                <div class="er-radio">
+                    <div @click="setInternalRegistryReg">
+                        <span class="er-radio-button" :class="{ selected: internalRegistryReg }"></span>
+                        <span class="er-radio-text">Внутрішній реєстр платформи</span>
+                    </div>
+                    <div @click="setExternalSystem">
+                        <span class="er-radio-button" :class="{ selected: !internalRegistryReg }"></span>
+                        <span class="er-radio-text">Зовнішня система</span>
+                    </div>
+                    <input type="hidden" :value="externalSystemType" name="external-system-type" />
+                </div>
+                <div v-if="internalRegistryReg" class="er-system-opts">
+                    <label for="in-registry">Оберіть реєстр</label>
+                    <select name="reg-name" id="in-registry">
+                        {{range $index, $ar := .externalRegAvailableRegistries}}
+                            <option>{{$ar.Name}}</option>
+                        {{end}}
+                    </select>
+                    <span>Якщо реєстру не має в переліку – його потрібно створити заздалегідь.</span>
+                </div>
+                <div v-if="!internalRegistryReg" class="er-system-opts">
+                    <label for="ex-system">Назва системи</label>
+                    <input required name="reg-name" id="ex-system" placeholder="Введіть назву" maxlength="32"
+                           pattern="^[a-z0-9][-a-z0-9]+?[a-z0-9]$" />
+                    <span>Допустимі символи: “a-z”, 0-9, “-”. Назва не може перевищувати довжину у 32 символів.
+                        Назва повинна починатись і закінчуватися символами латинського алфавіту або цифрами.</span>
+                    <label>Пароль доступу</label>
+                    <p>Пароль буде створено автоматично. Його можна буде перевірити після налагодження доступу до мастер-реєстру.</p>
+                </div>
+
+            </div>
+            <div class="popup-footer active">
+                <a href="#" id="external-reg-cancel" class="hide-popup" @click="hideExternalReg">відмінити</a>
+                <button value="submit" name="external-reg-apply" @click="addExternalReg" type="submit">Надати</button>
+            </div>
+        </form>
+    </div>
+
+</div>
+
+    {{template "scripts" .}}
+    <script type="text/javascript" src="{{.BasePath}}/static/js/moment.min.js"></script>
+    <script type="text/javascript" src="{{.BasePath}}/static/js/jquery.dataTables-1.12.1.min.js"></script>
+    <script type="text/javascript" src="{{.BasePath}}/static/js/view-registry.js"></script>
+    {{template "footer" .}}
+
+{{ end }}

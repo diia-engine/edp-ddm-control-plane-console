@@ -1,0 +1,97 @@
+.dropbtn {
+    background-color: #464547;
+    color: white;
+    font-size: 16px;
+    border: none;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #ddd;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown:hover .dropbtn {
+    background-color: #838284;
+}
+
+#dropdownMenuButton p {
+    margin-top: 5px;
+}
+
+.table {
+    width: 100%;
+    border: 1px solid #d1d1d1;
+    margin-top: 20px;
+}
+
+.form-group {
+    background-color: #464547;
+    display: flex;
+    margin-bottom: 0rem;
+    border-bottom: 1px solid #050505;
+}
+
+.burger {
+    margin-top: 5px;
+}
+
+.burger button.collapsed {
+    background-color: #464547;
+}
+
+.arrow.down {
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 3px;
+    margin-left: 1em;
+}
+
+.down {
+    transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.border-nav {
+    border-right-color: #050505;
+    border-right-style: solid;
+    border-right-width: 1px;
+    height: 100%;
+    position: relative;
+    width: 100%;
+    min-height: 1px;
+    padding-right: 25px;
+    padding-left: 11px;
+}
+
+a.component-name {
+    text-transform: capitalize;
+}

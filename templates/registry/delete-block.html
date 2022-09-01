@@ -1,0 +1,39 @@
+{{ define "delete-block" }}
+<div class="popup-backdrop"></div>
+<div id="delete-popup" class="popup-window">
+    <div class="popup-header">
+        <p>Видалити "<span id="delete-name">business-pro</span>"?</p>
+        <a href="#" class="popup-close hide-popup">
+            <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+        </a>
+    </div>
+    <form id="delete-form" method="post" action="">
+        <input type="hidden" name="_xsrf" value="{{ .xsrfdata }}" />
+        <div class="popup-body">
+            {{if eq .page "registry"}}
+            <p>Щоб уникнути випадкової втрати даних, введіть назву реєстру перш,
+                ніж ви зможете його видалити.</p>
+            {{end}}
+            {{if eq .page "group"}}
+                <p>Щоб уникнути випадкової втрати даних, введіть назву групи перш,
+                    ніж ви зможете її видалити.</p>
+            {{end}}
+
+            <div class="rc-form-group">
+                <input aria-label="registry name" type="text" id="registry-name" name="registry-name" required
+                        {{if eq .page "registry"}}
+                       placeholder="Назва реєстру"
+                           {{end}}
+                        {{if eq .page "group"}}
+                            placeholder="Назва групи"
+                        {{end}}
+                       autocomplete="off" />
+            </div>
+        </div>
+        <div class="popup-footer">
+            <a href="#" id="delete-cancel" class="hide-popup">відмінити</a>
+            <button value="submit" name="codebase-delete" type="submit">Видалити</button>
+        </div>
+    </form>
+</div>
+{{end}}

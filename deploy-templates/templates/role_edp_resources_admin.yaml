@@ -1,0 +1,33 @@
+{{ if eq .Values.global.platform "kubernetes" }}
+apiVersion: rbac.authorization.k8s.io/v1
+{{else}}
+apiVersion: authorization.openshift.io/v1
+{{end}}
+kind: Role
+metadata:
+  name: edp-resources-admin
+rules:
+- apiGroups:
+  - '*'
+  attributeRestrictions: null
+  resources:
+  - gerrits
+  - gitservers
+  - codebases
+  - codebasebranches
+  - cdpipelines
+  - stages
+  - codebases/finalizers
+  - codebasebranches/finalizers
+  - cdpipelines/finalizers
+  - stages/finalizers
+  - jenkinsjobbuildruns
+  - jenkinsjobbuildruns/status
+  verbs:
+  - get
+  - create
+  - list
+  - update
+  - delete
+  - patch
+  - watch

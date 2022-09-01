@@ -1,0 +1,171 @@
+{{ define "key-form" }}
+    <h3>Дані про ключ</h3>
+    <hr />
+    <div class="rc-form-group {{ if .errorsMap.KeyDeviceType }}error{{end}}">
+        <label for="key-device-type">Тип носія</label>
+        <select id="key-device-type" name="key-device-type">
+            <option {{ if eq .model.KeyDeviceType "file" }}selected="selected"{{end}}
+                    value="file">Файловий носій</option>
+            <option {{ if eq .model.KeyDeviceType "hardware" }}selected="selected"{{end}}
+                    value="hardware">Апаратний носій</option>
+        </select>
+        <span>
+                    {{range $key, $val := .errorsMap.KeyDeviceType}}
+                        {{ i18n $val.Tag $val.Param  }}
+                    {{end}}
+                </span>
+    </div>
+    <div class="key-type-hardware key-type-section" style="display: none;">
+        <div class="rc-form-group {{ if .errorsMap.RemoteType }}error{{end}}">
+            <label for="remote-type">Тип ключа</label>
+            <input required type="text" name="remote-type" id="remote-type" value="криптомод. ІІТ Гряда-301" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteType}}
+                            {{ i18n $val.Tag $val.Param  }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.RemoteKeyPassword }}error{{end}}">
+            <label for="remote-key-pwd">Пароль ключа</label>
+            <input required type="password" id="remote-key-pwd" name="remote-key-pwd" value="{{.model.RemoteKeyPassword}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteKeyPassword}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.RemoteCAName }}error{{end}}">
+            <label for="remote-ca-name">Ім'я АЦСК</label>
+            <input required type="text" id="remote-ca-name" name="remote-ca-name" value="{{.model.RemoteCAName}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteCAName}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.RemoteCAHost }}error{{end}}">
+            <label for="remote-ca-host">Хост АЦСК</label>
+            <input required type="text" id="remote-ca-host" name="remote-ca-host" value="{{.model.RemoteCAHost}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteCAHost}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.RemoteCAPort }}error{{end}}">
+            <label for="remote-ca-port">Порт АЦСК</label>
+            <input required type="number" id="remote-ca-port" name="remote-ca-port" value="{{.model.RemoteCAPort}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteCAPort}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.RemoteSerialNumber }}error{{end}}">
+            <label for="remote-serial-number">Серійний номер пристрою</label>
+            <input required type="text" id="remote-serial-number" name="remote-serial-number" value="{{.model.RemoteSerialNumber}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteSerialNumber}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.RemoteKeyPort }}error{{end}}">
+            <label for="remote-key-port">Порт ключа</label>
+            <input required type="number" id="remote-key-port" name="remote-key-port" value="{{.model.RemoteKeyPort}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteKeyPort}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.RemoteKeyHost }}error{{end}}">
+            <label for="remote-key-host">Хост ключа</label>
+            <input required type="text" id="remote-key-host" name="remote-key-host" value="{{.model.RemoteKeyHost}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteKeyHost}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.RemoteKeyMask }}error{{end}}">
+            <label for="remote-key-mask">Маска ключа</label>
+            <input required type="text" id="remote-key-mask" name="remote-key-mask" value="{{.model.RemoteKeyMask}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.RemoteKeyMask}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.INIConfig }}error{{end}}">
+            <label for="remote-ini-config">INI конфігурація</label>
+            <textarea rows="5" required id="remote-ini-config" name="remote-ini-config">
+                        {{.model.INIConfig}}
+                    </textarea>
+            <span>
+                        {{range $key, $val := .errorsMap.INIConfig}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+    </div>
+    <div class="key-type-file key-type-section">
+        <div class="rc-form-group {{ if .errorsMap.Key6 }}error{{end}}">
+            <label for="key6">Файловий ключ (розширення .dat)</label>
+            <input required type="file" name="key6" id="key6" accept=".dat" />
+            <span>
+                        {{range $key, $val := .errorsMap.Key6}}
+                            {{ i18n $val.Tag $val.Param  }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.SignKeyIssuer }}error{{end}}">
+            <label for="sign-key-issuer">АЦСК, що видав ключ</label>
+            <input type="text" id="sign-key-issuer" name="sign-key-issuer" required value="{{.model.SignKeyIssuer}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.SignKeyIssuer}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+        <div class="rc-form-group {{ if .errorsMap.SignKeyPwd }}error{{end}}">
+            <label for="sign-key-pwd">Пароль до файлового ключа</label>
+            <input required type="password" id="sign-key-pwd" name="sign-key-pwd" value="{{.model.SignKeyPwd}}" />
+            <span>
+                        {{range $key, $val := .errorsMap.SignKeyPwd}}
+                            {{ i18n $val.Tag $val.Param }}
+                        {{end}}
+                    </span>
+        </div>
+    </div>
+    <h3>Дані для перевірки ключа</h3>
+    <hr />
+    <div class="rc-form-group {{ if .errorsMap.CACertificate }}error{{end}}">
+        <label for="ca-cert">Публічні сертифікати АЦСК (розширення .p7b)</label>
+        <input required type="file" name="ca-cert" id="ca-cert" accept=".p7b" />
+        <span>
+                    {{range $key, $val := .errorsMap.CACertificate}}
+                        {{ i18n $val.Tag $val.Param }}
+                    {{end}}
+                </span>
+    </div>
+    <div class="rc-form-group {{ if .errorsMap.CAsJSON }}error{{end}}">
+        <label for="ca-json">Перелік АЦСК (розширення .json)</label>
+        <input required type="file" name="ca-json" id="ca-json" accept=".json" />
+        <span>
+                    {{range $key, $val := .errorsMap.CAsJSON}}
+                        {{ i18n $val.Tag $val.Param }}
+                    {{end}}
+                </span>
+    </div>
+    <h3>Перелік дозволених ключів <button class="allowed-keys-add" id="allowed-keys-add">+</button></h3>
+    <hr />
+    <div class="rc-form-group allowed-keys-body" id="allowed-keys-body">
+        <div class="allowed-keys-row">
+            <input name="allowed-keys-issuer[]" class="allowed-keys-input allowed-keys-issuer" required
+                   aria-label="key issuer" placeholder="Емітент ключа" type="text" />
+            <input name="allowed-keys-serial[]" class="allowed-keys-input allowed-keys-serial" required
+                   aria-label="key serial" placeholder="Серійний номер ключа" type="text" />
+        </div>
+    </div>
+{{end}}

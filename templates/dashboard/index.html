@@ -1,0 +1,12 @@
+{{ define "dashboard/index.html" }}
+    {{template "header" .}}
+
+    <div class="main-index">
+        <h1>Вітаємо!</h1>
+        <p>Щоб увійти до адмін панелі, будь ласка, автентифікуйтесь.</p>
+        <a href="{{ .BasePath }}/admin/dashboard">Автентифікуватись</a>
+        <div>У разі проблем з входом звертайтесь до адміністратора.</div>
+    </div>
+
+    {{template "footer" .}}
+{{end}}

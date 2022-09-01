@@ -1,0 +1,25 @@
+{{ define "cidr-form" }}
+<div class="popup-backdrop visible" v-cloak v-if="cidrPopupShow"></div>
+<div class="popup-window admin-window visible" v-cloak v-if="cidrPopupShow">
+    <div class="popup-header">
+        <p>Додати CIDR</p>
+        <a href="#" @click="hideCIDRForm" class="popup-close hide-popup">
+            <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+        </a>
+    </div>
+    <form @submit="createCIDR" id="cidr-form" method="post" action="">
+        <div class="popup-body">
+            <p class="popup-error" v-cloak v-if="cidrFormatError">Перевірте формат IP-адреси</p>
+            <div class="rc-form-group">
+                <label for="cidr-value">IP-адреси та маски</label>
+                <input required id="cidr-value" type="text" v-model="editCIDR" />
+                <p>Допустимі символи "0-9", "/", ".". Приклад: 172.16.0.0/12.</p>
+            </div>
+        </div>
+        <div class="popup-footer active">
+            <a href="#" id="cidr-cancel" class="hide-popup" @click="hideCIDRForm">відмінити</a>
+            <button value="submit" name="cidr-apply" @click="createCIDR" type="submit">Підтвердити</button>
+        </div>
+    </form>
+</div>
+{{end}}

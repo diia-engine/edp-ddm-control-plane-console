@@ -1,0 +1,41 @@
+{{define "admin-block"}}
+
+<div class="popup-backdrop visible" v-cloak v-if="adminPopupShow"></div>
+
+<div id="admin-popup admin-window" class="popup-window admin-window visible" v-cloak v-if="adminPopupShow">
+    <div class="popup-header">
+        <p>Адміністратор</p>
+        <a href="#" @click="hideAdminForm" class="popup-close hide-popup">
+            <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+        </a>
+    </div>
+    <form @submit="createAdmin" id="admin-form" method="post" action="">
+        <div class="popup-body">
+            <p class="popup-error" v-cloak v-if="requiredError">Всі поля обов'язкові для заповнення</p>
+            <p class="popup-error" v-cloak v-if="emailFormatError">Невірний формат електронной пошти</p>
+            <p class="popup-error" v-cloak v-if="usernameFormatError">Невірний формат ім'я користувача</p>
+
+            <div class="rc-form-group">
+                <input aria-label="admin first name" type="text"
+                       placeholder="Ім'я" v-model="editAdmin.firstName" />
+            </div>
+            <div class="rc-form-group">
+                <input aria-label="admin last name" type="text"
+                       placeholder="Прізвище" v-model="editAdmin.lastName" />
+            </div>
+            <div class="rc-form-group">
+                <input aria-label="email" type="email"
+                       placeholder="Електронна пошта" v-model="editAdmin.email" />
+            </div>
+            <div class="rc-form-group">
+                <input aria-label="password" type="password" v-model="editAdmin.tmpPassword"
+                       placeholder="Тимчасовий пароль" />
+            </div>
+        </div>
+        <div class="popup-footer active">
+            <a href="#" id="admin-cancel" class="hide-popup" @click="hideAdminForm">відмінити</a>
+            <button value="submit" name="admin-apply" @click="createAdmin" type="submit">Підтвердити</button>
+        </div>
+    </form>
+</div>
+{{end}}

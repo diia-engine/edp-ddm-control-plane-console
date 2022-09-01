@@ -1,0 +1,23 @@
+{{ if eq .Values.global.platform "openshift" }}
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: control-plane-console-keycloakrealmuser
+  namespace: user-management
+rules:
+- apiGroups:
+  - '*'
+  attributeRestrictions: null
+  resources:
+  - keycloakrealmusers
+  - keycloakrealmusers/finalizers
+  - keycloakrealmusers/status
+  - secrets
+  verbs:
+  - create
+  - get
+  - delete
+  - list
+  - update
+  - patch
+{{ end}}

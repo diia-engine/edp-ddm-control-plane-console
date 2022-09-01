@@ -1,0 +1,27 @@
+{{ if eq .Values.global.platform "openshift" }}
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: edp-{{ .Values.name }}-role-{{ .Values.global.edpName }}
+rules:
+- apiGroups:
+  - '*'
+  attributeRestrictions: null
+  resources:
+  - codebases
+  - codebasebranches
+  - cdpipelines
+  - stages
+  - codebases/finalizers
+  - codebasebranches/finalizers
+  - cdpipelines/finalizers
+  - stages/finalizers
+  - jenkinsjobbuildruns
+  - jenkinsjobbuildruns/status
+  verbs:
+  - create
+  - get
+  - delete
+  - update
+  - patch
+{{ end}}

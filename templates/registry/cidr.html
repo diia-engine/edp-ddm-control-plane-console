@@ -1,0 +1,49 @@
+{{ define "cidr-block" }}
+    <h3>Перелік дозволених CIDR</h3>
+    <hr />
+    <p>Ці налаштування є необов’язковими.</p>
+    <div class="rc-form-group">
+        <label for="admins">CIDR для портала чиновника</label>
+        <input type="hidden" id="preload-cidr" ref="cidrEditConfig" value="{{ .cidrConfig }}" />
+        <input type="hidden" id="officer-cidr" name="officer-cidr" v-model="officerCIDRValue.value" />
+        <div class="advanced-admins">
+            <div v-cloak v-for="c in officerCIDR" class="child-admin">
+                [[ c ]]
+                <a @click="deleteCIDR(c, officerCIDR, officerCIDRValue, $event)" :tp="officer" :cidr="c" href="#">
+                    <img src="/static/img/action-delete.png" />
+                </a>
+            </div>
+            <button type="button" @click="showCIDRForm(officerCIDR, officerCIDRValue)">+</button>
+        </div>
+    </div>
+
+    <div class="rc-form-group">
+        <label for="admins">CIDR для портала громадянина</label>
+        <input type="hidden" id="citizen-cidr" name="citizen-cidr" v-model="citizenCIDRValue.value" />
+        <div class="advanced-admins">
+            <div v-cloak v-for="c in citizenCIDR" class="child-admin">
+                [[ c ]]
+                <a @click="deleteCIDR(c, citizenCIDR, citizenCIDRValue, $event)" :tp="citizen" :cidr="c" href="#">
+                    <img src="/static/img/action-delete.png" />
+                </a>
+            </div>
+            <button type="button" @click="showCIDRForm(citizenCIDR, citizenCIDRValue)">+</button>
+        </div>
+    </div>
+
+    <div class="rc-form-group">
+        <label for="admins">CIDR для адміністративних компонент</label>
+        <input type="hidden" id="admin-cidr" name="admin-cidr" v-model="adminCIDRValue.value" />
+        <div class="advanced-admins">
+            <div v-cloak v-for="c in adminCIDR" class="child-admin">
+                [[ c ]]
+                <a @click="deleteCIDR(c, adminCIDR, adminCIDRValue, $event)" :tp="admin" :cidr="c" href="#">
+                    <img src="/static/img/action-delete.png" />
+                </a>
+            </div>
+            <button type="button" @click="showCIDRForm(adminCIDR, adminCIDRValue)">+</button>
+        </div>
+    </div>
+
+
+{{ end }}

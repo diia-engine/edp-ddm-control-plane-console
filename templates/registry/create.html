@@ -1,0 +1,147 @@
+{{ define "registry/create.html" }}
+    {{template "header" .}}
+    <div class="registry registry-create" id="registry-form">
+        <div class="registry-header">
+            <a href="{{ .BasePath }}/admin/registry/overview" class="registry-add">
+                <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
+                <span>НАЗАД</span>
+            </a>
+        </div>
+        <h1>Створити новий реєстр</h1>
+        <div class="registry-description">Щоб створити реєстр, вкажіть його назву та додайте опис.</div>
+
+        <form @submit="registryFormSubmit" id="create-form" class="registry-create-form" method="post"
+              enctype="multipart/form-data" action="">
+            <input type="hidden" name="action" value="create" />
+            {{ if .error }}
+            <div class="rc-global-error">{{.error}}</div>
+            {{ end }}
+
+            <div class="rc-title">
+                Увага! Назва повинна бути унікальною і її неможливо буде змінити після створення реєстру!
+            </div>
+            <div class="rc-form-group {{ if .errorsMap.Name }}error{{end}}">
+                <label for="name">Назва реєстру</label>
+                <input type="text" id="name" name="name" maxlength="12" required
+                       pattern="^[a-z0-9]([-a-z0-9]*[a-z0-9])?([a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
+                       value="{{.model.Name}}" />
+                <span>
+                    {{range $key, $val := .errorsMap.Name}}
+                        {{ i18n $val.Tag $val.Param }}
+                    {{end}}
+                </span>
+                <p>Допустимі символи: "a-z", "-". Назва не може перевищувати довжину у 12 символів.</p>
+            </div>
+            <div :class="{ error: adminsError }" class="rc-form-group {{ if .errorsMap.Admins }}error{{end}}">
+                <label for="admins">Адміністратори</label>
+                <input type="hidden" id="admins" name="admins" v-model="adminsValue" :admins="loadAdmins('{{ .model.Admins }}')" />
+                <div class="advanced-admins" ref="admins">
+                    <div v-cloak v-for="adm in admins" class="child-admin">
+                        [[ adm.email ]]
+                        <a @click="deleteAdmin" :email="adm.email" href="#">
+                            <img src="/static/img/action-delete.png" />
+                        </a>
+                    </div>
+                    <button type="button" @click="showAdminForm">+</button>
+                </div>
+                <span>
+                    <span v-if="adminsError">Не може бути порожнім</span>
+                    {{range $key, $val := .errorsMap.Admins}}
+                        {{ i18n $val.Tag $val.Param  }}
+                    {{end}}
+                </span>
+                <p>Допустимі символи: "0-9", "a-z", "_", "-", "@", ".", ",".</p>
+            </div>
+            <div class="rc-form-group {{ if .errorsMap.Description }}error{{end}}">
+                <label for="description">Опис</label>
+                <textarea rows="3" name="description" id="description" maxlength="250">{{.model.Description}}</textarea>
+                <span>{{range $key, $val := .errorsMap.Description}}{{ $val }}{{end}}</span>
+                <p>Опис може містити офіційну назву реєстру чи його призначення.</p>
+            </div>
+            <div class="rc-form-group {{ if .errorsMap.RegistryGitTemplate }}error{{end}}">
+                <label for="registry-git-template">Шаблон реєстру</label>
+                <select required name="registry-git-template" id="registry-git-template">
+                    <option></option>
+                    {{range $key, $val := .gerritProjects}}
+                        <option {{ if eq $.model.RegistryGitTemplate $val.Spec.Name }}selected="selected"{{end}}>{{$val.Spec.Name}}</option>
+                    {{end}}
+                </select>
+                <span>{{range $key, $val := .errorsMap.RegistryGitTemplate}}{{ $val }}{{end}}</span>
+            </div>
+            <div class="rc-form-group {{ if .errorsMap.RegistryGitBranch }}error{{end}}">
+                <label for="registry-git-branch">Гілка шаблону реєстру</label>
+                <select required name="registry-git-branch" id="registry-git-branch">
+
+                </select>
+                <span>{{range $key, $val := .errorsMap.RegistryGitTemplate}}{{ $val }}{{end}}</span>
+            </div>
+            {{template "reg-smtp" .}}
+            {{template "key-form" .}}
+            {{template "reg-dns" .}}
+            {{template "cidr-block" .}}
+
+            <div class="rc-form-group">
+                <button type="submit" name="submit">Підтвердити</button>
+            </div>
+        </form>
+        {{template "admin-block" .}}
+        {{template "cidr-form" .}}
+    </div>
+
+
+    <script src="{{ .BasePath }}/static/js/mustache.js"></script>
+    <script id="ini-template" type="x-tmpl-mustache">
+        {{ .hwINITemplateContent }}
+    </script>
+    <script id="allowed-keys-template" type="x-tmpl-mustache">
+        <div class="allowed-keys-row">
+            <input name="allowed-keys-issuer[]" class="allowed-keys-input allowed-keys-issuer" required aria-label="key issuer" placeholder="Емітент ключа" type="text" />
+            <input name="allowed-keys-serial[]" class="allowed-keys-input allowed-keys-serial" required aria-label="key serial" placeholder="Серійний номер ключа" type="text" />
+            <button class="allowed-keys-remove-btn">-</button>
+        </div>
+    </script>
+    <script type="text/javascript">
+        let registryBranches = {
+            {{range $projectKey, $project := .gerritProjects}}
+            "{{$project.Spec.Name}}": [
+                {{range $branchKey, $branch := $project.Status.Branches}}
+                "{{ $branch }}",
+                {{end}}
+            ],
+            {{end}}
+        };
+
+        $(function (){
+            let registryGitTemplate = $("#registry-git-template");
+            registryGitTemplate.change(function (e) {
+                let tpl = $(e.target).val();
+                let branches = registryBranches[tpl];
+                let branchesSelect = $("#registry-git-branch");
+                branchesSelect.empty();
+                for (let branch in branches) {
+                    let branchVal = branches[branch];
+                    let headsIndex = branchVal.indexOf("heads/")
+                    if (headsIndex !== -1) {
+                        branchVal = branchVal.substring(headsIndex + 6)
+                        branchesSelect.append(new Option(branchVal, branchVal));
+                    }
+                }
+            });
+            registryGitTemplate.change();
+
+            $("#create-form").submit(function () {
+                let registryNameInput = $("#name");
+                if (registryNameInput.val().length < 3) {
+                    registryNameInput.change();
+                    return false;
+                }
+            });
+        });
+    </script>
+    {{template  "scripts" .}}
+    <script type="text/javascript" src="{{ .BasePath }}/static/js/registry-form.js"></script>
+    <script type="text/javascript" src="{{ .BasePath }}/static/js/administrators.js"></script>
+
+    {{template "footer" .}}
+
+{{ end }}

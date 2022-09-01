@@ -1,0 +1,171 @@
+{{ define "cluster/view.html" }}
+    {{template "header" .}}
+    <div class="registry cluster">
+        <div class="registry-header registry-header-view cluster">
+            <h1>Керування Платформою</h1>
+            {{if .canUpdateCluster}}
+            <a href="{{ .BasePath }}/admin/cluster/edit" class="registry-add">
+                <img alt="add registry" src="{{ .BasePath }}/static/img/action-edit.png" />
+                <span>Редагувати</span>
+            </a>
+            {{end}}
+        </div>
+        <div class="registry-description cluster">Керування обчислювальними ресурсами платформи, мережею платформи, налаштування компонентів платформи, доступу до них.</div>
+
+        <div class="rg-info-block">
+            <div class="rg-info-block-header">
+                <span>Загальна інформація</span>
+                <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+            </div>
+            <div class="rg-info-block-body">
+                <div class="rg-info-line-horizontal">
+                    <span>Назва</span>
+                    <span>{{ .codebase.Name }}</span>
+                </div>
+                <div class="rg-info-line-horizontal">
+                    <span>Опис</span>
+                    <span>{{ .codebase.Description }}</span>
+                </div>
+                {{if .admins}}
+                    <div class="rg-info-line-horizontal">
+                        <span>Адміністратори</span>
+                        <span>{{ .admins }}</span>
+                    </div>
+                {{end}}
+                <div class="rg-info-line-horizontal">
+                    <span>Час створення</span>
+                    <span>{{ .codebase.FormattedCreatedAt }}</span>
+                </div>
+            </div>
+        </div>
+        {{if .branches }}
+            <div class="rg-info-block">
+                <div class="rg-info-block-header">
+                    <span>Конфігурація</span>
+                    <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+                </div>
+                <div class="rg-info-block-body">
+                    <table class="rg-info-table rg-info-table-config">
+                        <thead>
+                        <tr>
+                            <th>Статус</th>
+                            <th>Конфігурація</th>
+                            <th>VCS</th>
+                            <th>CI</th>
+                            <th>Версія</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{range $index, $br := .branches}}
+                            <tr>
+                                <td>
+                                    <img title="{{ i18n $br.LocaleStatus }}" alt="{{ i18n $br.LocaleStatus }}" src="{{ $.BasePath }}/static/img/status-{{$br.Status.Value}}.png" />
+                                </td>
+                                <td>
+                                    {{$br.Name}}
+                                </td>
+                                <td>
+                                    <a href="{{ $br.CreateGerritLink $.gerritURL }}" target="_blank">
+                                        <img alt="vcs" src="{{ $.BasePath }}/static/img/action-link.png" />
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{{ $br.CreateJenkinsLink $.jenkinsURL }}" target="_blank">
+                                        <img alt="ci" src="{{ $.BasePath }}/static/img/action-link.png" />
+                                    </a>
+                                </td>
+                                <td>{{$br.Spec.Version}}</td>
+                            </tr>
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {{end}}
+        {{if .actionLog}}
+            <div class="rg-info-block">
+                <div class="rg-info-block-header">
+                    <span>Журнал подій</span>
+                    <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+                </div>
+                <div class="rg-info-block-body">
+                    <table class="rg-info-table rg-info-table-config">
+                        <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Користувач</th>
+                            <th>Дія</th>
+                            <th>Результат</th>
+                            <th>Повідомлення</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{range $index, $al := .codebase.ActionLog}}
+                            <tr>
+                                <td>{{$al.FormattedLastTimeUpdate}}</td>
+                                <td>{{$al.UserName}}</td>
+                                <td>{{$al.Action}}</td>
+                                <td>{{$al.Result}}</td>
+                                <td>{{$al.Message}}</td>
+                            </tr>
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {{end}}
+        {{ if .mergeRequests}}
+            <div class="rg-info-block">
+                <div class="rg-info-block-header">
+                    <span>Запити на оновлення</span>
+                    <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+                </div>
+                <div class="rg-info-block-body">
+                    <table class="rg-info-table rg-info-table-config">
+                        <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Назва</th>
+                            <th>Статус</th>
+                            <th>Посилання</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{range $index, $al := .mergeRequests}}
+                            <tr>
+                                <td>{{$al.FormattedCreatedAt}}</td>
+                                <td>{{$al.Name}}</td>
+                                <td>{{$al.Status.Value}}</td>
+                                <td>
+                                    {{if $al.Status.ChangeURL}}
+                                        <a href="{{$al.Status.ChangeURL}}" target="_blank">
+                                            <img alt="vcs" src="{{ $.BasePath }}/static/img/action-link.png" />
+                                        </a>
+                                    {{end}}
+                                </td>
+                            </tr>
+                        {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {{end}}
+        {{ if .edpComponents}}
+            <div class="dashboard-panel registry-dashboard-panel">
+                <ul>
+                    {{range $index, $ec := .edpComponents}}
+                        <li>
+                            <img src="data:image/svg+xml;base64,{{$ec.Spec.Icon}}" alt="{{$ec.Spec.Type}} logo" />
+                            <div class="dashboard-item-content">
+                                <a href="{{$ec.Spec.Url}}">{{$ec.Spec.Type}} <img src="{{$.BasePath}}/static/img/action-link.png"
+                                                                                  alt="{{$ec.Spec.Type}} link"></a>
+                            </div>
+                        </li>
+                    {{end}}
+                </ul>
+            </div>
+        {{end}}
+    </div>
+    {{template "scripts" .}}
+    {{template "footer" .}}
+{{ end }}

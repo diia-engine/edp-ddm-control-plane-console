@@ -1,0 +1,19 @@
+apiVersion: v2.edp.epam.com/v1alpha1
+kind: AdminConsole
+metadata:
+  name: {{ .Values.name }}
+spec:
+  basePath: ''
+  dbSpec:
+    enabled: false
+    port: '5432'
+  edpSpec:
+    dnsWildcard: {{ .Values.dnsWildcard }}
+    integrationStrategies: 'Create,Clone,Import'
+    name: {{ .Release.Namespace }}
+    testReportTools: Allure
+    version: {{ .Values.image.version }}
+  image: {{ .Values.image.name }}
+  keycloakSpec:
+    enabled: true
+  version:  {{ .Values.image.version }}

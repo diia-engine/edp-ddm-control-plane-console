@@ -1,0 +1,22 @@
+{{- if .Values.keycloakIntegration.enabled -}}
+apiVersion: v1.edp.epam.com/v1alpha1
+kind: KeycloakClient
+metadata:
+  name: {{ .Values.keycloakIntegration.client.name }}
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  clientId: {{ .Values.keycloakIntegration.client.name }}
+  public: {{ .Values.keycloakIntegration.client.public }}
+  directAccess: false
+  realmRoles: []
+  audRequired: false
+  {{- if not .Values.keycloakIntegration.client.public }}
+  secret: {{ .Values.keycloakIntegration.client.secretName }}
+  {{- else }}
+  secret: ''
+  {{- end }}
+  advancedProtocolMappers: false
+  webUrl: {{ template "control-plane-console.url" . }}
+  targetRealm: {{ template "keycloak.realm" . }}
+  {{- end -}}

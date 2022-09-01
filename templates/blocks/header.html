@@ -1,0 +1,74 @@
+{{ define "header" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Міністерство цифрової трансформації України</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/all.css" />
+    <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/jquery-ui.min.css" />
+    <link rel="stylesheet" href="{{ .BasePath }}/static/css/index.css">
+    {{ block "css" . }}{{ end }}
+    <script src="{{ .BasePath }}/static/js/jquery-3.3.1.js"></script>
+    <script src="{{ .BasePath }}/static/js/popper.js"></script>
+    <script src="{{ .BasePath }}/static/js/bootstrap.js"></script>
+</head>
+<body>
+<main>
+
+<link rel="stylesheet" href="{{ .BasePath }}/static/css/header_footer.css">
+
+<header class="edp-header">
+    <div class="logo">
+        <a href="{{ .BasePath }}">
+            <img src="{{ .BasePath }}/static/img/uk-logo.png" alt="epam">
+        </a>
+    </div>
+    <h2>Міністерство цифрової трансформації України
+    </h2>
+    <div class="info-margin-right">
+        {{if .username}}
+            <span class="username">{{.username}}</span> |
+            <a href="/admin/logout">Вихід</a>
+        {{end}}
+    </div>
+</header>
+    <section class="content d-flex">
+        <aside class="p-0 bg-dark active js-aside-menu aside-menu active">
+            {{if .page}}
+                <nav class="navbar navbar-expand navbar-dark bg-dark flex-column flex-row align-items-start p-0">
+                    <div class="navbar-collapse">
+                        <ul class="flex-column flex-row navbar-nav w-100 justify-content-between">
+                            <li class="nav-item {{if eq .page "dashboard"}}active{{end}}" >
+                                <a class="nav-link pl-0" href="{{ .BasePath }}/admin/dashboard">
+                                    <i class="icon-dashboard" style="background: url('{{ .BasePath }}/static/img/dash.png')"></i>
+                                    <span class="link-name">ДАШБОРД</span>
+                                </a>
+                            </li>
+                            {{if .canViewRegistries}}
+                            <li class="nav-item {{if eq .page "registry"}}active{{end}}" >
+                                <a class="nav-link pl-0" href="{{ .BasePath }}/admin/registry/overview">
+                                    <i class="icon-dashboard"
+                                       style="margin-top: 5px;background: url('{{ .BasePath }}/static/img/list_bullet.png') no-repeat"></i>
+                                    <span class="link-name">РЕЄСТРИ</span>
+                                </a>
+                            </li>
+                            {{end}}
+                            {{if .canViewClusterManagement}}
+                            <li class="nav-item {{if eq .page "cluster"}}active{{end}}" >
+                                <a class="nav-link pl-0 " href="{{ .BasePath }}/admin/cluster/management">
+                                    <i class="icon-dashboard" style="background: url('{{ .BasePath }}/static/img/cluster_management.png')"></i>
+                                    <span class="link-name">КЕРУВАННЯ ПЛАТФОРМОЮ</span>
+                                </a>
+                            </li>
+                            {{end}}
+                        </ul>
+                    </div>
+                </nav>
+
+            {{end}}
+        </aside>
+        <div class="flex-fill pl-4 pr-4 wrapper">
+
+{{end}}

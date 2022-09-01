@@ -1,0 +1,123 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: {{ .Values.name }}
+  name: {{ .Values.name }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    app: control-plane-console
+  strategy:
+    activeDeadlineSeconds: 21600
+    resources: {}
+    rollingParams:
+      intervalSeconds: 1
+      maxSurge: 25%
+      maxUnavailable: 25%
+      timeoutSeconds: 600
+      updatePeriodSeconds: 1
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: HOST
+              value: "{{ template "control-plane-console.url" . }}"
+            - name: BASE_PATH
+              value: "{{if .Values.basePath}}/{{ .Values.basePath }}{{else}}{{end}}"
+            - name: EDP_ADMIN_CONSOLE_VERSION
+              value: "{{ .Values.version }}"
+            - name: GERRIT_GLOBAL_LINK
+              value: "https://gerrit-{{ template "edp.hostnameSuffix" . }}"
+            - name: CLUSTER_REPO
+              value: "cluster-mgmt"
+            - name: GROUP_GIT_REPO
+              value: "registry-group"
+            - name: REGISTRY_REPO_HOST
+              value: "https://gerrit-{{ template "edp.hostnameSuffix" . }}"
+            - name: REGISTRY_REPO_PREFIX
+              value: "registry-tenant-template-"
+            - name: JENKINS_GLOBAL_LINK
+              value: "https://jenkins-{{ template "edp.hostnameSuffix" . }}"
+            - name: AUTH_ENABLED
+              value: "true"
+            - name: INTEGRATION_STRATEGIES
+              value: "Create,Import"
+            - name: BUILD_TOOLS
+              value: "maven"
+            - name: DEPLOYMENT_SCRIPT
+              value: "helm-chart,openshift-template"
+            - name: PLATFORM_TYPE
+              value: "openshift"
+            - name: VERSIONING_TYPES
+              value: "default,edp"
+            - name: CI_TOOLS
+              value: "Jenkins,GitLab CI"
+            - name: PERF_DATA_SOURCES
+              value: "Sonar,Jenkins,GitLab"
+            - name: EDP_NAME
+              value: {{ .Release.Namespace }}
+            - name: OC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth-admin-console-client
+                  key: secret
+            - name: OC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oauth-admin-console-client
+                  key: clientId
+            - name: PROJECT_MASK_URL
+              value: "{{.Values.projectUrlMask}}"
+            - name: IMAGE_STREAM_MASK_URL
+              value: "{{ .Values.imageStreamUrlMask }}"
+            - name: ENABLE_BRANCH_PROVISIONERS
+              value: "{{ .Values.enable_branch_provisioners }}"
+          image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 180
+            periodSeconds: 20
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 1
+          name: {{ .Values.name }}
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 5
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            successThreshold: 1
+            tcpSocket:
+              port: 8080
+            timeoutSeconds: 1
+          resources:
+            requests:
+              memory: 500Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: {{ .Values.operator.serviceAccountName }}
+      serviceAccountName: {{ .Values.operator.serviceAccountName }}
+      terminationGracePeriodSeconds: 30
+  test: false
+  triggers:
+    - type: ConfigChange

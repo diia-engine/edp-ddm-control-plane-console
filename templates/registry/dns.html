@@ -1,0 +1,37 @@
+{{ define "reg-dns" }}
+    <h3>Налаштування DNS</h3>
+    <hr />
+    <div class="rc-form-group {{ if .errorsMap.DNSNameOfficer }}error{{end}}">
+        <label for="officer-dns">Доменне імʼя для кабінету чиновника</label>
+        <input type="text" name="officer-dns" id="officer-dns" value="{{ .model.DNSNameOfficer }}" />
+        <label for="">SSL-сертифікат для кабінету чиновника (розширення .pem)</label>
+        <input id="officer-ssl" name="officer-ssl" type="file" />
+        <span>
+                    {{range $key, $val := .errorsMap.DNSNameOfficer}}
+                        {{ i18n $val.Tag $val.Param }}
+                    {{end}}
+                </span>
+    </div>
+    <div class="rc-form-group {{ if .errorsMap.DNSNameCitizen }}error{{end}}">
+        <label for="citizen-dns">Доменне імʼя для кабінету громадянина</label>
+        <input type="text" name="citizen-dns" id="citizen-dns" value="{{ .model.DNSNameCitizen }}" />
+        <label for="">SSL-сертифікат для кабінету громадянина (розширення .pem)</label>
+        <input id="citizen-ssl" name="citizen-ssl" type="file" />
+        <span>
+                    {{range $key, $val := .errorsMap.DNSNameCitizen}}
+                        {{ i18n $val.Tag $val.Param }}
+                    {{end}}
+                </span>
+    </div>
+    <div class="yellow-banner">
+        <div class="banner-title">
+            Увага!
+        </div>
+        <div class="banner-body">
+            Необхідно виконати додаткову зовнішню конфігурацію за межами OpenShift кластеру та реєстру.
+            {{ if .dnsManual }}
+            Інструкція доступна <a href="#">за посиланням</a>.
+            {{end}}
+        </div>
+    </div>
+{{end}}

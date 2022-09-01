@@ -1,0 +1,34 @@
+{{ define "dashboard/dashboard.html" }}
+    {{template "header" .}}
+
+    <div class="dashboard-panel">
+        <ul>
+            <li>
+                <img src="{{.BasePath}}/static/img/gerrit-logo.png" alt="gerrit logo" />
+                <div class="dashboard-item-content">
+                    <a href="{{.gerritLink}}">Gerrit <img src="{{.BasePath}}/static/img/action-link.png" alt="gerrit link"></a>
+                    <p>
+                        Gerrit - вільне програмне забезпечення з веб-інтерфейсом, інтегроване з розподіленою
+                        системою контролю версій Git, призначене для спільного проведення інспекції вихідного коду.
+                        Gerrit був розроблений співробітником корпорації Google Шоном Пірсом для розробки операційної
+                        системи Android.
+                    </p>
+                </div>
+            </li>
+            <li>
+                <img src="{{.BasePath}}/static/img/jenkins-logo.png" alt="jenkins logo" />
+                <div class="dashboard-item-content">
+                    <a href="{{.jenkinsLink}}">Jenkins <img src="{{.BasePath}}/static/img/action-link.png" alt="gerrit link"></a>
+                    <p>
+                        Jenkins - програмна система з відкритим вихідним кодом на Java, призначена для забезпечення
+                        процесу безперервної інтеграції програмного забезпечення. Відгалужуючись в 2008 році від
+                        проекту Hudson, що належить компанії Oracle, основним його автором - Косуке Кавагуті.
+                        Поширюється під ліцензією MIT.
+                    </p>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    {{template "footer" .}}
+{{end}}
