@@ -13,7 +13,8 @@
             </div>
 
             <div class="cat-line" v-for="cat in registryResources.addedCats">
-                <h4>[[ cat.name ]] <button class="remove-cat">-</button></h4>
+                <h4>[[ cat.name ]]
+                    <button type="button" @click="removeResourceCat(cat, $event)" class="remove-cat">-</button></h4>
                 <div class="rc-form-group">
                     <h5>Istio sidecar</h5>
                     <div class="sidecar-enabled">
