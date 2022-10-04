@@ -119,10 +119,17 @@ let app = Vue.createApp({
                     'registry-kafka-api'
                 ],
                 addedCats: [],
-            }
+            },
+            wizard: {
+                activeTab: 'general'
+            },
         }
     },
     methods: {
+        selectWizardTab: function(tabName, e) {
+            this.wizard.activeTab = tabName;
+            e.preventDefault();
+        },
         addResourceCat: function (e) {
             e.preventDefault(e);
             if (this.registryResources.cat === '') {

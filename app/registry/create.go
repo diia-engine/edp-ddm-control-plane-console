@@ -105,6 +105,10 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, re
 func (a *App) getDNSManualURL(ctx context.Context) (string, error) {
 	com, err := a.EDPComponent.Get(ctx, a.Config.DDMManualEDPComponent)
 	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return "", nil
+		}
+
 		return "", errors.Wrap(err, "unable to get edp component")
 	}
 

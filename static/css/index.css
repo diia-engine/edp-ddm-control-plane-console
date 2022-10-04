@@ -12180,3 +12180,88 @@ p.error {
     font-size: 16px;
     margin-left: 10px;
 }
+
+.reg-wizard {
+    display: flex;
+    flex-direction: row;
+    margin-bottom: 24px;
+}
+
+.wizard-contents {
+    padding-top: 16px;
+}
+
+.wizard-contents ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 24px 0 8px;
+}
+
+.wizard-contents li {
+    text-transform: uppercase;
+    font-size: 12px;
+    padding: 8px;
+    min-width: 224px;
+    font-weight: 400;
+    font-style: normal;
+    font-family: "Oswald", "MuseoSans", sans-serif;
+}
+
+.wizard-contents a {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.wizard-contents li.active {
+    background: #E6F3FA;
+}
+
+.wizard-body {
+    border-left: 1px solid #000000;
+    /*padding-top: 16px;*/
+    padding: 16px 0 0 24px;
+}
+
+.registry-create-form.wizard-form {
+    box-shadow: none;
+    padding: 0 8px 8px 0;
+    margin-bottom: 16px;
+}
+
+.wizard-tab {
+    /*display: none;*/
+}
+
+.wizard-tab h2 {
+    font-family: "Oswald", "MuseoSans", sans-serif;
+    font-size: 18px;
+    line-height: 18px;
+    text-transform: uppercase;
+}
+
+.wizard-buttons {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.wizard-buttons.no-prev {
+    justify-content: flex-end;
+}
+
+.wizard-buttons button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 0;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.wizard-next {
+    background: #6DA300;
+}
+
+.wizard-prev {
+    background: #FC7979;
+}
