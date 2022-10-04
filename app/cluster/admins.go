@@ -48,17 +48,12 @@ func (a *App) updateAdmins(ctx *gin.Context) error {
 		return errors.Wrap(err, "unable to decode admins from request")
 	}
 
-	vals, err := a.Services.Gerrit.GetFileContents(ctx, a.Config.CodebaseName, "master", registry.ValuesLocation)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values contents")
-	}
-
 	if err := a.setAdminsVaultPassword(admins); err != nil {
 		return errors.Wrap(err, "unable to create admins secrets")
 	}
 
-	var valuesDict map[string]interface{}
-	if err := yaml.Unmarshal([]byte(vals), &valuesDict); err != nil {
+	valuesDict, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
+	if err != nil {
 		return errors.Wrap(err, "unable to decode values yaml")
 	}
 
@@ -124,13 +119,8 @@ func (a *App) setAdminsVaultPassword(admins []Admin) error {
 }
 
 func (a *App) getAdminsJSON(ctx context.Context) (string, error) {
-	admContents, err := a.Gerrit.GetFileContents(ctx, a.Config.CodebaseName, "master", registry.ValuesLocation)
+	valuesDict, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to get admin values yaml")
-	}
-
-	var valuesDict map[string]interface{}
-	if err := yaml.Unmarshal([]byte(admContents), &valuesDict); err != nil {
 		return "", errors.Wrap(err, "unable to decode values")
 	}
 

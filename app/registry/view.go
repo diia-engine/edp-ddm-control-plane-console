@@ -65,7 +65,7 @@ func (a *App) viewRegistryExternalRegistration(userCtx context.Context, registry
 		}
 	}
 
-	values, err := a.getValuesFromGit(userCtx, registryName)
+	values, err := GetValuesFromGit(userCtx, registryName, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}
@@ -156,7 +156,7 @@ func convertExternalRegFromInterface(in interface{}) ([]ExternalRegistration, er
 func (a *App) viewGetValues(userCtx context.Context, registryName string, viewParams gin.H) (map[string]interface{}, error) {
 	values, ok := viewParams["values"]
 	if !ok {
-		_values, err := a.getValuesFromGit(userCtx, registryName)
+		_values, err := GetValuesFromGit(userCtx, registryName, a.Gerrit)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get values from git")
 		}

@@ -71,7 +71,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 }
 
 func (a *App) loadValuesEditConfig(ctx context.Context, registryName string, rspParams gin.H, r *registry) error {
-	values, err := a.getValuesFromGit(ctx, registryName)
+	values, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}
@@ -218,7 +218,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response *router.Response, ret
 			gin.H{"page": "registry", "errorsMap": validationErrors, "registry": r, "model": r}), nil
 	}
 
-	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService, k8sService); err != nil {
+	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService); err != nil {
 		_, ok := errors.Cause(err).(MRExists)
 		if ok {
 			return router.MakeResponse(200, "registry/edit.html",
@@ -239,17 +239,14 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response *router.Response, ret
 }
 
 func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *registry, cb *codebase.Codebase,
-	cbService codebase.ServiceInterface, k8sService k8s.ServiceInterface) error {
-	if err := CreateRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService); err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
-	}
+	cbService codebase.ServiceInterface) error {
 
 	cb.Spec.Description = &r.Description
 	if cb.Annotations == nil {
 		cb.Annotations = make(map[string]string)
 	}
 
-	values, err := a.getValuesFromGit(ctx, r.Name)
+	values, err := GetValuesFromGit(ctx, r.Name, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}
@@ -257,6 +254,11 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	vaultSecretData := make(map[string]map[string]interface{})
 	if err := a.prepareDNSConfig(ginContext, r, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to prepare dns config")
+	}
+
+	if err := CreateRegistryKeys(keyManagement{r: r, vaultSecretPath: a.keyManagementRegistryVaultPath(r.Name)}, ginContext.Request,
+		vaultSecretData, values); err != nil {
+		return errors.Wrap(err, "unable to create registry keys")
 	}
 
 	if err := a.prepareMailServerConfig(ginContext, r, vaultSecretData, values); err != nil {
@@ -272,13 +274,13 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	if len(values) > 0 {
-		if err := a.createEditMergeRequest(ginContext, r, values); err != nil {
+		if err := CreateEditMergeRequest(ginContext, r.Name, values, a.Gerrit); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}
 	}
 
 	if len(vaultSecretData) > 0 {
-		if err := a.createVaultSecrets(vaultSecretData); err != nil {
+		if err := CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
 			return errors.Wrap(err, "unable to create vault secrets")
 		}
 	}
@@ -295,8 +297,9 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	return nil
 }
 
-func (a *App) createEditMergeRequest(ctx *gin.Context, r *registry, editValues map[string]interface{}) error {
-	values, err := a.getValuesFromGit(ctx, r.Name)
+func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map[string]interface{},
+	gerritService gerrit.ServiceInterface) error {
+	values, err := GetValuesFromGit(ctx, projectName, gerritService)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}
@@ -310,7 +313,7 @@ func (a *App) createEditMergeRequest(ctx *gin.Context, r *registry, editValues m
 		return errors.Wrap(err, "unable to encode values yaml")
 	}
 
-	mrs, err := a.Services.Gerrit.GetMergeRequestByProject(ctx, r.Name)
+	mrs, err := gerritService.GetMergeRequestByProject(ctx, projectName)
 	if err != nil {
 		return errors.Wrap(err, "unable to get MRs")
 	}
@@ -321,9 +324,9 @@ func (a *App) createEditMergeRequest(ctx *gin.Context, r *registry, editValues m
 		}
 	}
 
-	if err := a.Services.Gerrit.CreateMergeRequestWithContents(ctx, &gerrit.MergeRequest{
-		ProjectName:   r.Name,
-		Name:          fmt.Sprintf("reg-edit-mr-%s-%d", r.Name, time.Now().Unix()),
+	if err := gerritService.CreateMergeRequestWithContents(ctx, &gerrit.MergeRequest{
+		ProjectName:   projectName,
+		Name:          fmt.Sprintf("reg-edit-mr-%s-%d", projectName, time.Now().Unix()),
 		AuthorEmail:   ctx.GetString(router.UserEmailSessionKey),
 		AuthorName:    ctx.GetString(router.UserNameSessionKey),
 		CommitMessage: fmt.Sprintf("edit registry"),

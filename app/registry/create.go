@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"ddm-admin-console/service/vault"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -54,6 +55,7 @@ type KeyManagement interface {
 	KeysRequired() bool
 	FilesSecretName() string
 	EnvVarsSecretName() string
+	VaultSecretPath() string
 }
 
 func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, retErr error) {
@@ -255,16 +257,17 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unable to prepare admins config")
 	}
 
-	if err := a.createVaultSecrets(vaultSecretData); err != nil {
+	if err := CreateRegistryKeys(keyManagement{r: r, vaultSecretPath: a.keyManagementRegistryVaultPath(r.Name)},
+		ginContext.Request, vaultSecretData, values); err != nil {
+		return errors.Wrap(err, "unable to create registry keys")
+	}
+
+	if err := CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
 		return errors.Wrap(err, "unable to create vault secrets")
 	}
 
 	if err := a.Services.Gerrit.CreateProject(ctx, r.Name); err != nil {
 		return errors.Wrap(err, "unable to create gerrit project")
-	}
-
-	if err := CreateRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService); err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
 	}
 
 	cb := a.prepareRegistryCodebase(r)
@@ -303,11 +306,11 @@ func ModifyVaultPath(path string) string {
 	return strings.Join(pathParts, "/")
 }
 
-func (a *App) createVaultSecrets(secretData map[string]map[string]interface{}) error {
+func CreateVaultSecrets(vaultService vault.ServiceInterface, secretData map[string]map[string]interface{}) error {
 	for vaultPath, pathSecretData := range secretData {
 		vaultPath = ModifyVaultPath(vaultPath)
 
-		if _, err := a.Vault.Write(vaultPath, map[string]interface{}{
+		if _, err := vaultService.Write(vaultPath, map[string]interface{}{
 			"data": pathSecretData,
 		}); err != nil {
 			return errors.Wrap(err, "unable to write to vault")
@@ -331,6 +334,10 @@ func (a *App) vaultRegistryPath(registryName string) string {
 	return strings.ReplaceAll(
 		strings.ReplaceAll(a.Config.VaultRegistrySecretPathTemplate, "{registry}", registryName),
 		"{engine}", a.Config.VaultKVEngineName)
+}
+
+func (a *App) keyManagementRegistryVaultPath(registryName string) string {
+	return a.vaultRegistryPath(registryName) + "/key-management"
 }
 
 func (a *App) prepareCIDRConfig(r *registry, values map[string]interface{}) error {
@@ -693,7 +700,8 @@ func validateRegistryKeys(rq *http.Request, r KeyManagement) (createKeys bool, k
 	return
 }
 
-func CreateRegistryKeys(reg KeyManagement, rq *http.Request, k8sService k8s.ServiceInterface) error {
+func CreateRegistryKeys(reg KeyManagement, rq *http.Request, secretData map[string]map[string]interface{},
+	values map[string]interface{}) error {
 	createKeys, key6Fl, caCertFl, caJSONFl, err := validateRegistryKeys(rq, reg)
 	if err != nil {
 		return errors.Wrap(err, "unable to validate registry keys")
@@ -702,93 +710,153 @@ func CreateRegistryKeys(reg KeyManagement, rq *http.Request, k8sService k8s.Serv
 		return nil
 	}
 
-	filesSecretData := make(map[string][]byte)
-	envVarsSecretData := map[string][]byte{
-		"sign.key.device-type": []byte(reg.KeyDeviceType()),
-	}
-
-	if err := SetCASecretData(filesSecretData, caCertFl, caJSONFl); err != nil {
+	if err := setCASecretData(reg, secretData, values, caCertFl, caJSONFl); err != nil {
 		return errors.Wrap(err, "unable to set ca secret data for registry")
 	}
 
-	if err := SetKeySecretDataFromRegistry(reg, key6Fl, filesSecretData, envVarsSecretData); err != nil {
+	if err := setKeySecretDataFromRegistry(reg, key6Fl, secretData, values); err != nil {
 		return errors.Wrap(err, "unable to set key vars from registry form")
 	}
 
-	if err := SetAllowedKeysSecretData(filesSecretData, reg); err != nil {
+	if err := setAllowedKeysSecretData(reg, secretData, values); err != nil {
 		return errors.Wrap(err, "unable to set allowed keys secret data")
-	}
-
-	if err := k8sService.RecreateSecret(reg.FilesSecretName(), filesSecretData); err != nil {
-		return errors.Wrap(err, "unable to create secret")
-	}
-
-	if err := k8sService.RecreateSecret(reg.EnvVarsSecretName(), envVarsSecretData); err != nil {
-		return errors.Wrap(err, "unable to create secret")
 	}
 
 	return nil
 }
 
-func SetKeySecretDataFromRegistry(reg KeyManagement, key6Fl multipart.File,
-	filesSecretData, envVarsSecretData map[string][]byte) error {
+func setKeySecretDataFromRegistry(reg KeyManagement, key6Fl multipart.File,
+	secretData map[string]map[string]interface{}, values map[string]interface{}) error {
+
+	secretPath := reg.VaultSecretPath()
+	if _, ok := secretData[secretPath]; !ok {
+		secretData[secretPath] = make(map[string]interface{})
+	}
+
+	digitalSignatureInterface, ok := values["digital-signature"]
+	if !ok {
+		digitalSignatureInterface = map[string]interface{}{}
+	}
+	digitalSignatureDict := digitalSignatureInterface.(map[string]interface{})
+
+	dataInterface, ok := digitalSignatureDict["data"]
+	if !ok {
+		dataInterface = map[string]interface{}{}
+	}
+	dataDict := dataInterface.(map[string]interface{})
+
+	envInterface, ok := digitalSignatureDict["env"]
+	if !ok {
+		envInterface = map[string]interface{}{}
+	}
+	envDict := envInterface.(map[string]interface{})
+
+	envDict["sign.key.device-type"] = reg.KeyDeviceType()
 
 	if reg.KeyDeviceType() == KeyDeviceTypeFile {
 		key6Bytes, err := ioutil.ReadAll(key6Fl)
 		if err != nil {
 			return errors.Wrap(err, "unable to read file")
 		}
-		filesSecretData["Key-6.dat"] = key6Bytes
-		envVarsSecretData["sign.key.file.issuer"] = []byte(reg.SignKeyIssuer())
-		envVarsSecretData["sign.key.file.password"] = []byte(reg.SignKeyPwd())
+		secretData[secretPath]["Key-6.dat"] = key6Bytes
+		secretData[secretPath]["sign.key.file.issuer"] = []byte(reg.SignKeyIssuer())
+		secretData[secretPath]["sign.key.file.password"] = []byte(reg.SignKeyPwd())
 
-		//TODO: temporary hack, remote in future
-		envVarsSecretData["sign.key.hardware.type"] = []byte{}
-		envVarsSecretData["sign.key.hardware.device"] = []byte{}
-		envVarsSecretData["sign.key.hardware.password"] = []byte{}
-		filesSecretData["osplm.ini"] = []byte{}
-		// end todo
+		dataDict["Key-6-dat"] = secretPath
+		envDict["sign.key.file.issuer"] = secretPath
+		envDict["sign.key.file.password"] = secretPath
+
+		delete(dataDict, "osplm.ini")
+		delete(envDict, "sign.key.hardware.type")
+		delete(envDict, "sign.key.hardware.device")
+		delete(envDict, "sign.key.hardware.password")
 
 	} else if reg.KeyDeviceType() == KeyDeviceTypeHardware {
-		envVarsSecretData["sign.key.hardware.type"] = []byte(reg.RemoteType())
-		envVarsSecretData["sign.key.hardware.device"] = []byte(fmt.Sprintf("%s:%s (%s)",
+		secretData[secretPath]["sign.key.hardware.type"] = []byte(reg.RemoteType())
+		secretData[secretPath]["sign.key.hardware.device"] = []byte(fmt.Sprintf("%s:%s (%s)",
 			reg.RemoteSerialNumber(), reg.RemoteKeyPort(), reg.RemoteKeyHost()))
-		envVarsSecretData["sign.key.hardware.password"] = []byte(reg.RemoteKeyPassword())
-		filesSecretData["osplm.ini"] = []byte(reg.INIConfig())
+		secretData[secretPath]["sign.key.hardware.password"] = []byte(reg.RemoteKeyPassword())
+		secretData[secretPath]["osplm.ini"] = []byte(reg.INIConfig())
 
-		//TODO: temporary hack, remote in future
-		filesSecretData["Key-6.dat"] = []byte{}
-		envVarsSecretData["sign.key.file.issuer"] = []byte{}
-		envVarsSecretData["sign.key.file.password"] = []byte{}
-		// end todo
+		envDict["sign.key.hardware.type"] = secretPath
+		envDict["sign.key.hardware.device"] = secretPath
+		envDict["sign.key.hardware.password"] = secretPath
+		dataDict["osplm.ini"] = secretPath
+
+		delete(dataDict, "Key-6-dat")
+		delete(envDict, "sign.key.file.issuer")
+		delete(envDict, "sign.key.file.password")
 	}
+
+	digitalSignatureDict["data"] = dataDict
+	digitalSignatureDict["env"] = envDict
+	values["digital-signature"] = digitalSignatureDict
 
 	return nil
 }
 
-func SetCASecretData(filesSecretData map[string][]byte, caCertFl, caJSONFl multipart.File) error {
+func setCASecretData(reg KeyManagement, secretData map[string]map[string]interface{}, values map[string]interface{},
+	caCertFl, caJSONFl multipart.File) error {
 	caCertBytes, err := ioutil.ReadAll(caCertFl)
 	if err != nil {
 		return errors.Wrap(err, "unable to read file")
 	}
-	filesSecretData["CACertificates.p7b"] = caCertBytes
+
+	secretPath := reg.VaultSecretPath()
+	if _, ok := secretData[secretPath]; !ok {
+		secretData[secretPath] = make(map[string]interface{})
+	}
+
+	secretData[secretPath]["CACertificates.p7b"] = caCertBytes
 
 	casJSONBytes, err := ioutil.ReadAll(caJSONFl)
 	if err != nil {
 		return errors.Wrap(err, "unable to read file")
 	}
-	filesSecretData["CAs.json"] = casJSONBytes
+	secretData[secretPath]["CAs.json"] = casJSONBytes
+
+	digitalSignatureInterface, ok := values["digital-signature"]
+	if !ok {
+		digitalSignatureInterface = map[string]interface{}{}
+	}
+	digitalSignatureDict := digitalSignatureInterface.(map[string]interface{})
+
+	dataInterface, ok := digitalSignatureDict["data"]
+	if !ok {
+		dataInterface = map[string]interface{}{}
+	}
+	dataDict := dataInterface.(map[string]interface{})
+
+	dataDict["CACertificates"] = secretPath
+	dataDict["CAs"] = secretPath
+
+	digitalSignatureDict["data"] = dataDict
+	values["digital-signature"] = digitalSignatureDict
 
 	return nil
 }
 
-func SetAllowedKeysSecretData(filesSecretData map[string][]byte, reg KeyManagement) error {
-	//TODO tmp hack, remote in future
-	filesSecretData["allowed-keys.yml"] = []byte{}
-	//end todo
-
+func setAllowedKeysSecretData(reg KeyManagement, secretData map[string]map[string]interface{},
+	values map[string]interface{}) error {
 	allowedKeysIssuer := reg.AllowedKeysIssuer()
 	allowedKeysSerial := reg.AllowedKeysSerial()
+
+	secretPath := reg.VaultSecretPath()
+	if _, ok := secretData[secretPath]; !ok {
+		secretData[secretPath] = make(map[string]interface{})
+	}
+
+	digitalSignatureInterface, ok := values["digital-signature"]
+	if !ok {
+		digitalSignatureInterface = map[string]interface{}{}
+	}
+	digitalSignatureDict := digitalSignatureInterface.(map[string]interface{})
+
+	dataInterface, ok := digitalSignatureDict["data"]
+	if !ok {
+		dataInterface = map[string]interface{}{}
+	}
+	dataDict := dataInterface.(map[string]interface{})
 
 	if len(allowedKeysIssuer) > 0 {
 		var allowedKeysConf allowedKeysConfig
@@ -802,8 +870,13 @@ func SetAllowedKeysSecretData(filesSecretData map[string][]byte, reg KeyManageme
 		if err != nil {
 			return errors.Wrap(err, "unable to encode allowed keys to yaml")
 		}
-		filesSecretData["allowed-keys.yml"] = allowedKeysYaml
+
+		secretData[secretPath]["allowed-keys.yml"] = allowedKeysYaml
+		dataDict["allowed-keys-yml"] = secretPath
 	}
+
+	digitalSignatureDict["data"] = dataDict
+	values["digital-signature"] = digitalSignatureDict
 
 	return nil
 }

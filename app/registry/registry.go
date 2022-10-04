@@ -94,7 +94,12 @@ type allowedKey struct {
 }
 
 type keyManagement struct {
-	r *registry
+	r               *registry
+	vaultSecretPath string
+}
+
+func (k keyManagement) VaultSecretPath() string {
+	return k.vaultSecretPath
 }
 
 func (k keyManagement) KeyDeviceType() string {

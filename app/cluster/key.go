@@ -4,6 +4,7 @@ import (
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -30,7 +31,12 @@ type clusterKey struct {
 }
 
 type keyManagement struct {
-	r *clusterKey
+	r               *clusterKey
+	vaultSecretPath string
+}
+
+func (k keyManagement) VaultSecretPath() string {
+	return k.vaultSecretPath
 }
 
 func (k keyManagement) KeyDeviceType() string {
@@ -109,14 +115,29 @@ func (a *App) updateKey(ctx *gin.Context) error {
 		return err
 	}
 
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
-	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
+	values, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
 	if err != nil {
-		return errors.Wrap(err, "unable to init service for user context")
+		return errors.Wrap(err, "unable to get values from git")
+	}
+	vaultSecretData := make(map[string]map[string]interface{})
+
+	vaultPath := strings.ReplaceAll(a.VaultClusterKeyManagementPathTemplate, "{engine}", a.Config.VaultKVEngineName)
+
+	if err := registry.CreateRegistryKeys(keyManagement{r: &ck, vaultSecretPath: vaultPath}, ctx.Request,
+		vaultSecretData, values); err != nil {
+		return errors.Wrap(err, "unable to create registry keys")
 	}
 
-	if err := registry.CreateRegistryKeys(keyManagement{r: &ck}, ctx.Request, k8sService); err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
+	if len(values) > 0 {
+		if err := registry.CreateEditMergeRequest(ctx, a.Config.CodebaseName, values, a.Gerrit); err != nil {
+			return errors.Wrap(err, "unable to create edit merge request")
+		}
+	}
+
+	if len(vaultSecretData) > 0 {
+		if err := registry.CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
+			return errors.Wrap(err, "unable to create vault secrets")
+		}
 	}
 
 	return nil

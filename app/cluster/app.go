@@ -32,14 +32,15 @@ type Services struct {
 }
 
 type Config struct {
-	CodebaseName                   string
-	BackupSecretName               string
-	RegistryRepoHost               string
-	ClusterRepo                    string
-	VaultClusterAdminsPathTemplate string
-	VaultClusterAdminsPasswordKey  string
-	VaultKVEngineName              string
-	HardwareINITemplatePath        string
+	CodebaseName                          string
+	BackupSecretName                      string
+	RegistryRepoHost                      string
+	ClusterRepo                           string
+	VaultClusterAdminsPathTemplate        string
+	VaultClusterKeyManagementPathTemplate string
+	VaultClusterAdminsPasswordKey         string
+	VaultKVEngineName                     string
+	HardwareINITemplatePath               string
 }
 
 type App struct {

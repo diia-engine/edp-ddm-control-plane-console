@@ -60,6 +60,7 @@ func (a *Admins) GetAdmins(ctx context.Context, registryName string) ([]Admin, e
 	return admins, nil
 }
 
+//deprecated
 func (a *Admins) SyncAdmins(ctx context.Context, registryName string, admins []Admin) error {
 	usrs, err := a.keycloakService.GetUsersByRealm(ctx, a.usersRealm)
 	if err != nil {
