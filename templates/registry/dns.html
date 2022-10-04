@@ -27,6 +27,19 @@
                     {{end}}
                 </span>
     </div>
+    <div class="rc-form-group {{ if .errorsMap.DNSNameKeycloak }}error{{end}}">
+        <label for="keycloak-dns">Доменне імʼя для keycloak</label>
+        <input
+                pattern="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$"
+                type="text" name="citizen-dns" id="citizen-dns" value="{{ .model.DNSNameKeycloak }}" />
+        <label for="">SSL-сертифікат для keycloak (розширення .pem)</label>
+        <input id="keycloak-ssl" name="keycloak-ssl" type="file" />
+        <span>
+                    {{range $key, $val := .errorsMap.DNSNameKeycloak}}
+                        {{ i18n $val.Tag $val.Param }}
+                    {{end}}
+                </span>
+    </div>
     <div class="yellow-banner">
         <div class="banner-title">
             Увага!

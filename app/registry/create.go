@@ -11,7 +11,9 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -38,6 +40,9 @@ const (
 	AnnotationCreatorEmail    = "registry-parameters/creator-email"
 	AnnotationValues          = "registry-parameters/values"
 	AdministratorsValuesKey   = "administrators"
+	VaultKeyCACert            = "caCertificate"
+	VaultKeyCert              = "certificate"
+	VaultKeyPK                = "key"
 )
 
 type KeyManagement interface {
@@ -80,8 +85,13 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, re
 		return nil, errors.Wrap(err, "unable to get ini template data")
 	}
 
+	dnsManual, err := a.getDNSManualURL(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get dns manual")
+	}
+
 	return router.MakeResponse(200, "registry/create.html", gin.H{
-		"dnsManual":            false,
+		"dnsManual":            dnsManual,
 		"page":                 "registry",
 		"gerritProjects":       prjs,
 		"model":                registry{KeyDeviceType: KeyDeviceTypeFile},
@@ -89,6 +99,22 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, re
 		"smtpConfig":           "{}",
 		"cidrConfig":           "{}",
 	}), nil
+}
+
+func (a *App) getDNSManualURL(ctx context.Context) (string, error) {
+	com, err := a.EDPComponent.Get(ctx, a.Config.DDMManualEDPComponent)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get edp component")
+	}
+
+	u, err := url.Parse(com.Spec.Url)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to parse url")
+	}
+
+	u.Path = path.Join(u.Path, a.Config.RegistryDNSManualPath)
+
+	return u.String(), nil
 }
 
 func headsCount(refs []string) int {
@@ -464,9 +490,9 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, secretData 
 			secretData[secretPath] = make(map[string]interface{})
 		}
 
-		secretData[secretPath][a.Config.VaultOfficerCACertKey] = caCert
-		secretData[secretPath][a.Config.VaultOfficerCertKey] = cert
-		secretData[secretPath][a.Config.VaultOfficerPKKey] = key
+		secretData[secretPath][VaultKeyCACert] = caCert
+		secretData[secretPath][VaultKeyCert] = cert
+		secretData[secretPath][VaultKeyPK] = key
 	}
 
 	if r.DNSNameCitizen != "" {
@@ -498,9 +524,46 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, secretData 
 			secretData[secretPath] = make(map[string]interface{})
 		}
 
-		secretData[secretPath][a.Config.VaultCitizenCACertKey] = caCert
-		secretData[secretPath][a.Config.VaultCitizenCertKey] = cert
-		secretData[secretPath][a.Config.VaultCitizenPKKey] = key
+		secretData[secretPath][VaultKeyCACert] = caCert
+		secretData[secretPath][VaultKeyCert] = cert
+		secretData[secretPath][VaultKeyPK] = key
+	}
+
+	if r.DNSNameKeycloak != "" {
+		certFile, _, err := ginContext.Request.FormFile("keycloak-ssl")
+		if err != nil {
+			return errors.Wrap(err, "unable to get citizen ssl certificate")
+		}
+
+		certData, err := ioutil.ReadAll(certFile)
+		if err != nil {
+			return errors.Wrap(err, "unable to read citizen ssl data")
+		}
+
+		caCert, cert, key, err := decodePEM(certData)
+		if err != nil {
+			return validator.ValidationErrors([]validator.FieldError{
+				router.MakeFieldError("DNSNameKeycloak", "pem-decode-error")})
+		}
+
+		secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
+		secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameKeycloak)
+
+		if _, ok := secretData[secretPath]; !ok {
+			secretData[secretPath] = make(map[string]interface{})
+		}
+
+		secretData[secretPath][VaultKeyCACert] = caCert
+		secretData[secretPath][VaultKeyCert] = cert
+		secretData[secretPath][VaultKeyPK] = key
+
+		kcInterface, ok := values["keycloak"]
+		if !ok {
+			kcInterface = make(map[string]interface{})
+		}
+		kcDict := kcInterface.(map[string]interface{})
+		kcDict["customHost"] = r.DNSNameKeycloak
+		values["keycloak"] = kcDict
 	}
 
 	if len(citizenDict) > 0 {

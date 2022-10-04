@@ -55,8 +55,13 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}
 
+	dnsManual, err := a.getDNSManualURL(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get dns manual")
+	}
+
 	responseParams := gin.H{
-		"dnsManual":            false,
+		"dnsManual":            dnsManual,
 		"registry":             reg,
 		"page":                 "registry",
 		"hwINITemplateContent": hwINITemplateContent,

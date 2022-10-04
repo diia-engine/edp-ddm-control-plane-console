@@ -39,6 +39,7 @@ type registry struct {
 	MailServerOpts      string   `form:"mail-server-opts"`
 	DNSNameOfficer      string   `form:"officer-dns"`
 	DNSNameCitizen      string   `form:"citizen-dns"`
+	DNSNameKeycloak     string   `form:"keycloak-dns"`
 	CIDROfficer         string   `form:"officer-cidr"`
 	CIDRCitizen         string   `form:"citizen-cidr"`
 	CIDRAdmin           string   `form:"admin-cidr"`
