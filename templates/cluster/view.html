@@ -32,6 +32,16 @@
                         <span>{{ .admins }}</span>
                     </div>
                 {{end}}
+                {{if .cidr}}
+                    <div class="rg-info-line-horizontal">
+                        <span>CIDR для адміністративних компонент</span>
+                        <span>
+                            {{range .cidr}}
+                                <p class="view-cidr">{{ . }}</p>
+                            {{end}}
+                        </span>
+                    </div>
+                {{end}}
                 <div class="rg-info-line-horizontal">
                     <span>Час створення</span>
                     <span>{{ .codebase.FormattedCreatedAt }}</span>

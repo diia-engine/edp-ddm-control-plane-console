@@ -2,11 +2,13 @@ package cluster
 
 import (
 	"context"
+	"ddm-admin-console/app/registry"
 	"encoding/json"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 
 	"ddm-admin-console/router"
 )
@@ -64,6 +66,11 @@ func (a *App) view(ctx *gin.Context) (*router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get admins")
 	}
 
+	cidr, err := a.displayCIDR(userCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cidr")
+	}
+
 	return router.MakeResponse(200, "cluster/view.html", gin.H{
 		"branches":         branches,
 		"codebase":         cb,
@@ -74,6 +81,7 @@ func (a *App) view(ctx *gin.Context) (*router.Response, error) {
 		"canUpdateCluster": canUpdateCluster,
 		"mergeRequests":    mrs,
 		"admins":           adminsStr,
+		"cidr":             cidr,
 	}), nil
 }
 
@@ -94,4 +102,44 @@ func (a *App) displayAdmins(ctx context.Context) (string, error) {
 	}
 
 	return strings.Join(adminsStr, ", "), nil
+}
+
+func (a *App) displayCIDR(ctx context.Context) ([]string, error) {
+	values, err := a.Gerrit.GetFileContents(ctx, a.Config.CodebaseName, "master", registry.ValuesLocation)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get admin values yaml")
+	}
+
+	//TODO: refactor
+	var valuesDict map[string]interface{}
+	if err := yaml.Unmarshal([]byte(values), &valuesDict); err != nil {
+		return nil, errors.Wrap(err, "unable to decode values")
+	}
+
+	global, ok := valuesDict["global"]
+	if !ok {
+		return nil, nil
+	}
+
+	globalDict, ok := global.(map[string]interface{})
+	if !ok {
+		return nil, nil
+	}
+
+	whiteListIP, ok := globalDict["whiteListIP"]
+	if !ok {
+		return nil, nil
+	}
+
+	whiteListIPDict, ok := whiteListIP.(map[string]interface{})
+	if !ok {
+		return nil, nil
+	}
+
+	cidr, ok := whiteListIPDict["adminRoutes"]
+	if !ok {
+		return nil, nil
+	}
+
+	return strings.Split(cidr.(string), " "), nil
 }

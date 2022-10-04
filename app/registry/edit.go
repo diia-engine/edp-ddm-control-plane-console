@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -127,14 +128,42 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 	return nil
 }
 
-func (a *App) loadCIDRConfig(values map[string]interface{}, rspParams gin.H) error {
-	cidr, ok := values["cidr"]
+func (a *App) loadCIDRConfig(valuesDict map[string]interface{}, rspParams gin.H) error {
+	rspParams["cidrConfig"] = "{}"
+
+	//TODO: refactor
+	global, ok := valuesDict["global"]
 	if !ok {
-		rspParams["cidrConfig"] = "{}"
+		return nil
+	}
+	globalDict, ok := global.(map[string]interface{})
+	if !ok {
 		return nil
 	}
 
-	cidrConfig, err := json.Marshal(cidr)
+	whiteListIP, ok := globalDict["whiteListIP"]
+	if !ok {
+		return nil
+	}
+
+	whiteListIPDict, ok := whiteListIP.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	if adminRoutes, ok := whiteListIPDict["adminRoutes"]; ok {
+		whiteListIPDict["admin"] = strings.Split(adminRoutes.(string), " ")
+	}
+
+	if citizenPortal, ok := whiteListIPDict["citizenPortal"]; ok {
+		whiteListIPDict["citizen"] = strings.Split(citizenPortal.(string), " ")
+	}
+
+	if officerPortal, ok := whiteListIPDict["officerPortal"]; ok {
+		whiteListIPDict["officer"] = strings.Split(officerPortal.(string), " ")
+	}
+
+	cidrConfig, err := json.Marshal(whiteListIPDict)
 	if err != nil {
 		return errors.Wrap(err, "unable to encode cidr to JSON")
 	}

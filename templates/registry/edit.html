@@ -64,6 +64,25 @@
                 {{ template "reg-smtp" . }}
             </div>
 
+            <div>
+                <input class="hide-check" data-target="dns-block" name="edit-dns" type="checkbox" id="edit-dns">
+                <label for="edit-dns">Редагувати налаштування DNS</label>
+            </div>
+
+            <div id="dns-block" style="display: none;margin-bottom: 10px;">
+                {{template "reg-dns" .}}
+            </div>
+
+            <div>
+                <input class="hide-check" data-target="cidr-block" name="edit-cidr" type="checkbox" id="edit-cidr">
+                <label for="edit-cidr">Редагувати налаштування CIDR</label>
+            </div>
+
+            <div id="cidr-block" style="display: none;margin-bottom: 10px;">
+                {{template "cidr-block" .}}
+            </div>
+
+
             <div class="rc-form-group">
                 <button type="submit" name="submit">Підтвердити</button>
             </div>

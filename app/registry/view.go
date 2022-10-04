@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -192,22 +193,33 @@ func (a *App) viewCIDRConfig(userCtx context.Context, registryName string, viewP
 		return errors.Wrap(err, "unable to get values")
 	}
 
-	cidr, ok := valuesDict["cidr"]
+	globalInterface, ok := valuesDict["global"]
+	if !ok {
+		return nil
+	}
+	globalDict, ok := globalInterface.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	whiteListInterface, ok := globalDict["whiteListIP"]
+	if !ok {
+		return nil
+	}
+	whiteListDict, ok := whiteListInterface.(map[string]interface{})
 	if !ok {
 		return nil
 	}
 
-	cidrDict := cidr.(map[string]interface{})
-	if _, ok := cidrDict["admin"]; ok {
-		viewParams["adminCIDR"] = cidrDict["admin"].([]interface{})
+	if _, ok := whiteListDict["adminRoutes"]; ok {
+		viewParams["adminCIDR"] = strings.Split(whiteListDict["adminRoutes"].(string), " ")
 	}
 
-	if _, ok := cidrDict["citizen"]; ok {
-		viewParams["citizenCIDR"] = cidrDict["citizen"].([]interface{})
+	if _, ok := whiteListDict["citizenPortal"]; ok {
+		viewParams["citizenCIDR"] = strings.Split(whiteListDict["citizenPortal"].(string), " ")
 	}
 
-	if _, ok := cidrDict["officer"]; ok {
-		viewParams["officerCIDR"] = cidrDict["officer"].([]interface{})
+	if _, ok := whiteListDict["officerPortal"]; ok {
+		viewParams["officerCIDR"] = strings.Split(whiteListDict["officerPortal"].(string), " ")
 	}
 
 	return nil

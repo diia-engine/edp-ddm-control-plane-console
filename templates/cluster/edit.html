@@ -112,7 +112,11 @@
             </div>
         </form>
         {{end}}
+
+        {{template "cluster-cidr-block" .}}
+
         {{template "admin-block" .}}
+        {{template "cidr-form" .}}
     </div>
     {{template  "scripts" .}}
     <script src="{{ .BasePath }}/static/js/mustache.js"></script>

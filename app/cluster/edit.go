@@ -1,13 +1,17 @@
 package cluster
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"ddm-admin-console/app/registry"
@@ -72,24 +76,33 @@ func (a *App) editGet(ctx *gin.Context) (*router.Response, error) {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}
 
-	admins, err := a.getAdminsJSON(userCtx)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode admins")
-	}
-
 	hwINITemplateContent, err := registry.GetINITemplateContent(a.Config.HardwareINITemplatePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get ini template data")
 	}
 
-	return router.MakeResponse(200, "cluster/edit.html", gin.H{
+	valsDict, err := a.getValuesDict(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to load values")
+	}
+
+	rspParams := gin.H{
 		"backupConf":           backupConfig,
 		"page":                 "cluster",
 		"updateBranches":       branches,
 		"hasUpdate":            hasUpdate,
-		"admins":               admins,
 		"hwINITemplateContent": hwINITemplateContent,
-	}), nil
+	}
+
+	if err := a.loadAdminsConfig(valsDict, rspParams); err != nil {
+		return nil, errors.Wrap(err, "unable to load admins config")
+	}
+
+	if err := a.loadCIDRConfig(valsDict, rspParams); err != nil {
+		return nil, errors.Wrap(err, "unable to load cidr config")
+	}
+
+	return router.MakeResponse(200, "cluster/edit.html", rspParams), nil
 }
 
 func (a *App) editPost(ctx *gin.Context) (*router.Response, error) {
@@ -139,4 +152,70 @@ func (a *App) editPost(ctx *gin.Context) (*router.Response, error) {
 	}
 
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
+}
+
+func (a *App) getValuesDict(ctx context.Context) (map[string]interface{}, error) {
+	vals, err := a.Gerrit.GetFileContents(ctx, a.Config.CodebaseName, "master", registry.ValuesLocation)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get admin values yaml")
+	}
+
+	var valuesDict map[string]interface{}
+	if err := yaml.Unmarshal([]byte(vals), &valuesDict); err != nil {
+		return nil, errors.Wrap(err, "unable to decode values")
+	}
+
+	return valuesDict, nil
+}
+
+func (a *App) loadAdminsConfig(valuesDict map[string]interface{}, rspParams gin.H) error {
+	rspParams["admins"] = "[]"
+	adminsInterface, ok := valuesDict[ValuesAdminsKey]
+	if !ok {
+		return nil
+	}
+
+	bts, err := json.Marshal(adminsInterface)
+	if err != nil {
+		return errors.Wrap(err, "unable to json encode admins")
+	}
+
+	rspParams["admins"] = string(bts)
+	return nil
+}
+
+func (a *App) loadCIDRConfig(valuesDict map[string]interface{}, rspParams gin.H) error {
+	rspParams["cidrConfig"] = "{}"
+
+	//TODO: refactor
+	global, ok := valuesDict["global"]
+	if !ok {
+		return nil
+	}
+	globalDict, ok := global.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	whiteListIP, ok := globalDict["whiteListIP"]
+	if !ok {
+		return nil
+	}
+
+	whiteListIPDict, ok := whiteListIP.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	if adminRoutes, ok := whiteListIPDict["adminRoutes"]; ok {
+		whiteListIPDict["admin"] = strings.Split(adminRoutes.(string), " ")
+	}
+
+	cidrConfig, err := json.Marshal(whiteListIPDict)
+	if err != nil {
+		return errors.Wrap(err, "unable to encode cidr to JSON")
+	}
+
+	rspParams["cidrConfig"] = string(cidrConfig)
+	return nil
 }

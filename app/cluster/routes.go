@@ -8,4 +8,5 @@ func (a *App) createRoutes() {
 	a.router.POST("/admin/cluster/upgrade", a.clusterUpdate)
 	a.router.POST("/admin/cluster/admins", a.updateAdminsView)
 	a.router.POST("/admin/cluster/key", a.updateKeyView)
+	a.router.POST("/admin/cluster/cidr", a.updateCIDRView)
 }
