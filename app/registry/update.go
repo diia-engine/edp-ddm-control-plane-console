@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	mrTargetRegistryVersionUpdate = "registry-version-update"
+	MRTargetRegistryVersionUpdate = "registry-version-update"
 )
 
 type updateRequest struct {
@@ -91,7 +91,7 @@ func (a *App) createMergeRequest(registryName, updateBranch string, userContext 
 		AuthorName:    ginContext.GetString(router.UserNameSessionKey),
 		AuthorEmail:   ginContext.GetString(router.UserEmailSessionKey),
 		Labels: map[string]string{
-			MRLabelTarget: mrTargetRegistryVersionUpdate,
+			MRLabelTarget: MRTargetRegistryVersionUpdate,
 		},
 		AdditionalArguments: []string{"-X", "ours"},
 	}); err != nil {

@@ -14,7 +14,7 @@ func (e ExtendedMergeRequests) RequestName() string {
 		return e.Annotations[mrAnnotationRegName]
 	}
 
-	if e.Labels[MRLabelTarget] == mrTargetRegistryVersionUpdate {
+	if e.Labels[MRLabelTarget] == MRTargetRegistryVersionUpdate {
 		return e.Spec.SourceBranch
 	}
 

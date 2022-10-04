@@ -16,10 +16,10 @@ import (
 type SortByVersion []string
 
 func (a SortByVersion) Len() int           { return len(a) }
-func (a SortByVersion) Less(i, j int) bool { return branchVersion(a[i]).LessThan(branchVersion(a[j])) }
+func (a SortByVersion) Less(i, j int) bool { return BranchVersion(a[i]).LessThan(BranchVersion(a[j])) }
 func (a SortByVersion) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
-func branchVersion(name string) *version.Version {
+func BranchVersion(name string) *version.Version {
 	v, err := version.NewVersion(name)
 	if err != nil {
 		v, _ := version.NewVersion("0")
@@ -44,9 +44,9 @@ func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *c
 		return false, branches, nil
 	}
 
-	registryVersion := branchVersion(cb.Spec.DefaultBranch)
+	registryVersion := BranchVersion(cb.Spec.DefaultBranch)
 	if cb.Spec.BranchToCopyInDefaultBranch != "" {
-		registryVersion = branchVersion(cb.Spec.BranchToCopyInDefaultBranch)
+		registryVersion = BranchVersion(cb.Spec.BranchToCopyInDefaultBranch)
 	}
 
 	mrs, err := gerritService.GetMergeRequestByProject(ctx, gerritProject.Spec.Name)
@@ -60,12 +60,16 @@ func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *c
 	}
 
 	for _, mr := range mrs {
-		if mr.Status.Value == "NEW" {
+		if mr.Labels[MRLabelTarget] != MRTargetRegistryVersionUpdate {
+			continue
+		}
+
+		if mr.Status.Value == gerrit.StatusNew {
 			return false, branches, nil
 		}
 
-		if mr.Status.Value == "MERGED" {
-			mergedBranchVersion := branchVersion(mr.Spec.SourceBranch)
+		if mr.Status.Value == gerrit.StatusMerged {
+			mergedBranchVersion := BranchVersion(mr.Spec.SourceBranch)
 			if registryVersion.LessThan(mergedBranchVersion) {
 				registryVersion = mergedBranchVersion
 			}
@@ -76,7 +80,7 @@ func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *c
 
 	branches = []string{}
 	for _, br := range branchesDict {
-		if registryVersion.LessThan(branchVersion(br)) {
+		if registryVersion.LessThan(BranchVersion(br)) {
 			branches = append(branches, br)
 		}
 	}
@@ -119,7 +123,7 @@ func (a *App) filterUpdateBranchesByCluster(ctx context.Context, registryBranche
 
 	var filteredBranches []string
 	for _, rb := range registryBranches {
-		if branchVersion(rb).LessThanOrEqual(branchVersion(clusterBranch)) {
+		if BranchVersion(rb).LessThanOrEqual(BranchVersion(clusterBranch)) {
 			filteredBranches = append(filteredBranches, rb)
 		}
 	}

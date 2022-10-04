@@ -28,7 +28,10 @@ import (
 
 const (
 	//ViewTimeFormat = "02.01.2006 15:04"
-	ViewTimeFormat = "2006-01-02 15:04:05"
+	ViewTimeFormat  = "2006-01-02 15:04:05"
+	StatusMerged    = "MERGED"
+	StatusNew       = "NEW"
+	StatusAbandoned = "ABANDONED"
 )
 
 type Service struct {
@@ -148,6 +151,15 @@ func (s *Service) GetMergeRequest(ctx context.Context, name string) (*GerritMerg
 	}
 
 	return &mr, nil
+}
+
+func (s *Service) GetMergeRequests(ctx context.Context) ([]GerritMergeRequest, error) {
+	var mrs GerritMergeRequestList
+	if err := s.k8sClient.List(ctx, &mrs); err != nil {
+		return nil, errors.Wrap(err, "unable to list gerrit merge requests")
+	}
+
+	return mrs.Items, nil
 }
 
 func (s *Service) GetMergeRequestByProject(ctx context.Context, projectName string) ([]GerritMergeRequest, error) {

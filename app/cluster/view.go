@@ -3,6 +3,8 @@ package cluster
 import (
 	"context"
 	"ddm-admin-console/app/registry"
+	"ddm-admin-console/service/codebase"
+	"ddm-admin-console/service/gerrit"
 	"encoding/json"
 	"strings"
 
@@ -82,7 +84,30 @@ func (a *App) view(ctx *gin.Context) (*router.Response, error) {
 		"mergeRequests":    mrs,
 		"admins":           adminsStr,
 		"cidr":             cidr,
+		"version":          a.getClusterVersion(mrs, cb),
 	}), nil
+}
+
+func (a *App) getClusterVersion(mrs []gerrit.GerritMergeRequest, cb *codebase.Codebase) string {
+	registryVersion := registry.BranchVersion(cb.Spec.DefaultBranch)
+	if cb.Spec.BranchToCopyInDefaultBranch != "" {
+		registryVersion = registry.BranchVersion(cb.Spec.BranchToCopyInDefaultBranch)
+	}
+
+	for _, mr := range mrs {
+		if mr.Labels[registry.MRLabelTarget] != registry.MRTargetRegistryVersionUpdate {
+			continue
+		}
+
+		if mr.Status.Value == gerrit.StatusMerged {
+			mergedBranchVersion := registry.BranchVersion(mr.Spec.SourceBranch)
+			if registryVersion.LessThan(mergedBranchVersion) {
+				registryVersion = mergedBranchVersion
+			}
+		}
+	}
+
+	return registryVersion.String()
 }
 
 func (a *App) displayAdmins(ctx context.Context) (string, error) {

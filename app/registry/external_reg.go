@@ -167,7 +167,7 @@ func (a *App) createErMergeRequest(userCtx context.Context, ctx *gin.Context, re
 	}
 
 	for _, mr := range mrs {
-		if mr.Status.Value == "NEW" {
+		if mr.Status.Value == gerrit.StatusNew {
 			return MRExists("there is already open merge request(s) for this registry")
 		}
 	}

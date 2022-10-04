@@ -55,11 +55,11 @@ func (a *App) viewRegistryExternalRegistration(userCtx context.Context, registry
 		return errors.Wrap(err, "unable to get gerrit merge requests")
 	}
 	for _, mr := range mrs {
-		if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value == "NEW" {
+		if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value == gerrit.StatusNew {
 			eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
 				External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, status: erStatusInactive})
 			mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
-		} else if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value != "MERGED" && mr.Status.Value != "ABANDONED" {
+		} else if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value != gerrit.StatusMerged && mr.Status.Value != gerrit.StatusAbandoned {
 			eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
 				External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, status: erStatusFailed})
 			mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}

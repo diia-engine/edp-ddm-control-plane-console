@@ -19,6 +19,7 @@
                     <tr>
                         <th>Статус</th>
                         <th>Назва</th>
+                        <th>Версія</th>
                         <th>Опис</th>
                         <th>Час створення</th>
                         <th></th>
@@ -47,6 +48,9 @@
                             {{else}}
                                 {{$registry.Codebase.Name}}
                             {{end}}
+                        </td>
+                        <td>
+                            {{$registry.Codebase.Spec.DefaultBranch}}
                         </td>
                         <td>
                             {{$registry.Codebase.Description}}
