@@ -12189,7 +12189,8 @@ p.error {
 }
 
 .wizard-contents {
-    padding-top: 16px;
+    /*padding-top: 16px;*/
+    padding: 16px 0;
 }
 
 .wizard-contents ul {
@@ -12276,4 +12277,8 @@ p.error {
 
 .rc-form-group.administrators {
     /*margin-top: 24px;*/
+}
+
+.rc-form-group input[type=file] {
+    height: 47px;
 }

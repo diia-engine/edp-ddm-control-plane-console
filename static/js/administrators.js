@@ -123,8 +123,8 @@ let app = Vue.createApp({
             wizard: {
                 activeTab: 'general',
                 tabs: [
-                    {name: 'general', title: 'Загальні'},
-                    {name: 'administrators', title: 'Адміністратори'},
+                    {name: 'general', title: 'Загальні', valid: this.wizardGeneralValidation },
+                    {name: 'administrators', title: 'Адміністратори', valid: this.wizardAdministratorsValidation },
                     {name: 'template', title: 'Шаблон реєстру'},
                     {name: 'mail', title: 'Поштовий сервер'},
                     {name: 'key', title: 'Дані про ключ'},
@@ -140,12 +140,43 @@ let app = Vue.createApp({
         wizardNext: function (){
             for (let i=0;i<this.wizard.tabs.length;i++) {
                 if (this.wizard.tabs[i].name === this.wizard.activeTab) {
+                    if (this.wizard.tabs[i].hasOwnProperty('valid')) {
+                        this.wizard.tabs[i].valid();
+                    }
+
                     this.wizard.activeTab = this.wizard.tabs[i+1].name;
                     break;
                 }
             }
         },
+        wizardPrev: function (){
+            for (let i=0;i<this.wizard.tabs.length;i++) {
+                if (this.wizard.tabs[i].name === this.wizard.activeTab) {
+                    if (this.wizard.tabs[i].hasOwnProperty('valid')) {
+                        this.wizard.tabs[i].valid();
+                    }
+
+                    this.wizard.activeTab = this.wizard.tabs[i-1].name;
+                    break;
+                }
+            }
+        },
+        wizardGeneralValidation() {
+            console.log(this.wizard.activeTab);
+        },
+        wizardAdministratorsValidation() {
+            console.log(this.wizard.activeTab);
+            console.log('admins validation');
+        },
         selectWizardTab: function(tabName, e) {
+            for (let i=0;i<this.wizard.tabs.length;i++) {
+                if (this.wizard.tabs[i].name === this.wizard.activeTab) {
+                    if (this.wizard.tabs[i].hasOwnProperty('valid')) {
+                        this.wizard.tabs[i].valid();
+                    }
+                }
+            }
+
             this.wizard.activeTab = tabName;
             e.preventDefault();
         },
