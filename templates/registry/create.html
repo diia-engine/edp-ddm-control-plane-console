@@ -13,22 +13,9 @@
         <div class="reg-wizard">
             <div class="wizard-contents">
                 <ul>
-                    <li :class="{ active: wizard.activeTab == 'general'}">
-                        <a @click="selectWizardTab('general', $event)" href="#">Загальні</a></li>
-                    <li :class="{ active: wizard.activeTab == 'administrators'}">
-                        <a @click="selectWizardTab('administrators', $event)" href="#">Адміністратори</a></li>
-                    <li :class="{ active: wizard.activeTab == 'template'}">
-                        <a @click="selectWizardTab('template', $event)" href="#">Шаблон реєстру</a></li>
-                    <li :class="{ active: wizard.activeTab == 'mail'}">
-                        <a @click="selectWizardTab('mail', $event)" href="#">Поштовий сервер</a></li>
-                    <li :class="{ active: wizard.activeTab == 'key'}">
-                        <a @click="selectWizardTab('key', $event)" href="#">Дані про ключ</a></li>
-                    <li :class="{ active: wizard.activeTab == 'resources'}">
-                        <a @click="selectWizardTab('resources', $event)" href="#">Ресурси реєстру</a></li>
-                    <li :class="{ active: wizard.activeTab == 'dns'}">
-                        <a @click="selectWizardTab('dns', $event)" href="#">DNS</a></li>
-                    <li :class="{ active: wizard.activeTab == 'cidr'}">
-                        <a @click="selectWizardTab('cidr', $event)" href="#">Обмеження доступу</a></li>
+                    <li v-for="tab in wizard.tabs" :class="{ active: wizard.activeTab == tab.name }">
+                        <a @click="selectWizardTab(tab.name, $event)" href="#">[[ tab.title ]]</a>
+                    </li>
                 </ul>
             </div>
             <div class="wizard-body">
@@ -121,10 +108,14 @@
                     <div class="wizard-tab" v-show="wizard.activeTab == 'cidr'">
                         {{template "cidr-block" .}}
                     </div>
+                    <div class="wizard-tab" v-show="wizard.activeTab == 'confirmation'">
+                        <h2>Підтвердження</h2>
+                        <p>Усе готово для створення реєстру. Ви можете перевірити внесені дані або натисніть "Створити реєстр".</p>
+                    </div>
                     <div class="wizard-buttons" :class="{ 'no-prev': wizard.activeTab == 'general' }">
                         <button class="wizard-prev" @click="wizardPrev" v-show="wizard.activeTab != 'general'" type="button">Назад</button>
-                        <button class="wizard-next" @click="wizardNext" v-show="wizard.activeTab != 'cidr'" type="button">Далі</button>
-                        <button type="submit" name="submit" v-show="wizard.activeTab == 'cidr'">Підтвердити</button>
+                        <button class="wizard-next" @click="wizardNext" v-show="wizard.activeTab != 'confirmation'" type="button">Далі</button>
+                        <button class="wizard-next" type="submit" name="submit" v-show="wizard.activeTab == 'confirmation'">Створити реєстр</button>
                     </div>
                 </form>
             </div>

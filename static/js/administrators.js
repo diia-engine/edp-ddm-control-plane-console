@@ -121,11 +121,30 @@ let app = Vue.createApp({
                 addedCats: [],
             },
             wizard: {
-                activeTab: 'general'
+                activeTab: 'general',
+                tabs: [
+                    {name: 'general', title: 'Загальні'},
+                    {name: 'administrators', title: 'Адміністратори'},
+                    {name: 'template', title: 'Шаблон реєстру'},
+                    {name: 'mail', title: 'Поштовий сервер'},
+                    {name: 'key', title: 'Дані про ключ'},
+                    {name: 'resources', title: 'Ресурси реєстру'},
+                    {name: 'dns', title: 'DNS'},
+                    {name: 'cidr', title: 'Обмеження доступу'},
+                    {name: 'confirmation', title: 'Підтвердження'},
+                ],
             },
         }
     },
     methods: {
+        wizardNext: function (){
+            for (let i=0;i<this.wizard.tabs.length;i++) {
+                if (this.wizard.tabs[i].name === this.wizard.activeTab) {
+                    this.wizard.activeTab = this.wizard.tabs[i+1].name;
+                    break;
+                }
+            }
+        },
         selectWizardTab: function(tabName, e) {
             this.wizard.activeTab = tabName;
             e.preventDefault();

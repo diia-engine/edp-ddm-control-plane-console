@@ -12168,6 +12168,7 @@ p.error {
     height: 27px;
     padding: 0;
     font-size: 16px;
+    cursor: pointer;
 }
 
 .remove-cat {
