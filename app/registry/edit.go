@@ -94,8 +94,36 @@ func (a *App) loadValuesEditConfig(ctx context.Context, registryName string, rsp
 		return errors.Wrap(err, "unable to load admins config")
 	}
 
+	if err := a.loadRegistryResourcesConfig(values, r); err != nil {
+		return errors.Wrap(err, "unable to load resources config")
+	}
+
 	rspParams["model"] = r
 
+	return nil
+}
+
+func (a *App) loadRegistryResourcesConfig(values map[string]interface{}, r *registry) error {
+	global, ok := values["global"]
+	if !ok {
+		return nil
+	}
+	globalDict, ok := global.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	resources, ok := globalDict[ResourcesValuesKey]
+	if !ok {
+		return nil
+	}
+
+	resJS, err := json.Marshal(resources)
+	if err != nil {
+		return errors.Wrap(err, "unable to encode resources config")
+	}
+
+	r.Resources = string(resJS)
 	return nil
 }
 
@@ -305,6 +333,10 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 
 	if err := a.prepareAdminsConfig(r, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to prepare admin values config")
+	}
+
+	if err := a.prepareRegistryResources(r, values); err != nil {
+		return errors.Wrap(err, "unable to prepare registry resources config")
 	}
 
 	if len(values) > 0 {

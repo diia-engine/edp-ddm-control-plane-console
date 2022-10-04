@@ -40,6 +40,7 @@ const (
 	AnnotationCreatorEmail    = "registry-parameters/creator-email"
 	AnnotationValues          = "registry-parameters/values"
 	AdministratorsValuesKey   = "administrators"
+	ResourcesValuesKey        = "registry"
 	VaultKeyCACert            = "caCertificate"
 	VaultKeyCert              = "certificate"
 	VaultKeyPK                = "key"
@@ -287,6 +288,10 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 	if err := CreateRegistryKeys(keyManagement{r: r, vaultSecretPath: a.keyManagementRegistryVaultPath(r.Name)},
 		ginContext.Request, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
+	}
+
+	if err := a.prepareRegistryResources(r, values); err != nil {
+		return errors.Wrap(err, "unable to prepare registry resources config")
 	}
 
 	if err := CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {

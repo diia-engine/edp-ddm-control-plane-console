@@ -41,6 +41,33 @@ let app = Vue.createApp({
                 }
             }
         }
+
+        if (this.$refs.hasOwnProperty('resourcesEditConfig')) {
+            if (this.$refs.resourcesEditConfig.value !== "") {
+                let resourcesConfig = JSON.parse(this.$refs.resourcesEditConfig.value);
+
+                for (let i in resourcesConfig) {
+                    this.registryResources.cats.splice(
+                        this.registryResources.cats.indexOf(i), 1);
+
+                    let envVars = [];
+
+                    for (let j in resourcesConfig[i].container.envVars) {
+                        envVars.push({
+                            name: j,
+                            value: resourcesConfig[i].container.envVars[j],
+                        })
+                    }
+
+                    resourcesConfig[i].container.envVars = envVars;
+
+                    this.registryResources.addedCats.push({
+                        name: i,
+                        config: resourcesConfig[i],
+                    });
+                }
+            }
+        }
     },
     data() {
         return {
@@ -76,10 +103,93 @@ let app = Vue.createApp({
                 port: '587',
                 address: '',
                 password: ''
+            },
+            registryResources: {
+                encoded: '',
+                cat: '',
+                cats: [
+                    'kong',
+                    'bpms',
+                    'digital-signature-ops',
+                    'user-task-management',
+                    'user-process-management',
+                    'form-management-provider',
+                    'digital-document-service',
+                    'registry-rest-api',
+                    'registry-kafka-api'
+                ],
+                addedCats: [],
             }
         }
     },
     methods: {
+        addResourceCat: function (e) {
+            e.preventDefault(e);
+            if (this.registryResources.cat === '') {
+                return;
+            }
+
+            this.registryResources.addedCats.unshift({
+                name: this.registryResources.cat,
+                config: {
+                    istio: {
+                        sidecar: {
+                            enabled: false,
+                            resources: {
+                                requests: {
+                                    cpu: '',
+                                    memory: ''
+                                },
+                                limits: {
+                                    cpu: '',
+                                    memory: '',
+                                },
+                            },
+                        },
+                    },
+                    container: {
+                        resources: {
+                            requests: {
+                                cpu: '',
+                                memory: ''
+                            },
+                            limits: {
+                                cpu: '',
+                                memory: '',
+                            },
+                        },
+                        envVars: [{name: '', value: ''}],
+                    },
+                }
+            });
+
+            this.registryResources.cats.splice(
+                this.registryResources.cats.indexOf(this.registryResources.cat), 1)
+        },
+        addEnvVar: function(envVars, event) {
+            event.preventDefault();
+            envVars.push({name: "", value: ""})
+        },
+        removeEnvVar: function(envVars, env) {
+            envVars.splice(envVars.indexOf(env), 1);
+        },
+        encodeRegistryResources: function() {
+            let prepare = {};
+            this.registryResources.addedCats.forEach(function (el) {
+                let envVars = {};
+                el.config.container.envVars.forEach(function (el) {
+                    envVars[el.name] = el.value;
+                });
+                el.config.container.envVars = envVars;
+
+                prepare[el.name] = {
+                    istio: el.config.istio,
+                    container: el.config.container,
+                };
+            });
+
+            this.registryResources.encoded = JSON.stringify(prepare);
+        },
         registryFormSubmit(e) {
             if (this.registryFormSubmitted) {
                 e.preventDefault();
@@ -96,6 +206,7 @@ let app = Vue.createApp({
                 window.scrollTo(0, top);
             }
 
+            this.encodeRegistryResources();
             this.mailServerOpts = JSON.stringify(this.externalSMTPOpts);
             this.registryFormSubmitted = true;
         },
@@ -206,7 +317,8 @@ let app = Vue.createApp({
             };
 
             this.adminsValue = JSON.stringify(this.admins);
-        }
+        },
+
     }
 })
 

@@ -54,7 +54,6 @@
                 {{ template "key-form" . }}
             </div>
 
-
             <div>
                 <input class="hide-check" data-target="smtp-block" name="edit-smtp" type="checkbox" id="edit-smtp">
                 <label for="edit-smtp">Редагувати налаштування SMTP</label>
@@ -82,6 +81,14 @@
                 {{template "cidr-block" .}}
             </div>
 
+            <div>
+                <input class="hide-check" data-target="resources-block" name="edit-resources" type="checkbox" id="edit-resources">
+                <label for="edit-resources">Редагувати налаштування ресурсів реєстру</label>
+            </div>
+
+            <div id="resources-block" style="display: none;margin-bottom: 10px;">
+                {{ template "registry-resources" . }}
+            </div>
 
             <div class="rc-form-group">
                 <button type="submit" name="submit">Підтвердити</button>
