@@ -1,6 +1,5 @@
 {{ define "reg-smtp" }}
-    <h3>Вибір поштового серверу</h3>
-    <hr />
+    <h2>Вибір поштового серверу</h2>
     <div class="rc-form-group {{ if .errorsMap.MailServerType }}error{{end}}">
         <label for="smtp-server-type">Поштовий сервер</label>
         <input type="hidden" ref="smtpServerTypeSelected" value="{{ .model.MailServerType }}" />

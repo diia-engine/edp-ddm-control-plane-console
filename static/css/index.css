@@ -12236,32 +12236,43 @@ p.error {
     font-size: 18px;
     line-height: 18px;
     text-transform: uppercase;
+    margin-bottom: 24px;
 }
 
 .wizard-buttons {
     margin-top: 32px;
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    /*justify-content: space-between;*/
 }
 
-.wizard-buttons.no-prev {
-    justify-content: flex-end;
-}
+/*.wizard-buttons.no-prev {*/
+/*    justify-content: flex-end;*/
+/*}*/
 
 .wizard-buttons button {
     padding: 8px 16px;
     border-radius: 4px;
     border: 0;
-    color: #FFFFFF;
     text-transform: uppercase;
     cursor: pointer;
+    font-weight: 400;
+    font-size: 18px;
+    font-style: normal;
 }
 
 .wizard-next {
     background: #6DA300;
+    color: #FFFFFF;
 }
 
 .wizard-prev {
-    background: #FC7979;
+    /*background: #FC7979;*/
+    color: rgba(0, 0, 0, 0.5);
+    margin-right: 16px;
+    background: #FFFFFF;
+}
+
+.rc-form-group.administrators {
+    /*margin-top: 24px;*/
 }

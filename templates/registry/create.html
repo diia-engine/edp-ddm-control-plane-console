@@ -65,8 +65,8 @@
                         </div>
                     </div>
                     <div class="wizard-tab" v-show="wizard.activeTab == 'administrators'">
-                        <div :class="{ error: adminsError }" class="rc-form-group {{ if .errorsMap.Admins }}error{{end}}">
-                            <label for="admins">Адміністратори</label>
+                        <h2>Адміністратори</h2>
+                        <div :class="{ error: adminsError }" class="rc-form-group {{ if .errorsMap.Admins }}error{{end}} administrators">
                             <input type="hidden" id="admins" name="admins" v-model="adminsValue" :admins="loadAdmins('{{ .model.Admins }}')" />
                             <div class="advanced-admins" ref="admins">
                                 <div v-cloak v-for="adm in admins" class="child-admin">
@@ -87,6 +87,7 @@
                         </div>
                     </div>
                     <div class="wizard-tab" v-show="wizard.activeTab == 'template'">
+                        <h2>Налаштування шаблону реєстру</h2>
                         <div class="rc-form-group {{ if .errorsMap.RegistryGitTemplate }}error{{end}}">
                             <label for="registry-git-template">Шаблон реєстру</label>
                             <select required name="registry-git-template" id="registry-git-template">
