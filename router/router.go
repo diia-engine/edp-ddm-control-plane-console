@@ -31,6 +31,10 @@ func MakeResponse(code int, viewTemplate string, params gin.H) *Response {
 	}
 }
 
+func MakeStatusResponse(code int) *Response {
+	return &Response{code: code}
+}
+
 func MakeRedirectResponse(code int, path string) *Response {
 	return &Response{
 		code:         code,
@@ -56,6 +60,11 @@ func (r *Router) makeViewResponder(handler func(ctx *gin.Context) (*Response, er
 
 		if rsp.isRedirect {
 			ctx.Redirect(rsp.code, rsp.viewTemplate)
+			return
+		}
+
+		if rsp.viewTemplate == "" {
+			ctx.Status(rsp.code)
 			return
 		}
 

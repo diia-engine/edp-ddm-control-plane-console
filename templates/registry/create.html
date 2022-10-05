@@ -13,8 +13,8 @@
         <div class="reg-wizard">
             <div class="wizard-contents">
                 <ul>
-                    <li v-for="tab in wizard.tabs" :class="{ active: wizard.activeTab == tab.name }">
-                        <a @click="selectWizardTab(tab.name, $event)" href="#">[[ tab.title ]]</a>
+                    <li v-for="(tab, tabName) in wizard.tabs" :class="{ active: wizard.activeTab == tabName }">
+                        <a @click="selectWizardTab(tabName, $event)" href="#">[[ tab.title ]]</a>
                     </li>
                 </ul>
             </div>
@@ -31,11 +31,15 @@
                         <div class="rc-title">
                             Увага! Назва повинна бути унікальною і її неможливо буде змінити після створення реєстру!
                         </div>
-                        <div class="rc-form-group {{ if .errorsMap.Name }}error{{end}}">
+                        <div class="rc-form-group {{ if .errorsMap.Name }}error{{end}}"
+                             :class="{ 'error': wizard.tabs.general.requiredError || wizard.tabs.general.existsError || wizard.tabs.general.formatError }">
                             <label for="name">Назва реєстру</label>
                             <input type="text" id="name" name="name" maxlength="12" required
-                                   pattern="^[a-z0-9]([-a-z0-9]*[a-z0-9])?([a-z0-9]([-a-z0-9]*[a-z0-9])?)*$"
-                                   value="{{.model.Name}}" />
+                                   v-model="wizard.tabs.general.registryName"
+                                   pattern="^[a-z0-9]([-a-z0-9]*[a-z0-9])?([a-z0-9]([-a-z0-9]*[a-z0-9])?)*$" />
+                            <span v-if="wizard.tabs.general.requiredError">Обов’язкове поле</span>
+                            <span v-if="wizard.tabs.general.existsError">Реєстр з такою назвою вже існує</span>
+                            <span v-if="wizard.tabs.general.formatError">Будь-ласка вкажіть назву у відповідному форматі</span>
                             <span>
                                 {{range $key, $val := .errorsMap.Name}}
                                     {{ i18n $val.Tag $val.Param }}
@@ -53,7 +57,7 @@
                     </div>
                     <div class="wizard-tab" v-show="wizard.activeTab == 'administrators'">
                         <h2>Адміністратори</h2>
-                        <div :class="{ error: adminsError }" class="rc-form-group {{ if .errorsMap.Admins }}error{{end}} administrators">
+                        <div :class="{ error: wizard.tabs.administrators.requiredError }" class="rc-form-group {{ if .errorsMap.Admins }}error{{end}} administrators">
                             <input type="hidden" id="admins" name="admins" v-model="adminsValue" :admins="loadAdmins('{{ .model.Admins }}')" />
                             <div class="advanced-admins" ref="admins">
                                 <div v-cloak v-for="adm in admins" class="child-admin">
@@ -64,8 +68,8 @@
                                 </div>
                                 <button type="button" @click="showAdminForm">+</button>
                             </div>
+                            <span v-if="wizard.tabs.administrators.requiredError">Обов’язкове поле</span>
                             <span>
-                                <span v-if="adminsError">Не може бути порожнім</span>
                                 {{range $key, $val := .errorsMap.Admins}}
                                     {{ i18n $val.Tag $val.Param  }}
                                 {{end}}
@@ -176,6 +180,7 @@
         });
     </script>
     {{template  "scripts" .}}
+    <script type="text/javascript" src="{{ .BasePath }}/static/js/axios.min.js"></script>
     <script type="text/javascript" src="{{ .BasePath }}/static/js/registry-form.js"></script>
     <script type="text/javascript" src="{{ .BasePath }}/static/js/administrators.js"></script>
 

@@ -64,6 +64,20 @@ type KeyManagement interface {
 	VaultSecretPath() string
 }
 
+func (a *App) registryNameAvailable(ctx *gin.Context) (rsp *router.Response, retErr error) {
+	name := ctx.Param("name")
+	_, err := a.Codebase.Get(name)
+	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return router.MakeStatusResponse(http.StatusNotFound), nil
+		}
+
+		return nil, errors.Wrap(err, "unable to check codebase existance")
+	}
+
+	return router.MakeStatusResponse(http.StatusOK), nil
+}
+
 func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, retErr error) {
 	prjs, err := a.Services.Gerrit.GetProjects(context.Background())
 	if err != nil {
@@ -218,12 +232,8 @@ func (a *App) createRegistryPost(ctx *gin.Context) (response *router.Response, r
 			return nil, errors.Wrap(err, "unable to parse registry form")
 		}
 
-		//cidrConfig, _ := r.CIDRConfig()
-		//cidrConfigJSON, _ := json.Marshal(cidrConfig)
-
 		return router.MakeResponse(200, "registry/create.html",
 			gin.H{"page": "registry", "errorsMap": validationErrors, "model": r,
-				//"cidrConfig": string(cidrConfigJSON),
 				"hwINITemplateContent": hwINITemplateContent, "gerritProjects": prjs}), nil
 	}
 

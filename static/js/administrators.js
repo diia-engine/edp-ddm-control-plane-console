@@ -95,7 +95,6 @@ let app = Vue.createApp({
             requiredError: false,
             emailFormatError: false,
             adminsLoaded: false,
-            adminsError: false,
             smtpServerType: null,
             mailServerOpts: '',
             externalSMTPOpts: {
@@ -121,64 +120,128 @@ let app = Vue.createApp({
                 addedCats: [],
             },
             wizard: {
+                registryAction: 'create',
                 activeTab: 'general',
-                tabs: [
-                    {name: 'general', title: 'Загальні', valid: this.wizardGeneralValidation },
-                    {name: 'administrators', title: 'Адміністратори', valid: this.wizardAdministratorsValidation },
-                    {name: 'template', title: 'Шаблон реєстру'},
-                    {name: 'mail', title: 'Поштовий сервер'},
-                    {name: 'key', title: 'Дані про ключ'},
-                    {name: 'resources', title: 'Ресурси реєстру'},
-                    {name: 'dns', title: 'DNS'},
-                    {name: 'cidr', title: 'Обмеження доступу'},
-                    {name: 'confirmation', title: 'Підтвердження'},
-                ],
+                tabs: {
+                    general: {
+                        title: 'Загальні', validator: this.wizardGeneralValidation, validated: false,
+                        registryName: '', requiredError: false, existsError: false, formatError: false,
+                    },
+                    administrators: {title: 'Адміністратори', validator: this.wizardAdministratorsValidation,
+                        validated: false, requiredError: false,},
+                    template: {title: 'Шаблон реєстру', validated: false,},
+                    mail: {title: 'Поштовий сервер', validated: false,},
+                    key: {title: 'Дані про ключ', validated: false,},
+                    resources: {title: 'Ресурси реєстру', validated: false,},
+                    dns: {title: 'DNS', validated: false,},
+                    cidr: {title: 'Обмеження доступу', validated: false,},
+                    confirmation: {title: 'Підтвердження', validated: false,}
+                },
             },
         }
     },
     methods: {
         wizardNext: function (){
-            for (let i=0;i<this.wizard.tabs.length;i++) {
-                if (this.wizard.tabs[i].name === this.wizard.activeTab) {
-                    if (this.wizard.tabs[i].hasOwnProperty('valid')) {
-                        this.wizard.tabs[i].valid();
+            let tabKeys = Object.keys(this.wizard.tabs);
+
+            for (let i=0;i<tabKeys.length;i++) {
+                if (tabKeys[i] === this.wizard.activeTab) {
+                    let tab = this.wizard.tabs[tabKeys[i]];
+                    if (tab.hasOwnProperty('validator')) {
+                        let wizard = this.wizard;
+
+                        tab.validator(tab).then(function (){
+                            wizard.activeTab = tabKeys[i+1];
+                        });
+
+                        return;
                     }
 
-                    this.wizard.activeTab = this.wizard.tabs[i+1].name;
+                    this.wizard.activeTab = tabKeys[i+1];
                     break;
                 }
             }
         },
         wizardPrev: function (){
-            for (let i=0;i<this.wizard.tabs.length;i++) {
-                if (this.wizard.tabs[i].name === this.wizard.activeTab) {
-                    if (this.wizard.tabs[i].hasOwnProperty('valid')) {
-                        this.wizard.tabs[i].valid();
+            let tabKeys = Object.keys(this.wizard.tabs);
+
+            for (let i=0;i<tabKeys.length;i++) {
+                if (tabKeys[i] === this.wizard.activeTab) {
+                    let tab = this.wizard.tabs[tabKeys[i]];
+
+                    if (tab.hasOwnProperty('validator')) {
+                        let wizard = this.wizard;
+
+                        tab.validator(tab).then(function (){
+                            wizard.activeTab = tabKeys[i-1];
+                        });
+
+                        return;
                     }
 
-                    this.wizard.activeTab = this.wizard.tabs[i-1].name;
+                    this.wizard.activeTab = tabKeys[i-1];
                     break;
                 }
             }
         },
-        wizardGeneralValidation() {
-            console.log(this.wizard.activeTab);
-        },
-        wizardAdministratorsValidation() {
-            console.log(this.wizard.activeTab);
-            console.log('admins validation');
-        },
         selectWizardTab: function(tabName, e) {
-            for (let i=0;i<this.wizard.tabs.length;i++) {
-                if (this.wizard.tabs[i].name === this.wizard.activeTab) {
-                    if (this.wizard.tabs[i].hasOwnProperty('valid')) {
-                        this.wizard.tabs[i].valid();
-                    }
-                }
+            e.preventDefault();
+
+            if(!this.wizard.tabs[tabName].validated) {
+                return;
+            }
+
+            let tab = this.wizard.tabs[this.wizard.activeTab];
+            if (tab.hasOwnProperty('validator')) {
+                let wizard = this.wizard;
+
+                tab.validator(tab).then(function (){
+                    wizard.activeTab = tabName;
+                });
+
+                return;
             }
 
             this.wizard.activeTab = tabName;
-            e.preventDefault();
+        },
+        wizardGeneralValidation(tab) {
+            return new Promise((resolve) => {
+                tab.requiredError = false;
+                tab.formatError = false;
+                tab.existsError = false;
+
+                if (tab.registryName === "") {
+                    tab.requiredError = true;
+                    return;
+                }
+
+                if (!/^[a-z0-9]([-a-z0-9]*[a-z0-9])?([a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/.test(tab.registryName)) {
+                    tab.formatError = true;
+                    return;
+                }
+
+                axios.get(`/admin/registry/check/${tab.registryName}`)
+                    .then(function (response) {
+                        tab.existsError = true;
+                    })
+                    .catch(function (error) {
+                        tab.validated = true;
+                        resolve();
+                    })
+            });
+        },
+        wizardAdministratorsValidation(tab) {
+            let admins = this.admins;
+
+            return new Promise((resolve) => {
+                tab.requiredError = false;
+                if (admins.length === 0) {
+                    tab.requiredError = true;
+                    return;
+                }
+
+                resolve();
+            });
         },
         addResourceCat: function (e) {
             e.preventDefault(e);
@@ -259,16 +322,6 @@ let app = Vue.createApp({
             if (this.registryFormSubmitted) {
                 e.preventDefault();
                 return;
-            }
-
-            if (this.admins.length === 0) {
-                this.adminsError = true;
-                e.preventDefault();
-
-                let element = this.$refs['admins'];
-                let top = element.offsetTop;
-
-                window.scrollTo(0, top);
             }
 
             this.encodeRegistryResources();
