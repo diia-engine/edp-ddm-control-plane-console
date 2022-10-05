@@ -68,6 +68,12 @@ let app = Vue.createApp({
                 }
             }
         }
+
+        if (this.$refs.hasOwnProperty('registryBranches')) {
+            if (this.$refs.registryBranches.value !== "") {
+                this.wizard.tabs.template.projectBranches = JSON.parse(this.$refs.registryBranches.value);
+            }
+        }
     },
     data() {
         return {
@@ -124,13 +130,15 @@ let app = Vue.createApp({
                 activeTab: 'general',
                 tabs: {
                     general: {
-                        title: 'Загальні', validator: this.wizardGeneralValidation, validated: false,
-                        registryName: '', requiredError: false, existsError: false, formatError: false,
+                        title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
+                        formatError: false, /*validator: this.wizardGeneralValidation,*/
                     },
-                    administrators: {title: 'Адміністратори', validator: this.wizardAdministratorsValidation,
-                        validated: false, requiredError: false,},
-                    template: {title: 'Шаблон реєстру', validated: false,},
-                    mail: {title: 'Поштовий сервер', validated: false,},
+                    administrators: {title: 'Адміністратори', validated: false, requiredError: false,
+                        /*validator: this.wizardAdministratorsValidation,*/},
+                    template: {title: 'Шаблон реєстру', validated: false, registryTemplate: '', registryBranch: '',
+                        branches: [], projectBranches: {}, templateRequiredError: false, branchRequiredError: false,
+                        /*validator: this.wizardTemplateValidation*/},
+                    mail: {title: 'Поштовий сервер', validated: false, beginValidation: false, /*validator: this.wizardMailValidation*/},
                     key: {title: 'Дані про ключ', validated: false,},
                     resources: {title: 'Ресурси реєстру', validated: false,},
                     dns: {title: 'DNS', validated: false,},
@@ -141,7 +149,7 @@ let app = Vue.createApp({
         }
     },
     methods: {
-        wizardNext: function (){
+        wizardNext() {
             let tabKeys = Object.keys(this.wizard.tabs);
 
             for (let i=0;i<tabKeys.length;i++) {
@@ -162,7 +170,7 @@ let app = Vue.createApp({
                 }
             }
         },
-        wizardPrev: function (){
+        wizardPrev(){
             let tabKeys = Object.keys(this.wizard.tabs);
 
             for (let i=0;i<tabKeys.length;i++) {
@@ -184,7 +192,7 @@ let app = Vue.createApp({
                 }
             }
         },
-        selectWizardTab: function(tabName, e) {
+        selectWizardTab(tabName, e) {
             e.preventDefault();
 
             if(!this.wizard.tabs[tabName].validated) {
@@ -209,9 +217,15 @@ let app = Vue.createApp({
                 tab.requiredError = false;
                 tab.formatError = false;
                 tab.existsError = false;
+                tab.validated = false;
 
                 if (tab.registryName === "") {
                     tab.requiredError = true;
+                    return;
+                }
+
+                if (tab.registryName.length < 3) {
+                    tab.formatError = true;
                     return;
                 }
 
@@ -235,15 +249,67 @@ let app = Vue.createApp({
 
             return new Promise((resolve) => {
                 tab.requiredError = false;
+                tab.validated = false;
+
                 if (admins.length === 0) {
                     tab.requiredError = true;
                     return;
                 }
 
+                tab.validated = true;
                 resolve();
             });
         },
-        addResourceCat: function (e) {
+        wizardTemplateValidation(tab){
+            return new Promise((resolve) => {
+                tab.validated = false;
+                tab.templateRequiredError = false;
+                tab.branchRequiredError = false;
+
+                if (tab.registryTemplate === '') {
+                    tab.templateRequiredError = true;
+                    return;
+                }
+
+                if (tab.registryBranch === '') {
+                    tab.branchRequiredError = true;
+                    return;
+                }
+
+                tab.validated = true;
+                resolve();
+            });
+        },
+        wizardMailValidation(tab){
+            return new Promise((resolve) => {
+                tab.validated = false;
+
+                if (this.smtpServerType === 'platform-mail-server') {
+                    tab.validated = true;
+                    resolve();
+                    return;
+                }
+
+                tab.beginValidation = true;
+
+                for (let key in this.externalSMTPOpts) {
+                    if (this.externalSMTPOpts[key] === '') {
+                        return;
+                    }
+                }
+
+                tab.beginValidation = false;
+                tab.validated = true;
+                resolve();
+            });
+        },
+        wizardKeyValidation(tab){
+            tab.validated = false;
+
+            tab.validated = true;
+            resolve();
+        },
+        addResourceCat(e) {
             e.preventDefault(e);
             if (this.registryResources.cat === '') {
                 return;
@@ -286,14 +352,14 @@ let app = Vue.createApp({
             this.registryResources.cats.splice(
                 this.registryResources.cats.indexOf(this.registryResources.cat), 1);
         },
-        addEnvVar: function(envVars, event) {
+        addEnvVar(envVars, event) {
             event.preventDefault();
             envVars.push({name: "", value: ""})
         },
-        removeEnvVar: function(envVars, env) {
+        removeEnvVar(envVars, env) {
             envVars.splice(envVars.indexOf(env), 1);
         },
-        removeResourceCat: function (cat, event) {
+        removeResourceCat(cat, event) {
             event.preventDefault();
 
             this.registryResources.cats.push(cat.name);
@@ -301,7 +367,7 @@ let app = Vue.createApp({
             this.registryResources.addedCats.splice(
                 this.registryResources.addedCats.indexOf(cat), 1);
         },
-        encodeRegistryResources: function() {
+        encodeRegistryResources() {
             let prepare = {};
             this.registryResources.addedCats.forEach(function (el) {
                 let envVars = {};
@@ -384,7 +450,7 @@ let app = Vue.createApp({
             this.adminPopupShow = false;
             $("body").css("overflow", "scroll");
         },
-        deleteAdmin: function (e) {
+        deleteAdmin(e) {
             e.preventDefault();
             let email = e.currentTarget.getAttribute('email');
 
@@ -396,7 +462,7 @@ let app = Vue.createApp({
             }
             this.adminsValue = JSON.stringify(this.admins);
         },
-        createAdmin: function (e) {
+        createAdmin(e) {
             this.requiredError = false;
             this.emailFormatError = false;
 
@@ -436,7 +502,10 @@ let app = Vue.createApp({
 
             this.adminsValue = JSON.stringify(this.admins);
         },
-
+        changeTemplateProject(){
+            this.wizard.tabs.template.branches =
+                this.wizard.tabs.template.projectBranches[this.wizard.tabs.template.registryTemplate];
+        },
     }
 })
 

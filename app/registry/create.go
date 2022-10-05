@@ -105,10 +105,16 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, re
 		return nil, errors.Wrap(err, "unable to get dns manual")
 	}
 
+	gerritBranches, err := formatGerritProjectBranches(prjs)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to format gerrit project branches")
+	}
+
 	return router.MakeResponse(200, "registry/create.html", gin.H{
 		"dnsManual":            dnsManual,
 		"page":                 "registry",
 		"gerritProjects":       prjs,
+		"gerritBranches":       gerritBranches,
 		"model":                registry{KeyDeviceType: KeyDeviceTypeFile},
 		"hwINITemplateContent": hwINITemplateContent,
 		"smtpConfig":           "{}",
@@ -168,6 +174,25 @@ func (a *App) filterProjects(projects []gerrit.GerritProject) []gerrit.GerritPro
 	return filteredProjects
 }
 
+func formatGerritProjectBranches(projects []gerrit.GerritProject) (string, error) {
+	res := make(map[string][]string)
+	for _, p := range projects {
+		for _, b := range p.Status.Branches {
+			idx := strings.Index(b, "heads/")
+			if idx != -1 {
+				res[p.Spec.Name] = append(res[p.Name], b[idx+6:])
+			}
+		}
+	}
+
+	bts, err := json.Marshal(res)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to encode project branches")
+	}
+
+	return string(bts), nil
+}
+
 func GetINITemplateContent(path string) (string, error) {
 	iniTemplate, err := os.Open(path)
 	if err != nil {
@@ -199,27 +224,9 @@ func (a *App) createRegistryPost(ctx *gin.Context) (response *router.Response, r
 		return nil, errors.Wrap(err, "unable to init service for user context")
 	}
 
-	hwINITemplateContent, err := GetINITemplateContent(a.Config.HardwareINITemplatePath)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get ini template data")
-	}
-
-	prjs, err := a.Services.Gerrit.GetProjects(context.Background())
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to list gerrit projects")
-	}
-	prjs = a.filterProjects(prjs)
-
 	r := registry{Scenario: ScenarioKeyRequired}
 	if err := ctx.ShouldBind(&r); err != nil {
-		validationErrors, ok := err.(validator.ValidationErrors)
-		if !ok {
-			return nil, errors.Wrap(err, "unable to parse registry form")
-		}
-
-		return router.MakeResponse(200, "registry/create.html",
-			gin.H{"page": "registry", "errorsMap": validationErrors, "model": r,
-				"hwINITemplateContent": hwINITemplateContent, "gerritProjects": prjs}), nil
+		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
 	if err := a.validateCreateRegistryGitTemplate(ctx, &r); err != nil {
@@ -227,14 +234,7 @@ func (a *App) createRegistryPost(ctx *gin.Context) (response *router.Response, r
 	}
 
 	if err := a.createRegistry(userCtx, ctx, &r, cbService, k8sService); err != nil {
-		validationErrors, ok := errors.Cause(err).(validator.ValidationErrors)
-		if !ok {
-			return nil, errors.Wrap(err, "unable to parse registry form")
-		}
-
-		return router.MakeResponse(200, "registry/create.html",
-			gin.H{"page": "registry", "errorsMap": validationErrors, "model": r,
-				"hwINITemplateContent": hwINITemplateContent, "gerritProjects": prjs}), nil
+		return nil, errors.Wrap(err, "unable to create registry")
 	}
 
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/registry/overview"), nil

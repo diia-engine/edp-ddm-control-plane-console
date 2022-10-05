@@ -11548,6 +11548,10 @@ div#kubernetes-component {
     border: 1px solid #D35D47;
 }
 
+.rc-form-group.error select {
+    border: 1px solid #D35D47;
+}
+
 .rc-form-group.error span {
     display: inline;
 }

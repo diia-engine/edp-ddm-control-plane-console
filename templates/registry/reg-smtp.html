@@ -30,21 +30,27 @@
         <h3>Налаштування SMTP-підключення до зовнішнього поштового серверу</h3>
         <hr />
         <input type="hidden" name="mail-server-opts" :value="mailServerOpts" />
-        <div class="rc-form-group">
+        <div class="rc-form-group" :class="{'error': externalSMTPOpts.host == '' && wizard.tabs.mail.beginValidation}">
             <label for="smtp-host">Хост</label>
             <input v-model="externalSMTPOpts.host" required id="smtp-host" />
+            <span v-if="externalSMTPOpts.host == '' && wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group">
+        <div class="rc-form-group" :class="{'error': externalSMTPOpts.port == '' && wizard.tabs.mail.beginValidation}">
             <label for="smtp-port">Порт</label>
             <input required id="smtp-port" v-model="externalSMTPOpts.port" />
+            <span v-if="externalSMTPOpts.port == '' && wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group">
+        <div class="rc-form-group"
+             :class="{'error': externalSMTPOpts.address == '' && wizard.tabs.mail.beginValidation}">
             <label for="smtp-address">Поштова адреса</label>
             <input required id="smtp-address" v-model="externalSMTPOpts.address" />
+            <span v-if="externalSMTPOpts.address == '' && wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group">
+        <div class="rc-form-group"
+             :class="{'error': externalSMTPOpts.password == '' && wizard.tabs.mail.beginValidation}">
             <label for="smtp-password">Пароль</label>
             <input type="password" required id="smtp-password" v-model="externalSMTPOpts.password" />
+            <span v-if="externalSMTPOpts.password == '' && wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
         </div>
     </div>
     <br />

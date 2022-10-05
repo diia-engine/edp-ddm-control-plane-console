@@ -79,21 +79,29 @@
                     </div>
                     <div class="wizard-tab" v-show="wizard.activeTab == 'template'">
                         <h2>Налаштування шаблону реєстру</h2>
-                        <div class="rc-form-group {{ if .errorsMap.RegistryGitTemplate }}error{{end}}">
+                        <input type="hidden" id="preload-registry-branches" ref="registryBranches"
+                               value="{{ .gerritBranches }}" />
+                        <div class="rc-form-group {{ if .errorsMap.RegistryGitTemplate }}error{{end}}"
+                             :class="{'error': wizard.tabs.template.templateRequiredError}">
                             <label for="registry-git-template">Шаблон реєстру</label>
-                            <select required name="registry-git-template" id="registry-git-template">
+                            <select required name="registry-git-template" id="registry-git-template"
+                                    v-model="wizard.tabs.template.registryTemplate" @change="changeTemplateProject">
                                 <option></option>
                                 {{range $key, $val := .gerritProjects}}
                                     <option {{ if eq $.model.RegistryGitTemplate $val.Spec.Name }}selected="selected"{{end}}>{{$val.Spec.Name}}</option>
                                 {{end}}
                             </select>
+                            <span v-if="wizard.tabs.template.templateRequiredError">Обов’язкове поле</span>
                             <span>{{range $key, $val := .errorsMap.RegistryGitTemplate}}{{ $val }}{{end}}</span>
                         </div>
-                        <div class="rc-form-group {{ if .errorsMap.RegistryGitBranch }}error{{end}}">
+                        <div class="rc-form-group {{ if .errorsMap.RegistryGitBranch }}error{{end}}"
+                             :class="{'error': wizard.tabs.template.branchRequiredError}">
                             <label for="registry-git-branch">Гілка шаблону реєстру</label>
-                            <select required name="registry-git-branch" id="registry-git-branch">
-
+                            <select required name="registry-git-branch" id="registry-git-branch"
+                                    v-model="wizard.tabs.template.registryBranch">
+                                <option v-for="branch in wizard.tabs.template.branches">[[ branch ]]</option>
                             </select>
+                            <span v-if="wizard.tabs.template.branchRequiredError">Обов’язкове поле</span>
                             <span>{{range $key, $val := .errorsMap.RegistryGitTemplate}}{{ $val }}{{end}}</span>
                         </div>
                     </div>
@@ -140,44 +148,6 @@
             <input name="allowed-keys-serial[]" class="allowed-keys-input allowed-keys-serial" required aria-label="key serial" placeholder="Серійний номер ключа" type="text" />
             <button class="allowed-keys-remove-btn">-</button>
         </div>
-    </script>
-    <script type="text/javascript">
-        let registryBranches = {
-            {{range $projectKey, $project := .gerritProjects}}
-            "{{$project.Spec.Name}}": [
-                {{range $branchKey, $branch := $project.Status.Branches}}
-                "{{ $branch }}",
-                {{end}}
-            ],
-            {{end}}
-        };
-
-        $(function (){
-            let registryGitTemplate = $("#registry-git-template");
-            registryGitTemplate.change(function (e) {
-                let tpl = $(e.target).val();
-                let branches = registryBranches[tpl];
-                let branchesSelect = $("#registry-git-branch");
-                branchesSelect.empty();
-                for (let branch in branches) {
-                    let branchVal = branches[branch];
-                    let headsIndex = branchVal.indexOf("heads/")
-                    if (headsIndex !== -1) {
-                        branchVal = branchVal.substring(headsIndex + 6)
-                        branchesSelect.append(new Option(branchVal, branchVal));
-                    }
-                }
-            });
-            registryGitTemplate.change();
-
-            $("#create-form").submit(function () {
-                let registryNameInput = $("#name");
-                if (registryNameInput.val().length < 3) {
-                    registryNameInput.change();
-                    return false;
-                }
-            });
-        });
     </script>
     {{template  "scripts" .}}
     <script type="text/javascript" src="{{ .BasePath }}/static/js/axios.min.js"></script>
