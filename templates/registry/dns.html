@@ -1,43 +1,28 @@
 {{ define "reg-dns" }}
     <h2>Налаштування DNS</h2>
-    <div class="rc-form-group {{ if .errorsMap.DNSNameOfficer }}error{{end}}">
+    <div class="rc-form-group">
         <label for="officer-dns">Доменне імʼя для кабінету чиновника</label>
         <input
                 pattern="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$"
                 type="text" name="officer-dns" id="officer-dns" value="{{ .model.DNSNameOfficer }}" />
         <label for="">SSL-сертифікат для кабінету чиновника (розширення .pem)</label>
         <input id="officer-ssl" name="officer-ssl" type="file" />
-        <span>
-                    {{range $key, $val := .errorsMap.DNSNameOfficer}}
-                        {{ i18n $val.Tag $val.Param }}
-                    {{end}}
-                </span>
     </div>
-    <div class="rc-form-group {{ if .errorsMap.DNSNameCitizen }}error{{end}}">
+    <div class="rc-form-group">
         <label for="citizen-dns">Доменне імʼя для кабінету громадянина</label>
         <input
                 pattern="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$"
                 type="text" name="citizen-dns" id="citizen-dns" value="{{ .model.DNSNameCitizen }}" />
         <label for="">SSL-сертифікат для кабінету громадянина (розширення .pem)</label>
         <input id="citizen-ssl" name="citizen-ssl" type="file" />
-        <span>
-                    {{range $key, $val := .errorsMap.DNSNameCitizen}}
-                        {{ i18n $val.Tag $val.Param }}
-                    {{end}}
-                </span>
     </div>
-    <div class="rc-form-group {{ if .errorsMap.DNSNameKeycloak }}error{{end}}">
+    <div class="rc-form-group">
         <label for="keycloak-dns">Доменне імʼя для keycloak</label>
         <input
                 pattern="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$"
                 type="text" name="citizen-dns" id="citizen-dns" value="{{ .model.DNSNameKeycloak }}" />
         <label for="">SSL-сертифікат для keycloak (розширення .pem)</label>
         <input id="keycloak-ssl" name="keycloak-ssl" type="file" />
-        <span>
-                    {{range $key, $val := .errorsMap.DNSNameKeycloak}}
-                        {{ i18n $val.Tag $val.Param }}
-                    {{end}}
-                </span>
     </div>
     <div class="yellow-banner">
         <div class="banner-title">

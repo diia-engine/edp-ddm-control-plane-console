@@ -31,7 +31,7 @@
                         <div class="rc-title">
                             Увага! Назва повинна бути унікальною і її неможливо буде змінити після створення реєстру!
                         </div>
-                        <div class="rc-form-group {{ if .errorsMap.Name }}error{{end}}"
+                        <div class="rc-form-group"
                              :class="{ 'error': wizard.tabs.general.requiredError || wizard.tabs.general.existsError || wizard.tabs.general.formatError }">
                             <label for="name">Назва реєстру</label>
                             <input type="text" id="name" name="name" maxlength="12" required
@@ -40,24 +40,19 @@
                             <span v-if="wizard.tabs.general.requiredError">Обов’язкове поле</span>
                             <span v-if="wizard.tabs.general.existsError">Реєстр з такою назвою вже існує</span>
                             <span v-if="wizard.tabs.general.formatError">Будь-ласка вкажіть назву у відповідному форматі</span>
-                            <span>
-                                {{range $key, $val := .errorsMap.Name}}
-                                    {{ i18n $val.Tag $val.Param }}
-                                {{end}}
-                            </span>
                             <p>Допустимі символи: "a-z", "-". Назва не може перевищувати довжину у 12 символів.</p>
                         </div>
 
-                        <div class="rc-form-group {{ if .errorsMap.Description }}error{{end}}">
+                        <div class="rc-form-group">
                             <label for="description">Опис</label>
                             <textarea rows="3" name="description" id="description" maxlength="250">{{.model.Description}}</textarea>
-                            <span>{{range $key, $val := .errorsMap.Description}}{{ $val }}{{end}}</span>
                             <p>Опис може містити офіційну назву реєстру чи його призначення.</p>
                         </div>
                     </div>
                     <div class="wizard-tab" v-show="wizard.activeTab == 'administrators'">
                         <h2>Адміністратори</h2>
-                        <div :class="{ error: wizard.tabs.administrators.requiredError }" class="rc-form-group {{ if .errorsMap.Admins }}error{{end}} administrators">
+                        <div :class="{ error: wizard.tabs.administrators.requiredError }"
+                             class="rc-form-group administrators">
                             <input type="hidden" id="admins" name="admins" v-model="adminsValue" :admins="loadAdmins('{{ .model.Admins }}')" />
                             <div class="advanced-admins" ref="admins">
                                 <div v-cloak v-for="adm in admins" class="child-admin">
@@ -69,11 +64,6 @@
                                 <button type="button" @click="showAdminForm">+</button>
                             </div>
                             <span v-if="wizard.tabs.administrators.requiredError">Обов’язкове поле</span>
-                            <span>
-                                {{range $key, $val := .errorsMap.Admins}}
-                                    {{ i18n $val.Tag $val.Param  }}
-                                {{end}}
-                            </span>
                             <p>Допустимі символи: "0-9", "a-z", "_", "-", "@", ".", ",".</p>
                         </div>
                     </div>
@@ -81,7 +71,7 @@
                         <h2>Налаштування шаблону реєстру</h2>
                         <input type="hidden" id="preload-registry-branches" ref="registryBranches"
                                value="{{ .gerritBranches }}" />
-                        <div class="rc-form-group {{ if .errorsMap.RegistryGitTemplate }}error{{end}}"
+                        <div class="rc-form-group"
                              :class="{'error': wizard.tabs.template.templateRequiredError}">
                             <label for="registry-git-template">Шаблон реєстру</label>
                             <select required name="registry-git-template" id="registry-git-template"
@@ -92,9 +82,8 @@
                                 {{end}}
                             </select>
                             <span v-if="wizard.tabs.template.templateRequiredError">Обов’язкове поле</span>
-                            <span>{{range $key, $val := .errorsMap.RegistryGitTemplate}}{{ $val }}{{end}}</span>
                         </div>
-                        <div class="rc-form-group {{ if .errorsMap.RegistryGitBranch }}error{{end}}"
+                        <div class="rc-form-group"
                              :class="{'error': wizard.tabs.template.branchRequiredError}">
                             <label for="registry-git-branch">Гілка шаблону реєстру</label>
                             <select required name="registry-git-branch" id="registry-git-branch"
@@ -102,7 +91,6 @@
                                 <option v-for="branch in wizard.tabs.template.branches">[[ branch ]]</option>
                             </select>
                             <span v-if="wizard.tabs.template.branchRequiredError">Обов’язкове поле</span>
-                            <span>{{range $key, $val := .errorsMap.RegistryGitTemplate}}{{ $val }}{{end}}</span>
                         </div>
                     </div>
                     <div class="wizard-tab" v-show="wizard.activeTab == 'mail'">
@@ -141,13 +129,6 @@
     <script src="{{ .BasePath }}/static/js/mustache.js"></script>
     <script id="ini-template" type="x-tmpl-mustache">
         {{ .hwINITemplateContent }}
-    </script>
-    <script id="allowed-keys-template" type="x-tmpl-mustache">
-        <div class="allowed-keys-row">
-            <input name="allowed-keys-issuer[]" class="allowed-keys-input allowed-keys-issuer" required aria-label="key issuer" placeholder="Емітент ключа" type="text" />
-            <input name="allowed-keys-serial[]" class="allowed-keys-input allowed-keys-serial" required aria-label="key serial" placeholder="Серійний номер ключа" type="text" />
-            <button class="allowed-keys-remove-btn">-</button>
-        </div>
     </script>
     {{template  "scripts" .}}
     <script type="text/javascript" src="{{ .BasePath }}/static/js/axios.min.js"></script>

@@ -139,7 +139,21 @@ let app = Vue.createApp({
                         branches: [], projectBranches: {}, templateRequiredError: false, branchRequiredError: false,
                         /*validator: this.wizardTemplateValidation*/},
                     mail: {title: 'Поштовий сервер', validated: false, beginValidation: false, /*validator: this.wizardMailValidation*/},
-                    key: {title: 'Дані про ключ', validated: false,},
+                    key: {title: 'Дані про ключ', validated: false, deviceType: 'file', allowedKeys: 1, beginValidation: false,
+                        hardwareData: {
+                            remoteType: 'криптомод. ІІТ Гряда-301',
+                            remoteKeyPWD: '',
+                            remoteCaName: '',
+                            remoteCaHost: '',
+                            remoteCaPort: '',
+                            remoteSerialNumber: '',
+                            remoteKeyPort: '',
+                            remoteKeyHost: '',
+                            remoteKeyMask: '',
+                            iniConfig: '',
+                        },
+                        validator: this.wizardKeyValidation,
+                    },
                     resources: {title: 'Ресурси реєстру', validated: false,},
                     dns: {title: 'DNS', validated: false,},
                     cidr: {title: 'Обмеження доступу', validated: false,},
@@ -304,10 +318,36 @@ let app = Vue.createApp({
             });
         },
         wizardKeyValidation(tab){
-            tab.validated = false;
+            return new Promise((resolve) => {
+                tab.validated = false;
+                tab.beginValidation = true;
 
-            tab.validated = true;
-            resolve();
+                if (this.wizard.tabs.key.deviceType === 'hardware') {
+                    for (let key in this.wizard.tabs.key.hardwareData) {
+                        if (this.wizard.tabs.key.hardwareData[key] === '') {
+                            return;
+                        }
+                    }
+                }
+
+                tab.beginValidation = false;
+                tab.validated = true;
+                resolve();
+            });
+        },
+        renderINITemplate() {
+            let iniTemplate = document.getElementById('ini-template').innerHTML;
+            this.wizard.tabs.key.hardwareData.iniConfig = Mustache.render(iniTemplate, {
+                "CA_NAME": this.wizard.tabs.key.hardwareData.remoteCaName,
+                "CA_HOST": this.wizard.tabs.key.hardwareData.remoteCaHost,
+                "CA_PORT": this.wizard.tabs.key.hardwareData.remoteCaPort,
+                "KEY_SN": this.wizard.tabs.key.hardwareData.remoteSerialNumber,
+                "KEY_HOST": this.wizard.tabs.key.hardwareData.remoteKeyHost,
+                "KEY_ADDRESS_MASK": this.wizard.tabs.key.hardwareData.remoteKeyMask,
+            }).trim();
+        },
+        wizardKeyHardwareDataChanged(e) {
+            this.renderINITemplate();
         },
         addResourceCat(e) {
             e.preventDefault(e);

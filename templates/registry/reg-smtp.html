@@ -1,6 +1,6 @@
 {{ define "reg-smtp" }}
     <h2>Вибір поштового серверу</h2>
-    <div class="rc-form-group {{ if .errorsMap.MailServerType }}error{{end}}">
+    <div class="rc-form-group">
         <label for="smtp-server-type">Поштовий сервер</label>
         <input type="hidden" ref="smtpServerTypeSelected" value="{{ .model.MailServerType }}" />
         <input type="hidden" ref="smtpEditConfig" value="{{ .smtpConfig }}" />
@@ -10,17 +10,12 @@
             <option {{if eq .model.MailServerType "external-mail-server"}}selected="selected"{{end}}
                     value="external-mail-server">Зовнішній поштовий сервер</option>
         </select>
-        <span>
-            {{range $key, $val := .errorsMap.MailServerType}}
-                {{ i18n $val.Tag $val.Param  }}
-            {{end}}
-        </span>
     </div>
     <hr />
     <div v-cloak v-if="smtpServerType == 'platform-mail-server'">
         <h3>Налаштування підключення до платформенного поштового серверу</h3>
         <hr />
-        <div class="rc-form-group {{ if .errorsMap.MailServerOpts }}error{{end}}">
+        <div class="rc-form-group">
             <label for="ms-opts">Поштова адреса реєстру</label>
             <input readonly type="text" id="ms-opts" name="mail-server-opts"
                    value="<registry_name>@<registry.platform-domain>" />

@@ -20,10 +20,9 @@
             <div class="rc-form-group">
                 <label for="description">Опис</label>
                 <textarea rows="3" name="description" id="description" maxlength="250">{{ .registry.Description }}</textarea>
-                <span>{{range $key, $val := .errorsMap.Description}}{{ $val }}{{end}}</span>
                 <p>Опис може містити офіційну назву реєстру чи його призначення.</p>
             </div>
-            <div class="rc-form-group {{ if .errorsMap.Admins }}error{{end}}">
+            <div class="rc-form-group ">
                 <label for="admins">Адміністратори</label>
                 <input type="hidden" id="admins" name="admins" v-model="adminsValue"
                        :admins="loadAdmins('{{ .model.Admins }}')" />
@@ -37,11 +36,6 @@
                     </div>
                     <button type="button" @click="showAdminForm">+</button>
                 </div>
-                <span>
-                    {{range $key, $val := .errorsMap.Admins}}
-                        {{ $val.Error | i18n }}
-                    {{end}}
-                </span>
                 <p>Допустимі символи: "0-9", "a-z", "_", "-", "@", ".", ",".</p>
             </div>
 
@@ -100,7 +94,7 @@
         <br />
         <form id="registry-update-form" class="registry-create-form" method="post"
               action="/admin/registry/update/{{ .registry.Name }}">
-            <div class="rc-form-group {{ if .errorsMap.Branch }}error{{end}}">
+            <div class="rc-form-group">
                 <label for="branch">Оновити реєстр</label>
                 <select id="branch" name="branch" required>
                     <option></option>
@@ -108,12 +102,6 @@
                         <option>{{$val}}</option>
                     {{end}}
                 </select>
-
-                <span>
-                {{range $key, $val := .errorsMap.Branch}}
-                    {{i18n "uk" $val.Error}}
-                {{end}}
-            </span>
             </div>
             <div class="rc-form-group">
                 <button type="submit" name="submit">Підтвердити</button>

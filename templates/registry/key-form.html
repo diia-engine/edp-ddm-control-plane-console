@@ -1,171 +1,121 @@
 {{ define "key-form" }}
     <h2>Дані про ключ</h2>
 
-    <div class="rc-form-group {{ if .errorsMap.KeyDeviceType }}error{{end}}">
+    <div class="rc-form-group">
         <label for="key-device-type">Тип носія</label>
-        <select id="key-device-type" name="key-device-type">
+        <select v-model="wizard.tabs.key.deviceType" id="key-device-type" name="key-device-type">
             <option {{ if eq .model.KeyDeviceType "file" }}selected="selected"{{end}}
                     value="file">Файловий носій</option>
             <option {{ if eq .model.KeyDeviceType "hardware" }}selected="selected"{{end}}
                     value="hardware">Апаратний носій</option>
         </select>
-        <span>
-                    {{range $key, $val := .errorsMap.KeyDeviceType}}
-                        {{ i18n $val.Tag $val.Param  }}
-                    {{end}}
-                </span>
     </div>
-    <div class="key-type-hardware key-type-section" style="display: none;">
-        <div class="rc-form-group {{ if .errorsMap.RemoteType }}error{{end}}">
+    <div class="key-type-hardware key-type-section" v-show="wizard.tabs.key.deviceType == 'hardware'" v-cloak>
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteType == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-type">Тип ключа</label>
-            <input required type="text" name="remote-type" id="remote-type" value="криптомод. ІІТ Гряда-301" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteType}}
-                            {{ i18n $val.Tag $val.Param  }}
-                        {{end}}
-                    </span>
+            <input required type="text" @change="wizardKeyHardwareDataChanged" name="remote-type" id="remote-type"
+                   v-model="wizard.tabs.key.hardwareData.remoteType" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteType == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.RemoteKeyPassword }}error{{end}}">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteKeyPWD == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-key-pwd">Пароль ключа</label>
-            <input required type="password" id="remote-key-pwd" name="remote-key-pwd" value="{{.model.RemoteKeyPassword}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteKeyPassword}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <input required @change="wizardKeyHardwareDataChanged" type="password" id="remote-key-pwd"
+                   name="remote-key-pwd" v-model="wizard.tabs.key.hardwareData.remoteKeyPWD" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteKeyPWD == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.RemoteCAName }}error{{end}}">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteCaName == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-ca-name">Ім'я АЦСК</label>
-            <input required type="text" id="remote-ca-name" name="remote-ca-name" value="{{.model.RemoteCAName}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteCAName}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <input @change="wizardKeyHardwareDataChanged" required type="text" id="remote-ca-name"
+                   name="remote-ca-name" v-model="wizard.tabs.key.hardwareData.remoteCaName" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteCaName == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.RemoteCAHost }}error{{end}}">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteCaHost == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-ca-host">Хост АЦСК</label>
-            <input required type="text" id="remote-ca-host" name="remote-ca-host" value="{{.model.RemoteCAHost}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteCAHost}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <input required @change="wizardKeyHardwareDataChanged" type="text" id="remote-ca-host" name="remote-ca-host"
+                   v-model="wizard.tabs.key.hardwareData.remoteCaHost" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteCaHost == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.RemoteCAPort }}error{{end}}">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteCaPort == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-ca-port">Порт АЦСК</label>
-            <input required type="number" id="remote-ca-port" name="remote-ca-port" value="{{.model.RemoteCAPort}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteCAPort}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <input required @change="wizardKeyHardwareDataChanged" type="number" id="remote-ca-port"
+                   name="remote-ca-port" v-model="wizard.tabs.key.hardwareData.remoteCaPort" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteCaPort == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.RemoteSerialNumber }}error{{end}}">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteSerialNumber == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-serial-number">Серійний номер пристрою</label>
-            <input required type="text" id="remote-serial-number" name="remote-serial-number" value="{{.model.RemoteSerialNumber}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteSerialNumber}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <input required @change="wizardKeyHardwareDataChanged" type="text" id="remote-serial-number"
+                   name="remote-serial-number" v-model="wizard.tabs.key.hardwareData.remoteSerialNumber" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteSerialNumber == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.RemoteKeyPort }}error{{end}}">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteKeyPort == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-key-port">Порт ключа</label>
-            <input required type="number" id="remote-key-port" name="remote-key-port" value="{{.model.RemoteKeyPort}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteKeyPort}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <input required @change="wizardKeyHardwareDataChanged" type="number" id="remote-key-port"
+                   name="remote-key-port" v-model="wizard.tabs.key.hardwareData.remoteKeyPort" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteKeyPort == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.RemoteKeyHost }}error{{end}}">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteKeyHost == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-key-host">Хост ключа</label>
-            <input required type="text" id="remote-key-host" name="remote-key-host" value="{{.model.RemoteKeyHost}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteKeyHost}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <input required type="text" @change="wizardKeyHardwareDataChanged" id="remote-key-host"
+                   name="remote-key-host" v-model="wizard.tabs.key.hardwareData.remoteKeyHost" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteKeyHost == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.RemoteKeyMask }}error{{end}}">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.key.hardwareData.remoteKeyMask == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-key-mask">Маска ключа</label>
-            <input required type="text" id="remote-key-mask" name="remote-key-mask" value="{{.model.RemoteKeyMask}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.RemoteKeyMask}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <input required @change="wizardKeyHardwareDataChanged" type="text" id="remote-key-mask"
+                   name="remote-key-mask" v-model="wizard.tabs.key.hardwareData.remoteKeyMask" />
+            <span v-if="wizard.tabs.key.hardwareData.remoteKeyMask == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.INIConfig }}error{{end}}">
+        <div class="rc-form-group">
             <label for="remote-ini-config">INI конфігурація</label>
-            <textarea rows="5" required id="remote-ini-config" name="remote-ini-config">
-                        {{.model.INIConfig}}
-                    </textarea>
-            <span>
-                        {{range $key, $val := .errorsMap.INIConfig}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
+            <textarea rows="5" required id="remote-ini-config" v-model="wizard.tabs.key.hardwareData.iniConfig"
+                      name="remote-ini-config"></textarea>
         </div>
     </div>
-    <div class="key-type-file key-type-section">
-        <div class="rc-form-group {{ if .errorsMap.Key6 }}error{{end}}">
+    <div class="key-type-file key-type-section" v-show="wizard.tabs.key.deviceType == 'file'" v-cloak>
+        <div class="rc-form-group">
             <label for="key6">Файловий ключ (розширення .dat)</label>
             <input required type="file" name="key6" id="key6" accept=".dat" />
-            <span>
-                        {{range $key, $val := .errorsMap.Key6}}
-                            {{ i18n $val.Tag $val.Param  }}
-                        {{end}}
-                    </span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.SignKeyIssuer }}error{{end}}">
+        <div class="rc-form-group">
             <label for="sign-key-issuer">АЦСК, що видав ключ</label>
             <input type="text" id="sign-key-issuer" name="sign-key-issuer" required value="{{.model.SignKeyIssuer}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.SignKeyIssuer}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
         </div>
-        <div class="rc-form-group {{ if .errorsMap.SignKeyPwd }}error{{end}}">
+        <div class="rc-form-group">
             <label for="sign-key-pwd">Пароль до файлового ключа</label>
             <input required type="password" id="sign-key-pwd" name="sign-key-pwd" value="{{.model.SignKeyPwd}}" />
-            <span>
-                        {{range $key, $val := .errorsMap.SignKeyPwd}}
-                            {{ i18n $val.Tag $val.Param }}
-                        {{end}}
-                    </span>
         </div>
     </div>
     <h3>Дані для перевірки ключа</h3>
     <hr />
-    <div class="rc-form-group {{ if .errorsMap.CACertificate }}error{{end}}">
+    <div class="rc-form-group">
         <label for="ca-cert">Публічні сертифікати АЦСК (розширення .p7b)</label>
         <input required type="file" name="ca-cert" id="ca-cert" accept=".p7b" />
-        <span>
-                    {{range $key, $val := .errorsMap.CACertificate}}
-                        {{ i18n $val.Tag $val.Param }}
-                    {{end}}
-                </span>
     </div>
-    <div class="rc-form-group {{ if .errorsMap.CAsJSON }}error{{end}}">
+    <div class="rc-form-group">
         <label for="ca-json">Перелік АЦСК (розширення .json)</label>
         <input required type="file" name="ca-json" id="ca-json" accept=".json" />
-        <span>
-                    {{range $key, $val := .errorsMap.CAsJSON}}
-                        {{ i18n $val.Tag $val.Param }}
-                    {{end}}
-                </span>
     </div>
-    <h3>Перелік дозволених ключів <button class="allowed-keys-add" id="allowed-keys-add">+</button></h3>
+    <h3>Перелік дозволених ключів <button type="button" class="allowed-keys-add" id="allowed-keys-add"
+                                          @click="wizard.tabs.key.allowedKeys+=1">+</button>
+    </h3>
     <hr />
     <div class="rc-form-group allowed-keys-body" id="allowed-keys-body">
-        <div class="allowed-keys-row">
+        <div class="allowed-keys-row" v-for="n in wizard.tabs.key.allowedKeys">
             <input name="allowed-keys-issuer[]" class="allowed-keys-input allowed-keys-issuer" required
                    aria-label="key issuer" placeholder="Емітент ключа" type="text" />
             <input name="allowed-keys-serial[]" class="allowed-keys-input allowed-keys-serial" required
                    aria-label="key serial" placeholder="Серійний номер ключа" type="text" />
+            <button v-if="n > 1" class="allowed-keys-remove-btn" type="button"
+                    @click="wizard.tabs.key.allowedKeys-=1">-</button>
         </div>
     </div>
 {{end}}

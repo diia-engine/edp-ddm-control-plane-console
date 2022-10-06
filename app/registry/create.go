@@ -750,7 +750,6 @@ func (a *App) prepareRegistryCodebase(r *registry) *codebase.Codebase {
 				Type:      "edp",
 			},
 			Repository: &codebase.Repository{
-				//Url: fmt.Sprintf("%s/%s", gerritRegistryHost, r.RegistryGitTemplate),
 				Url: gitURL,
 			},
 			JenkinsSlave: &jenkinsSlave,
