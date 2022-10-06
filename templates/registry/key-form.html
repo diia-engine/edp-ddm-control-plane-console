@@ -81,41 +81,48 @@
         </div>
     </div>
     <div class="key-type-file key-type-section" v-show="wizard.tabs.key.deviceType == 'file'" v-cloak>
-        <div class="rc-form-group">
-            <label for="key6">Файловий ключ (розширення .dat)</label>
-            <input required type="file" name="key6" id="key6" accept=".dat" />
+        <div class="rc-form-group" :class="{'error': wizard.tabs.key.key6Required}">
+            <label  for="key6">Файловий ключ (розширення .dat)</label>
+            <input ref="key6" required type="file" name="key6" id="key6" accept=".dat" />
+            <span v-if="wizard.tabs.key.key6Required">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group">
+        <div class="rc-form-group" :class="{'error': wizard.tabs.key.fileData.signKeyIssuer == '' && wizard.tabs.key.beginValidation}">
             <label for="sign-key-issuer">АЦСК, що видав ключ</label>
-            <input type="text" id="sign-key-issuer" name="sign-key-issuer" required value="{{.model.SignKeyIssuer}}" />
+            <input type="text" id="sign-key-issuer" name="sign-key-issuer" required v-model="wizard.tabs.key.fileData.signKeyIssuer" />
+            <span v-if="wizard.tabs.key.fileData.signKeyIssuer == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
-        <div class="rc-form-group">
+        <div class="rc-form-group" :class="{'error': wizard.tabs.key.fileData.signKeyPWD == '' && wizard.tabs.key.beginValidation}">
             <label for="sign-key-pwd">Пароль до файлового ключа</label>
-            <input required type="password" id="sign-key-pwd" name="sign-key-pwd" value="{{.model.SignKeyPwd}}" />
+            <input required type="password" id="sign-key-pwd" name="sign-key-pwd" v-model="wizard.tabs.key.fileData.signKeyPWD" />
+            <span v-if="wizard.tabs.key.fileData.signKeyPWD == '' && wizard.tabs.key.beginValidation">Обов’язкове поле</span>
         </div>
     </div>
     <h3>Дані для перевірки ключа</h3>
     <hr />
-    <div class="rc-form-group">
+    <div class="rc-form-group"
+         :class="{'error': wizard.tabs.key.caCertRequired}">
         <label for="ca-cert">Публічні сертифікати АЦСК (розширення .p7b)</label>
-        <input required type="file" name="ca-cert" id="ca-cert" accept=".p7b" />
+        <input ref="keyCaCert" required type="file" name="ca-cert" id="ca-cert" accept=".p7b" />
+        <span v-if="wizard.tabs.key.caCertRequired">Обов’язкове поле</span>
     </div>
-    <div class="rc-form-group">
+    <div class="rc-form-group" :class="{'error': wizard.tabs.key.caJSONRequired}">
         <label for="ca-json">Перелік АЦСК (розширення .json)</label>
-        <input required type="file" name="ca-json" id="ca-json" accept=".json" />
+        <input ref="keyCaJSON" required type="file" name="ca-json" id="ca-json" accept=".json" />
+        <span v-if="wizard.tabs.key.caJSONRequired">Обов’язкове поле</span>
     </div>
     <h3>Перелік дозволених ключів <button type="button" class="allowed-keys-add" id="allowed-keys-add"
-                                          @click="wizard.tabs.key.allowedKeys+=1">+</button>
+                                          @click="wizardAddAllowedKey">+</button>
     </h3>
     <hr />
     <div class="rc-form-group allowed-keys-body" id="allowed-keys-body">
-        <div class="allowed-keys-row" v-for="n in wizard.tabs.key.allowedKeys">
-            <input name="allowed-keys-issuer[]" class="allowed-keys-input allowed-keys-issuer" required
+        <div class="allowed-keys-row" v-for="ak in wizard.tabs.key.allowedKeys"
+             :class="{ 'error': wizard.tabs.key.beginValidation && (ak.serial == '' || ak.issuer == '')}">
+            <input name="allowed-keys-issuer[]" v-model="ak.issuer" class="allowed-keys-input allowed-keys-issuer" required
                    aria-label="key issuer" placeholder="Емітент ключа" type="text" />
             <input name="allowed-keys-serial[]" class="allowed-keys-input allowed-keys-serial" required
-                   aria-label="key serial" placeholder="Серійний номер ключа" type="text" />
-            <button v-if="n > 1" class="allowed-keys-remove-btn" type="button"
-                    @click="wizard.tabs.key.allowedKeys-=1">-</button>
+                   v-model="ak.serial" aria-label="key serial" placeholder="Серійний номер ключа" type="text" />
+            <button v-if="ak.removable" class="allowed-keys-remove-btn" type="button"
+                    @click="wizardRemoveAllowedKey(ak)">-</button>
         </div>
     </div>
 {{end}}

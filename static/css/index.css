@@ -12067,6 +12067,10 @@ div#kubernetes-component {
     margin-bottom: 10px;
 }
 
+.allowed-keys-body span {
+    display: inline;
+}
+
 .allowed-keys-body input {
     width: 209px;
 }
@@ -12400,4 +12404,8 @@ p.error {
 
 .rc-form-group input[type=file] {
     height: 47px;
+}
+
+.allowed-keys-row.error input {
+    border: 1px solid #D35D47;
 }

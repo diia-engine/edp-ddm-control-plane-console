@@ -139,7 +139,7 @@ let app = Vue.createApp({
                         branches: [], projectBranches: {}, templateRequiredError: false, branchRequiredError: false,
                         /*validator: this.wizardTemplateValidation*/},
                     mail: {title: 'Поштовий сервер', validated: false, beginValidation: false, /*validator: this.wizardMailValidation*/},
-                    key: {title: 'Дані про ключ', validated: false, deviceType: 'file', allowedKeys: 1, beginValidation: false,
+                    key: {title: 'Дані про ключ', validated: false, deviceType: 'file', beginValidation: false,
                         hardwareData: {
                             remoteType: 'криптомод. ІІТ Гряда-301',
                             remoteKeyPWD: '',
@@ -152,6 +152,14 @@ let app = Vue.createApp({
                             remoteKeyMask: '',
                             iniConfig: '',
                         },
+                        fileData: {
+                            signKeyIssuer: '',
+                            signKeyPWD: '',
+                        },
+                        allowedKeys: [{issuer: '', serial: '', removable: false}],
+                        caCertRequired: false,
+                        caJSONRequired: false,
+                        key6Required: false,
                         validator: this.wizardKeyValidation,
                     },
                     resources: {title: 'Ресурси реєстру', validated: false,},
@@ -319,8 +327,30 @@ let app = Vue.createApp({
         },
         wizardKeyValidation(tab){
             return new Promise((resolve) => {
+                this.renderINITemplate();
+
                 tab.validated = false;
                 tab.beginValidation = true;
+                this.wizard.tabs.key.caCertRequired = false;
+                this.wizard.tabs.key.caJSONRequired = false;
+                this.wizard.tabs.key.key6Required = false;
+
+                if (this.$refs.keyCaCert.files.length === 0) {
+                    this.wizard.tabs.key.caCertRequired = true;
+                    return;
+                }
+
+                if (this.$refs.keyCaJSON.files.length === 0) {
+                    this.wizard.tabs.key.caJSONRequired = true;
+                    return;
+                }
+
+                for (let i=0;i<this.wizard.tabs.key.allowedKeys.length;i++) {
+                    if (this.wizard.tabs.key.allowedKeys[i].issuer === '' ||
+                        this.wizard.tabs.key.allowedKeys[i].serial === '') {
+                        return;
+                    }
+                }
 
                 if (this.wizard.tabs.key.deviceType === 'hardware') {
                     for (let key in this.wizard.tabs.key.hardwareData) {
@@ -328,10 +358,22 @@ let app = Vue.createApp({
                             return;
                         }
                     }
+                } else {
+                    for (let key in this.wizard.tabs.key.fileData) {
+                        if (this.wizard.tabs.key.hardwareData[key] === '') {
+                            return;
+                        }
+                    }
+
+                    if (this.$refs.key6.files.length === 0) {
+                        this.wizard.tabs.key.key6Required = true;
+                        return;
+                    }
                 }
 
                 tab.beginValidation = false;
                 tab.validated = true;
+
                 resolve();
             });
         },
@@ -348,6 +390,12 @@ let app = Vue.createApp({
         },
         wizardKeyHardwareDataChanged(e) {
             this.renderINITemplate();
+        },
+        wizardRemoveAllowedKey(item) {
+
+        },
+        wizardAddAllowedKey() {
+            this.wizard.tabs.key.allowedKeys.push({issuer: '', serial: '', removable: true});
         },
         addResourceCat(e) {
             e.preventDefault(e);
