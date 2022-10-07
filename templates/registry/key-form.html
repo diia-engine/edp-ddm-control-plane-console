@@ -10,7 +10,7 @@
                     value="hardware">Апаратний носій</option>
         </select>
     </div>
-    <div class="key-type-hardware key-type-section" v-show="wizard.tabs.key.deviceType == 'hardware'" v-cloak>
+    <div class="key-type-hardware key-type-section" v-if="wizard.tabs.key.deviceType == 'hardware'" v-cloak>
         <div class="rc-form-group"
              :class="{'error': wizard.tabs.key.hardwareData.remoteType == '' && wizard.tabs.key.beginValidation}">
             <label for="remote-type">Тип ключа</label>
@@ -80,7 +80,7 @@
                       name="remote-ini-config"></textarea>
         </div>
     </div>
-    <div class="key-type-file key-type-section" v-show="wizard.tabs.key.deviceType == 'file'" v-cloak>
+    <div class="key-type-file key-type-section" v-if="wizard.tabs.key.deviceType == 'file'" v-cloak>
         <div class="rc-form-group" :class="{'error': wizard.tabs.key.key6Required}">
             <label  for="key6">Файловий ключ (розширення .dat)</label>
             <input ref="key6" required type="file" name="key6" id="key6" accept=".dat" />

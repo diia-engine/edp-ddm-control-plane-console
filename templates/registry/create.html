@@ -19,7 +19,7 @@
                 </ul>
             </div>
             <div class="wizard-body">
-                <form @submit="registryFormSubmit" id="create-form" class="registry-create-form wizard-form" method="post"
+                <form id="create-form" class="registry-create-form wizard-form" method="post"
                       enctype="multipart/form-data" action="">
                     <input type="hidden" name="action" value="create" />
                     {{ if .error }}
@@ -132,9 +132,7 @@
     </script>
     {{template  "scripts" .}}
     <script type="text/javascript" src="{{ .BasePath }}/static/js/axios.min.js"></script>
-    <script type="text/javascript" src="{{ .BasePath }}/static/js/registry-form.js"></script>
     <script type="text/javascript" src="{{ .BasePath }}/static/js/administrators.js"></script>
-
     {{template "footer" .}}
 
 {{ end }}

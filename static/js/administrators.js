@@ -131,14 +131,14 @@ let app = Vue.createApp({
                 tabs: {
                     general: {
                         title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
-                        formatError: false, /*validator: this.wizardGeneralValidation,*/
+                        formatError: false, validator: this.wizardGeneralValidation,
                     },
                     administrators: {title: 'Адміністратори', validated: false, requiredError: false,
-                        /*validator: this.wizardAdministratorsValidation,*/},
+                        validator: this.wizardAdministratorsValidation,},
                     template: {title: 'Шаблон реєстру', validated: false, registryTemplate: '', registryBranch: '',
                         branches: [], projectBranches: {}, templateRequiredError: false, branchRequiredError: false,
-                        /*validator: this.wizardTemplateValidation*/},
-                    mail: {title: 'Поштовий сервер', validated: false, beginValidation: false, /*validator: this.wizardMailValidation*/},
+                        validator: this.wizardTemplateValidation},
+                    mail: {title: 'Поштовий сервер', validated: false, beginValidation: false, validator: this.wizardMailValidation},
                     key: {title: 'Дані про ключ', validated: false, deviceType: 'file', beginValidation: false,
                         hardwareData: {
                             remoteType: 'криптомод. ІІТ Гряда-301',
@@ -160,15 +160,17 @@ let app = Vue.createApp({
                         caCertRequired: false,
                         caJSONRequired: false,
                         key6Required: false,
-                        /*validator: this.wizardKeyValidation,*/
+                        validator: this.wizardKeyValidation,
                     },
                     resources: {title: 'Ресурси реєстру', validated: false, beginValidation: false,
                         validator: this.wizardResourcesValidation,},
                     dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '', keycloak: ''},
                         beginValidation: false, formatError: {officer: false, citizen: false, keycloak: false},
-                        requiredError: {officer: false, citizen: false, keycloak: false}},
-                    cidr: {title: 'Обмеження доступу', validated: false,},
-                    confirmation: {title: 'Підтвердження', validated: false,}
+                        requiredError: {officer: false, citizen: false, keycloak: false},
+                        typeError: {officer: false, citizen: false, keycloak: false},
+                        validator: this.wizardDNSValidation },
+                    cidr: {title: 'Обмеження доступу', validated: true,},
+                    confirmation: {title: 'Підтвердження', validated: true,}
                 },
             },
         }
@@ -220,10 +222,6 @@ let app = Vue.createApp({
         selectWizardTab(tabName, e) {
             e.preventDefault();
 
-            if(!this.wizard.tabs[tabName].validated) {
-                return;
-            }
-
             let tab = this.wizard.tabs[this.wizard.activeTab];
             if (tab.hasOwnProperty('validator')) {
                 let wizard = this.wizard;
@@ -232,6 +230,10 @@ let app = Vue.createApp({
                     wizard.activeTab = tabName;
                 });
 
+                return;
+            }
+
+            if(!this.wizard.tabs[tabName].validated) {
                 return;
             }
 
@@ -266,31 +268,69 @@ let app = Vue.createApp({
                     .catch(function (error) {
                         tab.validated = true;
                         resolve();
-                    })
+                    });
             });
         },
         wizardDNSValidation(tab){
-            tab.beginValidation = true;
-            tab.validated = false;
+            return new Promise((resolve) => {
+                tab.beginValidation = true;
+                tab.validated = false;
 
-            // for (let k in this.wizard.tabs.dns.data)
+                let filesToCheck = [];
 
-            for (let k in this.wizard.tabs.dns.data) {
-                this.wizard.tabs.dns.formatError[k] = false;
+                for (let k in this.wizard.tabs.dns.data) {
+                    this.wizard.tabs.dns.formatError[k] = false;
+                    this.wizard.tabs.dns.requiredError[k] = false;
+                    this.wizard.tabs.dns.typeError[k] = false;
 
-                if (this.wizard.tabs.dns.data[k] !== '') {
-                    if (/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/.test(this.wizard.tabs.dns.data[k])) {
-                        this.wizard.tabs.dns.formatError[k] = true;
-                        return;
+                    if (this.wizard.tabs.dns.data[k] !== '') {
+                        if (!/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/.test(this.wizard.tabs.dns.data[k])) {
+                            this.wizard.tabs.dns.formatError[k] = true;
+                            return;
+                        }
+
+                        let fileInput = this.$refs[`${k}SSL`];
+                        if (fileInput.files.length === 0) {
+                            this.wizard.tabs.dns.requiredError[k] = true;
+                            return;
+                        }
+
+                        filesToCheck.push({name: k, file: fileInput.files[0]});
                     }
                 }
+
+                if (filesToCheck.length > 0) {
+                    this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
+                    return;
+                }
+
+                tab.validated = true;
+                tab.beginValidation = false;
+                resolve();
+            });
+        },
+        wizardCheckPEMFiles(filesToCheck, resolve, tab) {
+            if (filesToCheck.length === 0) {
+                tab.validated = true;
+                tab.beginValidation = false;
+                resolve();
+                return;
             }
 
-            if (this.wizard.tabs.dns.data.citizen != )
+            let f = filesToCheck.pop();
+            let formData = new FormData();
+            formData.append("file", f.file);
+            let $this = this;
 
-
-            tab.validated = true;
-            resolve();
+            axios.post('/admin/registry/check-pem', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            }).then(function(rsp){
+                $this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
+            }).catch(function(error){
+                $this.wizard.tabs.dns.typeError[f.name] = true;
+            });
         },
         wizardResourcesValidation(tab){
             return new Promise((resolve) => {

@@ -64,6 +64,24 @@ type KeyManagement interface {
 	VaultSecretPath() string
 }
 
+func (a *App) validatePEMFile(ctx *gin.Context) (rsp *router.Response, retErr error) {
+	file, _, err := ctx.Request.FormFile("file")
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get form file")
+	}
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to read file data")
+	}
+
+	if _, _, _, err := decodePEM(data); err != nil {
+		return router.MakeStatusResponse(http.StatusUnprocessableEntity), nil
+	}
+
+	return router.MakeStatusResponse(http.StatusOK), nil
+}
+
 func (a *App) registryNameAvailable(ctx *gin.Context) (rsp *router.Response, retErr error) {
 	name := ctx.Param("name")
 	_, err := a.Codebase.Get(name)

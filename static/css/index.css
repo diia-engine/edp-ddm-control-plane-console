@@ -12071,6 +12071,10 @@ div#kubernetes-component {
     display: inline;
 }
 
+.show-errors-span span {
+    display: inline;
+}
+
 .allowed-keys-body input {
     width: 209px;
 }
@@ -12419,3 +12423,4 @@ p.error {
 .env-var-line.error input {
     border: 1px solid #D35D47;
 }
+
