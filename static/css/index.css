@@ -12269,6 +12269,7 @@ p.error {
     height: 40px;
     font-size: 16px;
     background: #E86969;
+    cursor: pointer;
 }
 
 .env-add-lnk {
@@ -12303,6 +12304,7 @@ p.error {
     color: #FFFFFF;
     font-size: 16px;
     margin-left: 10px;
+    cursor: pointer;
 }
 
 .reg-wizard {
@@ -12407,5 +12409,13 @@ p.error {
 }
 
 .allowed-keys-row.error input {
+    border: 1px solid #D35D47;
+}
+
+.rc-form-group input.error {
+    border: 1px solid #D35D47;
+}
+
+.env-var-line.error input {
     border: 1px solid #D35D47;
 }

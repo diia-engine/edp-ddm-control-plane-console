@@ -160,10 +160,13 @@ let app = Vue.createApp({
                         caCertRequired: false,
                         caJSONRequired: false,
                         key6Required: false,
-                        validator: this.wizardKeyValidation,
+                        /*validator: this.wizardKeyValidation,*/
                     },
-                    resources: {title: 'Ресурси реєстру', validated: false,},
-                    dns: {title: 'DNS', validated: false,},
+                    resources: {title: 'Ресурси реєстру', validated: false, beginValidation: false,
+                        validator: this.wizardResourcesValidation,},
+                    dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '', keycloak: ''},
+                        beginValidation: false, formatError: {officer: false, citizen: false, keycloak: false},
+                        requiredError: {officer: false, citizen: false, keycloak: false}},
                     cidr: {title: 'Обмеження доступу', validated: false,},
                     confirmation: {title: 'Підтвердження', validated: false,}
                 },
@@ -265,6 +268,63 @@ let app = Vue.createApp({
                         resolve();
                     })
             });
+        },
+        wizardDNSValidation(tab){
+            tab.beginValidation = true;
+            tab.validated = false;
+
+            // for (let k in this.wizard.tabs.dns.data)
+
+            for (let k in this.wizard.tabs.dns.data) {
+                this.wizard.tabs.dns.formatError[k] = false;
+
+                if (this.wizard.tabs.dns.data[k] !== '') {
+                    if (/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/.test(this.wizard.tabs.dns.data[k])) {
+                        this.wizard.tabs.dns.formatError[k] = true;
+                        return;
+                    }
+                }
+            }
+
+            if (this.wizard.tabs.dns.data.citizen != )
+
+
+            tab.validated = true;
+            resolve();
+        },
+        wizardResourcesValidation(tab){
+            return new Promise((resolve) => {
+                tab.beginValidation = true;
+                tab.validated = false;
+
+                for (let i=0;i<this.registryResources.addedCats.length;i++) {
+                    let cat = this.registryResources.addedCats[i];
+
+                    if (!this.checkObjectFieldsEmpty(cat.config)) {
+                        return;
+                    }
+                }
+
+                tab.beginValidation = false;
+                tab.validated = true;
+                resolve();
+            });
+        },
+        checkObjectFieldsEmpty(o){
+            for (let i in o) {
+                let t = typeof o[i];
+                if (t === 'string' && o[i] === '') {
+                    return false;
+                }
+
+                if (t === 'object') {
+                    if(!this.checkObjectFieldsEmpty(o[i])) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         },
         wizardAdministratorsValidation(tab) {
             let admins = this.admins;

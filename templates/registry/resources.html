@@ -22,27 +22,36 @@
                         <label for="istio-sidecar-enabled">Enabled</label>
                     </div>
                     <label>Requests</label>
-                    <input v-model="cat.config.istio.sidecar.resources.requests.cpu" type="text" placeholder="CPU" />
-                    <input v-model="cat.config.istio.sidecar.resources.requests.memory" type="text" placeholder="Memory" />
+                    <input v-model="cat.config.istio.sidecar.resources.requests.cpu" type="text" placeholder="CPU"
+                        :class="{'error': wizard.tabs.resources.beginValidation && cat.config.istio.sidecar.resources.requests.cpu == ''}"/>
+                    <input v-model="cat.config.istio.sidecar.resources.requests.memory" type="text" placeholder="Memory"
+                           :class="{'error': wizard.tabs.resources.beginValidation && cat.config.istio.sidecar.resources.requests.memory == ''}"/>
 
                     <label>Limits</label>
-                    <input v-model="cat.config.istio.sidecar.resources.limits.cpu" type="text" placeholder="CPU" />
-                    <input v-model="cat.config.istio.sidecar.resources.limits.memory" type="text" placeholder="Memory">
+                    <input v-model="cat.config.istio.sidecar.resources.limits.cpu" type="text" placeholder="CPU"
+                           :class="{'error': wizard.tabs.resources.beginValidation && cat.config.istio.sidecar.resources.limits.cpu == ''}" />
+                    <input v-model="cat.config.istio.sidecar.resources.limits.memory" type="text" placeholder="Memory"
+                           :class="{'error': wizard.tabs.resources.beginValidation && cat.config.istio.sidecar.resources.limits.memory == ''}">
                 </div>
 
                 <div class="rc-form-group">
                     <h5>Container</h5>
                     <label>Requests</label>
-                    <input v-model="cat.config.container.resources.requests.cpu" type="text" placeholder="CPU" />
-                    <input v-model="cat.config.container.resources.requests.memory" type="text" placeholder="Memory" />
+                    <input v-model="cat.config.container.resources.requests.cpu" type="text" placeholder="CPU"
+                           :class="{'error': wizard.tabs.resources.beginValidation && cat.config.container.resources.requests.cpu == ''}" />
+                    <input v-model="cat.config.container.resources.requests.memory" type="text" placeholder="Memory"
+                           :class="{'error': wizard.tabs.resources.beginValidation && cat.config.container.resources.requests.memory == ''}" />
 
                     <label>Limits</label>
-                    <input v-model="cat.config.container.resources.limits.cpu" type="text" placeholder="CPU" />
-                    <input v-model="cat.config.container.resources.limits.memory" type="text" placeholder="Memory">
+                    <input v-model="cat.config.container.resources.limits.cpu" type="text" placeholder="CPU"
+                           :class="{'error': wizard.tabs.resources.beginValidation && cat.config.container.resources.limits.cpu == ''}" />
+                    <input v-model="cat.config.container.resources.limits.memory" type="text" placeholder="Memory"
+                           :class="{'error': wizard.tabs.resources.beginValidation && cat.config.container.resources.limits.memory == ''}">
 
                     <label>Змінні оточення</label>
                     <div class="env-vars">
-                        <div class="env-var-line" v-for="env in cat.config.container.envVars">
+                        <div class="env-var-line" v-for="env in cat.config.container.envVars"
+                             :class="{'error': wizard.tabs.resources.beginValidation && (env.name == '' || env.value == '')}">
                             <input class="env-name" type="text" placeholder="Name" v-model="env.name" />
                             <input class="env-value" type="text" placeholder="Value" v-model="env.value" />
                             <button @click="removeEnvVar(cat.config.container.envVars, env)" class="remove-env-var">-</button>
