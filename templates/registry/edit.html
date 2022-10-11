@@ -10,84 +10,7 @@
         <h1>Редагувати реєстр "{{.registry.Name}}"</h1>
         <div class="registry-description">Можлива зміна опису реєстру. Змінити назву неможливо.</div>
 
-        <form @submit="registryFormSubmit" class="registry-create-form" method="post" action="" enctype="multipart/form-data">
-            {{if .MRExists}}
-            <p class="error">Наразі є один або більше відкритих запитів на оновлення.</p>
-            {{end}}
-
-            <input type="hidden" name="_xsrf" value="{{ .xsrfdata }}" />
-            <input type="hidden" name="action" value="edit" />
-            <div class="rc-form-group">
-                <label for="description">Опис</label>
-                <textarea rows="3" name="description" id="description" maxlength="250">{{ .registry.Description }}</textarea>
-                <p>Опис може містити офіційну назву реєстру чи його призначення.</p>
-            </div>
-            <div class="rc-form-group ">
-                <label for="admins">Адміністратори</label>
-                <input type="hidden" id="admins" name="admins" v-model="adminsValue"
-                       :admins="loadAdmins('{{ .model.Admins }}')" />
-
-                <div class="advanced-admins">
-                    <div v-cloak v-for="adm in admins" class="child-admin">
-                        [[ adm.email ]]
-                        <a @click="deleteAdmin" :email="adm.email" href="#">
-                            <img src="/static/img/action-delete.png" />
-                        </a>
-                    </div>
-                    <button type="button" @click="showAdminForm">+</button>
-                </div>
-                <p>Допустимі символи: "0-9", "a-z", "_", "-", "@", ".", ",".</p>
-            </div>
-
-            <div>
-                <input type="checkbox" id="edit-key">
-                <label for="edit-key">Редагувати дані про ключ</label>
-            </div>
-
-            <div id="key-block" style="display: none;margin-bottom: 10px;">
-                {{ template "key-form" . }}
-            </div>
-
-            <div>
-                <input class="hide-check" data-target="smtp-block" name="edit-smtp" type="checkbox" id="edit-smtp">
-                <label for="edit-smtp">Редагувати налаштування SMTP</label>
-            </div>
-
-            <div id="smtp-block" style="display: none;margin-bottom: 10px;">
-                {{ template "reg-smtp" . }}
-            </div>
-
-            <div>
-                <input class="hide-check" data-target="dns-block" name="edit-dns" type="checkbox" id="edit-dns">
-                <label for="edit-dns">Редагувати налаштування DNS</label>
-            </div>
-
-            <div id="dns-block" style="display: none;margin-bottom: 10px;">
-                {{template "reg-dns" .}}
-            </div>
-
-            <div>
-                <input class="hide-check" data-target="cidr-block" name="edit-cidr" type="checkbox" id="edit-cidr">
-                <label for="edit-cidr">Редагувати налаштування CIDR</label>
-            </div>
-
-            <div id="cidr-block" style="display: none;margin-bottom: 10px;">
-                {{template "cidr-block" .}}
-            </div>
-
-            <div>
-                <input class="hide-check" data-target="resources-block" name="edit-resources" type="checkbox" id="edit-resources">
-                <label for="edit-resources">Редагувати налаштування ресурсів реєстру</label>
-            </div>
-
-            <div id="resources-block" style="display: none;margin-bottom: 10px;">
-                {{ template "registry-resources" . }}
-            </div>
-
-            <div class="rc-form-group">
-                <button type="submit" name="submit">Підтвердити</button>
-            </div>
-        </form>
+        {{template "wizard" .}}
 
         {{if .hasUpdate}}
         <h1>Оновлення реєстру</h1>
@@ -115,36 +38,7 @@
     <script id="ini-template" type="x-tmpl-mustache">
         {{ .hwINITemplateContent }}
     </script>
-    <script id="allowed-keys-template" type="x-tmpl-mustache">
-        <div class="allowed-keys-row">
-            <input name="allowed-keys-issuer[]" class="allowed-keys-input allowed-keys-issuer" required aria-label="key issuer" placeholder="Емітент ключа" type="text" />
-            <input name="allowed-keys-serial[]" class="allowed-keys-input allowed-keys-serial" required aria-label="key serial" placeholder="Серійний номер ключа" type="text" />
-            <button class="allowed-keys-remove-btn">-</button>
-        </div>
-    </script>
-    <script type="text/javascript">
-        // let editKeyChecked = function(){
-        //     let checked = $("#edit-key").prop('checked'),
-        //         keyBlock = $("#key-block");
-        //     keyBlock.find("input").prop('disabled', !checked);
-        //
-        //     if (checked) {
-        //         keyBlock.show();
-        //         $("#key-device-type").change();
-        //     } else {
-        //         keyBlock.hide();
-        //     }
-        // };
-        //
-        // $(function () {
-        //     let editKey = $("#edit-key");
-        //     editKey.change(editKeyChecked);
-        //     editKey.prop("checked", false);
-        //     editKeyChecked();
-        // });
-
-    </script>
-    <script type="text/javascript" src="{{ .BasePath }}/static/js/registry-form.js"></script>
+    <script type="text/javascript" src="{{ .BasePath }}/static/js/axios.min.js"></script>
     <script type="text/javascript" src="{{ .BasePath }}/static/js/vue.global.js"></script>
     <script type="text/javascript" src="{{ .BasePath }}/static/js/administrators.js"></script>
     {{template "footer" .}}

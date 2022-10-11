@@ -12,7 +12,7 @@
             <p class="popup-error" v-cloak v-if="cidrFormatError">Перевірте формат IP-адреси</p>
             <div class="rc-form-group">
                 <label for="cidr-value">IP-адреси та маски</label>
-                <input required id="cidr-value" type="text" v-model="editCIDR" />
+                <input id="cidr-value" type="text" v-model="editCIDR" />
                 <p>Допустимі символи "0-9", "/", ".". Приклад: 172.16.0.0/12.</p>
             </div>
         </div>

@@ -2,7 +2,9 @@ package registry
 
 import (
 	"context"
+	"crypto/sha1"
 	"ddm-admin-console/service/gerrit"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -43,7 +45,10 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 		return nil, errors.Wrap(err, "unable to get registry")
 	}
 
-	model := registry{KeyDeviceType: KeyDeviceTypeFile}
+	model := registry{KeyDeviceType: KeyDeviceTypeFile, Name: reg.Name}
+	if reg.Spec.Description != nil {
+		model.Description = *reg.Spec.Description
+	}
 
 	hwINITemplateContent, err := GetINITemplateContent(a.Config.HardwareINITemplatePath)
 	if err != nil {
@@ -67,6 +72,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 		"hwINITemplateContent": hwINITemplateContent,
 		"updateBranches":       branches,
 		"hasUpdate":            hasUpdate,
+		"action":               "edit",
 	}
 
 	if err := a.loadValuesEditConfig(ctx, registryName, responseParams, &model); err != nil {
@@ -99,6 +105,12 @@ func (a *App) loadValuesEditConfig(ctx context.Context, registryName string, rsp
 	}
 
 	rspParams["model"] = r
+
+	registryData, err := json.Marshal(r)
+	if err != nil {
+		return errors.Wrap(err, "unable to encode registry data")
+	}
+	rspParams["registryData"] = string(registryData)
 
 	return nil
 }
@@ -313,6 +325,11 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to get values from git")
 	}
 
+	initialValuesHash, err := mapHash(values)
+	if err != nil {
+		return errors.Wrap(err, "unable to hash values")
+	}
+
 	vaultSecretData := make(map[string]map[string]interface{})
 	if err := a.prepareDNSConfig(ginContext, r, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to prepare dns config")
@@ -327,7 +344,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to prepare mail server config")
 	}
 
-	if err := a.prepareCIDRConfig(r, values); err != nil {
+	if err := a.prepareCIDRConfig(ginContext, r, values); err != nil {
 		return errors.Wrap(err, "unable to prepare cidr config")
 	}
 
@@ -339,7 +356,12 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to prepare registry resources config")
 	}
 
-	if len(values) > 0 {
+	changedValuesHash, err := mapHash(values)
+	if err != nil {
+		return errors.Wrap(err, "unable to get values map hash")
+	}
+
+	if initialValuesHash != changedValuesHash {
 		if err := CreateEditMergeRequest(ginContext, r.Name, values, a.Gerrit); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}
@@ -355,12 +377,18 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to update codebase")
 	}
 
-	//if err := a.Services.Jenkins.CreateJobBuildRun(fmt.Sprintf("registry-update-%d", time.Now().Unix()),
-	//	fmt.Sprintf("%s/job/MASTER-Build-%s/", r.Name, r.Name), nil); err != nil {
-	//	return errors.Wrap(err, "unable to trigger jenkins job build run")
-	//}
-
 	return nil
+}
+
+func mapHash(v map[string]interface{}) (string, error) {
+	bts, err := json.Marshal(v)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to encode map")
+	}
+
+	hasher := sha1.New()
+	hasher.Write(bts)
+	return base64.URLEncoding.EncodeToString(hasher.Sum(nil)), nil
 }
 
 func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map[string]interface{},

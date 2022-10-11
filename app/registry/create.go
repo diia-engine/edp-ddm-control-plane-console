@@ -137,6 +137,8 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, re
 		"hwINITemplateContent": hwINITemplateContent,
 		"smtpConfig":           "{}",
 		"cidrConfig":           "{}",
+		"action":               "create",
+		"registryData":         "{}",
 	}), nil
 }
 
@@ -251,7 +253,7 @@ func (a *App) createRegistryPost(ctx *gin.Context) (response *router.Response, r
 		return nil, errors.Wrap(err, "unable to validate create registry git template")
 	}
 
-	if err := a.createRegistry(userCtx, ctx, &r, cbService, k8sService); err != nil {
+	if err := a.createRegistry(userCtx, ctx, &r, cbService); err != nil {
 		return nil, errors.Wrap(err, "unable to create registry")
 	}
 
@@ -291,7 +293,7 @@ func (a *App) validateCreateRegistryGitTemplate(ctx context.Context, r *registry
 }
 
 func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *registry,
-	cbService codebase.ServiceInterface, k8sService k8s.ServiceInterface) error {
+	cbService codebase.ServiceInterface) error {
 	_, err := cbService.Get(r.Name)
 	if err == nil {
 		return validator.ValidationErrors([]validator.FieldError{router.MakeFieldError("Name", "registry-exists")})
@@ -305,7 +307,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unable to prepare dns config")
 	}
 
-	if err := a.prepareCIDRConfig(r, values); err != nil {
+	if err := a.prepareCIDRConfig(ginContext, r, values); err != nil {
 		return errors.Wrap(err, "unable to prepare cidr config")
 	}
 
@@ -404,7 +406,11 @@ func (a *App) keyManagementRegistryVaultPath(registryName string) string {
 	return a.vaultRegistryPath(registryName) + "/key-management"
 }
 
-func (a *App) prepareCIDRConfig(r *registry, values map[string]interface{}) error {
+func (a *App) prepareCIDRConfig(ginContext *gin.Context, r *registry, values map[string]interface{}) error {
+	if ginContext.PostForm("action") == "edit" && ginContext.PostForm("cidr-changed") == "" {
+		return nil
+	}
+
 	globalInterface, ok := values["global"]
 	if !ok {
 		globalInterface = make(map[string]interface{})
@@ -454,7 +460,7 @@ func (a *App) prepareAdminsConfig(r *registry, secretData map[string]map[string]
 	values map[string]interface{}) error {
 	//TODO: don't recreate admin secrets for existing admin
 
-	if r.Admins != "" {
+	if r.Admins != "" && r.AdminsChanged == "on" {
 		admins, err := validateAdmins(r.Admins)
 		if err != nil {
 			return errors.Wrap(err, "unable to validate admins")
@@ -678,12 +684,8 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 }
 
 func (a *App) prepareMailServerConfig(ginContext *gin.Context, r *registry, secretData map[string]map[string]interface{}, values map[string]interface{}) error {
-	action := ginContext.PostForm("action")
-	if action == "edit" {
-		performEdit := ginContext.PostForm("edit-smtp")
-		if performEdit == "" {
-			return nil
-		}
+	if ginContext.PostForm("action") == "edit" && ginContext.PostForm("edit-smtp") == "" {
+		return nil
 	}
 
 	notifications := make(map[string]interface{})

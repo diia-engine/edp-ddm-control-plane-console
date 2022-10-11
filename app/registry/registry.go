@@ -14,9 +14,10 @@ const (
 )
 
 type registry struct {
-	Name                string   `form:"name" binding:"required,min=3,max=12,registry-name"`
-	Description         string   `form:"description" valid:"max=250"`
-	Admins              string   `form:"admins"`
+	Name                string   `form:"name" binding:"required,min=3,max=12,registry-name" json:"name"`
+	Description         string   `form:"description" valid:"max=250" json:"description"`
+	Admins              string   `form:"admins" json:"admins"`
+	AdminsChanged       string   `form:"admins-changed"`
 	SignKeyIssuer       string   `form:"sign-key-issuer" binding:"required_if=KeyDeviceType file Scenario key-required"`
 	SignKeyPwd          string   `form:"sign-key-pwd" binding:"required_if=KeyDeviceType file Scenario key-required"`
 	RegistryGitTemplate string   `form:"registry-git-template" binding:"required"`
@@ -43,6 +44,7 @@ type registry struct {
 	CIDROfficer         string   `form:"officer-cidr"`
 	CIDRCitizen         string   `form:"citizen-cidr"`
 	CIDRAdmin           string   `form:"admin-cidr"`
+	CIDRChanged         string   `form:"cidr-changed"`
 	Resources           string   `form:"resources"`
 }
 

@@ -85,6 +85,10 @@ func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *c
 		}
 	}
 
+	if len(branches) == 0 {
+		return false, branches, nil
+	}
+
 	sort.Sort(SortByVersion(branches))
 	return true, branches, nil
 }

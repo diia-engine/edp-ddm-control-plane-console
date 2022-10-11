@@ -8,76 +8,82 @@ let app = Vue.createApp({
             this.smtpServerType = selectedSMTP;
         }
 
-        if (this.$refs.hasOwnProperty('smtpEditConfig')) {
-            if (this.$refs.smtpEditConfig.value !== "") {
-                let smtpConfig = JSON.parse(this.$refs.smtpEditConfig.value);
-                if (smtpConfig['type'] === 'external') {
-                    this.smtpServerType = 'external-mail-server';
-                    this.externalSMTPOpts = smtpConfig;
-                    this.externalSMTPOpts['port'] = smtpConfig['port'].toString();
-                } else {
-                    this.smtpServerType = 'platform-mail-server';
-                }
+        if (this.$refs.hasOwnProperty('smtpEditConfig') && this.$refs.smtpEditConfig.value !== "") {
+            let smtpConfig = JSON.parse(this.$refs.smtpEditConfig.value);
+            if (smtpConfig['type'] === 'external') {
+                this.smtpServerType = 'external-mail-server';
+                this.externalSMTPOpts = smtpConfig;
+                this.externalSMTPOpts['port'] = smtpConfig['port'].toString();
+            } else {
+                this.smtpServerType = 'platform-mail-server';
             }
         }
 
-        if (this.$refs.hasOwnProperty('cidrEditConfig')) {
-            if (this.$refs.cidrEditConfig.value !== "") {
-                let cidrConfig = JSON.parse(this.$refs.cidrEditConfig.value);
+        if (this.$refs.hasOwnProperty('cidrEditConfig') && this.$refs.cidrEditConfig.value !== "") {
+            let cidrConfig = JSON.parse(this.$refs.cidrEditConfig.value);
 
-                if (cidrConfig.hasOwnProperty('citizen')) {
-                    this.citizenCIDR = cidrConfig.citizen;
-                    this.citizenCIDRValue.value = JSON.stringify(this.citizenCIDR);
-                }
+            if (cidrConfig.hasOwnProperty('citizen')) {
+                this.citizenCIDR = cidrConfig.citizen;
+                this.citizenCIDRValue.value = JSON.stringify(this.citizenCIDR);
+            }
 
-                if (cidrConfig.hasOwnProperty('officer')) {
-                    this.officerCIDR = cidrConfig.officer;
-                    this.officerCIDRValue.value = JSON.stringify(this.officerCIDR);
-                }
+            if (cidrConfig.hasOwnProperty('officer')) {
+                this.officerCIDR = cidrConfig.officer;
+                this.officerCIDRValue.value = JSON.stringify(this.officerCIDR);
+            }
 
-                if (cidrConfig.hasOwnProperty('admin')) {
-                    this.adminCIDR = cidrConfig.admin;
-                    this.adminCIDRValue.value = JSON.stringify(this.adminCIDR);
-                }
+            if (cidrConfig.hasOwnProperty('admin')) {
+                this.adminCIDR = cidrConfig.admin;
+                this.adminCIDRValue.value = JSON.stringify(this.adminCIDR);
             }
         }
 
-        if (this.$refs.hasOwnProperty('resourcesEditConfig')) {
-            if (this.$refs.resourcesEditConfig.value !== "") {
-                let resourcesConfig = JSON.parse(this.$refs.resourcesEditConfig.value);
+        if (this.$refs.hasOwnProperty('resourcesEditConfig') && this.$refs.resourcesEditConfig.value !== "") {
+            let resourcesConfig = JSON.parse(this.$refs.resourcesEditConfig.value);
 
-                for (let i in resourcesConfig) {
-                    this.registryResources.cats.splice(
-                        this.registryResources.cats.indexOf(i), 1);
+            for (let i in resourcesConfig) {
+                this.registryResources.cats.splice(
+                    this.registryResources.cats.indexOf(i), 1);
 
-                    let envVars = [];
+                let envVars = [];
 
-                    for (let j in resourcesConfig[i].container.envVars) {
-                        envVars.push({
-                            name: j,
-                            value: resourcesConfig[i].container.envVars[j],
-                        })
-                    }
-
-                    resourcesConfig[i].container.envVars = envVars;
-
-                    this.registryResources.addedCats.push({
-                        name: i,
-                        config: resourcesConfig[i],
-                    });
+                for (let j in resourcesConfig[i].container.envVars) {
+                    envVars.push({
+                        name: j,
+                        value: resourcesConfig[i].container.envVars[j],
+                    })
                 }
+
+                resourcesConfig[i].container.envVars = envVars;
+
+                this.registryResources.addedCats.push({
+                    name: i,
+                    config: resourcesConfig[i],
+                });
             }
         }
 
-        if (this.$refs.hasOwnProperty('registryBranches')) {
-            if (this.$refs.registryBranches.value !== "") {
-                this.wizard.tabs.template.projectBranches = JSON.parse(this.$refs.registryBranches.value);
+        if (this.$refs.hasOwnProperty('registryBranches') && this.$refs.registryBranches.value !== "") {
+            this.wizard.tabs.template.projectBranches = JSON.parse(this.$refs.registryBranches.value);
+        }
+
+        if (this.$refs.hasOwnProperty('wizardAction')) {
+            this.wizard.registryAction = this.$refs.wizardAction.value;
+
+            if (this.$refs.wizardAction.value === "edit") {
+                let registryData = JSON.parse(this.$refs.registryData.value);
+                this.wizard.tabs.general.registryName = registryData.name;
+                this.wizard.tabs.template.visible = false;
+                this.wizard.tabs.confirmation.visible = false;
+                this.adminsChanged = false;
+                this.cidrChanged = false;
             }
         }
     },
     data() {
         return {
             registryFormSubmitted: false,
+            cidrChanged: true,
             officerCIDRValue: { value: '' },
             officerCIDR: [],
             citizenCIDRValue: { value: '' },
@@ -85,6 +91,7 @@ let app = Vue.createApp({
             adminCIDRValue: { value: '' },
             adminCIDR: [],
             adminsValue: '',
+            adminsChanged: true,
             currentCIDR: [],
             currentCIDRValue: '',
             cidrFormatError: false,
@@ -132,13 +139,15 @@ let app = Vue.createApp({
                     general: {
                         title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
                         formatError: false, validator: this.wizardGeneralValidation,
+                        visible: true,
                     },
                     administrators: {title: 'Адміністратори', validated: false, requiredError: false,
-                        validator: this.wizardAdministratorsValidation,},
+                        validator: this.wizardAdministratorsValidation, visible: true,},
                     template: {title: 'Шаблон реєстру', validated: false, registryTemplate: '', registryBranch: '',
                         branches: [], projectBranches: {}, templateRequiredError: false, branchRequiredError: false,
-                        validator: this.wizardTemplateValidation},
-                    mail: {title: 'Поштовий сервер', validated: false, beginValidation: false, validator: this.wizardMailValidation},
+                        validator: this.wizardTemplateValidation, visible: true, },
+                    mail: {title: 'Поштовий сервер', validated: false, beginValidation: false,
+                        validator: this.wizardMailValidation, visible: true,},
                     key: {title: 'Дані про ключ', validated: false, deviceType: 'file', beginValidation: false,
                         hardwareData: {
                             remoteType: 'криптомод. ІІТ Гряда-301',
@@ -160,17 +169,18 @@ let app = Vue.createApp({
                         caCertRequired: false,
                         caJSONRequired: false,
                         key6Required: false,
-                        validator: this.wizardKeyValidation,
+                        validator: this.wizardKeyValidation, visible: true,
+                        changed: false,
                     },
                     resources: {title: 'Ресурси реєстру', validated: false, beginValidation: false,
-                        validator: this.wizardResourcesValidation,},
+                        validator: this.wizardResourcesValidation, visible: true,},
                     dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '', keycloak: ''},
                         beginValidation: false, formatError: {officer: false, citizen: false, keycloak: false},
                         requiredError: {officer: false, citizen: false, keycloak: false},
                         typeError: {officer: false, citizen: false, keycloak: false},
-                        validator: this.wizardDNSValidation },
-                    cidr: {title: 'Обмеження доступу', validated: true,},
-                    confirmation: {title: 'Підтвердження', validated: true,}
+                        validator: this.wizardDNSValidation, visible: true, },
+                    cidr: {title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
+                    confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
         }
@@ -182,17 +192,12 @@ let app = Vue.createApp({
             for (let i=0;i<tabKeys.length;i++) {
                 if (tabKeys[i] === this.wizard.activeTab) {
                     let tab = this.wizard.tabs[tabKeys[i]];
-                    if (tab.hasOwnProperty('validator')) {
-                        let wizard = this.wizard;
+                    let wizard = this.wizard;
 
-                        tab.validator(tab).then(function (){
-                            wizard.activeTab = tabKeys[i+1];
-                        });
+                    tab.validator(tab).then(function (){
+                        wizard.activeTab = tabKeys[i+1];
+                    });
 
-                        return;
-                    }
-
-                    this.wizard.activeTab = tabKeys[i+1];
                     break;
                 }
             }
@@ -203,18 +208,12 @@ let app = Vue.createApp({
             for (let i=0;i<tabKeys.length;i++) {
                 if (tabKeys[i] === this.wizard.activeTab) {
                     let tab = this.wizard.tabs[tabKeys[i]];
+                    let wizard = this.wizard;
 
-                    if (tab.hasOwnProperty('validator')) {
-                        let wizard = this.wizard;
+                    tab.validator(tab).then(function (){
+                        wizard.activeTab = tabKeys[i-1];
+                    });
 
-                        tab.validator(tab).then(function (){
-                            wizard.activeTab = tabKeys[i-1];
-                        });
-
-                        return;
-                    }
-
-                    this.wizard.activeTab = tabKeys[i-1];
                     break;
                 }
             }
@@ -223,21 +222,31 @@ let app = Vue.createApp({
             e.preventDefault();
 
             let tab = this.wizard.tabs[this.wizard.activeTab];
-            if (tab.hasOwnProperty('validator')) {
-                let wizard = this.wizard;
+            let wizard = this.wizard;
 
-                tab.validator(tab).then(function (){
-                    wizard.activeTab = tabName;
-                });
+            tab.validator(tab).then(function (){
+                if (wizard.registryAction === "create") {
+                    for (let k in wizard.tabs) {
+                        if(!wizard.tabs[k].validated) {
+                            return;
+                        }
 
-                return;
-            }
+                        if (k === tabName) {
+                            break
+                        }
+                    }
+                }
 
-            if(!this.wizard.tabs[tabName].validated) {
-                return;
-            }
-
-            this.wizard.activeTab = tabName;
+                wizard.activeTab = tabName;
+            });
+        },
+        wizardTabChanged(tabName) {
+            this.wizard.tabs[tabName].changed = true;
+        },
+        wizardEmptyValidation(tab) {
+            return new Promise((resolve) => {
+                resolve();
+            });
         },
         wizardGeneralValidation(tab) {
             return new Promise((resolve) => {
@@ -258,6 +267,12 @@ let app = Vue.createApp({
 
                 if (!/^[a-z0-9]([-a-z0-9]*[a-z0-9])?([a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/.test(tab.registryName)) {
                     tab.formatError = true;
+                    return;
+                }
+
+                if (this.wizard.registryAction === "edit") {
+                    tab.validated = true;
+                    resolve();
                     return;
                 }
 
@@ -427,6 +442,12 @@ let app = Vue.createApp({
         },
         wizardKeyValidation(tab){
             return new Promise((resolve) => {
+
+                if (this.wizard.registryAction === 'edit' && !this.wizard.tabs.key.changed) {
+                    resolve();
+                    return;
+                }
+
                 this.renderINITemplate();
 
                 tab.validated = false;
@@ -490,6 +511,7 @@ let app = Vue.createApp({
         },
         wizardKeyHardwareDataChanged(e) {
             this.renderINITemplate();
+            this.wizard.tabs.key.changed = true;
         },
         wizardRemoveAllowedKey(item) {
 
@@ -588,6 +610,7 @@ let app = Vue.createApp({
                     this.admins = JSON.parse(admins);
                     this.adminsValue = JSON.stringify(this.admins);
                     this.adminsLoaded = true;
+                    this.adminsChanged = false;
                 }
             }
         },
@@ -620,7 +643,7 @@ let app = Vue.createApp({
             this.currentCIDR.push(this.editCIDR);
             this.currentCIDRValue.value = JSON.stringify(this.currentCIDR);
             this.hideCIDRForm();
-
+            this.cidrChanged = true;
         },
         deleteCIDR(c, cidr, value, e) {
             e.preventDefault();
@@ -633,6 +656,7 @@ let app = Vue.createApp({
             }
 
             value = JSON.stringify(cidr);
+            this.cidrChanged = true;
         },
         hideAdminForm() {
             this.adminPopupShow = false;
@@ -649,6 +673,7 @@ let app = Vue.createApp({
                 }
             }
             this.adminsValue = JSON.stringify(this.admins);
+            this.adminsChanged = true;
         },
         createAdmin(e) {
             this.requiredError = false;
@@ -689,6 +714,7 @@ let app = Vue.createApp({
             };
 
             this.adminsValue = JSON.stringify(this.admins);
+            this.adminsChanged = true;
         },
         changeTemplateProject(){
             this.wizard.tabs.template.branches =
