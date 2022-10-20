@@ -51,6 +51,7 @@ type Settings struct {
 	TempFolder                            string `envconfig:"TEMP_FOLDER" default:"/tmp"`
 	RegistryDNSManualPath                 string `envconfig:"REGISTRY_DNS_MANUAL_PATH" default:"platform/1.6/tech/infrastructure/custom-dns.html"`
 	DDMManualEDPComponent                 string `envconfig:"DDM_MANUAL_EDP_COMPONENT" default:"ddm-architecture"`
+	OAuthUseExternalTokenURL              bool   `envconfig:"OAUTH_USE_EXTERNAL_TOKEN_URL"`
 }
 
 type Services struct {

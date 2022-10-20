@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-contrib/sessions"
@@ -276,6 +277,18 @@ func initOauth(k8sConfig *rest.Config, cfg *config.Settings, r *gin.Engine) (*au
 		&http.Client{Transport: transport})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init oauth2 client")
+	}
+
+	if !cfg.OAuthUseExternalTokenURL {
+		tokenUrl, err := url.Parse(oa.Config.Endpoint.TokenURL)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse token url")
+		}
+
+		tokenUrl.Host = "oauth-openshift.openshift-authentication.svc"
+		tokenUrl.Scheme = "http"
+
+		oa.Config.Endpoint.TokenURL = tokenUrl.String()
 	}
 
 	gob.Register(&oauth2.Token{})

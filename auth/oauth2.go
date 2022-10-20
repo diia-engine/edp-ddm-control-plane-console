@@ -20,7 +20,7 @@ type OAuth2 struct {
 	redirectURL  string
 	httpClient   *http.Client
 	providerInfo providerInfo
-	config       *oauth2.Config
+	Config       *oauth2.Config
 }
 
 type providerInfo struct {
@@ -71,7 +71,7 @@ func InitOauth2(clientID, secret, discoveryURL, redirectURL string, httpClient *
 }
 
 func (o *OAuth2) initConfig() {
-	o.config = &oauth2.Config{
+	o.Config = &oauth2.Config{
 		ClientID:     o.clientID,
 		ClientSecret: o.secret,
 		Scopes:       o.providerInfo.ScopesSupported,
@@ -84,20 +84,20 @@ func (o *OAuth2) initConfig() {
 }
 
 func (o *OAuth2) AuthCodeURL() string {
-	return o.config.AuthCodeURL(fmt.Sprintf("state-%d", time.Now().Unix()))
+	return o.Config.AuthCodeURL(fmt.Sprintf("state-%d", time.Now().Unix()))
 }
 
 func (o *OAuth2) GetTokenClient(ctx context.Context, code string) (token *oauth2.Token, oauthClient *http.Client,
 	err error) {
-	token, err = o.config.Exchange(ctx, code)
+	token, err = o.Config.Exchange(ctx, code)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get access token")
 	}
 
-	oauthClient = o.config.Client(ctx, token)
+	oauthClient = o.Config.Client(ctx, token)
 	return
 }
 
 func (o *OAuth2) GetHTTPClient(ctx context.Context, token *oauth2.Token) *http.Client {
-	return o.config.Client(ctx, token)
+	return o.Config.Client(ctx, token)
 }
