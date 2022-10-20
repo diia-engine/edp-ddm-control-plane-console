@@ -225,6 +225,10 @@ func initApps(logger *zap.Logger, cnf *config.Settings, r *gin.Engine) error {
 		return errors.Wrap(err, "unable to init services")
 	}
 
+	if err := initControllers(sch, cnf.Namespace, logger, cnf, serviceItems); err != nil {
+		return errors.Wrap(err, "unable to init controllers")
+	}
+
 	oa, err := initOauth(restConf, cnf, r, serviceItems.K8S)
 	if err != nil {
 		return errors.Wrap(err, "unable to init oauth")

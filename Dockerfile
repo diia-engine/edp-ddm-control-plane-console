@@ -10,7 +10,7 @@ RUN addgroup --gid ${USER_UID} ${USER_NAME} \
     && adduser --disabled-password --uid ${USER_UID} --ingroup ${USER_NAME} --home ${HOME} ${USER_NAME}
 
 WORKDIR /go/bin
-ENV ZONEINFO=/usr/lib/go/lib/time/zoneinfo.zip
+ENV ZONEINFO=/usr/local/go/lib/time/zoneinfo.zip
 
 COPY control-plane-console .
 COPY static static
