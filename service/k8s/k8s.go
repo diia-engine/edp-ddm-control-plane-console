@@ -93,6 +93,15 @@ func (s *Service) GetSecret(name string) (*v1.Secret, error) {
 	return secret, nil
 }
 
+func (s *Service) GetConfigMap(ctx context.Context, name, namespace string) (*v1.ConfigMap, error) {
+	cm, err := s.clientSet.CoreV1().ConfigMaps(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get config map")
+	}
+
+	return cm, nil
+}
+
 func (s *Service) GetSecretKey(ctx context.Context, namespace, name, key string) (string, error) {
 	sec, err := s.GetSecretFromNamespace(ctx, name, namespace)
 	if err != nil {

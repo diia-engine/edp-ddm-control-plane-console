@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"ddm-admin-console/service/vault"
 	"encoding/gob"
 	"flag"
 	"fmt"
 	"html/template"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/gin-contrib/sessions"
@@ -213,11 +213,6 @@ func initApps(logger *zap.Logger, cnf *config.Settings, r *gin.Engine) error {
 		return errors.Wrap(err, "unable to init kube config")
 	}
 
-	oa, err := initOauth(restConf, cnf, r)
-	if err != nil {
-		return errors.Wrap(err, "unable to init oauth")
-	}
-
 	appRouter := router.Make(r, logger)
 
 	sch := runtime.NewScheme()
@@ -230,8 +225,9 @@ func initApps(logger *zap.Logger, cnf *config.Settings, r *gin.Engine) error {
 		return errors.Wrap(err, "unable to init services")
 	}
 
-	if err := initControllers(sch, cnf.Namespace, logger, cnf, serviceItems); err != nil {
-		return errors.Wrap(err, "unable to init controllers")
+	oa, err := initOauth(restConf, cnf, r, serviceItems.K8S)
+	if err != nil {
+		return errors.Wrap(err, "unable to init oauth")
 	}
 
 	_, err = dashboard.Make(appRouter, oa, serviceItems, cnf.ClusterCodebaseName)
@@ -263,7 +259,7 @@ func initKubeConfig() (*rest.Config, error) {
 	return restConfig, nil
 }
 
-func initOauth(k8sConfig *rest.Config, cfg *config.Settings, r *gin.Engine) (*auth.OAuth2, error) {
+func initOauth(k8sConfig *rest.Config, cfg *config.Settings, r *gin.Engine, k8sService k8s.ServiceInterface) (*auth.OAuth2, error) {
 	transport, err := rest.TransportFor(k8sConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create transport for k8s config")
@@ -280,15 +276,9 @@ func initOauth(k8sConfig *rest.Config, cfg *config.Settings, r *gin.Engine) (*au
 	}
 
 	if !cfg.OAuthUseExternalTokenURL {
-		tokenUrl, err := url.Parse(oa.Config.Endpoint.TokenURL)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to parse token url")
+		if err := oa.UseInternalTokenService(context.Background(), cfg.OAuthInternalTokenHost, k8sService); err != nil {
+			return nil, errors.Wrap(err, "unable to load internal oauth host")
 		}
-
-		tokenUrl.Host = "oauth-openshift.openshift-authentication.svc"
-		tokenUrl.Scheme = "http"
-
-		oa.Config.Endpoint.TokenURL = tokenUrl.String()
 	}
 
 	gob.Register(&oauth2.Token{})

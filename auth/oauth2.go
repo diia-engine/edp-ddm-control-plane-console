@@ -2,10 +2,14 @@ package auth
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"ddm-admin-console/service/k8s"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -40,6 +44,7 @@ func InitOauth2(clientID, secret, discoveryURL, redirectURL string, httpClient *
 		secret:       secret,
 		discoveryURL: discoveryURL,
 		redirectURL:  redirectURL,
+		httpClient:   httpClient,
 	}
 
 	if !strings.Contains(discoveryURL, ".well-known") {
@@ -83,12 +88,45 @@ func (o *OAuth2) initConfig() {
 	}
 }
 
+func (o *OAuth2) UseInternalTokenService(ctx context.Context, serviceHost string, k8sService k8s.ServiceInterface) error {
+	tokenUrl, err := url.Parse(o.Config.Endpoint.TokenURL)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse token url")
+	}
+
+	tokenUrl.Host = serviceHost
+	o.Config.Endpoint.TokenURL = tokenUrl.String()
+
+	cm, err := k8sService.GetConfigMap(ctx, "openshift-service-ca.crt", "openshift-config-managed")
+	if err != nil {
+		return errors.Wrap(err, "unable to get openshift ca config map")
+	}
+
+	ca, ok := cm.Data["service-ca.crt"]
+	if !ok {
+		return errors.New("no service ca found in config map")
+	}
+
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM([]byte(ca)) {
+		return errors.New("unable to append certs from PEM")
+	}
+	o.httpClient.Transport = &http.Transport{TLSClientConfig: &tls.Config{
+		RootCAs: caCertPool,
+	}}
+
+	return nil
+}
+
 func (o *OAuth2) AuthCodeURL() string {
 	return o.Config.AuthCodeURL(fmt.Sprintf("state-%d", time.Now().Unix()))
 }
 
 func (o *OAuth2) GetTokenClient(ctx context.Context, code string) (token *oauth2.Token, oauthClient *http.Client,
 	err error) {
+
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, o.httpClient)
+
 	token, err = o.Config.Exchange(ctx, code)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get access token")
