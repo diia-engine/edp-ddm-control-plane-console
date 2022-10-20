@@ -429,7 +429,11 @@ func (a *App) prepareCIDRConfig(ginContext *gin.Context, r *registry, values map
 			return errors.Wrap(err, "unable to decode cidr")
 		}
 
-		whiteListDict["citizenPortal"] = strings.Join(cidr, " ")
+		if len(cidr) > 0 {
+			whiteListDict["citizenPortal"] = strings.Join(cidr, " ")
+		} else if _, ok = whiteListDict["citizenPortal"]; ok {
+			delete(whiteListDict, "citizenPortal")
+		}
 	}
 
 	if r.CIDROfficer != "" {
@@ -438,7 +442,11 @@ func (a *App) prepareCIDRConfig(ginContext *gin.Context, r *registry, values map
 			return errors.Wrap(err, "unable to decode cidr")
 		}
 
-		whiteListDict["officerPortal"] = strings.Join(cidr, " ")
+		if len(cidr) > 0 {
+			whiteListDict["officerPortal"] = strings.Join(cidr, " ")
+		} else if _, ok = whiteListDict["officerPortal"]; ok {
+			delete(whiteListDict, "officerPortal")
+		}
 	}
 
 	if r.CIDRAdmin != "" {
@@ -447,7 +455,11 @@ func (a *App) prepareCIDRConfig(ginContext *gin.Context, r *registry, values map
 			return errors.Wrap(err, "unable to decode cidr")
 		}
 
-		whiteListDict["adminRoutes"] = strings.Join(cidr, " ")
+		if len(cidr) > 0 {
+			whiteListDict["adminRoutes"] = strings.Join(cidr, " ")
+		} else if _, ok = whiteListDict["adminRoutes"]; ok {
+			delete(whiteListDict, "adminRoutes")
+		}
 	}
 
 	globalDict["whiteListIP"] = whiteListDict

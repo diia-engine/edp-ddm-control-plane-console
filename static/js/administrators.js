@@ -602,6 +602,10 @@ let app = Vue.createApp({
 
             this.encodeRegistryResources();
             this.mailServerOpts = JSON.stringify(this.externalSMTPOpts);
+            this.citizenCIDRValue.value = JSON.stringify(this.citizenCIDR);
+            this.officerCIDRValue.value = JSON.stringify(this.officerCIDR);
+            this.adminCIDRValue.value = JSON.stringify(this.adminCIDR);
+
             this.registryFormSubmitted = true;
         },
         loadAdmins(admins) {

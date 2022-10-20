@@ -23,7 +23,22 @@ import (
 )
 
 func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retErr error) {
+	registryName := ctx.Param("name")
+
+	mrExists, err := ProjectHasOpenMR(ctx, registryName, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check MRs exists")
+	}
+
+	if mrExists {
+		return router.MakeResponse(200, "registry/edit-mr-exists.html", gin.H{
+			"registryName": registryName,
+			"page":         "registry",
+		}), nil
+	}
+
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
+
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")
@@ -33,8 +48,6 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")
 	}
-
-	registryName := ctx.Param("name")
 
 	if err := a.checkUpdateAccess(registryName, k8sService); err != nil {
 		return nil, errors.New("access denied")
@@ -283,29 +296,11 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response *router.Response, ret
 	}
 
 	if err := ctx.ShouldBind(&r); err != nil {
-		validationErrors, ok := err.(validator.ValidationErrors)
-		if !ok {
-			return nil, errors.Wrap(err, "unable to parse registry form")
-		}
-
-		return router.MakeResponse(200, "registry/edit.html",
-			gin.H{"page": "registry", "errorsMap": validationErrors, "registry": r, "model": r}), nil
+		return nil, errors.Wrap(err, "unable to parse registry form")
 	}
 
 	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService); err != nil {
-		_, ok := errors.Cause(err).(MRExists)
-		if ok {
-			return router.MakeResponse(200, "registry/edit.html",
-				gin.H{"page": "registry", "MRExists": true, "registry": r, "model": r}), nil
-		}
-
-		validationErrors, ok := errors.Cause(err).(validator.ValidationErrors)
-		if !ok {
-			return nil, errors.Wrap(err, "unable to parse registry form")
-		}
-
-		return router.MakeResponse(200, "registry/edit.html",
-			gin.H{"page": "registry", "errorsMap": validationErrors, "registry": r, "model": r}), nil
+		return nil, errors.Wrap(err, "unable to edit registry")
 	}
 
 	return router.MakeRedirectResponse(http.StatusFound,
@@ -407,6 +402,15 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map
 		return errors.Wrap(err, "unable to encode values yaml")
 	}
 
+	mrExists, err := ProjectHasOpenMR(ctx, projectName, gerritService)
+	if err != nil {
+		return errors.Wrap(err, "unable to check project MR exists")
+	}
+
+	if mrExists {
+		return MRExists("there is already open merge request(s) for this registry")
+	}
+
 	mrs, err := gerritService.GetMergeRequestByProject(ctx, projectName)
 	if err != nil {
 		return errors.Wrap(err, "unable to get MRs")
@@ -436,6 +440,21 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map
 	}
 
 	return nil
+}
+
+func ProjectHasOpenMR(ctx *gin.Context, projectName string, gerritService gerrit.ServiceInterface) (bool, error) {
+	mrs, err := gerritService.GetMergeRequestByProject(ctx, projectName)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to get MRs")
+	}
+
+	for _, mr := range mrs {
+		if mr.Status.Value == gerrit.StatusNew {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func validateAdmins(adminsLine string) ([]Admin, error) {
