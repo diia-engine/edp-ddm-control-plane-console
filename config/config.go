@@ -52,6 +52,7 @@ type Settings struct {
 	RegistryDNSManualPath                 string `envconfig:"REGISTRY_DNS_MANUAL_PATH" default:"platform/1.6/tech/infrastructure/custom-dns.html"`
 	DDMManualEDPComponent                 string `envconfig:"DDM_MANUAL_EDP_COMPONENT" default:"ddm-architecture"`
 	OAuthUseExternalTokenURL              bool   `envconfig:"OAUTH_USE_EXTERNAL_TOKEN_URL"`
+	OAuthInternalTokenURL                 string `envconfig:"OAUTH_INTERNAL_TOKEN_URL" default:"oauth-openshift.openshift-authentication.svc"`
 }
 
 type Services struct {
