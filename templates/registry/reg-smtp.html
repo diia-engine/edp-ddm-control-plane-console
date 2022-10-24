@@ -11,10 +11,9 @@
                     value="external-mail-server">Зовнішній поштовий сервер</option>
         </select>
     </div>
-    <hr />
+
     <div v-cloak v-if="smtpServerType == 'platform-mail-server'">
-        <h3>Налаштування підключення до платформенного поштового серверу</h3>
-        <hr />
+        <p>Налаштування підключення до платформенного поштового серверу</p>
         <div class="rc-form-group">
             <label for="ms-opts">Поштова адреса реєстру</label>
             <input readonly type="text" id="ms-opts" name="mail-server-opts"
@@ -22,8 +21,7 @@
         </div>
     </div>
     <div v-cloak v-if="smtpServerType == 'external-mail-server'">
-        <h3>Налаштування SMTP-підключення до зовнішнього поштового серверу</h3>
-        <hr />
+        <p>Налаштування SMTP-підключення до зовнішнього поштового серверу</p>
         <input type="hidden" name="mail-server-opts" :value="mailServerOpts" />
         <div class="rc-form-group" :class="{'error': externalSMTPOpts.host == '' && wizard.tabs.mail.beginValidation}">
             <label for="smtp-host">Хост</label>

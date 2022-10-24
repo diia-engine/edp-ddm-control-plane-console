@@ -12,7 +12,7 @@
         </div>
         <div class="wizard-body">
             <form id="create-form" @submit="registryFormSubmit" class="registry-create-form wizard-form" method="post"
-                  enctype="multipart/form-data" action="">
+                  enctype="multipart/form-data" action="" ref="registryWizardForm">
                 <input type="hidden" ref="wizardAction" name="action" value="{{ .action }}" />
                 <input type="hidden" ref="registryData" value="{{ .registryData }}" />
 
@@ -118,7 +118,8 @@
                     {{end}}
 
                     {{ if eq .action "edit" }}
-                    <button class="wizard-next" type="submit" name="submit">Підтвердити</button>
+                    <button v-show="wizard.activeTab != 'update'" class="wizard-next" type="button"
+                            @click="wizardEditSubmit">Підтвердити</button>
                     {{end}}
                 </div>
             </form>

@@ -79,6 +79,10 @@ let app = Vue.createApp({
                 this.cidrChanged = false;
             }
         }
+
+        if (this.$refs.hasOwnProperty('registryUpdate')) {
+            this.wizard.tabs.update.visible = true;
+        }
     },
     data() {
         return {
@@ -141,6 +145,9 @@ let app = Vue.createApp({
                         formatError: false, validator: this.wizardGeneralValidation,
                         visible: true,
                     },
+                    update: {
+                        title: 'Оновлення', validated: true, visible: false, validator: this.wizardEmptyValidation,
+                    },
                     administrators: {title: 'Адміністратори', validated: false, requiredError: false,
                         validator: this.wizardAdministratorsValidation, visible: true,},
                     template: {title: 'Шаблон реєстру', validated: false, registryTemplate: '', registryBranch: '',
@@ -186,6 +193,14 @@ let app = Vue.createApp({
         }
     },
     methods: {
+        wizardEditSubmit(event) {
+            let tab = this.wizard.tabs[this.wizard.activeTab];
+            let $this = this;
+            tab.validator(tab).then(function (){
+                $this.registryFormSubmit(event);
+                $this.$refs.registryWizardForm.submit();
+            });
+        },
         wizardNext() {
             let tabKeys = Object.keys(this.wizard.tabs);
 
@@ -598,7 +613,7 @@ let app = Vue.createApp({
             this.registryResources.encoded = JSON.stringify(prepare);
         },
         registryFormSubmit(e) {
-            if (this.registryFormSubmitted) {
+            if (this.registryFormSubmitted && e) {
                 e.preventDefault();
                 return;
             }
