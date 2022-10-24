@@ -579,16 +579,19 @@ let app = Vue.createApp({
         },
         encodeRegistryResources() {
             let prepare = {};
+
             this.registryResources.addedCats.forEach(function (el) {
+                let cloneEL = JSON.parse(JSON.stringify(el));
+
                 let envVars = {};
-                el.config.container.envVars.forEach(function (el) {
+                cloneEL.config.container.envVars.forEach(function (el) {
                     envVars[el.name] = el.value;
                 });
-                el.config.container.envVars = envVars;
+                cloneEL.config.container.envVars = envVars;
 
-                prepare[el.name] = {
-                    istio: el.config.istio,
-                    container: el.config.container,
+                prepare[cloneEL.name] = {
+                    istio: cloneEL.config.istio,
+                    container: cloneEL.config.container,
                 };
             });
 

@@ -292,8 +292,8 @@
                         <td class="mr-actions">
                             {{if $al.Status.ChangeURL}}
                                 <a title="Переглянути"
-                                   @click="showMrView('/admin/registry/{{ $.registry.Name}}/change/{{ $al.Status.ChangeID }}', $event)"
-                                   href="/admin/registry/{{ $.registry.Name}}/change/{{ $al.Status.ChangeID }}">
+                                   @click="showMrView('/admin/change/{{ $al.Status.ChangeID }}', $event)"
+                                   href="/admin/change/{{ $al.Status.ChangeID }}">
                                     <i class="fa-solid fa-eye fa-lg"></i>
                                 </a>
 
