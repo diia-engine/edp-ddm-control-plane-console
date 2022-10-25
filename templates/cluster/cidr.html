@@ -2,7 +2,7 @@
     <h1>Перелік дозволених CIDR</h1>
     <input type="hidden" id="preload-cidr" ref="cidrEditConfig" value="{{ .cidrConfig }}" />
     <br />
-    <form id="cluster-update-form" class="registry-create-form" method="post" action="/admin/cluster/cidr">
+    <form id="cluster-update-form" @submit="registryFormSubmit" class="registry-create-form" method="post" action="/admin/cluster/cidr">
         <div class="rc-form-group">
             <label for="admins">CIDR для адміністративних компонент</label>
             <input type="hidden" id="admin-cidr" name="admin-cidr" v-model="adminCIDRValue.value" />
