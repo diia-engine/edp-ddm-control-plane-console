@@ -87,7 +87,7 @@
     <div class="key-type-file key-type-section" v-if="wizard.tabs.key.deviceType == 'file'" v-cloak>
         <div class="rc-form-group" :class="{'error': wizard.tabs.key.key6Required}">
             <label  for="key6">Файловий ключ (розширення .dat)</label>
-            <input @change="wizardTabChanged('key')" ref="key6" type="file" name="key6" id="key6" accept=".dat" />
+            <input @change="wizardTabChanged('key'); wizard.tabs.key.key6Required = false;" ref="key6" type="file" name="key6" id="key6" accept=".dat" />
             <span v-if="wizard.tabs.key.key6Required">Обов’язкове поле</span>
         </div>
         <div class="rc-form-group" :class="{'error': wizard.tabs.key.fileData.signKeyIssuer == '' && wizard.tabs.key.beginValidation}">
@@ -106,12 +106,12 @@
     <div class="rc-form-group"
          :class="{'error': wizard.tabs.key.caCertRequired}">
         <label for="ca-cert">Публічні сертифікати АЦСК (розширення .p7b)</label>
-        <input @change="wizardTabChanged('key')" ref="keyCaCert" type="file" name="ca-cert" id="ca-cert" accept=".p7b" />
+        <input @change="wizardTabChanged('key'); wizard.tabs.key.caCertRequired = false;" ref="keyCaCert" type="file" name="ca-cert" id="ca-cert" accept=".p7b" />
         <span v-if="wizard.tabs.key.caCertRequired">Обов’язкове поле</span>
     </div>
     <div class="rc-form-group" :class="{'error': wizard.tabs.key.caJSONRequired}">
         <label for="ca-json">Перелік АЦСК (розширення .json)</label>
-        <input @change="wizardTabChanged('key')" ref="keyCaJSON" type="file" name="ca-json" id="ca-json" accept=".json" />
+        <input @change="wizardTabChanged('key'); wizard.tabs.key.caJSONRequired = false;" ref="keyCaJSON" type="file" name="ca-json" id="ca-json" accept=".json" />
         <span v-if="wizard.tabs.key.caJSONRequired">Обов’язкове поле</span>
     </div>
     <h3>Перелік дозволених ключів <button type="button" class="allowed-keys-add" id="allowed-keys-add"

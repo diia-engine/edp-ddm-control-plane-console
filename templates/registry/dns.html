@@ -8,7 +8,8 @@
         <span v-if="wizard.tabs.dns.formatError.officer">Невірний формат</span>
         <label for="">SSL-сертифікат для кабінету чиновника (розширення .pem)</label>
         <input ref="officerSSL" id="officer-ssl" name="officer-ssl" type="file"
-               :class="{'error': wizard.tabs.dns.requiredError.officer || wizard.tabs.dns.typeError.officer}" />
+               :class="{'error': wizard.tabs.dns.requiredError.officer || wizard.tabs.dns.typeError.officer}"
+            @change="wizard.tabs.dns.requiredError.officer = false;"/>
         <span v-if="wizard.tabs.dns.requiredError.officer">Обов’язкове поле</span>
         <span v-if="wizard.tabs.dns.typeError.officer">Невірний тип файлу</span>
     </div>
@@ -20,7 +21,8 @@
         <span v-if="wizard.tabs.dns.formatError.citizen">Невірний формат</span>
         <label for="">SSL-сертифікат для кабінету громадянина (розширення .pem)</label>
         <input ref="citizenSSL" id="citizen-ssl" name="citizen-ssl" type="file"
-               :class="{'error': wizard.tabs.dns.requiredError.citizen || wizard.tabs.dns.typeError.citizen}" />
+               :class="{'error': wizard.tabs.dns.requiredError.citizen || wizard.tabs.dns.typeError.citizen}"
+            @change="wizard.tabs.dns.requiredError.citizen = false;"/>
         <span v-if="wizard.tabs.dns.requiredError.citizen">Обов’язкове поле</span>
         <span v-if="wizard.tabs.dns.typeError.citizen">Невірний тип файлу</span>
     </div>
@@ -32,7 +34,8 @@
         <span v-if="wizard.tabs.dns.formatError.keycloak">Невірний формат</span>
         <label for="">SSL-сертифікат для keycloak (розширення .pem)</label>
         <input ref="keycloakSSL" id="keycloak-ssl" name="keycloak-ssl" type="file"
-               :class="{'error': wizard.tabs.dns.requiredError.keycloak || wizard.tabs.dns.typeError.keycloak}" />
+               :class="{'error': wizard.tabs.dns.requiredError.keycloak || wizard.tabs.dns.typeError.keycloak}"
+            @change="wizard.tabs.dns.requiredError.keycloak = false;"/>
         <span v-if="wizard.tabs.dns.requiredError.keycloak">Обов’язкове поле</span>
         <span v-if="wizard.tabs.dns.typeError.keycloak">Невірний тип файлу</span>
     </div>

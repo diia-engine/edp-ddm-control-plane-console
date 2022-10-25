@@ -306,6 +306,7 @@ let app = Vue.createApp({
                 tab.beginValidation = true;
                 tab.validated = false;
 
+                let validationFailed = false;
                 let filesToCheck = [];
 
                 for (let k in this.wizard.tabs.dns.data) {
@@ -316,21 +317,25 @@ let app = Vue.createApp({
                     if (this.wizard.tabs.dns.data[k] !== '') {
                         if (!/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/.test(this.wizard.tabs.dns.data[k])) {
                             this.wizard.tabs.dns.formatError[k] = true;
-                            return;
+                            validationFailed = true;
                         }
 
                         let fileInput = this.$refs[`${k}SSL`];
                         if (fileInput.files.length === 0) {
                             this.wizard.tabs.dns.requiredError[k] = true;
-                            return;
+                            validationFailed = true;
+                        } else {
+                            filesToCheck.push({name: k, file: fileInput.files[0]});
                         }
-
-                        filesToCheck.push({name: k, file: fileInput.files[0]});
                     }
                 }
 
                 if (filesToCheck.length > 0) {
                     this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
+                    validationFailed = true;
+                }
+
+                if (validationFailed) {
                     return;
                 }
 
@@ -457,7 +462,6 @@ let app = Vue.createApp({
         },
         wizardKeyValidation(tab){
             return new Promise((resolve) => {
-
                 if (this.wizard.registryAction === 'edit' && !this.wizard.tabs.key.changed) {
                     resolve();
                     return;
@@ -471,40 +475,45 @@ let app = Vue.createApp({
                 this.wizard.tabs.key.caJSONRequired = false;
                 this.wizard.tabs.key.key6Required = false;
 
+                let validationFailed = false;
                 if (this.$refs.keyCaCert.files.length === 0) {
                     this.wizard.tabs.key.caCertRequired = true;
-                    return;
+                    validationFailed = true;
                 }
 
                 if (this.$refs.keyCaJSON.files.length === 0) {
                     this.wizard.tabs.key.caJSONRequired = true;
-                    return;
+                    validationFailed = true;
                 }
 
                 for (let i=0;i<this.wizard.tabs.key.allowedKeys.length;i++) {
                     if (this.wizard.tabs.key.allowedKeys[i].issuer === '' ||
                         this.wizard.tabs.key.allowedKeys[i].serial === '') {
-                        return;
+                        validationFailed = true;
                     }
                 }
 
                 if (this.wizard.tabs.key.deviceType === 'hardware') {
                     for (let key in this.wizard.tabs.key.hardwareData) {
                         if (this.wizard.tabs.key.hardwareData[key] === '') {
-                            return;
+                            validationFailed = true;
                         }
                     }
                 } else {
                     for (let key in this.wizard.tabs.key.fileData) {
                         if (this.wizard.tabs.key.hardwareData[key] === '') {
-                            return;
+                            validationFailed = true;
                         }
                     }
 
                     if (this.$refs.key6.files.length === 0) {
                         this.wizard.tabs.key.key6Required = true;
-                        return;
+                        validationFailed = true;
                     }
+                }
+
+                if (validationFailed) {
+                    return;
                 }
 
                 tab.beginValidation = false;
@@ -739,6 +748,8 @@ let app = Vue.createApp({
 
             this.adminsValue = JSON.stringify(this.admins);
             this.adminsChanged = true;
+            this.wizard.tabs.administrators.validated = false;
+            this.wizard.tabs.administrators.requiredError = false;
         },
         changeTemplateProject(){
             this.wizard.tabs.template.branches =
