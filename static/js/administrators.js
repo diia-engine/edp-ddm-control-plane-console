@@ -112,6 +112,7 @@ let app = Vue.createApp({
             requiredError: false,
             emailFormatError: false,
             adminsLoaded: false,
+            adminsError: false,
             smtpServerType: null,
             mailServerOpts: '',
             externalSMTPOpts: {
