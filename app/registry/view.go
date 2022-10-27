@@ -45,7 +45,23 @@ func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registr
 		a.viewSMTPConfig,
 		a.viewCIDRConfig,
 		a.viewAdministratorsConfig,
+		a.viewRegistryHasUpdates,
 	}
+}
+
+func (a *App) viewRegistryHasUpdates(userCtx context.Context, registryName string, viewParams gin.H) error {
+	registry, ok := viewParams["registry"]
+	if !ok {
+		return nil
+	}
+
+	hasUpdate, _, err := HasUpdate(userCtx, a.Services.Gerrit, registry.(*codebase.Codebase))
+	if err != nil {
+		return errors.Wrap(err, "unable to check for updates")
+	}
+
+	viewParams["hasUpdate"] = hasUpdate
+	return nil
 }
 
 func (a *App) viewRegistryExternalRegistration(userCtx context.Context, registryName string, viewParams gin.H) error {

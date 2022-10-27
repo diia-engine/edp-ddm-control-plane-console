@@ -22,6 +22,34 @@ type updateRequest struct {
 	Branch string `form:"branch" binding:"required"`
 }
 
+func (a *App) registryUpdateView(ctx *gin.Context) (*router.Response, error) {
+	registryName := ctx.Param("name")
+
+	userCtx := a.router.ContextWithUserAccessToken(ctx)
+
+	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to init service for user context")
+	}
+
+	reg, err := cbService.Get(registryName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get registry")
+	}
+
+	hasUpdate, branches, err := HasUpdate(userCtx, a.Services.Gerrit, reg)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check for updates")
+	}
+
+	return router.MakeResponse(200, "registry/update.html", gin.H{
+		"updateBranches": branches,
+		"hasUpdate":      hasUpdate,
+		"registry":       reg,
+		"page":           "registry",
+	}), nil
+}
+
 func (a *App) registryUpdate(ctx *gin.Context) (*router.Response, error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)

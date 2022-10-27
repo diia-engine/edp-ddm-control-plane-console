@@ -8,6 +8,11 @@
                         <a @click="selectWizardTab(tabName, $event)" href="#">[[ tab.title ]]</a>
                     </li>
                 </template>
+                {{if .hasUpdate}}
+                    <li>
+                        <a href="/admin/registry/update/{{.registry.Name}}">Оновити реєстр</a>
+                    </li>
+                {{end}}
             </ul>
         </div>
         <div class="wizard-body">

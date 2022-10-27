@@ -11,10 +11,19 @@
     <div class="registry-header registry-header-view">
         <h1>Реєстр "{{.registry.Name}}"</h1>
         {{if .allowedToEdit}}
-        <a href="{{ .BasePath }}/admin/registry/edit/{{.registry.Name}}" class="registry-add">
-            <img alt="add registry" src="{{ .BasePath }}/static/img/action-edit.png" />
-            <span>Редагувати</span>
-        </a>
+            <div class="registry-view-actions">
+            {{if .hasUpdate}}
+                <a href="{{ .BasePath }}/admin/registry/update/{{.registry.Name}}" class="registry-add">
+                    <!--<img alt="add registry" src="{{ .BasePath }}/static/img/action-edit.png" />-->
+                    <i class="fa-solid fa-arrow-up"></i>
+                    <span>Оновити</span>
+                </a>
+            {{end}}
+                <a href="{{ .BasePath }}/admin/registry/edit/{{.registry.Name}}" class="registry-add">
+                    <img alt="add registry" src="{{ .BasePath }}/static/img/action-edit.png" />
+                    <span>Редагувати</span>
+                </a>
+            </div>
         {{end}}
     </div>
     <div class="registry-description">Інформація про реєстр.</div>

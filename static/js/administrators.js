@@ -146,9 +146,6 @@ let app = Vue.createApp({
                         formatError: false, validator: this.wizardGeneralValidation,
                         visible: true,
                     },
-                    update: {
-                        title: 'Оновлення', validated: true, visible: false, validator: this.wizardEmptyValidation,
-                    },
                     administrators: {title: 'Адміністратори', validated: false, requiredError: false,
                         validator: this.wizardAdministratorsValidation, visible: true,},
                     template: {title: 'Шаблон реєстру', validated: false, registryTemplate: '', registryBranch: '',
@@ -331,13 +328,12 @@ let app = Vue.createApp({
                     }
                 }
 
-                if (filesToCheck.length > 0) {
-                    this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
-                    validationFailed = true;
-                }
-
                 if (validationFailed) {
                     return;
+                }
+
+                if (filesToCheck.length > 0) {
+                    this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
                 }
 
                 tab.validated = true;
