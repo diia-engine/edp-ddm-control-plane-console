@@ -1,7 +1,14 @@
 {{ define "registry/change.html" }}
+    <link rel="stylesheet" href="/static/css/change.css" />
     <link rel="stylesheet" href="/static/css/github.min.css" />
     <link rel="stylesheet" type="text/css" href="/static/css/diff2html.min.css" />
     <div id="changes"></div>
+    {{if eq .change.Status "NEW"}}
+    <div class="change-actions">
+        <a class="change-abandon" href="/admin/abandon-change/{{.changeID}}">Відхилити</a>
+        <a class="change-submit" href="/admin/submit-change/{{.changeID}}">Підтвердити</a>
+    </div>
+    {{end}}
     <script type="text/javascript" src="/static/js/diff2html-ui.min.js"></script>
     <script type="text/javascript">
         const diffString = `{{ .changes }}`;

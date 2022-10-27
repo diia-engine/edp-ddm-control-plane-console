@@ -1,0 +1,15 @@
+{{ define "mr-view" }}
+
+<div style="width:80%;left:10%;height:80%;" class="popup-window admin-window visible" v-cloak v-if="mrView">
+    <div class="popup-header">
+        <p>Запит на оновлення</p>
+        <a href="#" @click="hideMrView" class="popup-close hide-popup">
+            <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+        </a>
+    </div>
+    <div class="popup-body mr-frame-body" style="border-bottom: none;">
+        <iframe ref="mrIframe" id="mr-frame" :src="mrSrc" style="width:100%;"></iframe>
+    </div>
+</div>
+
+{{end}}

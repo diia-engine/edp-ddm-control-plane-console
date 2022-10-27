@@ -40,13 +40,18 @@ let app = Vue.createApp({
             mrView: false,
             mrSrc: '',
         }
-    },
+    }, // mrIframe
     methods: {
         hideMrView(e) {
             $("body").css("overflow", "scroll");
             this.backdropShow = false;
             this.mrView = false;
             e.preventDefault();
+
+            let mrFrame = this.$refs.mrIframe;
+            if (mrFrame.src !== mrFrame.contentWindow.location.href) {
+                document.location.reload();
+            }
         },
         showMrView(src, e) {
             this.mrView = true;

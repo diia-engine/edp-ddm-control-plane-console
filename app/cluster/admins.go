@@ -19,6 +19,7 @@ import (
 const (
 	MRTypeClusterAdmins = "cluster-admins"
 	MRTypeClusterCIDR   = "cluster-cidr"
+	MRTypeClusterUpdate = "cluster-update"
 	ValuesAdminsKey     = "administrators"
 )
 

@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"ddm-admin-console/app/registry"
 	"fmt"
 	"net/http"
 	"time"
@@ -42,6 +43,9 @@ func (a *App) clusterUpdate(ctx *gin.Context) (*router.Response, error) {
 		AuthorName:          ctx.GetString(router.UserNameSessionKey),
 		AuthorEmail:         ctx.GetString(router.UserEmailSessionKey),
 		AdditionalArguments: []string{"-X", "ours"},
+		Labels: map[string]string{
+			registry.MRLabelTarget: MRTypeClusterUpdate,
+		},
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to create update merge request")
 	}

@@ -144,6 +144,15 @@ func (s *Service) CreateProject(ctx context.Context, name string) error {
 	return nil
 }
 
+func (s *Service) GetMergeRequests(ctx context.Context) ([]GerritMergeRequest, error) {
+	var mrs GerritMergeRequestList
+	if err := s.k8sClient.List(ctx, &mrs); err != nil {
+		return nil, errors.Wrap(err, "unable to get merge requests")
+	}
+
+	return mrs.Items, nil
+}
+
 func (s *Service) GetMergeRequest(ctx context.Context, name string) (*GerritMergeRequest, error) {
 	var mr GerritMergeRequest
 	if err := s.k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: s.Namespace}, &mr); err != nil {
@@ -153,13 +162,27 @@ func (s *Service) GetMergeRequest(ctx context.Context, name string) (*GerritMerg
 	return &mr, nil
 }
 
-func (s *Service) GetMergeRequests(ctx context.Context) ([]GerritMergeRequest, error) {
+func (s *Service) GetMergeRequestByChangeID(ctx context.Context, changeID string) (*GerritMergeRequest, error) {
 	var mrs GerritMergeRequestList
 	if err := s.k8sClient.List(ctx, &mrs); err != nil {
 		return nil, errors.Wrap(err, "unable to list gerrit merge requests")
 	}
 
-	return mrs.Items, nil
+	for _, mr := range mrs.Items {
+		if mr.Status.ChangeID == changeID {
+			return &mr, nil
+		}
+	}
+
+	return nil, errors.New("unable to find MR by changed ID")
+}
+
+func (s *Service) UpdateMergeRequestStatus(ctx context.Context, mr *GerritMergeRequest) error {
+	if err := s.k8sClient.Status().Update(ctx, mr); err != nil {
+		return errors.Wrap(err, "unable to update mr status")
+	}
+
+	return nil
 }
 
 func (s *Service) GetMergeRequestByProject(ctx context.Context, projectName string) ([]GerritMergeRequest, error) {

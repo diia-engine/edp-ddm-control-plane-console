@@ -1,0 +1,35 @@
+.change-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.change-actions a {
+    font-size: 18px;
+    color: #FFFFFF;
+    text-transform: uppercase;
+    border-radius: 4px;
+    display: block;
+    padding: 8px 16px;
+    background: #CCCCCC;
+    text-decoration: none;
+    margin-right: 10px;
+    font-family: 'Oswald', sans-serif;
+    width: 130px;
+    text-align: center;
+}
+
+.change-actions a.change-abandon {
+    background: #EE5E73;
+}
+
+.change-actions a.change-submit {
+    background: #6DA300;
+}
+
+.change-action-status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}

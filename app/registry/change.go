@@ -1,8 +1,10 @@
 package registry
 
 import (
+	"context"
 	"ddm-admin-console/router"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -19,27 +21,102 @@ const (
 	currentRevision = "current"
 )
 
+func (a *App) abandonChange(ctx *gin.Context) (response *router.Response, retErr error) {
+	changeID := ctx.Param("change")
+
+	if _, _, err := a.Gerrit.GoGerritClient().Changes.AbandonChange(changeID, &goGerrit.AbandonInput{
+		Message: fmt.Sprintf("Abandoned by %s [%s]", ctx.GetString(router.UserNameSessionKey),
+			ctx.GetString(router.UserEmailSessionKey)),
+	}); err != nil {
+		return nil, errors.Wrap(err, "unable to abandon change")
+	}
+
+	if err := a.updateMRStatus(ctx, changeID, "ABANDONED"); err != nil {
+		return nil, errors.Wrap(err, "unable to change MR status")
+	}
+
+	return router.MakeResponse(200, "registry/change-abandoned.html", gin.H{}), nil
+}
+
+func (a *App) submitChange(ctx *gin.Context) (response *router.Response, retErr error) {
+	changeID := ctx.Param("change")
+
+	if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SetReview(changeID, currentRevision, &goGerrit.ReviewInput{
+		Message: fmt.Sprintf("Submitted by %s [%s]", ctx.GetString(router.UserNameSessionKey),
+			ctx.GetString(router.UserEmailSessionKey)),
+		Labels: map[string]string{
+			"Code-Review": "2",
+			"Verified":    "1",
+		},
+	}); err != nil {
+		if rsp != nil {
+			body, _ := ioutil.ReadAll(rsp.Body)
+			return nil, errors.Wrapf(err, "unable to review change, error: %s", string(body))
+		}
+
+		return nil, errors.Wrap(err, "unable to review change")
+	}
+
+	if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SubmitChange(changeID, &goGerrit.SubmitInput{}); err != nil {
+		if rsp != nil {
+			body, _ := ioutil.ReadAll(rsp.Body)
+			return nil, errors.Wrapf(err, "unable to submit change, error: %s", string(body))
+		}
+
+		return nil, errors.Wrap(err, "unable to submit change")
+	}
+
+	if err := a.updateMRStatus(ctx, changeID, "MERGED"); err != nil {
+		return nil, errors.Wrap(err, "unable to change MR status")
+	}
+
+	return router.MakeResponse(200, "registry/change-submitted.html", gin.H{}), nil
+}
+
+func (a *App) updateMRStatus(ctx context.Context, changeID, status string) error {
+	mr, err := a.Gerrit.GetMergeRequestByChangeID(ctx, changeID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get MR")
+	}
+
+	mr.Status.Value = status
+
+	for i := 0; i < 5; i++ {
+		if err := a.Gerrit.UpdateMergeRequestStatus(ctx, mr); err != nil {
+			if strings.Contains(err.Error(), "changed") {
+				continue
+			}
+
+			return errors.Wrap(err, "unable to update MR status")
+		}
+	}
+
+	return nil
+}
+
 func (a *App) viewChange(ctx *gin.Context) (response *router.Response, retErr error) {
 	changeID := ctx.Param("change")
 
-	changes, err := a.getChangeContents(changeID)
+	changeInfo, _, err := a.Gerrit.GoGerritClient().Changes.GetChangeDetail(changeID, &goGerrit.ChangeOptions{})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get gerrit change details")
+	}
+
+	changes, err := a.getChangeContents(changeInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get changes")
 	}
 
 	return router.MakeResponse(200, "registry/change.html", gin.H{
-		"page":    "registry",
-		"changes": changes,
+		"page":     "registry",
+		"changes":  changes,
+		"change":   changeInfo,
+		"changeID": changeID,
 	}), nil
 }
 
-func (a *App) getChangeContents(changeID string) (string, error) {
-	changeInfo, _, err := a.Gerrit.GoGerritClient().Changes.GetChangeDetail(changeID, &goGerrit.ChangeOptions{})
-	if err != nil {
-		return "", errors.Wrap(err, "unable to get gerrit change details")
-	}
-
-	files, _, err := a.Gerrit.GoGerritClient().Changes.ListFiles(changeID, currentRevision, &goGerrit.FilesOptions{})
+func (a *App) getChangeContents(changeInfo *goGerrit.ChangeInfo) (string, error) {
+	files, _, err := a.Gerrit.GoGerritClient().Changes.ListFiles(changeInfo.ID, currentRevision, &goGerrit.FilesOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get change files")
 	}
@@ -50,7 +127,7 @@ func (a *App) getChangeContents(changeID string) (string, error) {
 			continue
 		}
 
-		changesContent, err := a.getFileChanges(changeID, fileName, changeInfo.Project, changeInfo.Branch)
+		changesContent, err := a.getFileChanges(changeInfo.ID, fileName, changeInfo.Project, changeInfo.Branch)
 		if err != nil {
 			return "", errors.Wrap(err, "unable to get file changes")
 		}
@@ -62,7 +139,16 @@ func (a *App) getChangeContents(changeID string) (string, error) {
 }
 
 func (a *App) getFileChanges(changeID, fileName, projectName, branchName string) (string, error) {
-	originalContent, originalHttpRsp, err := a.Gerrit.GoGerritClient().Projects.GetBranchContent(projectName, branchName, url.PathEscape(fileName))
+	commitInfo, _, err := a.Gerrit.GoGerritClient().Changes.GetCommit(changeID, currentRevision, &goGerrit.CommitOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get change commit")
+	}
+	if len(commitInfo.Parents) == 0 {
+		return "", errors.New("no parent commit for change found")
+	}
+
+	originalContent, originalHttpRsp, err := a.Gerrit.GoGerritClient().Projects.GetCommitContent(projectName,
+		commitInfo.Parents[0].Commit, url.PathEscape(fileName))
 	if err != nil && originalHttpRsp != nil && originalHttpRsp.StatusCode != 404 {
 		return "", errors.Wrap(err, "unable to get file content")
 	}

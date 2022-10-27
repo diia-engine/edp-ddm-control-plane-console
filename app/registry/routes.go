@@ -18,5 +18,8 @@ func (a *App) createRoutes() {
 	a.router.POST("/admin/registry/external-reg-add/:name", a.addExternalReg)
 	a.router.POST("/admin/registry/external-reg-remove/:name", a.removeExternalReg)
 	a.router.POST("/admin/registry/external-reg-disable/:name", a.disableExternalReg)
+
 	a.router.GET("/admin/change/:change", a.viewChange)
+	a.router.GET("/admin/submit-change/:change", a.submitChange)
+	a.router.GET("/admin/abandon-change/:change", a.abandonChange)
 }

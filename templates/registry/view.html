@@ -288,7 +288,7 @@
                         <td>{{$al.FormattedCreatedAt}}</td>
                         <td>{{$al.RequestName}}</td>
                         <td>{{ i18n $al.Action}}</td>
-                        <td class="mr-status">{{$al.Status.Value}}</td>
+                        <td class="mr-status">{{ i18n $al.Status.Value}}</td>
                         <td class="mr-actions">
                             {{if $al.Status.ChangeURL}}
                                 <a title="Переглянути"
@@ -334,17 +334,7 @@
 
     <div class="popup-backdrop visible" v-cloak v-if="backdropShow"></div>
 
-    <div style="width:80%;left:10%;height:80%;" class="popup-window admin-window visible" v-cloak v-if="mrView">
-        <div class="popup-header">
-            <p>Запит на оновлення</p>
-            <a href="#" @click="hideMrView" class="popup-close hide-popup">
-                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
-            </a>
-        </div>
-        <div class="popup-body mr-frame-body" style="border-bottom: none;">
-            <iframe id="mr-frame" :src="mrSrc" style="width:100%;"></iframe>
-        </div>
-    </div>
+    {{template "mr-view" .}}
 
     <div class="popup-window admin-window visible" v-cloak v-if="externalKey">
         <div class="popup-header">

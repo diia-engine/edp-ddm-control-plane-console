@@ -21,11 +21,13 @@ rules:
   resources:
     - gerritprojects
     - gerritmergerequests
+    - gerritmergerequests/status
   verbs:
     - list
     - get
     - create
     - watch
+    - update
 - apiGroups:
   - '*'
   attributeRestrictions: null

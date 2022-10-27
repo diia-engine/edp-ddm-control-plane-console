@@ -1,6 +1,7 @@
 {{ define "cluster/view.html" }}
     {{template "header" .}}
-    <div class="registry cluster">
+    <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/datatables.custom.css" />
+    <div class="registry cluster" id="registry-view">
         <div class="registry-header registry-header-view cluster">
             <h1>Керування Платформою</h1>
             {{if .canUpdateCluster}}
@@ -134,26 +135,35 @@
                     <span>Запити на оновлення</span>
                     <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
                 </div>
-                <div class="rg-info-block-body">
-                    <table class="rg-info-table rg-info-table-config">
+                <div class="rg-info-block-body mr-block-table">
+                    <table class="rg-info-table rg-info-table-config" id="mr-table">
                         <thead>
                         <tr>
                             <th>Дата</th>
-                            <th>Назва</th>
+                            <th>Запит</th>
+                            <th>Операція</th>
                             <th>Статус</th>
-                            <th>Посилання</th>
+                            <th></th>
                         </tr>
                         </thead>
                         <tbody>
                         {{range $index, $al := .mergeRequests}}
                             <tr>
                                 <td>{{$al.FormattedCreatedAt}}</td>
-                                <td>{{$al.Name}}</td>
-                                <td>{{$al.Status.Value}}</td>
-                                <td>
+                                <td>{{$al.RequestName}}</td>
+                                <td>{{ i18n $al.Action}}</td>
+                                <td class="mr-status">{{ i18n $al.Status.Value}}</td>
+                                <td class="mr-actions">
                                     {{if $al.Status.ChangeURL}}
+                                        <a title="Переглянути"
+                                           @click="showMrView('/admin/change/{{ $al.Status.ChangeID }}', $event)"
+                                           href="/admin/change/{{ $al.Status.ChangeID }}">
+                                            <i class="fa-solid fa-eye fa-lg"></i>
+                                        </a>
+
                                         <a href="{{$al.Status.ChangeURL}}" target="_blank">
-                                            <img alt="vcs" src="{{ $.BasePath }}/static/img/action-link.png" />
+                                            <img style="vertical-align: sub;" title="Переглянути в Gerrit" alt="vcs"
+                                                 src="{{ $.BasePath }}/static/img/action-link.png" />
                                         </a>
                                     {{end}}
                                 </td>
@@ -179,7 +189,18 @@
                 </ul>
             </div>
         {{end}}
+
+        <div class="popup-backdrop visible" v-cloak v-if="backdropShow"></div>
+        {{template "mr-view" .}}
     </div>
+
+
+
+
+
     {{template "scripts" .}}
+    <script type="text/javascript" src="{{.BasePath}}/static/js/moment.min.js"></script>
+    <script type="text/javascript" src="{{.BasePath}}/static/js/jquery.dataTables-1.12.1.min.js"></script>
+    <script type="text/javascript" src="{{.BasePath}}/static/js/view-registry.js"></script>
     {{template "footer" .}}
 {{ end }}
