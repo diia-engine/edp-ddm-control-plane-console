@@ -194,9 +194,12 @@ let app = Vue.createApp({
         wizardEditSubmit(event) {
             let tab = this.wizard.tabs[this.wizard.activeTab];
             let $this = this;
+
             tab.validator(tab).then(function (){
                 $this.registryFormSubmit(event);
-                $this.$refs.registryWizardForm.submit();
+                $this.$nextTick(() => {
+                    $this.$refs.registryWizardForm.submit();
+                });
             });
         },
         wizardNext() {
