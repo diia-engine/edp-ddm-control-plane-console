@@ -299,7 +299,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response *router.Response, ret
 		return nil, errors.Wrap(err, "unable to parse registry form")
 	}
 
-	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService); err != nil {
+	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService, k8sService); err != nil {
 		return nil, errors.Wrap(err, "unable to edit registry")
 	}
 
@@ -308,7 +308,11 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response *router.Response, ret
 }
 
 func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *registry, cb *codebase.Codebase,
-	cbService codebase.ServiceInterface) error {
+	cbService codebase.ServiceInterface, k8sService k8s.ServiceInterface) error {
+
+	if err := CreateRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService); err != nil {
+		return errors.Wrap(err, "unable to create registry keys")
+	}
 
 	cb.Spec.Description = &r.Description
 	if cb.Annotations == nil {
@@ -328,11 +332,6 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	vaultSecretData := make(map[string]map[string]interface{})
 	if err := a.prepareDNSConfig(ginContext, r, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to prepare dns config")
-	}
-
-	if err := CreateRegistryKeys(keyManagement{r: r, vaultSecretPath: a.keyManagementRegistryVaultPath(r.Name)}, ginContext.Request,
-		vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
 	}
 
 	if err := a.prepareMailServerConfig(ginContext, r, vaultSecretData, values); err != nil {
@@ -363,9 +362,10 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	if len(vaultSecretData) > 0 {
-		if err := CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
+		if err := a.createVaultSecrets(vaultSecretData); err != nil {
 			return errors.Wrap(err, "unable to create vault secrets")
 		}
+
 	}
 
 	if err := cbService.Update(cb); err != nil {

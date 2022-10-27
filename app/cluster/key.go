@@ -1,16 +1,5 @@
 package cluster
 
-import (
-	"ddm-admin-console/app/registry"
-	"ddm-admin-console/router"
-	"net/http"
-	"strings"
-
-	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
-)
-
 type clusterKey struct {
 	Scenario           string
 	SignKeyIssuer      string   `form:"sign-key-issuer" binding:"required_if=KeyDeviceType file Scenario key-required"`
@@ -95,50 +84,50 @@ func (k keyManagement) EnvVarsSecretName() string {
 	return "digital-signature-ops-env-vars"
 }
 
-func (a *App) updateKeyView(ctx *gin.Context) (*router.Response, error) {
-	if err := a.updateKey(ctx); err != nil {
-		return nil, errors.Wrap(err, "unable to update keys")
-	}
+//func (a *App) updateKeyView(ctx *gin.Context) (*router.Response, error) {
+//	if err := a.updateKey(ctx); err != nil {
+//		return nil, errors.Wrap(err, "unable to update keys")
+//	}
+//
+//	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
+//}
 
-	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
-}
-
-func (a *App) updateKey(ctx *gin.Context) error {
-	ck := clusterKey{Scenario: registry.ScenarioKeyRequired}
-
-	if err := ctx.ShouldBind(&ck); err != nil {
-		_, ok := err.(validator.ValidationErrors)
-		if !ok {
-			return errors.Wrap(err, "unable to parse registry form")
-		}
-
-		return err
-	}
-
-	values, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values from git")
-	}
-	vaultSecretData := make(map[string]map[string]interface{})
-
-	vaultPath := strings.ReplaceAll(a.VaultClusterKeyManagementPathTemplate, "{engine}", a.Config.VaultKVEngineName)
-
-	if err := registry.CreateRegistryKeys(keyManagement{r: &ck, vaultSecretPath: vaultPath}, ctx.Request,
-		vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
-	}
-
-	if len(values) > 0 {
-		if err := registry.CreateEditMergeRequest(ctx, a.Config.CodebaseName, values, a.Gerrit); err != nil {
-			return errors.Wrap(err, "unable to create edit merge request")
-		}
-	}
-
-	if len(vaultSecretData) > 0 {
-		if err := registry.CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
-			return errors.Wrap(err, "unable to create vault secrets")
-		}
-	}
-
-	return nil
-}
+//func (a *App) updateKey(ctx *gin.Context) error {
+//	ck := clusterKey{Scenario: registry.ScenarioKeyRequired}
+//
+//	if err := ctx.ShouldBind(&ck); err != nil {
+//		_, ok := err.(validator.ValidationErrors)
+//		if !ok {
+//			return errors.Wrap(err, "unable to parse registry form")
+//		}
+//
+//		return err
+//	}
+//
+//	values, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
+//	if err != nil {
+//		return errors.Wrap(err, "unable to get values from git")
+//	}
+//	vaultSecretData := make(map[string]map[string]interface{})
+//
+//	vaultPath := strings.ReplaceAll(a.VaultClusterKeyManagementPathTemplate, "{engine}", a.Config.VaultKVEngineName)
+//
+//	if err := registry.CreateRegistryKeys(keyManagement{r: &ck, vaultSecretPath: vaultPath}, ctx.Request,
+//		vaultSecretData, values); err != nil {
+//		return errors.Wrap(err, "unable to create registry keys")
+//	}
+//
+//	if len(values) > 0 {
+//		if err := registry.CreateEditMergeRequest(ctx, a.Config.CodebaseName, values, a.Gerrit); err != nil {
+//			return errors.Wrap(err, "unable to create edit merge request")
+//		}
+//	}
+//
+//	if len(vaultSecretData) > 0 {
+//		if err := registry.CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
+//			return errors.Wrap(err, "unable to create vault secrets")
+//		}
+//	}
+//
+//	return nil
+//}
