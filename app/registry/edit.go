@@ -238,8 +238,11 @@ func (a *App) loadSMTPConfig(values map[string]interface{}, rspParams gin.H) err
 	}
 
 	globalDict := global.(map[string]interface{})
-	emailDict := globalDict["notifications"].(map[string]interface{})["email"].(map[string]interface{})
+	if _, ok := globalDict["notifications"]; !ok {
+		return nil
+	}
 
+	emailDict := globalDict["notifications"].(map[string]interface{})["email"].(map[string]interface{})
 	mailConfig, err := json.Marshal(emailDict)
 	if err != nil {
 		return errors.Wrap(err, "unable to encode ot JSON smtp config")
