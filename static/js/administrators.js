@@ -179,10 +179,10 @@ let app = Vue.createApp({
                     },
                     resources: {title: 'Ресурси реєстру', validated: false, beginValidation: false,
                         validator: this.wizardResourcesValidation, visible: true,},
-                    dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '', keycloak: ''},
-                        beginValidation: false, formatError: {officer: false, citizen: false, keycloak: false},
-                        requiredError: {officer: false, citizen: false, keycloak: false},
-                        typeError: {officer: false, citizen: false, keycloak: false},
+                    dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '', /*keycloak: ''*/},
+                        beginValidation: false, formatError: {officer: false, citizen: false, /*keycloak: false*/},
+                        requiredError: {officer: false, citizen: false, /*keycloak: false*/},
+                        typeError: {officer: false, citizen: false, /*keycloak: false*/},
                         validator: this.wizardDNSValidation, visible: true, },
                     cidr: {title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
@@ -337,6 +337,7 @@ let app = Vue.createApp({
 
                 if (filesToCheck.length > 0) {
                     this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
+                    return;
                 }
 
                 tab.validated = true;
