@@ -55,7 +55,7 @@ func (a *App) viewRegistryHasUpdates(userCtx context.Context, registryName strin
 		return nil
 	}
 
-	hasUpdate, _, err := HasUpdate(userCtx, a.Services.Gerrit, registry.(*codebase.Codebase))
+	hasUpdate, _, err := HasUpdate(userCtx, a.Services.Gerrit, registry.(*codebase.Codebase), MRTargetRegistryVersionUpdate)
 	if err != nil {
 		return errors.Wrap(err, "unable to check for updates")
 	}

@@ -12239,6 +12239,10 @@ p.error {
     margin-right: 10px;
 }
 
+.mr-actions {
+    width: 60px;
+}
+
 #mr-frame {
     /*height: calc(100% - 10px);*/
     height: 100%;

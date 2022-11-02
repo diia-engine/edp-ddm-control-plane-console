@@ -113,6 +113,7 @@ let app = Vue.createApp({
             emailFormatError: false,
             adminsLoaded: false,
             adminsError: false,
+            adminExistsError: false,
             smtpServerType: null,
             mailServerOpts: '',
             externalSMTPOpts: {
@@ -648,6 +649,7 @@ let app = Vue.createApp({
         },
         showAdminForm() {
             this.emailFormatError = false;
+            this.adminExistsError = false;
             this.requiredError = false;
             this.adminPopupShow = true;
             $("body").css("overflow", "hidden");
@@ -728,6 +730,13 @@ let app = Vue.createApp({
                 )) {
                 this.emailFormatError = true;
                 return;
+            }
+
+            for (let i=0;i<this.admins.length;i++) {
+                if (this.admins[i].email.trim() === this.editAdmin.email.trim()) {
+                    this.adminExistsError = true;
+                    return;
+                }
             }
 
             $("body").css("overflow", "scroll");

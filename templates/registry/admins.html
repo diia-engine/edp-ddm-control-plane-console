@@ -14,6 +14,7 @@
             <p class="popup-error" v-cloak v-if="requiredError">Всі поля обов'язкові для заповнення</p>
             <p class="popup-error" v-cloak v-if="emailFormatError">Невірний формат електронной пошти</p>
             <p class="popup-error" v-cloak v-if="usernameFormatError">Невірний формат ім'я користувача</p>
+            <p class="popup-error" v-cloak v-if="adminExistsError">Адміністратор з таким email вже існує</p>
 
             <div class="rc-form-group">
                 <input aria-label="admin first name" type="text"

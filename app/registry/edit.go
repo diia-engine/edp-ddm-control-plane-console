@@ -68,7 +68,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 		return nil, errors.Wrap(err, "unable to get ini template data")
 	}
 
-	hasUpdate, branches, err := HasUpdate(userCtx, a.Services.Gerrit, reg)
+	hasUpdate, branches, err := HasUpdate(userCtx, a.Services.Gerrit, reg, MRTargetRegistryVersionUpdate)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}

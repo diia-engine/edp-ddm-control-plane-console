@@ -3,7 +3,6 @@ package cluster
 import (
 	"context"
 	"ddm-admin-console/app/registry"
-	"ddm-admin-console/service/codebase"
 	"ddm-admin-console/service/gerrit"
 	"encoding/json"
 	"strings"
@@ -73,6 +72,11 @@ func (a *App) view(ctx *gin.Context) (*router.Response, error) {
 		return nil, errors.Wrap(err, "unable to load gerrit merge requests")
 	}
 
+	clusterProject, err := a.Gerrit.GetProject(userCtx, a.CodebaseName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get cluster gerrit project")
+	}
+
 	return router.MakeResponse(200, "cluster/view.html", gin.H{
 		"branches":         branches,
 		"codebase":         cb,
@@ -83,19 +87,16 @@ func (a *App) view(ctx *gin.Context) (*router.Response, error) {
 		"canUpdateCluster": canUpdateCluster,
 		"admins":           adminsStr,
 		"cidr":             cidr,
-		"version":          a.getClusterVersion(emrs, cb),
+		"version":          a.getClusterVersion(clusterProject.Status.Branches, emrs),
 		"mergeRequests":    emrs,
 	}), nil
 }
 
-func (a *App) getClusterVersion(mrs []ExtendedMergeRequests, cb *codebase.Codebase) string {
-	registryVersion := registry.BranchVersion(cb.Spec.DefaultBranch)
-	if cb.Spec.BranchToCopyInDefaultBranch != "" {
-		registryVersion = registry.BranchVersion(cb.Spec.BranchToCopyInDefaultBranch)
-	}
+func (a *App) getClusterVersion(gerritProjectBranches []string, mrs []ExtendedMergeRequests) string {
+	registryVersion := registry.LowestVersion(registry.UpdateBranches(gerritProjectBranches))
 
 	for _, mr := range mrs {
-		if mr.Labels[registry.MRLabelTarget] != registry.MRTargetRegistryVersionUpdate {
+		if mr.Labels[registry.MRLabelTarget] != MRTypeClusterUpdate {
 			continue
 		}
 
