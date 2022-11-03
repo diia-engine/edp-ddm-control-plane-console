@@ -184,7 +184,9 @@ let app = Vue.createApp({
                         beginValidation: false, formatError: {officer: false, citizen: false, /*keycloak: false*/},
                         requiredError: {officer: false, citizen: false, /*keycloak: false*/},
                         typeError: {officer: false, citizen: false, /*keycloak: false*/},
-                        validator: this.wizardDNSValidation, visible: true, },
+                        editVisible: {officer: true, citizen: true},
+                        validator: this.wizardDNSValidation, visible: true,
+                        preloadValues: {}},
                     cidr: {title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
@@ -217,6 +219,17 @@ let app = Vue.createApp({
 
                     break;
                 }
+            }
+        },
+        dnsUnsetPreloadedValue(name, e){
+            this.wizard.tabs.dns.editVisible[name] = true;
+            this.wizard.tabs.dns.data[name] = this.wizard.tabs.dns.preloadValues[name];
+            e.preventDefault();
+        },
+        dnsSetPreloadedValue(name, value) {
+            if (!this.wizard.tabs.dns.preloadValues.hasOwnProperty(name)) {
+                this.wizard.tabs.dns.editVisible[name] = false;
+                this.wizard.tabs.dns.preloadValues[name] = value;
             }
         },
         wizardPrev(){
@@ -633,12 +646,23 @@ let app = Vue.createApp({
             }
 
             this.encodeRegistryResources();
+            this.prepareDNSConfig();
             this.mailServerOpts = JSON.stringify(this.externalSMTPOpts);
             this.citizenCIDRValue.value = JSON.stringify(this.citizenCIDR);
             this.officerCIDRValue.value = JSON.stringify(this.officerCIDR);
             this.adminCIDRValue.value = JSON.stringify(this.adminCIDR);
 
             this.registryFormSubmitted = true;
+        },
+        prepareDNSConfig(){
+            for (let k in this.wizard.tabs.dns.data) {
+                if (this.wizard.tabs.dns.editVisible[k] && this.wizard.tabs.dns.data[k] === '' &&
+                    this.wizard.tabs.dns.preloadValues.hasOwnProperty(k)) {
+                    this.wizard.tabs.dns.preloadValues = '';
+                    this.wizard.tabs.dns.editVisible[k] = false;
+                    this.wizard.tabs.dns.data[k] = '-';
+                }
+            }
         },
         loadAdmins(admins) {
             if (!this.adminsLoaded) {

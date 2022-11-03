@@ -92,6 +92,10 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 		return nil, errors.Wrap(err, "unable to load edit values from config")
 	}
 
+	if err := a.viewDNSConfig(userCtx, registryName, responseParams); err != nil {
+		return nil, errors.Wrap(err, "unable to load dns config")
+	}
+
 	return router.MakeResponse(200, "registry/edit.html", responseParams), nil
 }
 

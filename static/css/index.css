@@ -12440,3 +12440,16 @@ p.error {
 .registry-add i {
     margin-right: 13px;
 }
+
+.reg-dns-preload-value {
+    display: flex;
+    justify-content: space-between;
+    height: 40px;
+    border: 1px solid #CED0DB;
+    padding: 8px;
+    color: #9e9e9e;
+}
+
+.dns-inputs label:last-of-type {
+    margin-top: 8px;
+}
