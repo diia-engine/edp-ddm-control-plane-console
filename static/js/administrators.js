@@ -315,6 +315,7 @@ let app = Vue.createApp({
                     this.wizard.tabs.dns.formatError[k] = false;
                     this.wizard.tabs.dns.requiredError[k] = false;
                     this.wizard.tabs.dns.typeError[k] = false;
+                    let fileInput = this.$refs[`${k}SSL`];
 
                     if (this.wizard.tabs.dns.data[k] !== '') {
                         if (!/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/.test(this.wizard.tabs.dns.data[k])) {
@@ -322,13 +323,15 @@ let app = Vue.createApp({
                             validationFailed = true;
                         }
 
-                        let fileInput = this.$refs[`${k}SSL`];
                         if (fileInput.files.length === 0) {
                             this.wizard.tabs.dns.requiredError[k] = true;
                             validationFailed = true;
                         } else {
                             filesToCheck.push({name: k, file: fileInput.files[0]});
                         }
+                    } else if (fileInput.files.length > 0) {
+                        this.wizard.tabs.dns.formatError[k] = true;
+                        validationFailed = true;
                     }
                 }
 
