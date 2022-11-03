@@ -329,7 +329,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unable to create gerrit project")
 	}
 
-	if err := CreateRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService); err != nil {
+	if _, err := CreateRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService); err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
 	}
 
@@ -849,13 +849,13 @@ func validateRegistryKeys(rq *http.Request, r KeyManagement) (createKeys bool, k
 	return
 }
 
-func CreateRegistryKeys(reg KeyManagement, rq *http.Request, k8sService k8s.ServiceInterface) error {
+func CreateRegistryKeys(reg KeyManagement, rq *http.Request, k8sService k8s.ServiceInterface) (bool, error) {
 	createKeys, key6Fl, caCertFl, caJSONFl, err := validateRegistryKeys(rq, reg)
 	if err != nil {
-		return errors.Wrap(err, "unable to validate registry keys")
+		return false, errors.Wrap(err, "unable to validate registry keys")
 	}
 	if !createKeys {
-		return nil
+		return false, nil
 	}
 
 	filesSecretData := make(map[string][]byte)
@@ -864,26 +864,26 @@ func CreateRegistryKeys(reg KeyManagement, rq *http.Request, k8sService k8s.Serv
 	}
 
 	if err := SetCASecretData(filesSecretData, caCertFl, caJSONFl); err != nil {
-		return errors.Wrap(err, "unable to set ca secret data for registry")
+		return false, errors.Wrap(err, "unable to set ca secret data for registry")
 	}
 
 	if err := SetKeySecretDataFromRegistry(reg, key6Fl, filesSecretData, envVarsSecretData); err != nil {
-		return errors.Wrap(err, "unable to set key vars from registry form")
+		return false, errors.Wrap(err, "unable to set key vars from registry form")
 	}
 
 	if err := SetAllowedKeysSecretData(filesSecretData, reg); err != nil {
-		return errors.Wrap(err, "unable to set allowed keys secret data")
+		return false, errors.Wrap(err, "unable to set allowed keys secret data")
 	}
 
 	if err := k8sService.RecreateSecret(reg.FilesSecretName(), filesSecretData); err != nil {
-		return errors.Wrap(err, "unable to create secret")
+		return false, errors.Wrap(err, "unable to create secret")
 	}
 
 	if err := k8sService.RecreateSecret(reg.EnvVarsSecretName(), envVarsSecretData); err != nil {
-		return errors.Wrap(err, "unable to create secret")
+		return false, errors.Wrap(err, "unable to create secret")
 	}
 
-	return nil
+	return true, nil
 }
 
 func SetCASecretData(filesSecretData map[string][]byte, caCertFl, caJSONFl multipart.File) error {
