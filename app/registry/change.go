@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"ddm-admin-console/router"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -135,7 +136,13 @@ func (a *App) getChangeContents(changeInfo *goGerrit.ChangeInfo) (string, error)
 		changes = append(changes, changesContent)
 	}
 
-	return strings.Join(changes, ""), nil
+	out := strings.Join(changes, "")
+	bts, err := json.Marshal(out)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to encode changes")
+	}
+
+	return string(bts), nil
 }
 
 func (a *App) getFileChanges(changeID, fileName, projectName, branchName string) (string, error) {
