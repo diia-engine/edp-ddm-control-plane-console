@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (a *App) auth(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) auth(ctx *gin.Context) (response router.Response, retErr error) {
 	authCode := ctx.Query("code")
 	token, _, err := a.oauth.GetTokenClient(context.Background(), authCode)
 	if err != nil {
@@ -91,7 +91,7 @@ func (a *App) hasAccessToRegistries(k8sService k8s.ServiceInterface) (bool, erro
 	return false, nil
 }
 
-func (a *App) logout(ctx *gin.Context) (*router.Response, error) {
+func (a *App) logout(ctx *gin.Context) (router.Response, error) {
 	session := sessions.Default(ctx)
 	session.Clear()
 

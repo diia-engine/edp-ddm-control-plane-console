@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (a *App) listRegistry(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) listRegistry(ctx *gin.Context) (response router.Response, retErr error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
@@ -36,7 +36,7 @@ func (a *App) listRegistry(ctx *gin.Context) (response *router.Response, retErr 
 		return nil, errors.Wrap(err, "unable to check codebase permissions")
 	}
 
-	return router.MakeResponse(200, "registry/list.html", gin.H{
+	return router.MakeHTMLResponse(200, "registry/list.html", gin.H{
 		"registries":      registries,
 		"page":            "registry",
 		"allowedToCreate": allowedToCreate,

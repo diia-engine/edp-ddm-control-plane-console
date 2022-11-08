@@ -22,7 +22,7 @@ type updateRequest struct {
 	Branch string `form:"branch" binding:"required"`
 }
 
-func (a *App) registryUpdateView(ctx *gin.Context) (*router.Response, error) {
+func (a *App) registryUpdateView(ctx *gin.Context) (router.Response, error) {
 	registryName := ctx.Param("name")
 
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
@@ -42,7 +42,7 @@ func (a *App) registryUpdateView(ctx *gin.Context) (*router.Response, error) {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}
 
-	return router.MakeResponse(200, "registry/update.html", gin.H{
+	return router.MakeHTMLResponse(200, "registry/update.html", gin.H{
 		"updateBranches": branches,
 		"hasUpdate":      hasUpdate,
 		"registry":       reg,
@@ -50,7 +50,7 @@ func (a *App) registryUpdateView(ctx *gin.Context) (*router.Response, error) {
 	}), nil
 }
 
-func (a *App) registryUpdate(ctx *gin.Context) (*router.Response, error) {
+func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
@@ -78,7 +78,7 @@ func (a *App) registryUpdate(ctx *gin.Context) (*router.Response, error) {
 			return nil, errors.Wrap(err, "unable to parse registry form")
 		}
 
-		return router.MakeResponse(200, "registry/edit.html",
+		return router.MakeHTMLResponse(200, "registry/edit.html",
 			gin.H{"page": "registry", "errorsMap": validationErrors, "registry": r, "model": r}), nil
 	}
 

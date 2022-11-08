@@ -62,7 +62,7 @@ type KeyManagement interface {
 	EnvVarsSecretName() string
 }
 
-func (a *App) validatePEMFile(ctx *gin.Context) (rsp *router.Response, retErr error) {
+func (a *App) validatePEMFile(ctx *gin.Context) (rsp router.Response, retErr error) {
 	file, _, err := ctx.Request.FormFile("file")
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get form file")
@@ -80,7 +80,7 @@ func (a *App) validatePEMFile(ctx *gin.Context) (rsp *router.Response, retErr er
 	return router.MakeStatusResponse(http.StatusOK), nil
 }
 
-func (a *App) registryNameAvailable(ctx *gin.Context) (rsp *router.Response, retErr error) {
+func (a *App) registryNameAvailable(ctx *gin.Context) (rsp router.Response, retErr error) {
 	name := ctx.Param("name")
 	_, err := a.Codebase.Get(name)
 	if err != nil {
@@ -94,7 +94,7 @@ func (a *App) registryNameAvailable(ctx *gin.Context) (rsp *router.Response, ret
 	return router.MakeStatusResponse(http.StatusOK), nil
 }
 
-func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, retErr error) {
 	prjs, err := a.Services.Gerrit.GetProjects(context.Background())
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to list gerrit projects")
@@ -126,7 +126,7 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response *router.Response, re
 		return nil, errors.Wrap(err, "unable to format gerrit project branches")
 	}
 
-	return router.MakeResponse(200, "registry/create.html", gin.H{
+	return router.MakeHTMLResponse(200, "registry/create.html", gin.H{
 		"dnsManual":            dnsManual,
 		"page":                 "registry",
 		"gerritProjects":       prjs,
@@ -225,7 +225,7 @@ func GetINITemplateContent(path string) (string, error) {
 	return string(data), nil
 }
 
-func (a *App) createRegistryPost(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) createRegistryPost(ctx *gin.Context) (response router.Response, retErr error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (a *App) deleteRegistry(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) deleteRegistry(ctx *gin.Context) (response router.Response, retErr error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {

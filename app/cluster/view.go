@@ -14,7 +14,7 @@ import (
 	"ddm-admin-console/router"
 )
 
-func (a *App) view(ctx *gin.Context) (*router.Response, error) {
+func (a *App) view(ctx *gin.Context) (router.Response, error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
@@ -77,7 +77,7 @@ func (a *App) view(ctx *gin.Context) (*router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get cluster gerrit project")
 	}
 
-	return router.MakeResponse(200, "cluster/view.html", gin.H{
+	return router.MakeHTMLResponse(200, "cluster/view.html", gin.H{
 		"branches":         branches,
 		"codebase":         cb,
 		"jenkinsURL":       jenkinsComponent.Spec.Url,

@@ -33,7 +33,7 @@ type Admin struct {
 	PasswordVaultSecretKey string `yaml:"passwordVaultSecretKey" json:"-"`
 }
 
-func (a *App) updateAdminsView(ctx *gin.Context) (*router.Response, error) {
+func (a *App) updateAdminsView(ctx *gin.Context) (router.Response, error) {
 	if err := a.updateAdmins(ctx); err != nil {
 		return nil, errors.Wrap(err, "unable to update admins")
 	}

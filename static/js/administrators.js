@@ -40,27 +40,7 @@ let app = Vue.createApp({
 
         if (this.$refs.hasOwnProperty('resourcesEditConfig') && this.$refs.resourcesEditConfig.value !== "") {
             let resourcesConfig = JSON.parse(this.$refs.resourcesEditConfig.value);
-
-            for (let i in resourcesConfig) {
-                this.registryResources.cats.splice(
-                    this.registryResources.cats.indexOf(i), 1);
-
-                let envVars = [];
-
-                for (let j in resourcesConfig[i].container.envVars) {
-                    envVars.push({
-                        name: j,
-                        value: resourcesConfig[i].container.envVars[j],
-                    })
-                }
-
-                resourcesConfig[i].container.envVars = envVars;
-
-                this.registryResources.addedCats.push({
-                    name: i,
-                    config: resourcesConfig[i],
-                });
-            }
+            this.preloadRegistryResources(resourcesConfig);
         }
 
         if (this.$refs.hasOwnProperty('registryBranches') && this.$refs.registryBranches.value !== "") {
@@ -194,6 +174,36 @@ let app = Vue.createApp({
         }
     },
     methods: {
+        removeResourcesCatFromList(name)  {
+            let searchIdx = this.registryResources.cats.indexOf(name);
+            if (searchIdx !== -1) {
+                this.registryResources.cats.splice(
+                    searchIdx, 1);
+            }
+        },
+        decodeResourcesEnvVars(inEnvVars) {
+            let envVars = [];
+
+            for (let j in inEnvVars) {
+                envVars.push({
+                    name: j,
+                    value: inEnvVars[j],
+                })
+            }
+
+            return envVars;
+        },
+        preloadRegistryResources(data) {
+            for (let i in data) {
+                this.removeResourcesCatFromList(i);
+                data[i].container.envVars = this.decodeResourcesEnvVars(data[i].container.envVars);
+
+                this.registryResources.addedCats.push({
+                    name: i,
+                    config: data[i],
+                });
+            }
+        },
         wizardEditSubmit(event) {
             let tab = this.wizard.tabs[this.wizard.activeTab];
             let $this = this;
@@ -450,9 +460,23 @@ let app = Vue.createApp({
                     tab.branchRequiredError = true;
                     return;
                 }
+                let $this = this;
 
-                tab.validated = true;
-                resolve();
+                axios.get(
+                    `/admin/registry/preload-resources`, { params: {
+                            'template': tab.registryTemplate,
+                            'branch': tab.registryBranch,
+                        }
+                    })
+                    .then(function (response) {
+                        $this.preloadRegistryResources(response.data);
+                        tab.validated = true;
+                        resolve();
+                    })
+                    .catch(function (error) {
+                        tab.validated = true;
+                        resolve();
+                    });
             });
         },
         wizardMailValidation(tab){

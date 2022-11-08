@@ -22,7 +22,7 @@ import (
 	"ddm-admin-console/service/k8s"
 )
 
-func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retErr error) {
 	registryName := ctx.Param("name")
 
 	mrExists, err := ProjectHasOpenMR(ctx, registryName, a.Gerrit)
@@ -31,7 +31,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 	}
 
 	if mrExists {
-		return router.MakeResponse(200, "registry/edit-mr-exists.html", gin.H{
+		return router.MakeHTMLResponse(200, "registry/edit-mr-exists.html", gin.H{
 			"registryName": registryName,
 			"page":         "registry",
 		}), nil
@@ -96,7 +96,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response *router.Response, retE
 		return nil, errors.Wrap(err, "unable to load dns config")
 	}
 
-	return router.MakeResponse(200, "registry/edit.html", responseParams), nil
+	return router.MakeHTMLResponse(200, "registry/edit.html", responseParams), nil
 }
 
 func (a *App) loadValuesEditConfig(ctx context.Context, registryName string, rspParams gin.H, r *registry) error {
@@ -268,7 +268,7 @@ func (a *App) checkUpdateAccess(codebaseName string, userK8sService k8s.ServiceI
 	return nil
 }
 
-func (a *App) editRegistryPost(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retErr error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {

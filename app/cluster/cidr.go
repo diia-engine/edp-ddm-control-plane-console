@@ -16,7 +16,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func (a *App) updateCIDRView(ctx *gin.Context) (*router.Response, error) {
+func (a *App) updateCIDRView(ctx *gin.Context) (router.Response, error) {
 	if err := a.updateCIDR(ctx); err != nil {
 		return nil, errors.Wrap(err, "unable to update cidr")
 	}

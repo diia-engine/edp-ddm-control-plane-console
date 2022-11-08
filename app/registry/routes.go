@@ -23,4 +23,6 @@ func (a *App) createRoutes() {
 	a.router.GET("/admin/change/:change", a.viewChange)
 	a.router.GET("/admin/submit-change/:change", a.submitChange)
 	a.router.GET("/admin/abandon-change/:change", a.abandonChange)
+
+	a.router.GET("/admin/registry/preload-resources", a.preloadTemplateResources)
 }

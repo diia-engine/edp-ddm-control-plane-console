@@ -16,34 +16,63 @@ type Router struct {
 	logger Logger
 }
 
-type Response struct {
-	code         int
+type HTMLResponse struct {
+	StatusResponse
 	viewTemplate string
 	params       gin.H
-	isRedirect   bool
 }
 
-func MakeResponse(code int, viewTemplate string, params gin.H) *Response {
-	return &Response{
-		code:         code,
+type StatusResponse struct {
+	StatusCode int
+}
+
+func (s *StatusResponse) Code() int {
+	return s.StatusCode
+}
+
+type RedirectResponse struct {
+	StatusResponse
+	path string
+}
+
+type JSONResponse struct {
+	StatusResponse
+	data interface{}
+}
+
+type Response interface {
+	Code() int
+}
+
+func MakeJSONResponse(code int, data interface{}) Response {
+	return &JSONResponse{
+		StatusResponse: StatusResponse{StatusCode: code},
+		data:           data,
+	}
+}
+
+func MakeHTMLResponse(code int, viewTemplate string, params gin.H) Response {
+	return &HTMLResponse{
+		StatusResponse: StatusResponse{
+			StatusCode: code,
+		},
 		viewTemplate: viewTemplate,
 		params:       params,
 	}
 }
 
-func MakeStatusResponse(code int) *Response {
-	return &Response{code: code}
+func MakeStatusResponse(code int) Response {
+	return &StatusResponse{StatusCode: code}
 }
 
-func MakeRedirectResponse(code int, path string) *Response {
-	return &Response{
-		code:         code,
-		viewTemplate: path,
-		isRedirect:   true,
+func MakeRedirectResponse(code int, path string) Response {
+	return &RedirectResponse{
+		StatusResponse: StatusResponse{StatusCode: code},
+		path:           path,
 	}
 }
 
-func (r *Router) makeViewResponder(handler func(ctx *gin.Context) (*Response, error)) func(ctx *gin.Context) {
+func (r *Router) makeViewResponder(handler func(ctx *gin.Context) (Response, error)) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
 		rsp, err := handler(ctx)
 		if err != nil {
@@ -58,20 +87,18 @@ func (r *Router) makeViewResponder(handler func(ctx *gin.Context) (*Response, er
 			return
 		}
 
-		if rsp.isRedirect {
-			ctx.Redirect(rsp.code, rsp.viewTemplate)
-			return
+		switch rspType := rsp.(type) {
+		case *StatusResponse:
+			ctx.Status(rsp.Code())
+		case *RedirectResponse:
+			ctx.Redirect(rspType.Code(), rspType.path)
+		case *HTMLResponse:
+			rspType.params = r.parseValidationErrors(rspType.params)
+			rspType.params = r.includeSessionVars(ctx, rspType.params)
+			ctx.HTML(rspType.Code(), rspType.viewTemplate, rspType.params)
+		case *JSONResponse:
+			ctx.JSON(rspType.Code(), rspType.data)
 		}
-
-		if rsp.viewTemplate == "" {
-			ctx.Status(rsp.code)
-			return
-		}
-
-		rsp.params = r.parseValidationErrors(rsp.params)
-		rsp.params = r.includeSessionVars(ctx, rsp.params)
-
-		ctx.HTML(rsp.code, rsp.viewTemplate, rsp.params)
 	}
 }
 
@@ -83,11 +110,11 @@ func (r *Router) includeSessionVars(ctx *gin.Context, params gin.H) gin.H {
 	return params
 }
 
-func (r *Router) GET(relativePath string, handler func(ctx *gin.Context) (*Response, error)) {
+func (r *Router) GET(relativePath string, handler func(ctx *gin.Context) (Response, error)) {
 	r.engine.GET(relativePath, r.makeViewResponder(handler))
 }
 
-func (r *Router) POST(relativePath string, handler func(ctx *gin.Context) (*Response, error)) {
+func (r *Router) POST(relativePath string, handler func(ctx *gin.Context) (Response, error)) {
 	r.engine.POST(relativePath, r.makeViewResponder(handler))
 }
 

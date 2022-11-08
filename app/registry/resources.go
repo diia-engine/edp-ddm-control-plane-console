@@ -1,7 +1,13 @@
 package registry
 
 import (
+	"ddm-admin-console/router"
 	"encoding/json"
+	"net/http"
+	"net/url"
+
+	"github.com/gin-gonic/gin"
+	"gopkg.in/yaml.v3"
 
 	"github.com/pkg/errors"
 )
@@ -25,4 +31,38 @@ func (a *App) prepareRegistryResources(r *registry, values map[string]interface{
 	}
 
 	return nil
+}
+
+func (a *App) preloadTemplateResources(ctx *gin.Context) (rsp router.Response, retErr error) {
+	template, branch := ctx.Query("template"), ctx.Query("branch")
+	if template == "" || branch == "" {
+		return router.MakeStatusResponse(http.StatusUnprocessableEntity), nil
+	}
+
+	content, _, err := a.Gerrit.GoGerritClient().Projects.GetBranchContent(template, branch,
+		url.PathEscape(ValuesLocation))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get template content")
+	}
+
+	var data map[string]interface{}
+	if err := yaml.Unmarshal([]byte(content), &data); err != nil {
+		return nil, errors.Wrap(err, "unable to decode yaml")
+	}
+
+	global, ok := data["global"]
+	if !ok {
+		return nil, errors.New("no global values in deploy templates")
+	}
+	globalDict, ok := global.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("wrong global dict format")
+	}
+
+	resources, ok := globalDict["registry"]
+	if !ok {
+		return nil, errors.New("no registry resources found")
+	}
+
+	return router.MakeJSONResponse(http.StatusOK, resources), nil
 }

@@ -18,7 +18,7 @@ type updateRequest struct {
 	Branch string `form:"branch" binding:"required"`
 }
 
-func (a *App) clusterUpdate(ctx *gin.Context) (*router.Response, error) {
+func (a *App) clusterUpdate(ctx *gin.Context) (router.Response, error) {
 	var ur updateRequest
 	if err := ctx.ShouldBind(&ur); err != nil {
 		validationErrors, ok := err.(validator.ValidationErrors)
@@ -26,7 +26,7 @@ func (a *App) clusterUpdate(ctx *gin.Context) (*router.Response, error) {
 			return nil, errors.Wrap(err, "unable to parse registry form")
 		}
 
-		return router.MakeResponse(200, "cluster/edit.html",
+		return router.MakeHTMLResponse(200, "cluster/edit.html",
 			gin.H{"page": "cluster", "errorsMap": validationErrors, "backupConf": BackupConfig{}}), nil
 	}
 

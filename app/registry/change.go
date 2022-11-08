@@ -22,7 +22,7 @@ const (
 	currentRevision = "current"
 )
 
-func (a *App) abandonChange(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) abandonChange(ctx *gin.Context) (response router.Response, retErr error) {
 	changeID := ctx.Param("change")
 
 	if _, _, err := a.Gerrit.GoGerritClient().Changes.AbandonChange(changeID, &goGerrit.AbandonInput{
@@ -36,10 +36,10 @@ func (a *App) abandonChange(ctx *gin.Context) (response *router.Response, retErr
 		return nil, errors.Wrap(err, "unable to change MR status")
 	}
 
-	return router.MakeResponse(200, "registry/change-abandoned.html", gin.H{}), nil
+	return router.MakeHTMLResponse(200, "registry/change-abandoned.html", gin.H{}), nil
 }
 
-func (a *App) submitChange(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) submitChange(ctx *gin.Context) (response router.Response, retErr error) {
 	changeID := ctx.Param("change")
 
 	if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SetReview(changeID, currentRevision, &goGerrit.ReviewInput{
@@ -71,7 +71,7 @@ func (a *App) submitChange(ctx *gin.Context) (response *router.Response, retErr 
 		return nil, errors.Wrap(err, "unable to change MR status")
 	}
 
-	return router.MakeResponse(200, "registry/change-submitted.html", gin.H{}), nil
+	return router.MakeHTMLResponse(200, "registry/change-submitted.html", gin.H{}), nil
 }
 
 func (a *App) updateMRStatus(ctx context.Context, changeID, status string) error {
@@ -95,7 +95,7 @@ func (a *App) updateMRStatus(ctx context.Context, changeID, status string) error
 	return nil
 }
 
-func (a *App) viewChange(ctx *gin.Context) (response *router.Response, retErr error) {
+func (a *App) viewChange(ctx *gin.Context) (response router.Response, retErr error) {
 	changeID := ctx.Param("change")
 
 	changeInfo, _, err := a.Gerrit.GoGerritClient().Changes.GetChangeDetail(changeID, &goGerrit.ChangeOptions{})
@@ -108,7 +108,7 @@ func (a *App) viewChange(ctx *gin.Context) (response *router.Response, retErr er
 		return nil, errors.Wrap(err, "unable to get changes")
 	}
 
-	return router.MakeResponse(200, "registry/change.html", gin.H{
+	return router.MakeHTMLResponse(200, "registry/change.html", gin.H{
 		"page":     "registry",
 		"changes":  changes,
 		"change":   changeInfo,

@@ -15,7 +15,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-func (a *App) viewRegistry(ctx *gin.Context) (*router.Response, error) {
+func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 
 	registryName := ctx.Param("name")
@@ -31,7 +31,7 @@ func (a *App) viewRegistry(ctx *gin.Context) (*router.Response, error) {
 		}
 	}
 
-	return router.MakeResponse(200, "registry/view.html", viewParams), nil
+	return router.MakeHTMLResponse(200, "registry/view.html", viewParams), nil
 }
 
 func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registryName string, viewParams gin.H) error {

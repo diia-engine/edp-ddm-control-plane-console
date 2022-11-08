@@ -32,7 +32,7 @@ type BackupConfig struct {
 	StorageCredentialsSecret string `form:"storage-credentials-secret" binding:"required"`
 }
 
-func (a *App) editGet(ctx *gin.Context) (*router.Response, error) {
+func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
@@ -102,10 +102,10 @@ func (a *App) editGet(ctx *gin.Context) (*router.Response, error) {
 		return nil, errors.Wrap(err, "unable to load cidr config")
 	}
 
-	return router.MakeResponse(200, "cluster/edit.html", rspParams), nil
+	return router.MakeHTMLResponse(200, "cluster/edit.html", rspParams), nil
 }
 
-func (a *App) editPost(ctx *gin.Context) (*router.Response, error) {
+func (a *App) editPost(ctx *gin.Context) (router.Response, error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
@@ -133,7 +133,7 @@ func (a *App) editPost(ctx *gin.Context) (*router.Response, error) {
 			return nil, errors.Wrap(err, "unable to parse registry form")
 		}
 
-		return router.MakeResponse(200, "cluster/edit.html",
+		return router.MakeHTMLResponse(200, "cluster/edit.html",
 			gin.H{"page": "cluster", "errorsMap": validationErrors, "backupConf": backupConfig}), nil
 	}
 
