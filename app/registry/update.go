@@ -93,7 +93,7 @@ func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
 			return nil, errors.Wrap(err, "unable to update codebase provisioner")
 		}
 
-		if err := a.Services.Jenkins.CreateJobBuildRun(fmt.Sprintf("ru-create-release-%d", time.Now().Unix()),
+		if err := a.Services.Jenkins.CreateJobBuildRun(ctx, fmt.Sprintf("ru-create-release-%d", time.Now().Unix()),
 			fmt.Sprintf("%s/job/Create-release-%s/", r.Name, r.Name), map[string]string{
 				"RELEASE_NAME": cb.Spec.DefaultBranch,
 			}); err != nil {

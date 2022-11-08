@@ -2,6 +2,7 @@ package gerrit
 
 import (
 	"context"
+	"ddm-admin-console/service"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,12 +10,9 @@ import (
 	"time"
 
 	goGerrit "github.com/andygrunwald/go-gerrit"
-
-	coreV1Api "k8s.io/api/core/v1"
-
-	"gopkg.in/resty.v1"
-
 	"github.com/pkg/errors"
+	"gopkg.in/resty.v1"
+	coreV1Api "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,8 +20,6 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	pkgScheme "sigs.k8s.io/controller-runtime/pkg/scheme"
-
-	"ddm-admin-console/service"
 )
 
 const (

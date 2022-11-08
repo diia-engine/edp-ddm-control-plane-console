@@ -340,10 +340,30 @@ func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, regist
 	if err != nil {
 		return errors.Wrap(err, "unable to get registry branches")
 	}
+
+	if err := a.loadBranchesStatuses(userCtx, branches); err != nil {
+		return errors.Wrap(err, "unable to load branch statuses")
+	}
+
 	registry.Branches = branches
 
 	viewParams["registry"] = registry
 	viewParams["branches"] = branches
+
+	return nil
+}
+
+func (a *App) loadBranchesStatuses(ctx context.Context, branches []codebase.CodebaseBranch) error {
+	for i, b := range branches {
+		branchName := strings.ToUpper(b.Spec.BranchName)
+		status, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/%s/job/%s-Build-%s", b.Spec.CodebaseName,
+			branchName, branchName, b.Spec.CodebaseName))
+		if err != nil {
+			return errors.Wrap(err, "unable to get branch build status")
+		}
+
+		branches[i].Status.Value = status
+	}
 
 	return nil
 }

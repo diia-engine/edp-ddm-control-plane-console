@@ -35,6 +35,8 @@ type Settings struct {
 	EnableBranchProvisioners              bool   `envconfig:"ENABLE_BRANCH_PROVISIONERS"`
 	RegistryCodebaseLabels                string `envconfig:"REGISTRY_CODEBASE_LABELS"`
 	GerritAPIUrlTemplate                  string `envconfig:"GERRIT_API_URL_TPL" default:"http://{HOST}:8080/a/"`
+	JenkinsAPIURL                         string `envconfig:"JENKINS_API_URL" default:"http://jenkins:8080"`
+	JenkinsAdminSecretName                string `envconfig:"JENKINS_ADMIN_SECRET_NAME" default:"jenkins-admin-token"`
 	VaultNamespace                        string `envconfig:"VAULT_NAMESPACE" default:"user-management"`
 	VaultSecretName                       string `envconfig:"VAULT_SECRET_NAME" default:"vault-root-token"`
 	VaultSecretTokenKey                   string `envconfig:"VAULT_SECRET_TOKEN_KEY" default:"VAULT_ROOT_TOKEN"`

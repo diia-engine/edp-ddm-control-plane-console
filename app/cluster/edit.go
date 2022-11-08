@@ -146,7 +146,7 @@ func (a *App) editPost(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to recreate backup secret")
 	}
 
-	if err := jenkinsService.CreateJobBuildRun(fmt.Sprintf("cluster-update-%d", time.Now().Unix()),
+	if err := jenkinsService.CreateJobBuildRun(ctx, fmt.Sprintf("cluster-update-%d", time.Now().Unix()),
 		fmt.Sprintf("%s/job/MASTER-Build-%s/", a.Config.CodebaseName, a.Config.CodebaseName), nil); err != nil {
 		return nil, errors.Wrap(err, "unable to trigger jenkins job build run")
 	}

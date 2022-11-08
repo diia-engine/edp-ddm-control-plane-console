@@ -368,7 +368,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 			return errors.Wrap(err, "unable to create edit merge request")
 		}
 	} else if keysUpdated {
-		if err := a.Services.Jenkins.CreateJobBuildRun(fmt.Sprintf("registry-update-%d", time.Now().Unix()),
+		if err := a.Services.Jenkins.CreateJobBuildRun(ctx, fmt.Sprintf("registry-update-%d", time.Now().Unix()),
 			fmt.Sprintf("%s/job/MASTER-Build-%s/", r.Name, r.Name), nil); err != nil {
 			return errors.Wrap(err, "unable to trigger jenkins job build run")
 		}

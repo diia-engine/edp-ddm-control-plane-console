@@ -41,6 +41,9 @@ msgstr "Помилка"
 msgid "status-failure"
 msgstr "Помилка"
 
+msgid "status-FAILURE"
+msgstr "Помилка"
+
 msgid "status-inactive"
 msgstr "В обробці"
 

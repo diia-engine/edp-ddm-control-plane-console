@@ -13,5 +13,6 @@ type ServiceInterface interface {
 	CanI(group, resource, verb, name string) (bool, error)
 	GetSecretFromNamespace(ctx context.Context, name, namespace string) (*v1.Secret, error)
 	GetSecretKey(ctx context.Context, namespace, name, key string) (string, error)
+	GetSecretKeys(ctx context.Context, namespace, name string, keys []string) (map[string]string, error)
 	GetConfigMap(ctx context.Context, name, namespace string) (*v1.ConfigMap, error)
 }

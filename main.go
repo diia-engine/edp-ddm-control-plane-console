@@ -149,7 +149,9 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 		return nil, errors.Wrap(err, "unable to init k8s service")
 	}
 
-	serviceItems.Jenkins, err = jenkins.Make(sch, restConf, appConf.Namespace)
+	serviceItems.Jenkins, err = jenkins.Make(sch, restConf, serviceItems.K8S,
+		jenkins.Config{Namespace: appConf.Namespace, APIUrl: appConf.JenkinsAPIURL,
+			AdminSecretName: appConf.JenkinsAdminSecretName})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init jenkins service")
 	}
