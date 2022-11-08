@@ -2,12 +2,10 @@ package dashboard
 
 import (
 	"context"
-	"net/http"
-
-	"ddm-admin-console/service/codebase"
-
 	"ddm-admin-console/router"
+	"ddm-admin-console/service/codebase"
 	"ddm-admin-console/service/k8s"
+	"net/http"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -16,7 +14,7 @@ import (
 
 func (a *App) auth(ctx *gin.Context) (response router.Response, retErr error) {
 	authCode := ctx.Query("code")
-	token, _, err := a.oauth.GetTokenClient(context.Background(), authCode)
+	token, _, err := a.oauth.GetTokenClient(ctx, authCode)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get token client")
 	}
@@ -32,7 +30,7 @@ func (a *App) auth(ctx *gin.Context) (response router.Response, retErr error) {
 	}
 
 	session.Set(router.UserNameSessionKey, user.FullName)
-	session.Set(router.UserEmailSessionKey, user.ObjectMeta.Name)
+	session.Set(router.UserEmailSessionKey, user.Metadata.Name)
 
 	if err := a.setRegistryPermissionsToSession(userCtx, session); err != nil {
 		return nil, errors.Wrap(err, "unable to set registry permissions to session")

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"ddm-admin-console/service/openshift"
 	"ddm-admin-console/service/vault"
 	"encoding/gob"
 	"flag"
@@ -40,7 +41,6 @@ import (
 	"ddm-admin-console/service/jenkins"
 	"ddm-admin-console/service/k8s"
 	"ddm-admin-console/service/keycloak"
-	"ddm-admin-console/service/openshift"
 )
 
 func main() {
@@ -154,7 +154,7 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 		return nil, errors.Wrap(err, "unable to init jenkins service")
 	}
 
-	serviceItems.OpenShift, err = openshift.Make(restConf, appConf.Namespace)
+	serviceItems.OpenShift, err = openshift.Make(restConf)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init open shift service")
 	}
