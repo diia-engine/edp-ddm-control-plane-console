@@ -580,7 +580,11 @@ let app = Vue.createApp({
             this.wizard.tabs.key.changed = true;
         },
         wizardRemoveAllowedKey(item) {
-
+            let searchIdx = this.wizard.tabs.key.allowedKeys.indexOf(item);
+            if (searchIdx !== -1) {
+                this.wizard.tabs.key.allowedKeys.splice(
+                    searchIdx, 1);
+            }
         },
         wizardAddAllowedKey() {
             this.wizard.tabs.key.allowedKeys.push({issuer: '', serial: '', removable: true});
