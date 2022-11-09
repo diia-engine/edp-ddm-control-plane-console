@@ -326,16 +326,20 @@ func updateRegistryValues(instance *codebaseService.Codebase, gitService *git.Se
 		return errors.Wrap(err, "unable to encode values yaml")
 	}
 
-	if err := gitService.SetFileContents(registry.ValuesLocation, string(bts)); err != nil {
-		return errors.Wrap(err, "unable to set values yaml file contents")
-	}
+	newContents := string(bts)
 
-	if err := gitService.Commit("set initial values.yaml from admin console",
-		[]string{registry.ValuesLocation}, &git.User{
-			Name:  instance.Annotations[registry.AnnotationCreatorUsername],
-			Email: instance.Annotations[registry.AnnotationCreatorEmail],
-		}); err != nil {
-		return errors.Wrap(err, "unable to commit values yaml")
+	if newContents != valuesStr {
+		if err := gitService.SetFileContents(registry.ValuesLocation, newContents); err != nil {
+			return errors.Wrap(err, "unable to set values yaml file contents")
+		}
+
+		if err := gitService.Commit("set initial values.yaml from admin console",
+			[]string{registry.ValuesLocation}, &git.User{
+				Name:  instance.Annotations[registry.AnnotationCreatorUsername],
+				Email: instance.Annotations[registry.AnnotationCreatorEmail],
+			}); err != nil {
+			return errors.Wrap(err, "unable to commit values yaml")
+		}
 	}
 
 	return nil

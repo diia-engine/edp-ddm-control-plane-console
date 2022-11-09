@@ -300,7 +300,12 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unknown error")
 	}
 
-	values, vaultSecretData := make(map[string]interface{}), make(map[string]map[string]interface{})
+	values, err := a.GetValuesFromBranch(r.RegistryGitTemplate, r.RegistryGitBranch)
+	if err != nil {
+		return errors.Wrap(err, "unable to load values from template")
+	}
+
+	vaultSecretData := make(map[string]map[string]interface{})
 	if err := a.prepareDNSConfig(ginContext, r, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to prepare dns config")
 	}
