@@ -195,12 +195,14 @@ func (a *App) filterProjects(projects []gerrit.GerritProject) []gerrit.GerritPro
 func formatGerritProjectBranches(projects []gerrit.GerritProject) (string, error) {
 	res := make(map[string][]string)
 	for _, p := range projects {
+		var branches []string
 		for _, b := range p.Status.Branches {
 			idx := strings.Index(b, "heads/")
 			if idx != -1 {
-				res[p.Spec.Name] = append(res[p.Name], b[idx+6:])
+				branches = append(branches, b[idx+6:])
 			}
 		}
+		res[p.Spec.Name] = branches
 	}
 
 	bts, err := json.Marshal(res)
