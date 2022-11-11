@@ -4,7 +4,6 @@ import (
 	"context"
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
-	"ddm-admin-console/service/gerrit"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -77,20 +76,15 @@ func (a *App) updateCIDR(ctx *gin.Context) error {
 }
 
 func (a *App) createCIDRMergeRequest(userCtx context.Context, ctx *gin.Context, values string) error {
-	if err := a.Services.Gerrit.CreateMergeRequestWithContents(userCtx, &gerrit.MergeRequest{
-		ProjectName:   a.Config.CodebaseName,
-		Name:          fmt.Sprintf("cidr-mr-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
-		AuthorEmail:   ctx.GetString(router.UserEmailSessionKey),
-		AuthorName:    ctx.GetString(router.UserNameSessionKey),
-		CommitMessage: fmt.Sprintf("update cluster CIDR config"),
-		TargetBranch:  "master",
-		Labels: map[string]string{
-			registry.MRLabelTarget: MRTypeClusterCIDR,
-		},
-	}, map[string]string{
-		registry.ValuesLocation: values,
+	if err := a.createValuesMergeRequest(userCtx, &valuesMrConfig{
+		name:          fmt.Sprintf("cidr-mr-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
+		values:        values,
+		targetLabel:   MRTypeClusterCIDR,
+		commitMessage: fmt.Sprintf("update cluster CIDR config"),
+		authorName:    ctx.GetString(router.UserNameSessionKey),
+		authorEmail:   ctx.GetString(router.UserEmailSessionKey),
 	}); err != nil {
-		return errors.Wrap(err, "unable to create MR with new values")
+		return errors.Wrap(err, "unable to create MR")
 	}
 
 	return nil
