@@ -159,7 +159,7 @@ let app = Vue.createApp({
                         changed: false,
                     },
                     resources: {title: 'Ресурси реєстру', validated: false, beginValidation: false,
-                        validator: this.wizardResourcesValidation, visible: true,},
+                        validator: /*this.wizardResourcesValidation*/ this.wizardEmptyValidation, visible: true,},
                     dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '', /*keycloak: ''*/},
                         beginValidation: false, formatError: {officer: false, citizen: false, /*keycloak: false*/},
                         requiredError: {officer: false, citizen: false, /*keycloak: false*/},
@@ -194,15 +194,87 @@ let app = Vue.createApp({
             return envVars;
         },
         preloadRegistryResources(data) {
+            this.registryResources.cats = [
+                'kong',
+                'bpms',
+                'digital-signature-ops',
+                'user-task-management',
+                'user-process-management',
+                'form-management-provider',
+                'digital-document-service',
+                'registry-rest-api',
+                'registry-kafka-api'
+            ];
+
+            this.registryResources.addedCats = [];
+
             for (let i in data) {
                 this.removeResourcesCatFromList(i);
                 data[i].container.envVars = this.decodeResourcesEnvVars(data[i].container.envVars);
 
+
+                let mergedData = this.mergeResource(data[i]);
                 this.registryResources.addedCats.push({
                     name: i,
-                    config: data[i],
+                    config: mergedData,
                 });
             }
+        },
+        mergeResource(data) {
+            let emptyResource = {
+                istio: {
+                    sidecar: {
+                        enabled: false,
+                            resources: {
+                            requests: {
+                                cpu: '',
+                                memory: ''
+                            },
+                            limits: {
+                                cpu: '',
+                                memory: '',
+                            },
+                        },
+                    },
+                },
+                container: {
+                    resources: {
+                        requests: {
+                            cpu: '',
+                                memory: ''
+                        },
+                        limits: {
+                            cpu: '',
+                                memory: '',
+                        },
+                    },
+                    envVars: [{name: '', value: ''}],
+                },
+
+            };
+
+            this.mergeDeep(emptyResource, data);
+            return emptyResource;
+        },
+        isObject(item) {
+            return (item && typeof item === 'object' && !Array.isArray(item));
+        },
+        mergeDeep(target, ...sources) {
+            if (!sources.length) return target;
+            const source = sources.shift();
+
+            if (this.isObject(target) && this.isObject(source)) {
+                for (const key in source) {
+                    if (this.isObject(source[key])) {
+                        if (!target[key]) Object.assign(target, { [key]: {} });
+                        this.mergeDeep(target[key], source[key]);
+                    } else {
+                        Object.assign(target, { [key]: source[key] });
+                    }
+                }
+            }
+
+            return this.mergeDeep(target, ...sources);
         },
         wizardEditSubmit(event) {
             let tab = this.wizard.tabs[this.wizard.activeTab];
@@ -665,7 +737,25 @@ let app = Vue.createApp({
                 };
             });
 
+            prepare = this.cleanEmptyProperties(prepare);
+
             this.registryResources.encoded = JSON.stringify(prepare);
+        },
+        cleanEmptyProperties(obj) {
+            if (this.isObject(obj)) {
+                for (const key in obj) {
+                    if (this.isObject(obj[key])) {
+                        this.cleanEmptyProperties(obj[key]);
+
+                        if (Object.keys(obj[key]).length === 0) {
+                            delete obj[key];
+                        }
+                    } else if (obj[key] === '') {
+                        delete obj[key];
+                    }
+
+                }
+            }
         },
         registryFormSubmit(e) {
             if (this.registryFormSubmitted && e) {
