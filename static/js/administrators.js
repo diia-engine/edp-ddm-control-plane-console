@@ -210,8 +210,10 @@ let app = Vue.createApp({
 
             for (let i in data) {
                 this.removeResourcesCatFromList(i);
-                data[i].container.envVars = this.decodeResourcesEnvVars(data[i].container.envVars);
-
+                if (data[i].hasOwnProperty('container') &&
+                    this.isObject(data[i].container) && data[i].container.hasOwnProperty('envVars')) {
+                    data[i].container.envVars = this.decodeResourcesEnvVars(data[i].container.envVars);
+                }
 
                 let mergedData = this.mergeResource(data[i]);
                 this.registryResources.addedCats.push({
@@ -265,6 +267,10 @@ let app = Vue.createApp({
 
             if (this.isObject(target) && this.isObject(source)) {
                 for (const key in source) {
+                    if (source[key] === null) {
+                        continue
+                    }
+
                     if (this.isObject(source[key])) {
                         if (!target[key]) Object.assign(target, { [key]: {} });
                         this.mergeDeep(target[key], source[key]);
