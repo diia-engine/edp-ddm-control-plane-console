@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	mergeRequestController "ddm-admin-console/controller/merge_request"
 	"ddm-admin-console/service/vault"
 	"encoding/gob"
 	"flag"
@@ -193,9 +194,14 @@ func initControllers(sch *runtime.Scheme, namespace string, logger *zap.Logger, 
 		return errors.Wrap(err, "unable to ini manager")
 	}
 
-	if err := codebaseController.Make(mgr, logger.Sugar(),
-		registry.MakeAdmins(services.Keycloak, cnf.UsersRealm, cnf.UsersNamespace), cnf); err != nil {
+	l := logger.Sugar()
+
+	if err := codebaseController.Make(mgr, l, cnf); err != nil {
 		return errors.Wrap(err, "unable to init codebase controller")
+	}
+
+	if err := mergeRequestController.Make(mgr, l, cnf); err != nil {
+		return errors.Wrap(err, "unable to init merge request controller")
 	}
 
 	go func() {

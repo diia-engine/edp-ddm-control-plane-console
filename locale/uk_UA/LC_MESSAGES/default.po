@@ -73,3 +73,6 @@ msgstr "Відхилено"
 
 msgid "MERGED"
 msgstr "Підтверджено"
+
+msgid "in progress"
+msgstr "У процесі виконання"
