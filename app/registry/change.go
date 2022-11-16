@@ -5,7 +5,6 @@ import (
 	"ddm-admin-console/router"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -42,30 +41,35 @@ func (a *App) abandonChange(ctx *gin.Context) (response router.Response, retErr 
 func (a *App) submitChange(ctx *gin.Context) (response router.Response, retErr error) {
 	changeID := ctx.Param("change")
 
-	if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SetReview(changeID, currentRevision, &goGerrit.ReviewInput{
-		Message: fmt.Sprintf("Submitted by %s [%s]", ctx.GetString(router.UserNameSessionKey),
-			ctx.GetString(router.UserEmailSessionKey)),
-		Labels: map[string]string{
-			"Code-Review": "2",
-			"Verified":    "1",
-		},
-	}); err != nil {
-		if rsp != nil {
-			body, _ := ioutil.ReadAll(rsp.Body)
-			return nil, errors.Wrapf(err, "unable to review change, error: %s", string(body))
-		}
-
-		return nil, errors.Wrap(err, "unable to review change")
+	if err := a.Gerrit.ApproveAndSubmitChange(changeID, ctx.GetString(router.UserNameSessionKey),
+		ctx.GetString(router.UserEmailSessionKey)); err != nil {
+		return nil, errors.Wrap(err, "unable to approve change")
 	}
 
-	if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SubmitChange(changeID, &goGerrit.SubmitInput{}); err != nil {
-		if rsp != nil {
-			body, _ := ioutil.ReadAll(rsp.Body)
-			return nil, errors.Wrapf(err, "unable to submit change, error: %s", string(body))
-		}
-
-		return nil, errors.Wrap(err, "unable to submit change")
-	}
+	//if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SetReview(changeID, currentRevision, &goGerrit.ReviewInput{
+	//	Message: fmt.Sprintf("Submitted by %s [%s]", ctx.GetString(router.UserNameSessionKey),
+	//		ctx.GetString(router.UserEmailSessionKey)),
+	//	Labels: map[string]string{
+	//		"Code-Review": "2",
+	//		"Verified":    "1",
+	//	},
+	//}); err != nil {
+	//	if rsp != nil {
+	//		body, _ := ioutil.ReadAll(rsp.Body)
+	//		return nil, errors.Wrapf(err, "unable to review change, error: %s", string(body))
+	//	}
+	//
+	//	return nil, errors.Wrap(err, "unable to review change")
+	//}
+	//
+	//if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SubmitChange(changeID, &goGerrit.SubmitInput{}); err != nil {
+	//	if rsp != nil {
+	//		body, _ := ioutil.ReadAll(rsp.Body)
+	//		return nil, errors.Wrapf(err, "unable to submit change, error: %s", string(body))
+	//	}
+	//
+	//	return nil, errors.Wrap(err, "unable to submit change")
+	//}
 
 	if err := a.updateMRStatus(ctx, changeID, "MERGED"); err != nil {
 		return nil, errors.Wrap(err, "unable to change MR status")

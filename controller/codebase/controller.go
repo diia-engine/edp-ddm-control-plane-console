@@ -258,21 +258,6 @@ func GetGerritPrivateKey(ctx context.Context, k8sClient client.Client, cnf *conf
 	return string(key), nil
 }
 
-//func (c *Controller) getGerritPrivateKey(ctx context.Context) (string, error) {
-//	var gerritSecret v1.Secret
-//	if err := c.k8sClient.Get(ctx, types.NamespacedName{Namespace: c.cnf.Namespace, Name: c.cnf.GitKeySecretName},
-//		&gerritSecret); err != nil {
-//		return "", errors.Wrap(err, "unable to get gerrit project creator secret")
-//	}
-//
-//	key, ok := gerritSecret.Data[keySecretIndex]
-//	if !ok {
-//		return "", errors.Errorf("no data by key %s in gerrit secret", keySecretIndex)
-//	}
-//
-//	return string(key), nil
-//}
-
 func updateRegistryValues(instance *codebaseService.Codebase, gitService *git.Service) error {
 	valuesStr, err := gitService.GetFileContents(registry.ValuesLocation)
 	if err != nil {

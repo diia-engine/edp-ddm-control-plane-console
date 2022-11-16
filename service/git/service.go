@@ -1,10 +1,12 @@
 package git
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -41,6 +43,14 @@ func Make(path, user, key string) *Service {
 		user:    user,
 		key:     key,
 	}
+}
+
+func (s *Service) GenerateChangeID() (string, error) {
+	h := sha1.New()
+	if _, err := h.Write([]byte(time.Now().Format(time.RFC3339))); err != nil {
+		return "", errors.Wrap(err, "unable to write hash")
+	}
+	return fmt.Sprintf("I%x", h.Sum(nil)), nil
 }
 
 func (s *Service) Clean() error {
@@ -377,4 +387,14 @@ func (s *Service) RemoveBranch(name string) error {
 	}
 
 	return nil
+}
+
+func ExtractMrURL(pushMessage string) string {
+	return regexp.MustCompile(
+		`https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)`).
+		FindString(pushMessage)
+}
+
+func CommitMessageWithChangeID(commitMessage, changeID string) string {
+	return fmt.Sprintf("%s\n\nChange-Id: %s", commitMessage, changeID)
 }

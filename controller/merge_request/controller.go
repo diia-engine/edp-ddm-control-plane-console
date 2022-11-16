@@ -15,9 +15,10 @@ import (
 	"path"
 	"reflect"
 
-	"gopkg.in/yaml.v3"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,14 +32,16 @@ type Controller struct {
 	mgr       ctrl.Manager
 	k8sClient client.Client
 	cnf       *config.Settings
+	gerrit    gerritService.ServiceInterface
 }
 
-func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings) error {
+func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerrit gerritService.ServiceInterface) error {
 	c := Controller{
 		mgr:       mgr,
 		logger:    logger,
 		k8sClient: mgr.GetClient(),
 		cnf:       cnf,
+		gerrit:    gerrit,
 	}
 
 	if err := ctrl.NewControllerManagedBy(mgr).
@@ -62,6 +65,25 @@ func isSpecUpdated(e event.UpdateEvent) bool {
 func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result,
 	resultErr error) {
 
+	c.logger.Infow("reconciling merge request", "Request.Namespace", request.Namespace,
+		"Request.Name", request.Name)
+
+	var instance gerritService.GerritMergeRequest
+	if err := c.k8sClient.Get(ctx, request.NamespacedName, &instance); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			c.logger.Infow("instance not found", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
+			return
+		}
+
+		resultErr = errors.Wrap(err, "unable to get merge request from k8s")
+		return
+	}
+
+	if err := c.prepareMergeRequest(ctx, &instance); err != nil {
+		resultErr = errors.Wrap(err, "unable to prepare merge request")
+		return
+	}
+
 	return
 }
 
@@ -77,6 +99,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 // 9. create new change to source branch if it not clean
 // 10. apply and submit change
 // 11. set merge request cr spec source branch to pass it to gerrit operator
+// 12. clear backup folder
 
 func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
 	if instance.Labels[registry.MRLabelAction] != registry.MRLabelActionBranchMerge || instance.Spec.SourceBranch != "" {
@@ -142,12 +165,15 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	if err := CopyFolder(projectPath, projectBackupPath); err != nil {
 		return errors.Wrap(err, "unable to backup source branch")
 	}
+	if err := os.RemoveAll(path.Join(projectBackupPath, ".git")); err != nil {
+		return errors.Wrap(err, "unable to remove .git folder from backup")
+	}
 
 	if msg, err := gitService.Rebase(targetBranch, "-X", "ours"); err != nil {
 		return errors.Wrapf(err, "unable to rebase from target branch: %s", msg)
 	}
 
-	if err := CopyFolder(projectBackupPath, projectPath); err != nil {
+	if err := CopyFolder(fmt.Sprintf("%s/.", projectBackupPath), fmt.Sprintf("%s/", projectPath)); err != nil {
 		return errors.Wrap(err, "unable to restore source branch")
 	}
 
@@ -159,13 +185,36 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to add all files")
 	}
 
+	changeID, err := gitService.GenerateChangeID()
+	if err != nil {
+		return errors.Wrap(err, "unable to generate change id")
+	}
+
 	//check for change id!
-	if err := gitService.Commit(fmt.Sprintf("update branch values.yaml from [%s] branch", targetBranch),
+	if err := gitService.Commit(
+		git.CommitMessageWithChangeID(fmt.Sprintf("update branch values.yaml from [%s] branch", targetBranch), changeID),
 		[]string{}, &git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail}); err != nil {
 		return errors.Wrap(err, "unable to commit changes")
 	}
 
-	//restore source branch
+	refSpec := fmt.Sprintf("HEAD:refs/for/%s", sourceBranch)
+	if err := gitService.Push("origin", refSpec); err != nil {
+		return errors.Wrap(err, "unable to push repo")
+	}
+
+	if err := c.gerrit.ApproveAndSubmitChange(changeID, instance.Spec.AuthorName,
+		instance.Spec.AuthorEmail); err != nil {
+		return errors.Wrap(err, "unable to approve change id")
+	}
+
+	instance.Spec.SourceBranch = sourceBranch
+	if err := c.k8sClient.Update(ctx, instance); err != nil {
+		return errors.Wrap(err, "unable to update merge request")
+	}
+
+	if err := os.RemoveAll(backupFolder); err != nil {
+		return errors.Wrap(err, "unable to clear backup folder")
+	}
 
 	return nil
 }
@@ -244,13 +293,14 @@ func MergeValuesFiles(src, dst string) error {
 
 func CopyFolder(src, dst string) error {
 	cmd := exec.Command("cp", "-r", src, dst)
+	var msg string
 	bts, err := cmd.CombinedOutput()
-	if err != nil {
-		return errors.Wrap(err, "unable to copy folder")
+	if len(bts) > 0 {
+		msg = string(bts)
 	}
 
-	if len(bts) > 0 {
-		return errors.New(string(bts))
+	if err != nil {
+		return errors.Wrapf(err, "unable to copy folder %s", msg)
 	}
 
 	return nil

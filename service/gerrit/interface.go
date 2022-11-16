@@ -19,4 +19,5 @@ type ServiceInterface interface {
 	GoGerritClient() *goGerrit.Client
 	GetMergeRequestByChangeID(ctx context.Context, changeID string) (*GerritMergeRequest, error)
 	UpdateMergeRequestStatus(ctx context.Context, mr *GerritMergeRequest) error
+	ApproveAndSubmitChange(changeID, username, email string) error
 }
