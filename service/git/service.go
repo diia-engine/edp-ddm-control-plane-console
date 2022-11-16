@@ -305,6 +305,45 @@ func (s *Service) Checkout(branch string, create bool) error {
 	return nil
 }
 
+func (s *Service) Add(file string) error {
+	cmd := s.commandCreate("git", "add", file)
+	cmd.SetDir(s.path)
+
+	var msg string
+	out, err := cmd.CombinedOutput()
+
+	if out != nil && len(out) > 0 {
+		msg = string(out)
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "unable to run rebase, msg: %s", msg)
+	}
+
+	return nil
+}
+
+func (s *Service) Rebase(targetBranch string, params ...string) (string, error) {
+	gitArgs := []string{"rebase", targetBranch}
+	gitArgs = append(gitArgs, params...)
+
+	cmd := s.commandCreate("git", gitArgs...)
+	cmd.SetDir(s.path)
+
+	var msg string
+	out, err := cmd.CombinedOutput()
+
+	if out != nil && len(out) > 0 {
+		msg = string(out)
+	}
+
+	if err != nil {
+		return msg, errors.Wrap(err, "unable to run rebase")
+	}
+
+	return msg, nil
+}
+
 func (s *Service) worktree() (*git.Repository, *git.Worktree, error) {
 	r, err := git.PlainOpen(s.path)
 	if err != nil {
