@@ -15,10 +15,9 @@ import (
 	"path"
 	"reflect"
 
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,43 +98,25 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 // 9. create new change to source branch with commit amend
 // 10. apply and submit change
 // 11. set merge request cr spec source branch to pass it to gerrit operator
-// 12. clear backup folder
 
 func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
 	if instance.Labels[registry.MRLabelAction] != registry.MRLabelActionBranchMerge || instance.Spec.SourceBranch != "" {
 		return nil
 	}
 
-	controllerFolderPath, err := codebase.PrepareControllerTempFolder(c.cnf.TempFolder, "merge-requests")
+	_, backupFolderPath, projectPath, err := prepareControllerFolders(c.cnf.TempFolder, instance.Spec.ProjectName)
 	if err != nil {
-		return errors.Wrap(err, "unable to create merge-requests folder")
+		return errors.Wrap(err, "unable to prepare controller tmp folders")
 	}
 
-	backupFolder, err := codebase.PrepareControllerTempFolder(c.cnf.TempFolder, "mr-backup")
+	gitService, err := c.initGitService(ctx, projectPath)
 	if err != nil {
-		return errors.Wrap(err, "unable to create backup folder")
+		return errors.Wrap(err, "unable to init git service")
 	}
 
-	privateKey, err := codebase.GetGerritPrivateKey(ctx, c.k8sClient, c.cnf)
+	targetBranch, sourceBranch, err := getBranchesFromLabels(instance.Labels)
 	if err != nil {
-		return errors.Wrap(err, "unable to get gerrit private key")
-	}
-
-	gitService := git.Make(path.Join(controllerFolderPath, instance.Spec.ProjectName), c.cnf.GitUsername, privateKey)
-	defer func() {
-		if err := gitService.Clean(); err != nil {
-			c.logger.Error(err)
-		}
-	}()
-
-	targetBranch, ok := instance.Labels[registry.MRLabelTargetBranch]
-	if !ok {
-		return errors.New("target branch is not specified")
-	}
-
-	sourceBranch, ok := instance.Labels[registry.MRLabelSourceBranch]
-	if !ok {
-		return errors.New("source branch is not specified")
+		return errors.Wrap(err, "unable to get branches from instance labels")
 	}
 
 	if err := gitService.Clone(fmt.Sprintf("%s/%s", codebase.GerritSSHURL(c.cnf), instance.Spec.ProjectName)); err != nil {
@@ -145,11 +126,8 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	if err := gitService.Checkout(targetBranch, false); err != nil {
 		return errors.Wrap(err, "unable to checkout branch")
 	}
-
-	projectPath := path.Join(controllerFolderPath, instance.Spec.ProjectName)
-
 	//backup values.yaml
-	valuesBackupPath := path.Join(backupFolder, "backup-values.yaml")
+	valuesBackupPath := path.Join(backupFolderPath, "backup-values.yaml")
 	projectValuesPath := path.Join(projectPath, registry.ValuesLocation)
 	if err := CopyFile(projectValuesPath, valuesBackupPath); err != nil {
 		return errors.Wrap(err, "unable to backup values yaml")
@@ -158,28 +136,24 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	if err := gitService.Checkout(sourceBranch, false); err != nil {
 		return errors.Wrap(err, "unable to checkout")
 	}
-
 	//backup source branch
-	projectBackupPath := path.Join(backupFolder, fmt.Sprintf("backup-%s", instance.Spec.ProjectName))
+	projectBackupPath, err := backupProject(backupFolderPath, projectPath, instance.Spec.ProjectName)
 	if err := CopyFolder(projectPath, projectBackupPath); err != nil {
 		return errors.Wrap(err, "unable to backup source branch")
 	}
-	if err := os.RemoveAll(path.Join(projectBackupPath, ".git")); err != nil {
-		return errors.Wrap(err, "unable to remove .git folder from backup")
-	}
-
+	//rebase from target branch
 	if msg, err := gitService.Rebase(targetBranch, "-X", "ours"); err != nil {
 		return errors.Wrapf(err, "unable to rebase from target branch: %s", msg)
 	}
-
+	//restore source branch
 	if err := CopyFolder(fmt.Sprintf("%s/.", projectBackupPath), fmt.Sprintf("%s/", projectPath)); err != nil {
 		return errors.Wrap(err, "unable to restore source branch")
 	}
-
+	//merge values from target branch
 	if err := MergeValuesFiles(valuesBackupPath, projectValuesPath); err != nil {
 		return errors.Wrap(err, "unable to merge values")
 	}
-
+	//add all changes
 	if err := gitService.Add("."); err != nil {
 		return errors.Wrap(err, "unable to add all files")
 	}
@@ -206,11 +180,60 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to update merge request")
 	}
 
-	if err := os.RemoveAll(backupFolder); err != nil {
-		return errors.Wrap(err, "unable to clear backup folder")
+	return nil
+}
+
+func backupProject(backupFolderPath, projectPath, projectName string) (string, error) {
+	projectBackupPath := path.Join(backupFolderPath, fmt.Sprintf("backup-%s", projectName))
+	if err := CopyFolder(projectPath, projectBackupPath); err != nil {
+		return "", errors.Wrap(err, "unable to backup source branch")
+	}
+	if err := os.RemoveAll(path.Join(projectBackupPath, ".git")); err != nil {
+		return "", errors.Wrap(err, "unable to remove .git folder from backup")
 	}
 
-	return nil
+	return projectBackupPath, nil
+}
+
+func (c *Controller) initGitService(ctx context.Context, projectPath string) (*git.Service, error) {
+	privateKey, err := codebase.GetGerritPrivateKey(ctx, c.k8sClient, c.cnf)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get gerrit private key")
+	}
+
+	return git.Make(projectPath, c.cnf.GitUsername, privateKey), nil
+}
+
+func getBranchesFromLabels(labels map[string]string) (targetBranch, sourceBranch string, err error) {
+	targetBranch, ok := labels[registry.MRLabelTargetBranch]
+	if !ok {
+		err = errors.New("target branch is not specified")
+		return
+	}
+
+	sourceBranch, ok = labels[registry.MRLabelSourceBranch]
+	if !ok {
+		err = errors.New("source branch is not specified")
+		return
+	}
+
+	return
+}
+
+func prepareControllerFolders(tempFolder, projectName string) (controllerFolderPath, backupFolderPath, projectPath string, retErr error) {
+	controllerFolderPath, retErr = codebase.PrepareControllerTempFolder(tempFolder, "merge-requests")
+	if retErr != nil {
+		return
+	}
+
+	backupFolderPath, retErr = codebase.PrepareControllerTempFolder(tempFolder, "mr-backup")
+	if retErr != nil {
+		return
+	}
+
+	projectPath = path.Join(controllerFolderPath, projectName)
+
+	return
 }
 
 func MergeValuesFiles(src, dst string) error {

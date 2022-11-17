@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 
@@ -102,13 +101,12 @@ type Commit struct {
 
 func (s *Service) GetMergeListCommits(ctx context.Context, changeID, revision string) ([]Commit, error) {
 	rq, _ := s.GoGerritClient().NewRequest("GET",
-		fmt.Sprintf("changes/%s/revisions/%s/mergeable", changeID, revision), nil)
+		fmt.Sprintf("changes/%s/revisions/%s/mergelist", changeID, revision), nil)
 	rq = rq.WithContext(ctx)
 
 	var commits []Commit
 
-	rsp, err := s.GoGerritClient().Do(rq, &commits)
-	log.Println(rsp.StatusCode)
+	_, err := s.GoGerritClient().Do(rq, &commits)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get merge list commits")
 	}
