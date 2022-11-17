@@ -743,7 +743,7 @@ let app = Vue.createApp({
                 };
             });
 
-            prepare = this.cleanEmptyProperties(prepare);
+            this.cleanEmptyProperties(prepare);
 
             this.registryResources.encoded = JSON.stringify(prepare);
         },
