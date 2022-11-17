@@ -709,10 +709,8 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 	return
 }
 
-func (a *App) prepareMailServerConfig(ginContext *gin.Context, r *registry, secretData map[string]map[string]interface{}, values map[string]interface{}) error {
-	if ginContext.PostForm("action") == "edit" && ginContext.PostForm("edit-smtp") == "" {
-		return nil
-	}
+func (a *App) prepareMailServerConfig(ginContext *gin.Context, r *registry, secretData map[string]map[string]interface{},
+	values map[string]interface{}) error {
 
 	notifications := make(map[string]interface{})
 
