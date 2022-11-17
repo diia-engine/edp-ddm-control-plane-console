@@ -95,6 +95,21 @@ func (s *Service) Clone(url string) error {
 	return nil
 }
 
+func (s *Service) RawCommit(message string, user *User, params ...string) error {
+	baseParams := []string{"commit", "-m", message, fmt.Sprintf("--author=\"%s <%s>\"", user.Name, user.Email)}
+	baseParams = append(baseParams, params...)
+
+	cmd := s.commandCreate("git", baseParams...)
+	cmd.SetDir(s.path)
+
+	bts, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to commit: %s", string(bts))
+	}
+
+	return nil
+}
+
 func (s *Service) Commit(message string, files []string, user *User) error {
 	_, w, err := s.worktree()
 	if err != nil {

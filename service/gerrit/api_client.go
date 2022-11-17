@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 
@@ -94,13 +95,23 @@ func (s *Service) GetMRFiles(ctx context.Context, changeID string) ([]string, er
 	return files, nil
 }
 
-//func (s *Service) GetChangeFileContent(ctx context.Context, changeID string, filePath string) (string, error) {
-//	s.goGerritClient.Changes.cont
-//}
+type Commit struct {
+	Commit  string `json:"commit"`
+	Subject string `json:"subject"`
+}
 
-//
-//func (s *Service) GetFileDiff(ctx context.Context, changeID, filePath string) error {
-//	//https://gerrit-control-plane-platform-main.apps.master-for-install-43.mdtu-ddm.projects.epam.com/changes/<change id>/revisions/current/files/<file name>/diff?context=ALL&intraline=&whitespace=IGNORE_NONE
-//	rsp, err := s.apiClient.NewRequest().SetContext(ctx)
-//	return nil
-//}
+func (s *Service) GetMergeListCommits(ctx context.Context, changeID, revision string) ([]Commit, error) {
+	rq, _ := s.GoGerritClient().NewRequest("GET",
+		fmt.Sprintf("changes/%s/revisions/%s/mergeable", changeID, revision), nil)
+	rq = rq.WithContext(ctx)
+
+	var commits []Commit
+
+	rsp, err := s.GoGerritClient().Do(rq, &commits)
+	log.Println(rsp.StatusCode)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get merge list commits")
+	}
+
+	return commits, nil
+}

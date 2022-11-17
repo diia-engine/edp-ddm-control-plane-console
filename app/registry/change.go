@@ -5,11 +5,13 @@ import (
 	"ddm-admin-console/router"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	goGerrit "github.com/andygrunwald/go-gerrit"
@@ -19,6 +21,7 @@ import (
 
 const (
 	currentRevision = "current"
+	mergeList       = "/MERGE_LIST"
 )
 
 func (a *App) abandonChange(ctx *gin.Context) (response router.Response, retErr error) {
@@ -45,31 +48,6 @@ func (a *App) submitChange(ctx *gin.Context) (response router.Response, retErr e
 		ctx.GetString(router.UserEmailSessionKey)); err != nil {
 		return nil, errors.Wrap(err, "unable to approve change")
 	}
-
-	//if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SetReview(changeID, currentRevision, &goGerrit.ReviewInput{
-	//	Message: fmt.Sprintf("Submitted by %s [%s]", ctx.GetString(router.UserNameSessionKey),
-	//		ctx.GetString(router.UserEmailSessionKey)),
-	//	Labels: map[string]string{
-	//		"Code-Review": "2",
-	//		"Verified":    "1",
-	//	},
-	//}); err != nil {
-	//	if rsp != nil {
-	//		body, _ := ioutil.ReadAll(rsp.Body)
-	//		return nil, errors.Wrapf(err, "unable to review change, error: %s", string(body))
-	//	}
-	//
-	//	return nil, errors.Wrap(err, "unable to review change")
-	//}
-	//
-	//if _, rsp, err := a.Gerrit.GoGerritClient().Changes.SubmitChange(changeID, &goGerrit.SubmitInput{}); err != nil {
-	//	if rsp != nil {
-	//		body, _ := ioutil.ReadAll(rsp.Body)
-	//		return nil, errors.Wrapf(err, "unable to submit change, error: %s", string(body))
-	//	}
-	//
-	//	return nil, errors.Wrap(err, "unable to submit change")
-	//}
 
 	if err := a.updateMRStatus(ctx, changeID, "MERGED"); err != nil {
 		return nil, errors.Wrap(err, "unable to change MR status")
@@ -107,7 +85,7 @@ func (a *App) viewChange(ctx *gin.Context) (response router.Response, retErr err
 		return nil, errors.Wrap(err, "unable to get gerrit change details")
 	}
 
-	changes, err := a.getChangeContents(changeInfo)
+	changes, err := a.getChangeContents(ctx, changeInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get changes")
 	}
@@ -120,7 +98,7 @@ func (a *App) viewChange(ctx *gin.Context) (response router.Response, retErr err
 	}), nil
 }
 
-func (a *App) getChangeContents(changeInfo *goGerrit.ChangeInfo) (string, error) {
+func (a *App) getChangeContents(ctx context.Context, changeInfo *goGerrit.ChangeInfo) (string, error) {
 	files, _, err := a.Gerrit.GoGerritClient().Changes.ListFiles(changeInfo.ID, currentRevision, &goGerrit.FilesOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get change files")
@@ -132,7 +110,17 @@ func (a *App) getChangeContents(changeInfo *goGerrit.ChangeInfo) (string, error)
 			continue
 		}
 
-		changesContent, err := a.getFileChanges(changeInfo.ID, fileName, changeInfo.Project, changeInfo.Branch)
+		if fileName == mergeList {
+			changesContent, err := a.getMergeListFileChanges(ctx, changeInfo.ID, changeInfo.Project)
+			if err != nil {
+				return "", errors.Wrap(err, "unable to load merge list")
+			}
+
+			changes = append(changes, changesContent...)
+			continue
+		}
+
+		changesContent, err := a.getChangeFileChanges(changeInfo.ID, fileName, changeInfo.Project)
 		if err != nil {
 			return "", errors.Wrap(err, "unable to get file changes")
 		}
@@ -149,7 +137,57 @@ func (a *App) getChangeContents(changeInfo *goGerrit.ChangeInfo) (string, error)
 	return string(bts), nil
 }
 
-func (a *App) getFileChanges(changeID, fileName, projectName, branchName string) (string, error) {
+func (a *App) getMergeListFileChanges(ctx context.Context, changeID, projectName string) ([]string, error) {
+	//rq, _ := a.Gerrit.GoGerritClient().NewRequest("GET",
+	//	fmt.Sprintf("changes/%s/revisions/%s/mergeable", changeID, currentRevision), nil)
+	//
+	//a.Gerrit.GoGerritClient().Do(rq)
+	////a.Gerrit.GoGerritClient().Changes.GetMergeable("")
+
+	commits, err := a.Gerrit.GetMergeListCommits(ctx, changeID, currentRevision)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get merge list commits")
+	}
+
+	log.Println(commits)
+
+	content, _, err := a.Gerrit.GoGerritClient().Changes.GetContent(changeID, currentRevision, mergeList)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get file content")
+	}
+
+	if err := a.decodeMergeListContent(*content, projectName); err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	return []string{}, nil
+}
+
+func (a *App) decodeMergeListContent(content, projectName string) error {
+	r := regexp.MustCompile("\\* ([a-f0-9]+) ")
+	matches := r.FindAllStringSubmatch(content, -1)
+	for _, m := range matches {
+		if len(m) == 2 {
+			commitHash := m[1]
+
+			commitInfo, _, err := a.Gerrit.GoGerritClient().Projects.GetCommit(projectName, commitHash)
+			if err != nil {
+				return errors.Wrapf(err, "unable to get commit info")
+			}
+
+			files, _, err := a.Gerrit.GoGerritClient().Changes.ListFiles(commitInfo.Commit, currentRevision, &goGerrit.FilesOptions{})
+			if err != nil {
+				return errors.Wrap(err, "")
+			}
+
+			log.Println(files)
+		}
+	}
+
+	return nil
+}
+
+func (a *App) getChangeFileChanges(changeID, fileName, projectName string) (string, error) {
 	commitInfo, _, err := a.Gerrit.GoGerritClient().Changes.GetCommit(changeID, currentRevision, &goGerrit.CommitOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get change commit")

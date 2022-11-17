@@ -96,7 +96,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 // 6. rebase from target branch with automatic conflict resolution
 // 7. restore source branch
 // 8. manually merge values.yaml from backup with new version from source branch if it backup`ed
-// 9. create new change to source branch if it not clean
+// 9. create new change to source branch with commit amend
 // 10. apply and submit change
 // 11. set merge request cr spec source branch to pass it to gerrit operator
 // 12. clear backup folder
@@ -138,8 +138,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.New("source branch is not specified")
 	}
 
-	gerritSSHURL := codebase.GerritSSHURL(c.cnf)
-	if err := gitService.Clone(fmt.Sprintf("%s/%s", gerritSSHURL, instance.Spec.ProjectName)); err != nil {
+	if err := gitService.Clone(fmt.Sprintf("%s/%s", codebase.GerritSSHURL(c.cnf), instance.Spec.ProjectName)); err != nil {
 		return errors.Wrap(err, "unable to clone repo")
 	}
 
@@ -190,21 +189,16 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to generate change id")
 	}
 
-	//check for change id!
-	if err := gitService.Commit(
-		git.CommitMessageWithChangeID(fmt.Sprintf("update branch values.yaml from [%s] branch", targetBranch), changeID),
-		[]string{}, &git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail}); err != nil {
-		return errors.Wrap(err, "unable to commit changes")
+	if err := gitService.RawCommit(
+		git.CommitMessageWithChangeID(
+			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
+				targetBranch), changeID), &git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail},
+		"--amend"); err != nil {
+		return errors.Wrapf(err, "unable to commit changes")
 	}
 
-	refSpec := fmt.Sprintf("HEAD:refs/for/%s", sourceBranch)
-	if err := gitService.Push("origin", refSpec); err != nil {
+	if err := gitService.Push("origin", fmt.Sprintf("refs/heads/%s:%s", sourceBranch, sourceBranch), "--force"); err != nil {
 		return errors.Wrap(err, "unable to push repo")
-	}
-
-	if err := c.gerrit.ApproveAndSubmitChange(changeID, instance.Spec.AuthorName,
-		instance.Spec.AuthorEmail); err != nil {
-		return errors.Wrap(err, "unable to approve change id")
 	}
 
 	instance.Spec.SourceBranch = sourceBranch

@@ -23,11 +23,7 @@ func (e ExtendedMergeRequests) RequestName() string {
 	}
 
 	if e.Labels[MRLabelTarget] == MRTargetRegistryVersionUpdate {
-		if e.Spec.SourceBranch != "" {
-			return e.Spec.SourceBranch
-		} else if e.Labels[MRLabelSourceBranch] != "" {
-			return e.Labels[MRLabelSourceBranch]
-		}
+		return "Оновлення версії реєстру"
 	}
 
 	if e.Labels[MRLabelTarget] == mrTargetEditRegistry {
@@ -42,6 +38,14 @@ func (e ExtendedMergeRequests) Action() string {
 		action, ok := e.Labels[MRLabelSubTarget]
 		if ok {
 			return fmt.Sprintf("mre-action-%s", action)
+		}
+	}
+
+	if e.Labels[MRLabelTarget] == MRTargetRegistryVersionUpdate {
+		if e.Spec.SourceBranch != "" {
+			return e.Spec.SourceBranch
+		} else if e.Labels[MRLabelSourceBranch] != "" {
+			return e.Labels[MRLabelSourceBranch]
 		}
 	}
 
