@@ -15,7 +15,7 @@ import (
 
 type ScheduleItem struct {
 	Schedule      string `yaml:"schedule"`
-	ExpiresInDays string `yaml:"expires_in_days"`
+	ExpiresInDays string `yaml:"expiresInDays"`
 }
 
 type BackupScheduleForm struct {
@@ -51,9 +51,9 @@ func (bs BackupScheduleForm) ToNestedStruct() BackupSchedule {
 }
 
 type BackupSchedule struct {
-	Nexus          ScheduleItem `yaml:"control-plane-nexus"`
-	ControlPlane   ScheduleItem `yaml:"control-plane"`
-	UserManagement ScheduleItem `yaml:"user-management"`
+	Nexus          ScheduleItem `yaml:"controlPlaneNexus"`
+	ControlPlane   ScheduleItem `yaml:"controlPlane"`
+	UserManagement ScheduleItem `yaml:"userManagement"`
 	Monitoring     ScheduleItem `yaml:"monitoring"`
 }
 
