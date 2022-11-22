@@ -53,6 +53,8 @@ type Settings struct {
 	DDMManualEDPComponent                 string `envconfig:"DDM_MANUAL_EDP_COMPONENT" default:"ddm-architecture"`
 	OAuthUseExternalTokenURL              bool   `envconfig:"OAUTH_USE_EXTERNAL_TOKEN_URL"`
 	OAuthInternalTokenHost                string `envconfig:"OAUTH_INTERNAL_TOKEN_HOST" default:"oauth-openshift.openshift-authentication.svc"`
+	TrembitaClientDefaultRegistries       string `envconfig:"TREMBITA_C_DEFAULT_REGS" default:"edr-registry:platform,dracs-registry:platform,idp-exchange-service-registry:platform"`
+	RegistryDefaultExternalSystems        string `envconfig:"REGISTRY_DEFAULT_EXT_SYSTEMS" default:"diia:platform,http-bin:registry,secured-service:registry"`
 }
 
 type Services struct {

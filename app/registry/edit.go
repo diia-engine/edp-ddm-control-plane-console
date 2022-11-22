@@ -129,6 +129,12 @@ func (a *App) loadValuesEditConfig(ctx context.Context, registryName string, rsp
 	}
 	rspParams["registryData"] = string(registryData)
 
+	valuesJson, err := json.Marshal(values)
+	if err != nil {
+		return errors.Wrap(err, "unable to encode registry values")
+	}
+	rspParams["registryValues"] = string(valuesJson)
+
 	return nil
 }
 
@@ -338,24 +344,11 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	vaultSecretData := make(map[string]map[string]interface{})
-	if err := a.prepareDNSConfig(ginContext, r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare dns config")
-	}
 
-	if err := a.prepareMailServerConfig(ginContext, r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare mail server config")
-	}
-
-	if err := a.prepareCIDRConfig(ginContext, r, values); err != nil {
-		return errors.Wrap(err, "unable to prepare cidr config")
-	}
-
-	if err := a.prepareAdminsConfig(r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare admin values config")
-	}
-
-	if err := a.prepareRegistryResources(r, values); err != nil {
-		return errors.Wrap(err, "unable to prepare registry resources config")
+	for _, proc := range a.createUpdateRegistryProcessors() {
+		if err := proc(ginContext, r, values, vaultSecretData); err != nil {
+			return errors.Wrap(err, "error during registry create")
+		}
 	}
 
 	changedValuesHash, err := mapHash(values)
