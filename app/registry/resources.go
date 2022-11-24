@@ -70,7 +70,7 @@ func (a *App) preloadTemplateResources(ctx *gin.Context) (rsp router.Response, r
 
 	resources, ok := globalDict["registry"]
 	if !ok {
-		return nil, errors.New("no registry resources found")
+		return router.MakeJSONResponse(200, []string{}), nil
 	}
 
 	return router.MakeJSONResponse(http.StatusOK, resources), nil
