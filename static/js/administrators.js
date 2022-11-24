@@ -111,7 +111,6 @@ let app = Vue.createApp({
                     'digitalSignatureOps',
                     'userTaskManagement',
                     'userProcessManagement',
-                    // 'formManagementProvider',
                     'digitalDocumentService',
                     'restApi',
                     'kafkaApi',
@@ -195,16 +194,17 @@ let app = Vue.createApp({
             return envVars;
         },
         preloadRegistryResources(data) {
+            //TODO: move to constant
             this.registryResources.cats = [
                 'kong',
                 'bpms',
-                'digital-signature-ops',
-                'user-task-management',
-                'user-process-management',
-                'form-management-provider',
-                'digital-document-service',
-                'registry-rest-api',
-                'registry-kafka-api'
+                'digitalSignatureOps',
+                'userTaskManagement',
+                'userProcessManagement',
+                'digitalDocumentService',
+                'restApi',
+                'kafkaApi',
+                'soapApi',
             ];
 
             this.registryResources.addedCats = [];
