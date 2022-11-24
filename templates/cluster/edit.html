@@ -95,7 +95,7 @@
             <div class="rc-form-group {{ if .errorsMap.NexusSchedule }}error{{end}}">
                 <label for="nexus-schedule">Розклад</label>
                 <input type="text" name="nexus-schedule" id="nexus-schedule" placeholder="0 10 * * *"
-                       value="{{.backupSchedule.NexusSchedule}}" required />
+                       value="{{.backupSchedule.NexusSchedule}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.NexusSchedule}}
                         {{i18n "uk" $val.Error}}
@@ -105,7 +105,7 @@
             <div class="rc-form-group {{ if .errorsMap.NexusExpiresInDays }}error{{end}}">
                 <label for="nexus-expires-in-days">Час зберігання в днях</label>
                 <input type="text" id="nexus-expires-in-days" name="nexus-expires-in-days" placeholder="5"
-                       value="{{.backupSchedule.NexusExpiresInDays}}" required />
+                       value="{{.backupSchedule.NexusExpiresInDays}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.NexusExpiresInDays}}
                         {{i18n "uk" $val.Error}}
@@ -117,7 +117,7 @@
             <div class="rc-form-group {{ if .errorsMap.ControlPlaneSchedule }}error{{end}}">
                 <label for="control-plane-schedule">Розклад</label>
                 <input type="text" name="control-plane-schedule" id="control-plane-schedule" placeholder="0 10 * * *"
-                       value="{{.backupSchedule.ControlPlaneSchedule}}" required />
+                       value="{{.backupSchedule.ControlPlaneSchedule}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.ControlPlaneSchedule}}
                         {{i18n "uk" $val.Error}}
@@ -127,7 +127,7 @@
             <div class="rc-form-group {{ if .errorsMap.ControlPlaneExpiresInDays }}error{{end}}">
                 <label for="control-plane-expires-in-days">Час зберігання в днях</label>
                 <input type="text" id="control-plane-expires-in-days" name="control-plane-expires-in-days"
-                       placeholder="5" value="{{.backupSchedule.ControlPlaneExpiresInDays}}" required />
+                       placeholder="5" value="{{.backupSchedule.ControlPlaneExpiresInDays}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.ControlPlaneExpiresInDays}}
                         {{i18n "uk" $val.Error}}
@@ -139,7 +139,7 @@
             <div class="rc-form-group {{ if .errorsMap.UserManagementSchedule }}error{{end}}">
                 <label for="user-management-schedule">Розклад</label>
                 <input type="text" name="user-management-schedule" id="user-management-schedule" placeholder="0 10 * * *"
-                       value="{{.backupSchedule.UserManagementSchedule}}" required />
+                       value="{{.backupSchedule.UserManagementSchedule}}" />
                 <span>
                     {{range $key, $val := .errorsMap.UserManagementSchedule}}
                         {{i18n "uk" $val.Error}}
@@ -149,7 +149,7 @@
             <div class="rc-form-group {{ if .errorsMap.UserManagementSchedule }}error{{end}}">
                 <label for="user-management-expires-in-days">Час зберігання в днях</label>
                 <input type="text" id="user-management-expires-in-days" name="user-management-expires-in-days"
-                       placeholder="5" value="{{.backupSchedule.UserManagementSchedule}}" required />
+                       placeholder="5" value="{{.backupSchedule.UserManagementSchedule}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.UserManagementSchedule}}
                         {{i18n "uk" $val.Error}}
@@ -161,7 +161,7 @@
             <div class="rc-form-group {{ if .errorsMap.MonitoringSchedule }}error{{end}}">
                 <label for="monitoring-schedule">Розклад</label>
                 <input type="text" name="monitoring-schedule" id="monitoring-schedule" placeholder="0 10 * * *"
-                       value="{{.backupSchedule.MonitoringSchedule}}" required />
+                       value="{{.backupSchedule.MonitoringSchedule}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.MonitoringSchedule}}
                         {{i18n "uk" $val.Error}}
@@ -171,7 +171,7 @@
             <div class="rc-form-group {{ if .errorsMap.MonitoringExpiresInDays }}error{{end}}">
                 <label for="monitoring-expires-in-days">Час зберігання в днях</label>
                 <input type="text" id="monitoring-expires-in-days" name="monitoring-expires-in-days"
-                       placeholder="5" value="{{.backupSchedule.MonitoringExpiresInDays}}" required />
+                       placeholder="5" value="{{.backupSchedule.MonitoringExpiresInDays}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.MonitoringExpiresInDays}}
                         {{i18n "uk" $val.Error}}

@@ -102,6 +102,10 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to load cidr config")
 	}
 
+	if err := a.loadBackupScheduleConfig(valsDict, rspParams); err != nil {
+		return nil, errors.Wrap(err, "unable to load backup schedule config")
+	}
+
 	return router.MakeHTMLResponse(200, "cluster/edit.html", rspParams), nil
 }
 

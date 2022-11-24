@@ -6,11 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
+)
+
+const (
+	backupValuesIndex = "backup"
 )
 
 type ScheduleItem struct {
@@ -27,6 +30,19 @@ type BackupScheduleForm struct {
 	UserManagementExpiresInDays string `form:"user-management-expires-in-days"`
 	MonitoringSchedule          string `form:"monitoring-schedule"`
 	MonitoringExpiresInDays     string `form:"monitoring-expires-in-days"`
+}
+
+func (bs BackupSchedule) ToForm() BackupScheduleForm {
+	return BackupScheduleForm{
+		UserManagementExpiresInDays: bs.UserManagement.ExpiresInDays,
+		UserManagementSchedule:      bs.UserManagement.Schedule,
+		MonitoringExpiresInDays:     bs.Monitoring.ExpiresInDays,
+		MonitoringSchedule:          bs.Monitoring.Schedule,
+		ControlPlaneExpiresInDays:   bs.ControlPlane.ExpiresInDays,
+		ControlPlaneSchedule:        bs.ControlPlane.Schedule,
+		NexusSchedule:               bs.Nexus.Schedule,
+		NexusExpiresInDays:          bs.Nexus.ExpiresInDays,
+	}
 }
 
 func (bs BackupScheduleForm) ToNestedStruct() BackupSchedule {
@@ -75,7 +91,7 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
 
-	vals["backup"] = bs.ToNestedStruct()
+	vals[backupValuesIndex] = bs.ToNestedStruct()
 	bts, err := yaml.Marshal(vals)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to encode yaml")
@@ -93,4 +109,29 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 	}
 
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
+}
+
+func (a *App) loadBackupScheduleConfig(valuesDict map[string]interface{}, rspParams gin.H) error {
+	var (
+		bs  BackupSchedule
+		bsf BackupScheduleForm
+	)
+
+	backupConfig, ok := valuesDict[backupValuesIndex]
+	if !ok {
+		rspParams["backupSchedule"] = bsf
+		return nil
+	}
+
+	bts, err := yaml.Marshal(backupConfig)
+	if err != nil {
+		return errors.Wrap(err, "unable to encode backup schedule")
+	}
+
+	if err := yaml.Unmarshal(bts, &bs); err != nil {
+		return errors.Wrap(err, "unable to encode backup schedule")
+	}
+
+	rspParams["backupSchedule"] = bs.ToForm()
+	return nil
 }
