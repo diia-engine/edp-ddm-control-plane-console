@@ -156,7 +156,7 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 		return nil, errors.Wrap(err, "unable to init jenkins service")
 	}
 
-	serviceItems.OpenShift, err = openshift.Make(restConf)
+	serviceItems.OpenShift, err = openshift.Make(restConf, serviceItems.K8S)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init open shift service")
 	}
