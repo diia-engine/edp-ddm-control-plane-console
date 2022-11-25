@@ -29,12 +29,12 @@ func Make(restConfig *rest.Config, k8sService k8s.ServiceInterface) (*Service, e
 	if restConfig.TLSClientConfig.Insecure {
 		svc.restyClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	} else {
-		cm, err := k8sService.GetConfigMap(context.Background(), "openshift-service-ca.crt", "openshift-config-managed")
+		cm, err := k8sService.GetConfigMap(context.Background(), "openshift-global-ca", "openshift-controller-manager")
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get openshift ca config map")
 		}
 
-		ca, ok := cm.Data["service-ca.crt"]
+		ca, ok := cm.Data["ca-bundle.crt"]
 		if !ok {
 			return nil, errors.New("no service ca found in config map")
 		}
