@@ -47,9 +47,9 @@
             {{if .admins }}
                 <div class="rg-info-line-horizontal">
                     <span>Адміністратори</span>
-                    <span>
+                    <span class="cidr-values">
                         {{range $index, $adm := .admins}}
-                            {{ $adm.email }}
+                            <div class="view-cidr">{{ $adm.email }}</div>
                         {{end}}
                     </span>
                 </div>
@@ -87,9 +87,9 @@
             {{if .officerCIDR}}
             <div class="rg-info-line-horizontal">
                 <span>CIDR для портала чиновника</span>
-                <span>
+                <span class="cidr-values">
                     {{range .officerCIDR}}
-                        <p class="view-cidr">{{ . }}</p>
+                        <div class="view-cidr">{{ . }}</div>
                     {{end}}
                 </span>
             </div>

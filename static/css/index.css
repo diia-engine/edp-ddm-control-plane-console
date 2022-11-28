@@ -11719,12 +11719,20 @@ div#kubernetes-component {
     padding: 16px;
     font-size: 16px;
     display: flex;
+    /*flex: 1 0 auto;*/
 }
 
 .rg-info-line-horizontal span:first-of-type {
     width: 272px;
     display: block;
     font-weight: bold;
+    flex-basis: 272px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.rg-info-line-horizontal span:last-of-type {
+    /*flex-grow: 0;*/
 }
 
 .rg-info-table {
@@ -12230,9 +12238,14 @@ p.error {
     font-weight: normal;
     padding: 8px;
     background: #F2F2F2;
-    display: inline;
+    display: block;
     border-radius: 4px;
-    margin-right: 3px;
+    margin: 0 3px 3px 0;
+}
+
+.cidr-values {
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .mr-actions a {
@@ -12453,3 +12466,4 @@ p.error {
 .dns-inputs label:last-of-type {
     margin-top: 8px;
 }
+
