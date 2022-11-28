@@ -27,9 +27,6 @@
                 {{ if .error }}
                     <div class="rc-global-error">{{.error}}</div>
                 {{ end }}
-                <div class="wizard-tab" v-show="wizard.activeTab == 'trembitaClient'">
-                    {{template "trembita-client" .}}
-                </div>
                 <div class="wizard-tab" v-show="wizard.activeTab == 'general'">
                     <h2>Загальні налаштування</h2>
                     <div class="rc-title">

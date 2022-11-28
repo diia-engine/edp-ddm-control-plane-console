@@ -22,6 +22,7 @@ let app = Vue.createApp({
     },
     data() {
         return {
+            accordion: 'general',
             externalRegPopupShow: false,
             backdropShow: false,
             internalRegistryReg: true,

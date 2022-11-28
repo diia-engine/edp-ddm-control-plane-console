@@ -62,14 +62,14 @@ $(document).ready(function() {
         paging: true,
         columnDefs: [
             { orderable: false, targets: 0 },
-            { orderable: false, targets: 4 },
             { orderable: false, targets: 5 },
+            { orderable: false, targets: 6 },
             {
-                targets: 3,
+                targets: 4,
                 render: DataTable.render.datetime('DD.MM.YYYY h:mm'),
             },
         ],
-        order: [[3, 'desc']],
+        order: [[4, 'desc']],
         language: {
             "processing": "Зачекайте...",
             "lengthMenu": "Показати _MENU_ записів",

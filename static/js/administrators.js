@@ -62,7 +62,6 @@ let app = Vue.createApp({
 
         if (this.$refs.hasOwnProperty('registryValues')) {
             this.registryValues = JSON.parse(this.$refs.registryValues.value);
-            this.wizardLoadTrembitaClientFromValues();
         }
 
         if (this.$refs.hasOwnProperty('registryUpdate')) {
@@ -133,15 +132,6 @@ let app = Vue.createApp({
                         formatError: false, validator: this.wizardGeneralValidation,
                         visible: true,
                     },
-                    trembitaClient: {title: 'Клієнт трембіти', validated: false, visible: true,
-                        validator: this.wizardTrembitaClientValidation, enabled: false, data: {
-                            id: '',
-                            protocolVersion: '',
-                            xRoadInstance: '',
-                            memberClass: '',
-                            memberCode: '',
-                            subsystemCode: '',
-                        }, beginValidation: false,},
                     administrators: {title: 'Адміністратори', validated: false, requiredError: false,
                         validator: this.wizardAdministratorsValidation, visible: true,},
                     template: {title: 'Шаблон реєстру', validated: false, registryTemplate: '', registryBranch: '',
@@ -417,44 +407,6 @@ let app = Vue.createApp({
                         tab.validated = true;
                         resolve();
                     });
-            });
-        },
-        wizardLoadTrembitaClientFromValues() {
-            if (this.registryValues.hasOwnProperty('trembita')) {
-                this.wizard.tabs.trembitaClient.enabled = true;
-                this.wizard.tabs.trembitaClient.data = {
-                    id: this.registryValues.trembita.consumer["user-id"],
-                    protocolVersion: this.registryValues.trembita.consumer["protocol-version"],
-                    xRoadInstance: this.registryValues.trembita.consumer.client["x-road-instance"],
-                    memberClass: this.registryValues.trembita.consumer.client["member-class"],
-                    memberCode: this.registryValues.trembita.consumer.client["member-code"],
-                    subsystemCode: this.registryValues.trembita.consumer.client["subsystem-code"],
-                };
-            }
-        },
-        wizardTrembitaEnabledChange(){
-            this.wizard.tabs.trembitaClient.beginValidation = false;
-        },
-        wizardTrembitaClientValidation(tab){
-            return new Promise((resolve) => {
-                if (!this.wizard.tabs.trembitaClient.enabled) {
-                    tab.validated = true;
-                    resolve();
-                    return;
-                }
-
-                tab.beginValidation = true;
-                tab.validated = false;
-
-                for (let k in this.wizard.tabs.trembitaClient.data) {
-                    if (this.wizard.tabs.trembitaClient.data[k] === '') {
-                        return;
-                    }
-                }
-
-                tab.validated = true;
-                tab.beginValidation = false;
-                resolve();
             });
         },
         wizardDNSValidation(tab){
