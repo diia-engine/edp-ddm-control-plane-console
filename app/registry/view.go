@@ -20,15 +20,18 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 
 	registryName := ctx.Param("name")
 
-	viewParams := gin.H{
-		"page":     "registry",
-		"timezone": a.Config.Timezone,
-	}
-
 	values, _, err := GetValuesFromGit(ctx, registryName, a.Services.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
+
+	viewParams := gin.H{
+		"page":     "registry",
+		"timezone": a.Config.Timezone,
+		"values":   values,
+	}
+
+	//values.Trembita.Registries
 
 	for _, f := range a.viewRegistryProcessFunctions() {
 		if err := f(userCtx, registryName, values, viewParams); err != nil {

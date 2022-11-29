@@ -51,7 +51,7 @@
                     <span>Адміністратори</span>
                     <span>
                         {{range $index, $adm := .admins}}
-                            {{ $adm.email }}
+                            {{ $adm.Email }}
                         {{end}}
                     </span>
                 </div>
@@ -138,7 +138,24 @@
                     <th></th>
                 </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                {{range $index, $al := .values.Trembita.Registries}}
+                    <tr>
+                        <td>
+                            <i class="fa-solid fa-{{$al.FaStatus}}"></i>
+                        </td>
+                        <td>{{ $index }}</td>
+                        <td>{{ i18n $al.StrType}}</td>
+                        <td>{{$al.Protocol}}</td>
+                        <td>{{$al.Auth}}</td>
+                        <td>
+                            <a href="#">
+                                <img alt="edit" src="/static/img/action-edit.png" />
+                            </a>
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
             </table>
         </div>
     </div>
@@ -161,7 +178,29 @@
                     <th></th>
                 </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                {{range $index, $al := .values.ExternalSystems}}
+                    <tr>
+                        <td>
+                            <i class="fa-solid fa-{{$al.FaStatus}}"></i>
+                        </td>
+                        <td>{{ $index }}</td>
+                        <td>{{ i18n $al.StrType}}</td>
+                        <td>{{$al.Protocol}}</td>
+                        <td>{{$al.StrAuth}}</td>
+                        <td>
+                            <div class="trembita-actions">
+                                <a href="#">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a href="#">
+                                    <i class="fa-solid fa-trash registry-trash {{if eq "platform" $al.Type}}inactive{{end}} "></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
             </table>
             <div class="link-grant-access">
                 <a class="" href="#">

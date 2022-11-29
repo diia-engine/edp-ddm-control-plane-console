@@ -12521,3 +12521,31 @@ p.error {
 .trembita-client-settings {
     margin-top: 32px;
 }
+
+.fa-triangle-exclamation {
+    color: #FFC000;
+    font-size: 19px;
+}
+
+.fa-circle-check {
+    color: #6DA300;
+    font-size: 19px;
+}
+
+.trembita-actions {
+    display: flex;
+    align-items: baseline;
+}
+
+.trembita-actions a {
+    margin-left: 40px;
+}
+
+.trembita-actions i {
+    font-size: 19px;
+}
+
+.registry-trash.inactive {
+    color: #BFBFBF;
+    cursor: not-allowed;
+}

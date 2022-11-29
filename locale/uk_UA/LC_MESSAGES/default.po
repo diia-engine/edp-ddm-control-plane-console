@@ -73,3 +73,9 @@ msgstr "Відхилено"
 
 msgid "MERGED"
 msgstr "Підтверджено"
+
+msgid "type-platform"
+msgstr "Системний"
+
+msgid "type-registry"
+msgstr "Реєстровий"

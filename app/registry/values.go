@@ -1,5 +1,7 @@
 package registry
 
+import "fmt"
+
 type Values struct {
 	Administrators  []Admin                   `yaml:"administrators" json:"administrators"`
 	ExternalSystems map[string]ExternalSystem `yaml:"external-systems" json:"external-systems"`
@@ -21,7 +23,24 @@ type ExternalSystem struct {
 	Type     string            `yaml:"type" json:"type"`
 	Protocol string            `yaml:"protocol" json:"protocol"`
 	Auth     map[string]string `yaml:"auth" json:"auth"`
-	//Auth     TrembitaServiceAuth `yaml:"auth" json:"auth"`
+}
+
+func (e ExternalSystem) StrAuth() string {
+	if e.Auth != nil {
+		if t, ok := e.Auth["type"]; ok {
+			return t
+		}
+	}
+
+	return "-"
+}
+
+func (e ExternalSystem) FaStatus() string {
+	if e.URL == "" {
+		return "triangle-exclamation"
+	}
+
+	return "circle-check"
 }
 
 type Global struct {
@@ -49,7 +68,31 @@ type TrembitaRegistry struct {
 	Service         TrembitaRegistryService `yaml:"service" json:"service"`
 }
 
-// `yaml:"" json:""`
+func (t TrembitaRegistry) StrType() string {
+	return fmt.Sprintf("type-%s", t.Type)
+}
+
+func (e ExternalSystem) StrType() string {
+	return fmt.Sprintf("type-%s", e.Type)
+}
+
+func (t TrembitaRegistry) Auth() string {
+	if t.Service.Auth != nil {
+		if t, ok := t.Service.Auth["type"]; ok {
+			return t
+		}
+	}
+
+	return "-"
+}
+
+func (t TrembitaRegistry) FaStatus() string {
+	if t.UserID == "" {
+		return "triangle-exclamation"
+	}
+
+	return "circle-check"
+}
 
 type TrembitaRegistryClient struct {
 	XRoadInstance string `yaml:"x-road-instance" json:"x-road-instance"`
@@ -61,10 +104,4 @@ type TrembitaRegistryClient struct {
 type TrembitaRegistryService struct {
 	TrembitaRegistryClient
 	Auth map[string]string `yaml:"auth" json:"auth"`
-	//Auth TrembitaServiceAuth `yaml:"auth" json:"auth"`
-}
-
-type TrembitaServiceAuth struct {
-	Type   string `yaml:"type" json:"type"`
-	Secret string `yaml:"secret" json:"secret"`
 }
