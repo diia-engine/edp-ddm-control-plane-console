@@ -297,7 +297,7 @@
                         <td>{{$al.FormattedCreatedAt}}</td>
                         <td>{{$al.RequestName}}</td>
                         <td>{{ i18n $al.Action}}</td>
-                        <td class="mr-status">{{ i18n $al.Status.Value}}</td>
+                        <td class="mr-status">{{if $al.Status.Value}}{{ i18n $al.Status.Value}}{{end}}</td>
                         <td class="mr-actions">
                             {{if $al.Status.ChangeURL}}
                                 <a title="Переглянути"
