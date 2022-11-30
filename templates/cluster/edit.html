@@ -50,7 +50,7 @@
                        value="{{.backupConf.StorageLocation}}" required />
                 <span>
                     {{range $key, $val := .errorsMap.StorageLocation}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -60,7 +60,7 @@
                        value="{{.backupConf.StorageType}}" required />
                 <span>
                     {{range $key, $val := .errorsMap.StorageType}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -70,7 +70,7 @@
                        value="{{.backupConf.StorageCredentialsKey}}" required />
                 <span>
                     {{range $key, $val := .errorsMap.StorageCredentialsKey}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -80,7 +80,7 @@
                        value="{{.backupConf.StorageCredentialsSecret}}" required />
                 <span>
                     {{range $key, $val := .errorsMap.StorageCredentialsSecret}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -98,7 +98,7 @@
                        value="{{.backupSchedule.NexusSchedule}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.NexusSchedule}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -108,7 +108,7 @@
                        value="{{.backupSchedule.NexusExpiresInDays}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.NexusExpiresInDays}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -120,7 +120,7 @@
                        value="{{.backupSchedule.ControlPlaneSchedule}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.ControlPlaneSchedule}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -130,7 +130,7 @@
                        placeholder="5" value="{{.backupSchedule.ControlPlaneExpiresInDays}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.ControlPlaneExpiresInDays}}
-                        {{i18n "uk" $val.Error}}
+                        {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -142,7 +142,7 @@
                        value="{{.backupSchedule.UserManagementSchedule}}" />
                 <span>
                     {{range $key, $val := .errorsMap.UserManagementSchedule}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -152,7 +152,7 @@
                        placeholder="5" value="{{.backupSchedule.UserManagementExpiresInDays}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.UserManagementExpiresInDays}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -164,7 +164,7 @@
                        value="{{.backupSchedule.MonitoringSchedule}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.MonitoringSchedule}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -174,7 +174,7 @@
                        placeholder="5" value="{{.backupSchedule.MonitoringExpiresInDays}}"  />
                 <span>
                     {{range $key, $val := .errorsMap.MonitoringExpiresInDays}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>
@@ -198,7 +198,7 @@
 
                 <span>
                     {{range $key, $val := .errorsMap.Branch}}
-                        {{i18n "uk" $val.Error}}
+                         {{i18n $val.Tag}}
                     {{end}}
                 </span>
             </div>

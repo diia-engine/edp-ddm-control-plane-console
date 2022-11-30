@@ -76,3 +76,6 @@ msgstr "Відхилено"
 
 msgid "MERGED"
 msgstr "Підтверджено"
+
+msgid "cron-expression"
+msgstr "Невірний вираз"

@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"github.com/robfig/cron/v3"
 	"gopkg.in/yaml.v3"
 )
 
@@ -23,14 +24,14 @@ type ScheduleItem struct {
 }
 
 type BackupScheduleForm struct {
-	NexusSchedule               string `form:"nexus-schedule"`
-	NexusExpiresInDays          string `form:"nexus-expires-in-days"`
-	ControlPlaneSchedule        string `form:"control-plane-schedule"`
-	ControlPlaneExpiresInDays   string `form:"control-plane-expires-in-days"`
-	UserManagementSchedule      string `form:"user-management-schedule"`
-	UserManagementExpiresInDays string `form:"user-management-expires-in-days"`
-	MonitoringSchedule          string `form:"monitoring-schedule"`
-	MonitoringExpiresInDays     string `form:"monitoring-expires-in-days"`
+	NexusSchedule               string `form:"nexus-schedule" binding:"required,cron-expression"`
+	NexusExpiresInDays          string `form:"nexus-expires-in-days" binding:"required"`
+	ControlPlaneSchedule        string `form:"control-plane-schedule" binding:"required,cron-expression"`
+	ControlPlaneExpiresInDays   string `form:"control-plane-expires-in-days" binding:"required"`
+	UserManagementSchedule      string `form:"user-management-schedule" binding:"required,cron-expression"`
+	UserManagementExpiresInDays string `form:"user-management-expires-in-days" binding:"required"`
+	MonitoringSchedule          string `form:"monitoring-schedule" binding:"required,cron-expression"`
+	MonitoringExpiresInDays     string `form:"monitoring-expires-in-days" binding:"required"`
 }
 
 func (bs BackupSchedule) ToForm() BackupScheduleForm {
@@ -129,6 +130,15 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 	}
 
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
+}
+
+func CronExpressionValidator(fl validator.FieldLevel) bool {
+	expression := fl.Field().String()
+	if _, err := cron.ParseStandard(expression); err != nil {
+		return false
+	}
+
+	return true
 }
 
 func (a *App) loadBackupScheduleConfig(values *Values, rspParams gin.H) error {
