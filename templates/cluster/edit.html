@@ -146,12 +146,12 @@
                     {{end}}
                 </span>
             </div>
-            <div class="rc-form-group {{ if .errorsMap.UserManagementSchedule }}error{{end}}">
+            <div class="rc-form-group {{ if .errorsMap.UserManagementExpiresInDays }}error{{end}}">
                 <label for="user-management-expires-in-days">Час зберігання в днях</label>
                 <input type="text" id="user-management-expires-in-days" name="user-management-expires-in-days"
-                       placeholder="5" value="{{.backupSchedule.UserManagementSchedule}}"  />
+                       placeholder="5" value="{{.backupSchedule.UserManagementExpiresInDays}}"  />
                 <span>
-                    {{range $key, $val := .errorsMap.UserManagementSchedule}}
+                    {{range $key, $val := .errorsMap.UserManagementExpiresInDays}}
                         {{i18n "uk" $val.Error}}
                     {{end}}
                 </span>

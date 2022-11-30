@@ -81,7 +81,7 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get ini template data")
 	}
 
-	valsDict, err := a.getValuesDict(ctx)
+	values, err := a.getValuesDict(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load values")
 	}
@@ -94,19 +94,21 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		"hwINITemplateContent": hwINITemplateContent,
 	}
 
-	if err := a.loadAdminsConfig(valsDict, rspParams); err != nil {
-		return nil, errors.Wrap(err, "unable to load admins config")
-	}
-
-	if err := a.loadCIDRConfig(valsDict, rspParams); err != nil {
-		return nil, errors.Wrap(err, "unable to load cidr config")
-	}
-
-	if err := a.loadBackupScheduleConfig(valsDict, rspParams); err != nil {
-		return nil, errors.Wrap(err, "unable to load backup schedule config")
+	for _, f := range a.editDataLoaders() {
+		if err := f(values, rspParams); err != nil {
+			return nil, errors.Wrap(err, "unable to load edit data")
+		}
 	}
 
 	return router.MakeHTMLResponse(200, "cluster/edit.html", rspParams), nil
+}
+
+func (a *App) editDataLoaders() []func(*Values, gin.H) error {
+	return []func(*Values, gin.H) error{
+		a.loadAdminsConfig,
+		a.loadCIDRConfig,
+		a.loadBackupScheduleConfig,
+	}
 }
 
 func (a *App) editPost(ctx *gin.Context) (router.Response, error) {
@@ -158,28 +160,32 @@ func (a *App) editPost(ctx *gin.Context) (router.Response, error) {
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
 }
 
-func (a *App) getValuesDict(ctx context.Context) (map[string]interface{}, error) {
+func (a *App) getValuesDict(ctx context.Context) (*Values, error) {
 	vals, err := a.Gerrit.GetFileContents(ctx, a.Config.CodebaseName, "master", registry.ValuesLocation)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get admin values yaml")
 	}
 
-	var valuesDict map[string]interface{}
-	if err := yaml.Unmarshal([]byte(vals), &valuesDict); err != nil {
+	var (
+		valuesDict map[string]interface{}
+		values     *Values
+		valuesBts  = []byte(vals)
+	)
+	if err := yaml.Unmarshal(valuesBts, &valuesDict); err != nil {
 		return nil, errors.Wrap(err, "unable to decode values")
 	}
 
-	return valuesDict, nil
-}
-
-func (a *App) loadAdminsConfig(valuesDict map[string]interface{}, rspParams gin.H) error {
-	rspParams["admins"] = "[]"
-	adminsInterface, ok := valuesDict[ValuesAdminsKey]
-	if !ok {
-		return nil
+	if err := yaml.Unmarshal(valuesBts, &values); err != nil {
+		return nil, errors.Wrap(err, "unable to decode values")
 	}
 
-	bts, err := json.Marshal(adminsInterface)
+	values.OriginalYaml = valuesDict
+
+	return values, nil
+}
+
+func (a *App) loadAdminsConfig(values *Values, rspParams gin.H) error {
+	bts, err := json.Marshal(values.Admins)
 	if err != nil {
 		return errors.Wrap(err, "unable to json encode admins")
 	}
@@ -188,38 +194,15 @@ func (a *App) loadAdminsConfig(valuesDict map[string]interface{}, rspParams gin.
 	return nil
 }
 
-func (a *App) loadCIDRConfig(valuesDict map[string]interface{}, rspParams gin.H) error {
-	rspParams["cidrConfig"] = "{}"
-
-	//TODO: refactor
-	global, ok := valuesDict["global"]
-	if !ok {
-		return nil
-	}
-	globalDict, ok := global.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	whiteListIP, ok := globalDict["whiteListIP"]
-	if !ok {
-		return nil
-	}
-
-	whiteListIPDict, ok := whiteListIP.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	if adminRoutes, ok := whiteListIPDict["adminRoutes"]; ok {
-		whiteListIPDict["admin"] = strings.Split(adminRoutes.(string), " ")
-	}
-
-	cidrConfig, err := json.Marshal(whiteListIPDict)
+func (a *App) loadCIDRConfig(values *Values, rspParams gin.H) error {
+	cidrConfig, err := json.Marshal(map[string]interface{}{
+		"admin": strings.Split(values.Global.WhiteListIP.AdminRoutes, " "),
+	})
 	if err != nil {
 		return errors.Wrap(err, "unable to encode cidr to JSON")
 	}
 
 	rspParams["cidrConfig"] = string(cidrConfig)
+
 	return nil
 }

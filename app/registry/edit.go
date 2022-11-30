@@ -332,7 +332,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to get values from git")
 	}
 
-	initialValuesHash, err := mapHash(values)
+	initialValuesHash, err := MapHash(values)
 	if err != nil {
 		return errors.Wrap(err, "unable to hash values")
 	}
@@ -358,7 +358,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to prepare registry resources config")
 	}
 
-	changedValuesHash, err := mapHash(values)
+	changedValuesHash, err := MapHash(values)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values map hash")
 	}
@@ -388,7 +388,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	return nil
 }
 
-func mapHash(v map[string]interface{}) (string, error) {
+func MapHash(v map[string]interface{}) (string, error) {
 	bts, err := json.Marshal(v)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to encode map")

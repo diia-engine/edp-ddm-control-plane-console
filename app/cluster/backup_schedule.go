@@ -4,6 +4,7 @@ import (
 	"ddm-admin-console/router"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,12 +14,12 @@ import (
 )
 
 const (
-	backupValuesIndex = "backup"
+	veleroValuesIndex = "velero"
 )
 
 type ScheduleItem struct {
 	Schedule      string `yaml:"schedule"`
-	ExpiresInDays string `yaml:"expiresInDays"`
+	ExpiresInDays int    `yaml:"expires_in_days"`
 }
 
 type BackupScheduleForm struct {
@@ -34,34 +35,43 @@ type BackupScheduleForm struct {
 
 func (bs BackupSchedule) ToForm() BackupScheduleForm {
 	return BackupScheduleForm{
-		UserManagementExpiresInDays: bs.UserManagement.ExpiresInDays,
+		UserManagementExpiresInDays: strconv.Itoa(bs.UserManagement.ExpiresInDays),
 		UserManagementSchedule:      bs.UserManagement.Schedule,
-		MonitoringExpiresInDays:     bs.Monitoring.ExpiresInDays,
+		MonitoringExpiresInDays:     strconv.Itoa(bs.Monitoring.ExpiresInDays),
 		MonitoringSchedule:          bs.Monitoring.Schedule,
-		ControlPlaneExpiresInDays:   bs.ControlPlane.ExpiresInDays,
+		ControlPlaneExpiresInDays:   strconv.Itoa(bs.ControlPlane.ExpiresInDays),
 		ControlPlaneSchedule:        bs.ControlPlane.Schedule,
+		NexusExpiresInDays:          strconv.Itoa(bs.Nexus.ExpiresInDays),
 		NexusSchedule:               bs.Nexus.Schedule,
-		NexusExpiresInDays:          bs.Nexus.ExpiresInDays,
 	}
 }
 
-func (bs BackupScheduleForm) ToNestedStruct() BackupSchedule {
+func mustInt(s string) int {
+	i, err := strconv.ParseInt(s, 10, 32)
+	if err != nil {
+		return 0
+	}
+
+	return int(i)
+}
+
+func (bsf BackupScheduleForm) ToNestedStruct() BackupSchedule {
 	return BackupSchedule{
 		Nexus: ScheduleItem{
-			ExpiresInDays: bs.NexusExpiresInDays,
-			Schedule:      bs.NexusSchedule,
+			ExpiresInDays: mustInt(bsf.NexusExpiresInDays),
+			Schedule:      bsf.NexusSchedule,
 		},
 		ControlPlane: ScheduleItem{
-			Schedule:      bs.ControlPlaneSchedule,
-			ExpiresInDays: bs.ControlPlaneExpiresInDays,
+			Schedule:      bsf.ControlPlaneSchedule,
+			ExpiresInDays: mustInt(bsf.ControlPlaneExpiresInDays),
 		},
 		Monitoring: ScheduleItem{
-			Schedule:      bs.MonitoringSchedule,
-			ExpiresInDays: bs.MonitoringExpiresInDays,
+			Schedule:      bsf.MonitoringSchedule,
+			ExpiresInDays: mustInt(bsf.MonitoringExpiresInDays),
 		},
 		UserManagement: ScheduleItem{
-			Schedule:      bs.UserManagementSchedule,
-			ExpiresInDays: bs.UserManagementExpiresInDays,
+			Schedule:      bsf.UserManagementSchedule,
+			ExpiresInDays: mustInt(bsf.UserManagementExpiresInDays),
 		},
 	}
 }
@@ -86,13 +96,23 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 			gin.H{"page": "cluster", "errorsMap": validationErrors, "backupSchedule": bs}), nil
 	}
 
-	vals, err := a.getValuesDict(ctx)
+	values, err := a.getValuesDict(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
 
-	vals[backupValuesIndex] = bs.ToNestedStruct()
-	bts, err := yaml.Marshal(vals)
+	valuesDict := values.OriginalYaml
+
+	velero, ok := valuesDict[veleroValuesIndex]
+	if !ok {
+		velero = make(map[string]interface{})
+	}
+	veleroDict := velero.(map[string]interface{})
+
+	veleroDict["backup"] = bs.ToNestedStruct()
+	valuesDict[veleroValuesIndex] = veleroDict
+
+	bts, err := yaml.Marshal(valuesDict)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to encode yaml")
 	}
@@ -111,27 +131,8 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
 }
 
-func (a *App) loadBackupScheduleConfig(valuesDict map[string]interface{}, rspParams gin.H) error {
-	var (
-		bs  BackupSchedule
-		bsf BackupScheduleForm
-	)
+func (a *App) loadBackupScheduleConfig(values *Values, rspParams gin.H) error {
+	rspParams["backupSchedule"] = values.Velero.Backup.ToForm()
 
-	backupConfig, ok := valuesDict[backupValuesIndex]
-	if !ok {
-		rspParams["backupSchedule"] = bsf
-		return nil
-	}
-
-	bts, err := yaml.Marshal(backupConfig)
-	if err != nil {
-		return errors.Wrap(err, "unable to encode backup schedule")
-	}
-
-	if err := yaml.Unmarshal(bts, &bs); err != nil {
-		return errors.Wrap(err, "unable to encode backup schedule")
-	}
-
-	rspParams["backupSchedule"] = bs.ToForm()
 	return nil
 }
