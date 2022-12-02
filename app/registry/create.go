@@ -520,7 +520,10 @@ func (a *App) prepareRegistryExternalSystemsConfig(ctx *gin.Context, r *registry
 			continue
 		}
 
-		externalSystems[resParts[0]] = map[string]string{"type": resParts[1]}
+		externalSystems[resParts[0]] = map[string]string{
+			"type":     resParts[1],
+			"protocol": "REST",
+		}
 	}
 
 	if len(externalSystems) > 0 {

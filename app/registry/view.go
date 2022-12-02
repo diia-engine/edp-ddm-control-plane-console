@@ -25,13 +25,17 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
 
-	viewParams := gin.H{
-		"page":     "registry",
-		"timezone": a.Config.Timezone,
-		"values":   values,
+	valuesJson, err := json.Marshal(values)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode values")
 	}
 
-	//values.Trembita.Registries
+	viewParams := gin.H{
+		"page":       "registry",
+		"timezone":   a.Config.Timezone,
+		"values":     values,
+		"valuesJson": string(valuesJson),
+	}
 
 	for _, f := range a.viewRegistryProcessFunctions() {
 		if err := f(userCtx, registryName, values, viewParams); err != nil {
@@ -180,9 +184,17 @@ func (a *App) viewAdministratorsConfig(userCtx context.Context, registryName str
 }
 
 func (a *App) viewCIDRConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
-	viewParams["adminCIDR"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
-	viewParams["citizenCIDR"] = strings.Split(values.Global.WhiteListIP.CitizenPortal, " ")
-	viewParams["officerCIDR"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
+	if values.Global.WhiteListIP.AdminRoutes != "" {
+		viewParams["adminCIDR"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
+	}
+
+	if values.Global.WhiteListIP.CitizenPortal != "" {
+		viewParams["citizenCIDR"] = strings.Split(values.Global.WhiteListIP.CitizenPortal, " ")
+	}
+
+	if values.Global.WhiteListIP.OfficerPortal != "" {
+		viewParams["officerCIDR"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
+	}
 
 	return nil
 }

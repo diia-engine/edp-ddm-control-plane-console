@@ -368,16 +368,21 @@ func mapHash(v map[string]interface{}) (string, error) {
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map[string]interface{},
-	gerritService gerrit.ServiceInterface) error {
-	_, values, err := GetValuesFromGit(ctx, projectName, gerritService)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values from git")
-	}
+type MRLabel struct {
+	Key   string
+	Value string
+}
 
-	for k, v := range editValues {
-		values[k] = v
-	}
+func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[string]interface{},
+	gerritService gerrit.ServiceInterface, labels ...MRLabel) error {
+	//_, values, err := GetValuesFromGit(ctx, projectName, gerritService)
+	//if err != nil {
+	//	return errors.Wrap(err, "unable to get values from git")
+	//}
+	//
+	//for k, v := range editValues {
+	//	values[k] = v
+	//}
 
 	valuesYaml, err := yaml.Marshal(values)
 	if err != nil {
@@ -404,6 +409,14 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map
 		}
 	}
 
+	_labels := map[string]string{
+		MRLabelTarget: mrTargetEditRegistry,
+	}
+
+	for _, l := range labels {
+		_labels[l.Key] = l.Value
+	}
+
 	if err := gerritService.CreateMergeRequestWithContents(ctx, &gerrit.MergeRequest{
 		ProjectName:   projectName,
 		Name:          fmt.Sprintf("reg-edit-mr-%s-%d", projectName, time.Now().Unix()),
@@ -411,10 +424,8 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map
 		AuthorName:    ctx.GetString(router.UserNameSessionKey),
 		CommitMessage: fmt.Sprintf("edit registry"),
 		TargetBranch:  "master",
-		Labels: map[string]string{
-			MRLabelTarget: mrTargetEditRegistry,
-		},
-		Annotations: map[string]string{},
+		Labels:        _labels,
+		Annotations:   map[string]string{},
 	}, map[string]string{
 		ValuesLocation: string(valuesYaml),
 	}); err != nil {

@@ -32,6 +32,8 @@ const (
 	mrSubTargetDisable         = "disable"
 	mrSubTargetEnable          = "enable"
 	mrSubTargetDeletion        = "deletion"
+	MRLabelApprove             = "console/approve"
+	MRLabelApproveAuto         = "auto"
 )
 
 type MRExists string

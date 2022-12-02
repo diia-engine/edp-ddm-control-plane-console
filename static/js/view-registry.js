@@ -19,9 +19,13 @@ let hasNewMergeRequests = function () {
 
 let app = Vue.createApp({
     mounted() {
+        if (this.$refs.hasOwnProperty('valuesJson')) {
+            this.values = JSON.parse(this.$refs.valuesJson.value);
+        }
     },
     data() {
         return {
+            values: {},
             accordion: 'general',
             externalRegPopupShow: false,
             backdropShow: false,
@@ -40,9 +44,65 @@ let app = Vue.createApp({
             accessGrantError: false,
             mrView: false,
             mrSrc: '',
+            trembitaClient: {
+                registryName: '',
+                formShow: false,
+                startValidation: false,
+                data: {
+                    protocol: "SOAP",
+                    service: {
+                        auth: { type: 'NO_AUTH' },
+                    },
+                },
+            },
         }
     }, // mrIframe
     methods: {
+        setTrembitaClientForm(e) {
+            this.trembitaClient.startValidation = true;
+        },
+        hideTrembitaClientForm(e) {
+            e.preventDefault();
+            this.backdropShow = false;
+            this.trembitaClient.formShow = false;
+            $("body").css("overflow", "scroll");
+        },
+        showTrembitaClientForm(registry, e) {
+            e.preventDefault();
+
+            this.trembitaClient.registryName = registry;
+            this.backdropShow = true;
+            this.trembitaClient.formShow = true;
+
+            console.log(this.values.trembita.registries[registry]);
+            this.mergeDeep(this.trembitaClient.data, this.values.trembita.registries[registry]);
+
+            $("body").css("overflow", "hidden");
+        },
+        isObject(item) {
+            return (item && typeof item === 'object' && !Array.isArray(item));
+        },
+        mergeDeep(target, ...sources) {
+            if (!sources.length) return target;
+            const source = sources.shift();
+
+            if (this.isObject(target) && this.isObject(source)) {
+                for (const key in source) {
+                    if (source[key] === null || source[key] === "") {
+                        continue
+                    }
+
+                    if (this.isObject(source[key])) {
+                        if (!target[key]) Object.assign(target, { [key]: {} });
+                        this.mergeDeep(target[key], source[key]);
+                    } else {
+                        Object.assign(target, { [key]: source[key] });
+                    }
+                }
+            }
+
+            return this.mergeDeep(target, ...sources);
+        },
         hideMrView(e) {
             $("body").css("overflow", "scroll");
             this.backdropShow = false;

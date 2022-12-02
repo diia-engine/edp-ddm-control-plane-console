@@ -2,6 +2,7 @@
     {{template "header" .}}
     <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/datatables.custom.css" />
 <div class="registry" id="registry-view">
+    <input type="hidden" value="{{ .valuesJson }}" ref="valuesJson" />
     <div class="registry-header">
         <a href="{{ .BasePath }}/admin/registry/overview" class="registry-add">
             <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
@@ -149,7 +150,7 @@
                         <td>{{$al.Protocol}}</td>
                         <td>{{$al.Auth}}</td>
                         <td>
-                            <a href="#">
+                            <a href="#" @click="showTrembitaClientForm('{{ $index }}', $event)">
                                 <img alt="edit" src="/static/img/action-edit.png" />
                             </a>
                         </td>
@@ -157,6 +158,8 @@
                 {{end}}
                 </tbody>
             </table>
+
+            {{template "trembita-client-form" .}}
         </div>
     </div>
     <div class="rg-info-block">

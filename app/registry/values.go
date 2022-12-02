@@ -4,7 +4,7 @@ import "fmt"
 
 type Values struct {
 	Administrators  []Admin                   `yaml:"administrators" json:"administrators"`
-	ExternalSystems map[string]ExternalSystem `yaml:"external-systems" json:"external-systems"`
+	ExternalSystems map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
 	Global          Global                    `yaml:"global" json:"global"`
 	Trembita        Trembita                  `yaml:"trembita" json:"trembita"`
 	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
@@ -59,9 +59,9 @@ type Trembita struct {
 }
 
 type TrembitaRegistry struct {
-	UserID          string                  `yaml:"user-id" json:"user-id"`
+	UserID          string                  `yaml:"user-id" json:"userId"`
 	Type            string                  `yaml:"type" json:"type"`
-	ProtocolVersion string                  `yaml:"protocol-version" json:"protocol-version"`
+	ProtocolVersion string                  `yaml:"protocol-version" json:"protocolVersion"`
 	URL             string                  `yaml:"url" json:"url"`
 	Protocol        string                  `yaml:"protocol" json:"protocol"`
 	Client          TrembitaRegistryClient  `yaml:"client" json:"client"`
@@ -95,10 +95,10 @@ func (t TrembitaRegistry) FaStatus() string {
 }
 
 type TrembitaRegistryClient struct {
-	XRoadInstance string `yaml:"x-road-instance" json:"x-road-instance"`
-	MemberClass   string `yaml:"member-class" json:"member-class"`
-	MemberCode    string `yaml:"member-code" json:"member-code"`
-	SubsystemCode string `yaml:"subsystem-code" json:"subsystem-code"`
+	XRoadInstance string `yaml:"x-road-instance" json:"xRoadInstance"`
+	MemberClass   string `yaml:"member-class" json:"memberClass"`
+	MemberCode    string `yaml:"member-code" json:"memberCode"`
+	SubsystemCode string `yaml:"subsystem-code" json:"subsystemCode"`
 }
 
 type TrembitaRegistryService struct {

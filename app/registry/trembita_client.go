@@ -1,10 +1,63 @@
 package registry
 
 import (
+	"ddm-admin-console/router"
+	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
+
+type TrembitaClientRegistryForm struct {
+	TrembitaClientProtocolVersion string `form:"trembita-client-protocol-version" binding:"required"`
+	TrembitaClientURL             string `form:"trembita-client-url" binding:"required"`
+	TrembitaClientUserID          string `form:"trembita-client-user-id" binding:"required"`
+	TrembitaClientXRoadInstance   string `form:"trembita-client-x-road-instance" binding:"required"`
+	TrembitaClientMemberClass     string `form:"trembita-client-member-class" binding:"required"`
+	TrembitaClientMemberCode      string `form:"trembita-client-member-code" binding:"required"`
+	TrembitaClientSubsystemCode   string `form:"trembita-client-subsystem-code" binding:"required"`
+	TrembitaClientRegitryName     string `form:"trembita-client-regitry-name" binding:"required"`
+	TrembitaClientProtocol        string `form:"trembita-client-protocol" binding:"required"`
+	TrembitaServiceXRoadInstance  string `form:"trembita-service-x-road-instance" binding:"required"`
+	TrembitaServiceMemberClass    string `form:"trembita-service-member-class" binding:"required"`
+	TrembitaServiceMemberCode     string `form:"trembita-service-member-code" binding:"required"`
+	TrembitaServiceSubsystemCode  string `form:"trembita-service-subsystem-code" binding:"required"`
+	TrembitaServiceAuthType       string `form:"trembita-service-auth-type" binding:"required"`
+	TrembitaServiceAuthSecret     string `form:"trembita-service-auth-secret"`
+}
+
+func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
+	tr := TrembitaRegistry{
+		URL:             tf.TrembitaClientURL,
+		UserID:          tf.TrembitaClientUserID,
+		ProtocolVersion: tf.TrembitaClientProtocolVersion,
+		Client: TrembitaRegistryClient{
+			MemberClass:   tf.TrembitaClientMemberClass,
+			MemberCode:    tf.TrembitaClientMemberCode,
+			SubsystemCode: tf.TrembitaClientSubsystemCode,
+			XRoadInstance: tf.TrembitaClientXRoadInstance,
+		},
+		Service: TrembitaRegistryService{
+			TrembitaRegistryClient: TrembitaRegistryClient{
+				MemberCode:    tf.TrembitaServiceMemberCode,
+				MemberClass:   tf.TrembitaServiceMemberClass,
+				XRoadInstance: tf.TrembitaServiceXRoadInstance,
+				SubsystemCode: tf.TrembitaServiceSubsystemCode,
+			},
+			Auth: map[string]string{
+				"type": tf.TrembitaServiceAuthType,
+			},
+		},
+	}
+
+	if tf.TrembitaServiceAuthSecret != "" {
+		tr.Service.Auth["secret"] = tf.TrembitaServiceAuthSecret
+	}
+
+	return tr
+}
 
 func (a *App) prepareTrembitaClientConfig(ctx *gin.Context, r *registry, values map[string]interface{},
 	secrets map[string]map[string]interface{}) error {
@@ -26,7 +79,10 @@ func (a *App) prepareTrembitaClientConfig(ctx *gin.Context, r *registry, values 
 				continue
 			}
 
-			trembitaClientRegistries[regParts[0]] = map[string]string{"type": regParts[1]}
+			trembitaClientRegistries[regParts[0]] = map[string]string{
+				"type":     regParts[1],
+				"protocol": "SOAP",
+			}
 		}
 
 		if len(trembitaClientRegistries) > 0 {
@@ -37,4 +93,48 @@ func (a *App) prepareTrembitaClientConfig(ctx *gin.Context, r *registry, values 
 	values[trembitaValuesKey] = trembitaDict
 
 	return nil
+}
+
+func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Response, retErr error) {
+	registryName := ctx.Param("name")
+	_, err := a.Codebase.Get(registryName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find registry")
+	}
+
+	var tf TrembitaClientRegistryForm
+	if err := ctx.ShouldBind(&tf); err != nil {
+		return nil, errors.Wrap(err, "unable to parse form")
+	}
+
+	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get values")
+	}
+
+	trembitaRegistryFromValues, ok := values.Trembita.Registries[tf.TrembitaClientRegitryName]
+	if !ok {
+		return nil, errors.New("wrong registry name")
+	}
+
+	trembitaRegistry := tf.ToNestedStruct()
+	trembitaRegistry.Type = trembitaRegistryFromValues.Type
+	trembitaRegistry.Protocol = trembitaRegistryFromValues.Protocol
+
+	trembita, ok := values.OriginalYaml[trembitaValuesKey]
+	if !ok {
+		return nil, errors.New("no trembita config in values")
+	}
+	trembitaDict := trembita.(map[string]interface{})
+	registriesDict := trembitaDict["registries"].(map[string]interface{})
+	registriesDict[tf.TrembitaClientRegitryName] = trembitaRegistry
+	values.OriginalYaml[trembitaValuesKey] = trembitaDict
+
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
+		MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+		return nil, errors.Wrap(err, "unable to create merge request")
+	}
+
+	return router.MakeRedirectResponse(http.StatusFound,
+		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
 }
