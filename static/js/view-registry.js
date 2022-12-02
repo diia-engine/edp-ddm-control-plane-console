@@ -49,8 +49,21 @@ let app = Vue.createApp({
                 formShow: false,
                 startValidation: false,
                 data: {
+                    protocolVersion: '',
+                    url: '',
+                    userId: '',
                     protocol: "SOAP",
+                    client: {
+                        xRoadInstance: '',
+                        memberClass: '',
+                        memberCode: '',
+                        subsystemCode: '',
+                    },
                     service: {
+                        xRoadInstance: '',
+                        memberClass: '',
+                        memberCode: '',
+                        subsystemCode: '',
                         auth: { type: 'NO_AUTH' },
                     },
                 },
@@ -60,6 +73,44 @@ let app = Vue.createApp({
     methods: {
         setTrembitaClientForm(e) {
             this.trembitaClient.startValidation = true;
+            for (let i in this.trembitaClient.data) {
+                if (typeof(this.trembitaClient.data[i]) == "string" && this.trembitaClient.data[i] === "") {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            for (let i in this.trembitaClient.data.client) {
+                if (typeof(this.trembitaClient.data.client[i]) == "string" &&
+                    this.trembitaClient.data.client[i] === "") {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            for (let i in this.trembitaClient.data.service) {
+                if (typeof(this.trembitaClient.data.service[i]) == "string" &&
+                    this.trembitaClient.data.service[i] === "") {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            if (this.trembitaClient.data.service.auth.type === 'AUTH_TOKEN' &&
+                this.trembitaClient.data.service.auth['secret'] === '') {
+                e.preventDefault();
+            }
+        },
+        changeTrembitaClientAuthType() {
+            if (this.trembitaClient.data.service.auth.type === 'AUTH_TOKEN' &&
+                !this.trembitaClient.data.service.auth.hasOwnProperty('secret')) {
+                this.trembitaClient.data.service.auth['secret'] = '';
+            }
+
+            if (this.trembitaClient.data.service.auth.type === 'NO_AUTH' &&
+                this.trembitaClient.data.service.auth.hasOwnProperty('secret')) {
+                delete this.trembitaClient.data.service.auth['secret']
+            }
         },
         hideTrembitaClientForm(e) {
             e.preventDefault();
