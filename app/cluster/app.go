@@ -64,6 +64,9 @@ func Make(router router.Interface, services Services, cnf Config) (*App, error) 
 	if err := router.AddValidator("cron-expression", CronExpressionValidator); err != nil {
 		return nil, errors.Wrap(err, "unable to add cron expression validator")
 	}
+	if err := router.AddValidator("only-integer", OnlyIntegerValidator); err != nil {
+		return nil, errors.Wrap(err, "unable to add only integer validator")
+	}
 
 	return &app, nil
 }

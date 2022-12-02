@@ -25,13 +25,13 @@ type ScheduleItem struct {
 
 type BackupScheduleForm struct {
 	NexusSchedule               string `form:"nexus-schedule" binding:"required,cron-expression"`
-	NexusExpiresInDays          string `form:"nexus-expires-in-days" binding:"required"`
+	NexusExpiresInDays          string `form:"nexus-expires-in-days" binding:"required,only-integer"`
 	ControlPlaneSchedule        string `form:"control-plane-schedule" binding:"required,cron-expression"`
-	ControlPlaneExpiresInDays   string `form:"control-plane-expires-in-days" binding:"required"`
+	ControlPlaneExpiresInDays   string `form:"control-plane-expires-in-days" binding:"required,only-integer"`
 	UserManagementSchedule      string `form:"user-management-schedule" binding:"required,cron-expression"`
-	UserManagementExpiresInDays string `form:"user-management-expires-in-days" binding:"required"`
+	UserManagementExpiresInDays string `form:"user-management-expires-in-days" binding:"required,only-integer"`
 	MonitoringSchedule          string `form:"monitoring-schedule" binding:"required,cron-expression"`
-	MonitoringExpiresInDays     string `form:"monitoring-expires-in-days" binding:"required"`
+	MonitoringExpiresInDays     string `form:"monitoring-expires-in-days" binding:"required,only-integer"`
 }
 
 func (bs BackupSchedule) ToForm() BackupScheduleForm {
@@ -135,6 +135,15 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 func CronExpressionValidator(fl validator.FieldLevel) bool {
 	expression := fl.Field().String()
 	if _, err := cron.ParseStandard(expression); err != nil {
+		return false
+	}
+
+	return true
+}
+
+func OnlyIntegerValidator(fl validator.FieldLevel) bool {
+	expression := fl.Field().String()
+	if _, err := strconv.ParseInt(expression, 10, 24); err != nil {
 		return false
 	}
 

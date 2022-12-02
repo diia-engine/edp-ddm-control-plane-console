@@ -79,3 +79,6 @@ msgstr "Підтверджено"
 
 msgid "cron-expression"
 msgstr "Невірний вираз"
+
+msgid "only-integer"
+msgstr "Тільки цілі числа"
