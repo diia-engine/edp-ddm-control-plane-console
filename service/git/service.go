@@ -95,12 +95,36 @@ func (s *Service) Clone(url string) error {
 	return nil
 }
 
-func (s *Service) RawCommit(message string, user *User, params ...string) error {
-	baseParams := []string{"commit", "-m", message, fmt.Sprintf("--author=\"%s <%s>\"", user.Name, user.Email)}
+func (s *Service) SetAuthor(user *User) error {
+	cmd := s.commandCreate("git", "config", "user.email", user.Email)
+	cmd.SetDir(s.path)
+
+	bts, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to commit: %s", string(bts))
+	}
+
+	cmd = s.commandCreate("git", "config", "user.name", user.Name)
+	cmd.SetDir(s.path)
+
+	bts, err = cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to commit: %s", string(bts))
+	}
+
+	return nil
+}
+
+func (s *Service) RawCommit(message string /*user *User,*/, params ...string) error {
+	baseParams := []string{"commit" /* fmt.Sprintf("--author=\"%s <%s>\"", user.Name, user.Email),*/, "-m", message}
 	baseParams = append(baseParams, params...)
 
 	cmd := s.commandCreate("git", baseParams...)
 	cmd.SetDir(s.path)
+	//cmd.SetEnv([]string{fmt.Sprintf("GIT_AUTHOR_EMAIL=\"%s\"", user.Email),
+	//	fmt.Sprintf("GIT_AUTHOR_NAME=\"%s\"", user.Name)})
+
+	//GIT_AUTHOR_EMAIL="you@email.com" && GIT_AUTHOR_NAME="Your Name"
 
 	bts, err := cmd.CombinedOutput()
 	if err != nil {
@@ -184,7 +208,7 @@ func (s *Service) keyFilePath() (string, error) {
 		return s._keyFilePath, nil
 	}
 
-	keyFile, err := os.Create(fmt.Sprintf("%s/sshkey_%d", s.TempDir, time.Now().Unix()))
+	keyFile, err := os.Create(fmt.Sprintf("%s/sshkey_%d", s.TempDir, time.Now().UnixNano()))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create temp file for ssh key")
 	}

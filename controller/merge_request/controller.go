@@ -165,10 +165,14 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to generate change id")
 	}
 
+	if err := gitService.SetAuthor(&git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail}); err != nil {
+		return errors.Wrap(err, "unable to set author")
+	}
+
 	if err := gitService.RawCommit(
 		git.CommitMessageWithChangeID(
 			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
-				targetBranch), changeID), &git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail},
+				targetBranch), changeID),
 		"--amend"); err != nil {
 		return errors.Wrap(err, "unable to commit changes")
 	}
