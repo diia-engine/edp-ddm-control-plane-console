@@ -79,6 +79,8 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err := c.prepareMergeRequest(ctx, &instance); err != nil {
+		c.logger.Errorw("reconciling merge request", "Request.Namespace", request.Namespace,
+			"Request.Name", request.Name, "error", err.Error())
 		resultErr = errors.Wrap(err, "unable to prepare merge request")
 		return
 	}
@@ -168,7 +170,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
 				targetBranch), changeID), &git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail},
 		"--amend"); err != nil {
-		return errors.Wrapf(err, "unable to commit changes")
+		return errors.Wrap(err, "unable to commit changes")
 	}
 
 	if err := gitService.Push("origin", fmt.Sprintf("refs/heads/%s:%s", sourceBranch, sourceBranch), "--force"); err != nil {

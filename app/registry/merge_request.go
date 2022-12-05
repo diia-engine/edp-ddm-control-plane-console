@@ -9,7 +9,7 @@ type ExtendedMergeRequests struct {
 	gerrit.GerritMergeRequest
 }
 
-func (e ExtendedMergeRequests) StatusValues() string {
+func (e ExtendedMergeRequests) StatusValue() string {
 	if e.Labels[MRLabelAction] == MRLabelActionBranchMerge && e.Spec.SourceBranch == "" {
 		return "in progress"
 	}
@@ -42,11 +42,12 @@ func (e ExtendedMergeRequests) Action() string {
 	}
 
 	if e.Labels[MRLabelTarget] == MRTargetRegistryVersionUpdate {
-		if e.Spec.SourceBranch != "" {
-			return e.Spec.SourceBranch
-		} else if e.Labels[MRLabelSourceBranch] != "" {
-			return e.Labels[MRLabelSourceBranch]
+		sourceBranch := e.Spec.SourceBranch
+		if sourceBranch == "" {
+			sourceBranch = e.Labels[MRLabelSourceBranch]
 		}
+
+		return fmt.Sprintf("Оновлення реєстру до %s", sourceBranch)
 	}
 
 	return "-"
