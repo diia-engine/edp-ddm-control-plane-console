@@ -19,7 +19,8 @@ func (e ExtendedMergeRequests) RequestName() string {
 }
 
 func (e ExtendedMergeRequests) StatusValue() string {
-	if e.Labels[registry.MRLabelAction] == registry.MRLabelActionBranchMerge && e.Spec.SourceBranch == "" {
+	if e.Labels[registry.MRLabelAction] == registry.MRLabelActionBranchMerge &&
+		(e.Spec.SourceBranch == "" || e.Status.Value == "sourceBranch or changesConfigMap must be specified") {
 		return "in progress"
 	}
 
