@@ -52,10 +52,6 @@ func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
 		},
 	}
 
-	if tf.TrembitaServiceAuthSecret != "" {
-		tr.Service.Auth["secret"] = tf.TrembitaServiceAuthSecret
-	}
-
 	return tr
 }
 
@@ -129,6 +125,20 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 	registriesDict := trembitaDict["registries"].(map[string]interface{})
 	registriesDict[tf.TrembitaClientRegitryName] = trembitaRegistry
 	values.OriginalYaml[trembitaValuesKey] = trembitaDict
+
+	//path vault:secret/<registry>/trembita-registries/<trembita-registry-name>
+	//key trembita.registries.<registry-name>.auth.secret.token
+	//create secret
+
+	if tf.TrembitaServiceAuthType == "AUTH_TOKEN" && tf.TrembitaServiceAuthSecret != "" {
+		if err := a.createVaultSecrets(map[string]map[string]interface{}{
+			fmt.Sprintf("vault:secret/%s/trembita-registries/%s", registryName, tf.TrembitaClientRegitryName): {
+				fmt.Sprintf("trembita.registries.%s.auth.secret.token", tf.TrembitaClientRegitryName): tf.TrembitaServiceAuthSecret,
+			},
+		}); err != nil {
+			return nil, errors.Wrap(err, "unable to create auth token secret")
+		}
+	}
 
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
 		MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
