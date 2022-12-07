@@ -32,20 +32,21 @@ import (
 )
 
 const (
-	AnnotationSMPTType        = "registry-parameters/smtp-type"
-	AnnotationSMPTOpts        = "registry-parameters/smtp-opts"
-	AnnotationTemplateName    = "registry-parameters/template-name"
-	AnnotationCreatorUsername = "registry-parameters/creator-username"
-	AnnotationCreatorEmail    = "registry-parameters/creator-email"
-	AnnotationValues          = "registry-parameters/values"
-	AdministratorsValuesKey   = "administrators"
-	ResourcesValuesKey        = "registry"
-	VaultKeyCACert            = "caCertificate"
-	VaultKeyCert              = "certificate"
-	VaultKeyPK                = "key"
-	externalSystemsKey        = "external-systems"
-	trembitaRegistriesKey     = "registries"
-	trembitaValuesKey         = "trembita"
+	AnnotationSMPTType          = "registry-parameters/smtp-type"
+	AnnotationSMPTOpts          = "registry-parameters/smtp-opts"
+	AnnotationTemplateName      = "registry-parameters/template-name"
+	AnnotationCreatorUsername   = "registry-parameters/creator-username"
+	AnnotationCreatorEmail      = "registry-parameters/creator-email"
+	AnnotationValues            = "registry-parameters/values"
+	AdministratorsValuesKey     = "administrators"
+	ResourcesValuesKey          = "registry"
+	VaultKeyCACert              = "caCertificate"
+	VaultKeyCert                = "certificate"
+	VaultKeyPK                  = "key"
+	externalSystemsKey          = "external-systems"
+	trembitaRegistriesKey       = "registries"
+	trembitaValuesKey           = "trembita"
+	trembitaRegistriesValuesKet = "registries"
 )
 
 type KeyManagement interface {

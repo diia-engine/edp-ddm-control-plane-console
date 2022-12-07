@@ -48,6 +48,7 @@ let app = Vue.createApp({
                 registryName: '',
                 formShow: false,
                 startValidation: false,
+                tokenInputType: 'text',
                 data: {
                     protocolVersion: '',
                     url: '',
@@ -118,6 +119,12 @@ let app = Vue.createApp({
             this.trembitaClient.formShow = false;
             $("body").css("overflow", "scroll");
         },
+        trembitaFormSecretFocus() {
+            if (this.trembitaClient.tokenInputType === 'password') {
+                this.trembitaClient.data.service.auth.secret = '';
+                this.trembitaClient.tokenInputType = 'text';
+            }
+        },
         showTrembitaClientForm(registry, e) {
             e.preventDefault();
 
@@ -125,8 +132,10 @@ let app = Vue.createApp({
             this.backdropShow = true;
             this.trembitaClient.formShow = true;
 
-            console.log(this.values.trembita.registries[registry]);
             this.mergeDeep(this.trembitaClient.data, this.values.trembita.registries[registry]);
+            if (this.trembitaClient.data.service.auth.hasOwnProperty('secret')) {
+                this.trembitaClient.tokenInputType = 'password';
+            }
 
             $("body").css("overflow", "hidden");
         },

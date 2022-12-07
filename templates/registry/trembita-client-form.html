@@ -150,7 +150,9 @@
                      :class="{'error': trembitaClient.data.service.auth.secret == '' && trembitaClient.startValidation}">
                     <label>Вкажіть токен авторизації</label>
                     <input aria-label="" name="trembita-service-auth-secret"
-                           v-model="trembitaClient.data.service.auth.secret" type="text" />
+                           v-model="trembitaClient.data.service.auth.secret"
+                           :type="[[ trembitaClient.tokenInputType ]]"
+                           @focus="trembitaFormSecretFocus" />
                     <span v-if="trembitaClient.data.service.auth.secret == '' && trembitaClient.startValidation">
                         Обов’язкове поле
                     </span>
