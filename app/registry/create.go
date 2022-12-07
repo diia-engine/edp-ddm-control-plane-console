@@ -195,12 +195,14 @@ func (a *App) filterProjects(projects []gerrit.GerritProject) []gerrit.GerritPro
 func formatGerritProjectBranches(projects []gerrit.GerritProject) (string, error) {
 	res := make(map[string][]string)
 	for _, p := range projects {
+		var branches []string
 		for _, b := range p.Status.Branches {
 			idx := strings.Index(b, "heads/")
 			if idx != -1 {
-				res[p.Spec.Name] = append(res[p.Name], b[idx+6:])
+				branches = append(branches, b[idx+6:])
 			}
 		}
+		res[p.Spec.Name] = branches
 	}
 
 	bts, err := json.Marshal(res)
@@ -300,7 +302,12 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unknown error")
 	}
 
-	values, vaultSecretData := make(map[string]interface{}), make(map[string]map[string]interface{})
+	values, err := a.GetValuesFromBranch(r.RegistryGitTemplate, r.RegistryGitBranch)
+	if err != nil {
+		return errors.Wrap(err, "unable to load values from template")
+	}
+
+	vaultSecretData := make(map[string]map[string]interface{})
 	if err := a.prepareDNSConfig(ginContext, r, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to prepare dns config")
 	}
@@ -702,10 +709,8 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 	return
 }
 
-func (a *App) prepareMailServerConfig(ginContext *gin.Context, r *registry, secretData map[string]map[string]interface{}, values map[string]interface{}) error {
-	if ginContext.PostForm("action") == "edit" && ginContext.PostForm("edit-smtp") == "" {
-		return nil
-	}
+func (a *App) prepareMailServerConfig(ginContext *gin.Context, r *registry, secretData map[string]map[string]interface{},
+	values map[string]interface{}) error {
 
 	notifications := make(map[string]interface{})
 

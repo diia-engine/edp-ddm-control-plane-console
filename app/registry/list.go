@@ -62,7 +62,8 @@ func (a *App) loadRegistryVersions(ctx context.Context, cbs []codebase.Codebase)
 			registryVersion = BranchVersion(cb.Spec.BranchToCopyInDefaultBranch)
 		}
 
-		for _, mr := range mrs {
+		currentRegistryMrs := registryMrs[cb.Name]
+		for _, mr := range currentRegistryMrs {
 			if mr.Labels[MRLabelTarget] != MRTargetRegistryVersionUpdate {
 				continue
 			}

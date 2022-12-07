@@ -5,6 +5,7 @@ import (
 	"ddm-admin-console/service"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -28,6 +29,7 @@ const (
 	StatusMerged    = "MERGED"
 	StatusNew       = "NEW"
 	StatusAbandoned = "ABANDONED"
+	CurrentRevision = "current"
 )
 
 type Service struct {
@@ -255,6 +257,34 @@ func (s *Service) CreateMergeRequestWithContents(ctx context.Context, mr *MergeR
 		},
 	}); err != nil {
 		return errors.Wrap(err, "unable to create merge request")
+	}
+
+	return nil
+}
+
+func (s *Service) ApproveAndSubmitChange(changeID, username, email string) error {
+	if _, rsp, err := s.GoGerritClient().Changes.SetReview(changeID, CurrentRevision, &goGerrit.ReviewInput{
+		Message: fmt.Sprintf("Submitted by %s [%s]", username, email),
+		Labels: map[string]string{
+			"Code-Review": "2",
+			"Verified":    "1",
+		},
+	}); err != nil {
+		if rsp != nil {
+			body, _ := io.ReadAll(rsp.Body)
+			return errors.Wrapf(err, "unable to review change, error: %s", string(body))
+		}
+
+		return errors.Wrap(err, "unable to review change")
+	}
+
+	if _, rsp, err := s.GoGerritClient().Changes.SubmitChange(changeID, &goGerrit.SubmitInput{}); err != nil {
+		if rsp != nil {
+			body, _ := io.ReadAll(rsp.Body)
+			return errors.Wrapf(err, "unable to submit change, error: %s", string(body))
+		}
+
+		return errors.Wrap(err, "unable to submit change")
 	}
 
 	return nil

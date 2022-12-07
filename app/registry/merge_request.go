@@ -9,13 +9,21 @@ type ExtendedMergeRequests struct {
 	gerrit.GerritMergeRequest
 }
 
+func (e ExtendedMergeRequests) StatusValue() string {
+	if e.Labels[MRLabelAction] == MRLabelActionBranchMerge && e.Spec.SourceBranch == "" {
+		return "in progress"
+	}
+
+	return e.Status.Value
+}
+
 func (e ExtendedMergeRequests) RequestName() string {
 	if e.Labels[MRLabelTarget] == mrTargetExternalReg {
 		return e.Annotations[mrAnnotationRegName]
 	}
 
 	if e.Labels[MRLabelTarget] == MRTargetRegistryVersionUpdate {
-		return e.Spec.SourceBranch
+		return "Оновлення версії реєстру"
 	}
 
 	if e.Labels[MRLabelTarget] == mrTargetEditRegistry {
@@ -31,6 +39,15 @@ func (e ExtendedMergeRequests) Action() string {
 		if ok {
 			return fmt.Sprintf("mre-action-%s", action)
 		}
+	}
+
+	if e.Labels[MRLabelTarget] == MRTargetRegistryVersionUpdate {
+		sourceBranch := e.Spec.SourceBranch
+		if sourceBranch == "" {
+			sourceBranch = e.Labels[MRLabelSourceBranch]
+		}
+
+		return fmt.Sprintf("Оновлення реєстру до %s", sourceBranch)
 	}
 
 	return "-"

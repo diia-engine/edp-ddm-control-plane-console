@@ -1,10 +1,12 @@
 package git
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -41,6 +43,14 @@ func Make(path, user, key string) *Service {
 		user:    user,
 		key:     key,
 	}
+}
+
+func (s *Service) GenerateChangeID() (string, error) {
+	h := sha1.New()
+	if _, err := h.Write([]byte(time.Now().Format(time.RFC3339))); err != nil {
+		return "", errors.Wrap(err, "unable to write hash")
+	}
+	return fmt.Sprintf("I%x", h.Sum(nil)), nil
 }
 
 func (s *Service) Clean() error {
@@ -80,6 +90,45 @@ func (s *Service) Clone(url string) error {
 	bts, err := fetchCMD.CombinedOutput()
 	if err != nil && !strings.Contains(string(bts), "does not make sense") {
 		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
+	}
+
+	return nil
+}
+
+func (s *Service) SetAuthor(user *User) error {
+	cmd := s.commandCreate("git", "config", "user.email", user.Email)
+	cmd.SetDir(s.path)
+
+	bts, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to commit: %s", string(bts))
+	}
+
+	cmd = s.commandCreate("git", "config", "user.name", user.Name)
+	cmd.SetDir(s.path)
+
+	bts, err = cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to commit: %s", string(bts))
+	}
+
+	return nil
+}
+
+func (s *Service) RawCommit(message string /*user *User,*/, params ...string) error {
+	baseParams := []string{"commit" /* fmt.Sprintf("--author=\"%s <%s>\"", user.Name, user.Email),*/, "-m", message}
+	baseParams = append(baseParams, params...)
+
+	cmd := s.commandCreate("git", baseParams...)
+	cmd.SetDir(s.path)
+	//cmd.SetEnv([]string{fmt.Sprintf("GIT_AUTHOR_EMAIL=\"%s\"", user.Email),
+	//	fmt.Sprintf("GIT_AUTHOR_NAME=\"%s\"", user.Name)})
+
+	//GIT_AUTHOR_EMAIL="you@email.com" && GIT_AUTHOR_NAME="Your Name"
+
+	bts, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to commit: %s", string(bts))
 	}
 
 	return nil
@@ -159,7 +208,7 @@ func (s *Service) keyFilePath() (string, error) {
 		return s._keyFilePath, nil
 	}
 
-	keyFile, err := os.Create(fmt.Sprintf("%s/sshkey_%d", s.TempDir, time.Now().Unix()))
+	keyFile, err := os.Create(fmt.Sprintf("%s/sshkey_%d", s.TempDir, time.Now().UnixNano()))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create temp file for ssh key")
 	}
@@ -305,6 +354,45 @@ func (s *Service) Checkout(branch string, create bool) error {
 	return nil
 }
 
+func (s *Service) Add(file string) error {
+	cmd := s.commandCreate("git", "add", file)
+	cmd.SetDir(s.path)
+
+	var msg string
+	out, err := cmd.CombinedOutput()
+
+	if out != nil && len(out) > 0 {
+		msg = string(out)
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "unable to run rebase, msg: %s", msg)
+	}
+
+	return nil
+}
+
+func (s *Service) Rebase(targetBranch string, params ...string) (string, error) {
+	gitArgs := []string{"rebase", targetBranch}
+	gitArgs = append(gitArgs, params...)
+
+	cmd := s.commandCreate("git", gitArgs...)
+	cmd.SetDir(s.path)
+
+	var msg string
+	out, err := cmd.CombinedOutput()
+
+	if out != nil && len(out) > 0 {
+		msg = string(out)
+	}
+
+	if err != nil {
+		return msg, errors.Wrap(err, "unable to run rebase")
+	}
+
+	return msg, nil
+}
+
 func (s *Service) worktree() (*git.Repository, *git.Worktree, error) {
 	r, err := git.PlainOpen(s.path)
 	if err != nil {
@@ -338,4 +426,14 @@ func (s *Service) RemoveBranch(name string) error {
 	}
 
 	return nil
+}
+
+func ExtractMrURL(pushMessage string) string {
+	return regexp.MustCompile(
+		`https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)`).
+		FindString(pushMessage)
+}
+
+func CommitMessageWithChangeID(commitMessage, changeID string) string {
+	return fmt.Sprintf("%s\n\nChange-Id: %s", commitMessage, changeID)
 }

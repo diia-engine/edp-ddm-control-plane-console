@@ -36,6 +36,15 @@ func (e ExtendedMergeRequests) RequestName() string {
 	return e.Name
 }
 
+func (e ExtendedMergeRequests) StatusValue() string {
+	if e.Labels[registry.MRLabelAction] == registry.MRLabelActionBranchMerge &&
+		(e.Spec.SourceBranch == "" || e.Status.Value == "sourceBranch or changesConfigMap must be specified") {
+		return "in progress"
+	}
+
+	return e.Status.Value
+}
+
 func (e ExtendedMergeRequests) Action() string {
 	if e.Labels[registry.MRLabelTarget] == MRTypeClusterAdmins {
 		return "Оновлення адміністраторів платформи"
@@ -45,8 +54,13 @@ func (e ExtendedMergeRequests) Action() string {
 		return "Обмеження доступу"
 	}
 
+	sourceBranch := e.Spec.SourceBranch
+	if sourceBranch == "" {
+		sourceBranch = e.Labels[registry.MRLabelSourceBranch]
+	}
+
 	if e.Labels[registry.MRLabelTarget] == MRTypeClusterUpdate {
-		return fmt.Sprintf("Оновлення платформи до %s", e.Spec.SourceBranch)
+		return fmt.Sprintf("Оновлення платформи до %s", sourceBranch)
 	}
 
 	return "-"

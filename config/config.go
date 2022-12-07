@@ -55,6 +55,10 @@ type Settings struct {
 	DDMManualEDPComponent                 string `envconfig:"DDM_MANUAL_EDP_COMPONENT" default:"ddm-architecture"`
 	OAuthUseExternalTokenURL              bool   `envconfig:"OAUTH_USE_EXTERNAL_TOKEN_URL"`
 	OAuthInternalTokenHost                string `envconfig:"OAUTH_INTERNAL_TOKEN_HOST" default:"oauth-openshift.openshift-authentication.svc"`
+	GitUsername                           string `envconfig:"GERRIT_GIT_USERNAME" default:"project-creator"`
+	GitKeySecretName                      string `envconfig:"GERRIT_GIT_KEY_SECRET_NAME" default:"gerrit-project-creator"`
+	GitHost                               string `envconfig:"GERRIT_GIT_HOSTNAME" default:"gerrit"`
+	GitPort                               string `envconfig:"GERRIT_GIT_PORT" default:"31000"`
 }
 
 type Services struct {

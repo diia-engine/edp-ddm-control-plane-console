@@ -82,3 +82,6 @@ msgstr "Невірний вираз"
 
 msgid "only-integer"
 msgstr "Тільки цілі числа"
+
+msgid "in progress"
+msgstr "У процесі виконання"

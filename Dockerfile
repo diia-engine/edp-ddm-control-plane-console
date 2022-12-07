@@ -12,7 +12,6 @@ RUN addgroup --gid ${USER_UID} ${USER_NAME} \
 WORKDIR /go/bin
 ENV ZONEINFO=/usr/local/go/lib/time/zoneinfo.zip
 
-COPY control-plane-console .
 COPY static static
 COPY templates templates
 COPY default.env .
@@ -21,7 +20,8 @@ COPY osplm.ini .
 RUN mkdir /home/admin-console/.ssh && chown ${USER_NAME}:${USER_NAME} /home/admin-console/.ssh && chmod 700 /home/admin-console/.ssh
 COPY ssh-config.txt /home/admin-console/.ssh/config
 RUN chown ${USER_NAME}:${USER_NAME} /home/admin-console/.ssh/config && chmod 700 /home/admin-console/.ssh/config
-
 USER ${USER_UID}
-
+RUN git config --global user.email "admin@localhost"
+RUN git config --global user.name "admin"
+COPY control-plane-console .
 CMD ["/go/bin/control-plane-console"]
