@@ -193,7 +193,7 @@
                         <td>{{$al.StrAuth}}</td>
                         <td>
                             <div class="trembita-actions">
-                                <a href="#">
+                                <a href="#" @click="showExternalSystemForm('{{ $index }}', $event)">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
                                 <a href="#">
@@ -212,6 +212,8 @@
                 </a>
             </div>
         </div>
+
+        {{template "registry-external-system" .}}
     </div>
     <div class="rg-info-block">
         <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'external-access'}"

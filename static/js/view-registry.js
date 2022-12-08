@@ -44,6 +44,18 @@ let app = Vue.createApp({
             accessGrantError: false,
             mrView: false,
             mrSrc: '',
+            externalSystem: {
+                registryName: '',
+                registryNameEditable: false,
+                formShow: false,
+                startValidation: false,
+                tokenInputType: 'text',
+                data: {
+                    url: '',
+                    protocol: "REST",
+                    auth: { type: 'NO_AUTH' },
+                },
+            },
             trembitaClient: {
                 registryName: '',
                 formShow: false,
@@ -102,6 +114,9 @@ let app = Vue.createApp({
                 e.preventDefault();
             }
         },
+        changeExternalSystemAuthType() {
+
+        },
         changeTrembitaClientAuthType() {
             if (this.trembitaClient.data.service.auth.type === 'AUTH_TOKEN' &&
                 !this.trembitaClient.data.service.auth.hasOwnProperty('secret')) {
@@ -112,6 +127,12 @@ let app = Vue.createApp({
                 this.trembitaClient.data.service.auth.hasOwnProperty('secret')) {
                 delete this.trembitaClient.data.service.auth['secret']
             }
+        },
+        hideExternalSystemForm(e) {
+            e.preventDefault();
+            this.backdropShow = false;
+            this.externalSystem.formShow = false;
+            $("body").css("overflow", "scroll");
         },
         hideTrembitaClientForm(e) {
             e.preventDefault();
@@ -124,6 +145,19 @@ let app = Vue.createApp({
                 this.trembitaClient.data.service.auth.secret = '';
                 this.trembitaClient.tokenInputType = 'text';
             }
+        },
+        externalSystemSecretFocus() {
+
+        },
+        showExternalSystemForm(registry, e) {
+            e.preventDefault();
+            this.externalSystem.registryName = registry;
+            this.backdropShow = true;
+            this.externalSystem.formShow = true;
+
+            //todo: load data
+
+            $("body").css("overflow", "hidden");
         },
         showTrembitaClientForm(registry, e) {
             e.preventDefault();

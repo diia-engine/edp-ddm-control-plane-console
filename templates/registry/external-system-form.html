@@ -1,0 +1,125 @@
+{{ define "registry-external-system" }}
+    <div id="external-system-popup" class="popup-window admin-window visible scrollable-popup" v-cloak v-if="externalSystem.formShow">
+        <div class="popup-header">
+            <p>Налаштувати зовнішню систему для взаємодії</p>
+            <a href="#" @click="hideExternalSystemForm" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+        <form @submit="setExternalSystemForm" id="external-system-form" method="post"
+              action="/admin/registry/external-system/{{.registry.Name}}">
+            <div class="popup-body">
+                <div class="rc-form-group"
+                     :class="{'error': externalSystem.registryName == '' && externalSystem.startValidation}">
+                    <label>Назва зовнішньої системи</label>
+                    <input aria-label="" name="external-system-registry-name" type="text"
+                           v-model="externalSystem.registryName"
+                           :readonly = "[[ externalSystem.registryNameEditable ]]" />
+                    <span v-if="externalSystem.registryName == '' && externalSystem.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': externalSystem.data.url == '' && externalSystem.startValidation}">
+                    <label>Адреса зовнішньої системи</label>
+                    <input aria-label="" type="text" name="external-system-url" v-model="externalSystem.data.url" />
+                    <span v-if="externalSystem.data.url == '' && externalSystem.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': externalSystem.data.protocol == '' && externalSystem.startValidation}">
+                    <label>Протокол інтеграції</label>
+                    <input aria-label="" type="text" name="external-system-protocol"
+                           v-model="externalSystem.data.protocol" readonly />
+                    <span v-if="externalSystem.data.protocol == '' && externalSystem.startValidation">
+                        Обов’язкове поле
+                    </span>
+                    <p>Наразі підтримується лише REST-протокол інтеграції.</p>
+                </div>
+
+                <div class="rc-form-group">
+                    <label>Вкажіть тип аутентифікації</label>
+                    <select aria-label="" name="external-system-auth-type"
+                            v-model="externalSystem.data.auth.type"
+                            @change="changeExternalSystemAuthType">
+                        <option>NO_AUTH</option>
+                        <option>AUTH_TOKEN</option>
+                        <option>BEARER</option>
+                        <option>BASIC</option>
+                        <option>AUTH_TOKEN+BEARER</option>
+                    </select>
+                    <p>Наразі підтримуються: NO_AUTH, AUTH_TOKEN, BEARER, BASIC, AUTH_TOKEN+BEARER</p>
+                </div>
+
+                <div class="auth-token-bearer" v-if="externalSystem.data.auth.type == 'AUTH_TOKEN+BEARER'">
+                    <div class="rc-form-group"
+                         :class="{'error': externalSystem.data.auth.authUri == '' && externalSystem.startValidation}">
+                        <label>Вкажіть енд-поінт аутентифікації партнера</label>
+                        <input aria-label="" type="text" name="external-system-auth-uri"
+                               v-model="externalSystem.data.auth.authUri" />
+                        <span v-if="externalSystem.data.auth.authUri == '' && externalSystem.startValidation">
+                        Обов’язкове поле
+                        </span>
+                    </div>
+
+                    <div class="rc-form-group"
+                         :class="{'error': externalSystem.data.auth.accessTokenJSONPath == '' && externalSystem.startValidation}">
+                        <label>Вкажіть json-path для отримання токена доступу</label>
+                        <input aria-label="" type="text" name="external-system-auth-access-token-json-path"
+                               v-model="externalSystem.data.auth.accessTokenJSONPath" />
+                        <span v-if="externalSystem.data.auth.accessTokenJSONPath == '' && externalSystem.startValidation">
+                        Обов’язкове поле
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="rc-form-group"
+                     v-if="externalSystem.data.auth.type == 'AUTH_TOKEN' || externalSystem.data.auth.type == 'BEARER' || externalSystem.data.auth.type == 'AUTH_TOKEN+BEARER'"
+                     :class="{'error': externalSystem.data.auth.secret == '' && externalSystem.startValidation}">
+                    <label>Вкажіть токен авторизації</label>
+                    <input aria-label="" name="external-system-auth-secret"
+                           v-model="externalSystem.data.auth.secret"
+                           :type="[[ externalSystem.tokenInputType ]]"
+                           @focus="externalSystemSecretFocus" />
+                    <span v-if="externalSystem.data.auth.secret == '' && externalSystem.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div v-if="externalSystem.data.auth.type == 'BASIC'">
+                    <div class="rc-form-group"
+                         :class="{'error': externalSystem.data.auth.username == '' && externalSystem.startValidation}">
+                        <label>Логін</label>
+                        <input aria-label="" name="external-system-auth-username"
+                               @focus="externalSystemSecretFocus"
+                               v-model="externalSystem.data.auth.username"
+                               :type="[[ externalSystem.tokenInputType ]]" />
+                        <span v-if="externalSystem.data.auth.username == '' && externalSystem.startValidation">
+                        Обов’язкове поле
+                    </span>
+                    </div>
+
+                    <div class="rc-form-group"
+                         :class="{'error': externalSystem.data.auth.secret == '' && externalSystem.startValidation}">
+                        <label>Пароль</label>
+                        <input aria-label="" name="external-system-auth-secret"
+                               v-model="externalSystem.data.auth.secret"
+                               :type="[[ externalSystem.tokenInputType ]]"
+                               @focus="externalSystemSecretFocus" />
+                        <span v-if="externalSystem.data.auth.secret == '' && externalSystem.startValidation">
+                        Обов’язкове поле
+                    </span>
+                    </div>
+                </div>
+            </div>
+            <div class="popup-footer active">
+                <a href="#" id="admin-cancel" class="hide-popup" @click="hideExternalSystemForm">відмінити</a>
+                <button value="submit" name="admin-apply" type="submit">Підтвердити</button>
+            </div>
+        </form>
+    </div>
+{{end}}

@@ -12569,3 +12569,7 @@ p.error {
     /*z-index: 1;*/
     overflow:auto;
 }
+
+.auth-token-bearer {
+    margin-bottom: 24px;
+}
