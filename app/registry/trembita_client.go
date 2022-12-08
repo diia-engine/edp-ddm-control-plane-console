@@ -129,12 +129,16 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 	//create secret
 
 	if tf.TrembitaServiceAuthType == "AUTH_TOKEN" && tf.TrembitaServiceAuthSecret != "" {
-		secretPath := fmt.Sprintf("vault:secret/%s/trembita-registries/%s", registryName,
+		vaultPath := fmt.Sprintf("%s/trembita-registries/%s", a.vaultRegistryPath(registryName),
 			tf.TrembitaClientRegitryName)
+		prefixedPath := fmt.Sprintf("vault:%s", vaultPath)
 
-		if tf.TrembitaServiceAuthSecret != secretPath {
+		//secretPath := fmt.Sprintf("vault:secret/%s/trembita-registries/%s", registryName,
+		//	tf.TrembitaClientRegitryName)
+
+		if tf.TrembitaServiceAuthSecret != prefixedPath {
 			if err := a.createVaultSecrets(map[string]map[string]interface{}{
-				secretPath: {
+				vaultPath: {
 					fmt.Sprintf("trembita.registries.%s.auth.secret.token", tf.TrembitaClientRegitryName): tf.TrembitaServiceAuthSecret,
 				},
 			}); err != nil {
@@ -142,7 +146,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 			}
 		}
 
-		trembitaRegistry.Service.Auth["secret"] = secretPath
+		trembitaRegistry.Service.Auth["secret"] = prefixedPath
 	}
 
 	registriesDict[tf.TrembitaClientRegitryName] = trembitaRegistry
