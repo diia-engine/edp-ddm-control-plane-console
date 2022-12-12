@@ -1,10 +1,13 @@
 package registry
 
 import (
+	"ddm-admin-console/router"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -16,13 +19,13 @@ const (
 )
 
 type RegistryExternalSystemForm struct {
-	RegistryName        string `form:"external-system-registry-name"`
-	URL                 string `form:"external-system-url"`
-	Protocol            string `form:"external-system-protocol"`
-	AuthType            string `form:"external-system-auth-type"`
+	RegistryName        string `form:"external-system-registry-name" binding:"required"`
+	URL                 string `form:"external-system-url" binding:"required"`
+	Protocol            string `form:"external-system-protocol" binding:"required"`
+	AuthType            string `form:"external-system-auth-type" binding:"required"`
 	AuthURI             string `form:"external-system-auth-uri"`
 	AccessTokenJSONPath string `form:"external-system-auth-access-token-json-path"`
-	AuthSecret          string `form:"external-system-auth-secret"`
+	AuthSecret          string `form:"external-system-auth-secret" binding:"required"`
 	AuthUsername        string `form:"external-system-auth-username"`
 }
 
@@ -80,4 +83,21 @@ func (a *App) prepareRegistryExternalSystemsConfig(ctx *gin.Context, r *registry
 	}
 
 	return nil
+}
+
+func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Response, retErr error) {
+	registryName := ctx.Param("name")
+
+	_, err := a.Codebase.Get(registryName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find registry")
+	}
+
+	var f RegistryExternalSystemForm
+	if err := ctx.ShouldBind(&f); err != nil {
+		return nil, errors.Wrap(err, "unable to parse form")
+	}
+
+	return router.MakeRedirectResponse(http.StatusFound,
+		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
 }
