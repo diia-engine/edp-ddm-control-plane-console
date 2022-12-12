@@ -85,6 +85,7 @@ func (a *App) prepareRegistryExternalSystemsConfig(ctx *gin.Context, r *registry
 	return nil
 }
 
+// edit
 func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Response, retErr error) {
 	registryName := ctx.Param("name")
 
@@ -96,6 +97,34 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 	var f RegistryExternalSystemForm
 	if err := ctx.ShouldBind(&f); err != nil {
 		return nil, errors.Wrap(err, "unable to parse form")
+	}
+
+	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get values")
+	}
+
+	valuesExternalSystem, ok := values.ExternalSystems[f.RegistryName]
+	if !ok {
+		return nil, errors.Wrap(err, "unable to get external system")
+	}
+
+	editExtenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName))
+	editExtenalSystem.Type = valuesExternalSystem.Type
+	editExtenalSystem.Protocol = valuesExternalSystem.Protocol
+
+	valuesExternalSystems, ok := values.OriginalYaml[externalSystemsKey]
+	if !ok {
+		return nil, errors.Wrap(err, "no external systems key in values")
+	}
+	valuesExternalSystemsDict := valuesExternalSystems.(map[string]interface{})
+
+	valuesExternalSystemsDict[f.RegistryName] = editExtenalSystem
+	values.OriginalYaml[externalSystemsKey] = valuesExternalSystemsDict
+
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
+		MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
 	return router.MakeRedirectResponse(http.StatusFound,
