@@ -29,6 +29,10 @@ type RegistryExternalSystemForm struct {
 	AuthUsername        string `form:"external-system-auth-username"`
 }
 
+func externalSystemsSecretPath(vaultRegistryPath string) string {
+	return fmt.Sprintf("%s/external-systems", vaultRegistryPath)
+}
+
 func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) ExternalSystem {
 	es := ExternalSystem{
 		URL:      f.URL,
@@ -39,8 +43,7 @@ func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) Exter
 	}
 
 	if f.AuthType != authTypeNoAuth {
-		es.Auth["secret"] = fmt.Sprintf("%s/external-systems/%s", vaultRegistryPath,
-			f.RegistryName)
+		es.Auth["secret"] = fmt.Sprintf("vault:%s", externalSystemsSecretPath(vaultRegistryPath))
 	}
 
 	if f.AuthType == authTypeAuthTokenBearer {
@@ -129,4 +132,14 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 
 	return router.MakeRedirectResponse(http.StatusFound,
 		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
+}
+
+func (a *App) setExternalSystemRegistrySecrets(f *RegistryExternalSystemForm, registryName string) error {
+	secretPath := externalSystemsSecretPath(a.vaultRegistryPath(registryName))
+	secretData := make(map[string]interface{})
+
+	if f.AuthType != authTypeNoAuth {
+		//TODO: check if secret changed
+		secretData[fmt.Sprintf("external-systems.%s.auth.secret.token", f.RegistryName)] = f.AuthSecret
+	}
 }

@@ -3,6 +3,10 @@
     <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/datatables.custom.css" />
 <div class="registry" id="registry-view">
     <input type="hidden" value="{{ .valuesJson }}" ref="valuesJson" />
+    {{if .openMergeRequests}}
+    <input type="hidden" value="{{.openMergeRequests}}" ref="openMergeRequests" />
+    {{template "open-mr-form" .}}
+    {{end}}
     <div class="registry-header">
         <a href="{{ .BasePath }}/admin/registry/overview" class="registry-add">
             <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
@@ -14,12 +18,12 @@
         {{if .allowedToEdit}}
             <div class="registry-view-actions">
             {{if .hasUpdate}}
-                <a href="{{ .BasePath }}/admin/registry/update/{{.registry.Name}}" class="registry-add">
+                <a href="{{ .BasePath }}/admin/registry/update/{{.registry.Name}}" @click="checkForOpenMRs" class="registry-add">
                     <i class="fa-solid fa-arrow-up"></i>
                     <span>Оновити</span>
                 </a>
             {{end}}
-                <a href="{{ .BasePath }}/admin/registry/edit/{{.registry.Name}}" class="registry-add">
+                <a href="{{ .BasePath }}/admin/registry/edit/{{.registry.Name}}" @click="checkForOpenMRs" class="registry-add">
                     <img alt="add registry" src="{{ .BasePath }}/static/img/action-edit.png" />
                     <span>Редагувати</span>
                 </a>

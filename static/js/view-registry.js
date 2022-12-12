@@ -22,6 +22,10 @@ let app = Vue.createApp({
         if (this.$refs.hasOwnProperty('valuesJson')) {
             this.values = JSON.parse(this.$refs.valuesJson.value);
         }
+
+        if (this.$refs.hasOwnProperty('openMergeRequests')) {
+            this.openMergeRequests.has = true;
+        }
     },
     data() {
         return {
@@ -44,6 +48,10 @@ let app = Vue.createApp({
             accessGrantError: false,
             mrView: false,
             mrSrc: '',
+            openMergeRequests: {
+                has: false,
+                formShow: false,
+            },
             externalSystem: {
                 registryName: '',
                 registryNameEditable: false,
@@ -53,7 +61,13 @@ let app = Vue.createApp({
                 data: {
                     url: '',
                     protocol: "REST",
-                    auth: { type: 'NO_AUTH' },
+                    auth: {
+                        type: 'NO_AUTH',
+                        secret: '',
+                        authUri: '',
+                        accessTokenJSONPath: '',
+                        username: '',
+                    },
                 },
             },
             trembitaClient: {
@@ -77,13 +91,62 @@ let app = Vue.createApp({
                         memberClass: '',
                         memberCode: '',
                         subsystemCode: '',
-                        auth: { type: 'NO_AUTH' },
+                        auth: {
+                            type: 'NO_AUTH',
+                        },
                     },
                 },
             },
         }
     }, // mrIframe
     methods: {
+        checkForOpenMRs(e) {
+            if (this.openMergeRequests.has) {
+                e.preventDefault();
+                this.showOpenMRForm();
+            }
+        },
+        showOpenMRForm() {
+            this.backdropShow = true;
+            this.openMergeRequests.formShow = true;
+            this.accordion = 'merge-requests';
+            //todo: load data
+
+            $("body").css("overflow", "hidden");
+        },
+        hideOpenMRForm(e) {
+            e.preventDefault();
+            this.openMergeRequests.formShow = false;
+            this.backdropShow = false;
+            $("body").css("overflow", "scroll");
+        },
+        setExternalSystemForm(e) {
+            this.externalSystem.startValidation = true;
+
+            if (this.externalSystem.data.url === "") {
+                e.preventDefault();
+                return;
+            }
+
+            if (this.externalSystem.data.auth.type !== 'NO_AUTH' &&
+                (!this.externalSystem.data.auth.hasOwnProperty('secret') || this.externalSystem.data.auth['secret'] === '')) {
+                e.preventDefault();
+                return;
+            }
+
+            if (this.externalSystem.data.auth.type === 'BASIC' && this.externalSystem.data.auth['username'] === '') {
+                e.preventDefault();
+                return;
+            }
+
+            if (this.externalSystem.data.auth.type === 'AUTH_TOKEN+BEARER' &&
+                (!this.externalSystem.data.auth.hasOwnProperty('authUri') ||
+                    this.externalSystem.data.auth['authUri'] === '' ||
+                    !this.externalSystem.data.auth.hasOwnProperty('accessTokenJSONPath') ||
+                    this.externalSystem.data.auth['accessTokenJSONPath'] === '')) {
+                e.preventDefault();
+            }
+        },
         setTrembitaClientForm(e) {
             this.trembitaClient.startValidation = true;
             for (let i in this.trembitaClient.data) {
@@ -91,6 +154,7 @@ let app = Vue.createApp({
                     e.preventDefault();
                     return;
                 }
+
             }
 
             for (let i in this.trembitaClient.data.client) {
@@ -115,7 +179,7 @@ let app = Vue.createApp({
             }
         },
         changeExternalSystemAuthType() {
-
+            this.externalSystem.startValidation = false;
         },
         changeTrembitaClientAuthType() {
             if (this.trembitaClient.data.service.auth.type === 'AUTH_TOKEN' &&

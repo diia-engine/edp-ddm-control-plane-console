@@ -124,6 +124,8 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 	trembitaDict := trembita.(map[string]interface{})
 	registriesDict := trembitaDict[trembitaRegistriesValuesKet].(map[string]interface{})
 
+	//TODO: change path to single secret vault:secret/<registry>/trembita-registries
+	//TODO: check if keys rewrited or keep
 	//path vault:secret/<registry>/trembita-registries/<trembita-registry-name>
 	//key trembita.registries.<registry-name>.auth.secret.token
 	//create secret

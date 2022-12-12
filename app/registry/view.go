@@ -245,6 +245,9 @@ func (a *App) viewRegistryGetMergeRequests(userCtx context.Context, registryName
 
 	emrs := make([]ExtendedMergeRequests, 0, len(mrs))
 	for _, mr := range mrs {
+		if mr.Status.Value == gerrit.StatusNew {
+			viewParams["openMergeRequests"] = true
+		}
 		emrs = append(emrs, ExtendedMergeRequests{GerritMergeRequest: mr})
 	}
 
