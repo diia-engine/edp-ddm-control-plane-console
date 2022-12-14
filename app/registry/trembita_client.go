@@ -126,27 +126,20 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 
 	//TODO: change path to single secret vault:secret/<registry>/trembita-registries
 	//TODO: check if keys rewrited or keep
-	//path vault:secret/<registry>/trembita-registries/<trembita-registry-name>
-	//key trembita.registries.<registry-name>.auth.secret.token
-	//create secret
-
 	if tf.TrembitaServiceAuthType == authTypeAuthToken && tf.TrembitaServiceAuthSecret != "" {
-		vaultPath := fmt.Sprintf("%s/trembita-registries/%s", a.vaultRegistryPath(registryName),
-			tf.TrembitaClientRegitryName)
+		vaultPath := fmt.Sprintf("%s/trembita-registries", a.vaultRegistryPath(registryName))
 		prefixedPath := fmt.Sprintf("vault:%s", vaultPath)
-
-		//secretPath := fmt.Sprintf("vault:secret/%s/trembita-registries/%s", registryName,
-		//	tf.TrembitaClientRegitryName)
 
 		if tf.TrembitaServiceAuthSecret != prefixedPath {
 			if err := a.createVaultSecrets(map[string]map[string]interface{}{
 				vaultPath: {
 					fmt.Sprintf("trembita.registries.%s.auth.secret.token", tf.TrembitaClientRegitryName): tf.TrembitaServiceAuthSecret,
 				},
-			}); err != nil {
+			}, true); err != nil {
 				return nil, errors.Wrap(err, "unable to create auth token secret")
 			}
 		}
+
 		//todo: maybe move to nested struct converter
 		trembitaRegistry.Service.Auth["secret"] = prefixedPath
 	}

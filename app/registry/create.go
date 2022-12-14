@@ -32,21 +32,23 @@ import (
 )
 
 const (
-	AnnotationSMPTType          = "registry-parameters/smtp-type"
-	AnnotationSMPTOpts          = "registry-parameters/smtp-opts"
-	AnnotationTemplateName      = "registry-parameters/template-name"
-	AnnotationCreatorUsername   = "registry-parameters/creator-username"
-	AnnotationCreatorEmail      = "registry-parameters/creator-email"
-	AnnotationValues            = "registry-parameters/values"
-	AdministratorsValuesKey     = "administrators"
-	ResourcesValuesKey          = "registry"
-	VaultKeyCACert              = "caCertificate"
-	VaultKeyCert                = "certificate"
-	VaultKeyPK                  = "key"
-	externalSystemsKey          = "external-systems"
-	trembitaRegistriesKey       = "registries"
-	trembitaValuesKey           = "trembita"
-	trembitaRegistriesValuesKet = "registries"
+	AnnotationSMPTType            = "registry-parameters/smtp-type"
+	AnnotationSMPTOpts            = "registry-parameters/smtp-opts"
+	AnnotationTemplateName        = "registry-parameters/template-name"
+	AnnotationCreatorUsername     = "registry-parameters/creator-username"
+	AnnotationCreatorEmail        = "registry-parameters/creator-email"
+	AnnotationValues              = "registry-parameters/values"
+	AdministratorsValuesKey       = "administrators"
+	ResourcesValuesKey            = "registry"
+	VaultKeyCACert                = "caCertificate"
+	VaultKeyCert                  = "certificate"
+	VaultKeyPK                    = "key"
+	externalSystemsKey            = "external-systems"
+	externalSystemDefaultProtocol = "REST"
+	externalSystemDeletableType   = "registry"
+	trembitaRegistriesKey         = "registries"
+	trembitaValuesKey             = "trembita"
+	trembitaRegistriesValuesKet   = "registries"
 )
 
 type KeyManagement interface {
@@ -333,7 +335,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		}
 	}
 
-	if err := a.createVaultSecrets(vaultSecretData); err != nil {
+	if err := a.createVaultSecrets(vaultSecretData, false); err != nil {
 		return errors.Wrap(err, "unable to create vault secrets")
 	}
 
@@ -382,11 +384,32 @@ func ModifyVaultPath(path string) string {
 	return strings.Join(pathParts, "/")
 }
 
-func (a *App) createVaultSecrets(secretData map[string]map[string]interface{}) error {
-	for vaultPath, pathSecretData := range secretData {
-		vaultPath = ModifyVaultPath(vaultPath)
+func (a *App) createVaultSecrets(secretData map[string]map[string]interface{}, append bool) error {
+	for vPath, pathSecretData := range secretData {
+		modPath := ModifyVaultPath(vPath)
 
-		if _, err := a.Vault.Write(vaultPath, map[string]interface{}{
+		if append {
+			sec, err := a.Vault.Read(modPath)
+			if err != nil {
+				return errors.Wrap(err, "unable to read secret")
+			}
+
+			if sec != nil {
+				currentSecretData, ok := sec.Data["data"]
+				if ok {
+					currentSecretData, ok := currentSecretData.(map[string]interface{})
+					if ok {
+						for k, v := range pathSecretData {
+							currentSecretData[k] = v
+						}
+
+						pathSecretData = currentSecretData
+					}
+				}
+			}
+		}
+
+		if _, err := a.Vault.Write(modPath, map[string]interface{}{
 			"data": pathSecretData,
 		}); err != nil {
 			return errors.Wrap(err, "unable to write to vault")

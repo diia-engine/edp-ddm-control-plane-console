@@ -7,6 +7,7 @@
     <input type="hidden" value="{{.openMergeRequests}}" ref="openMergeRequests" />
     {{template "open-mr-form" .}}
     {{end}}
+    <input type="hidden" value="{{ .registry.Name }}" ref="registryName" />
     <div class="registry-header">
         <a href="{{ .BasePath }}/admin/registry/overview" class="registry-add">
             <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
@@ -200,7 +201,7 @@
                                 <a href="#" @click="showExternalSystemForm('{{ $index }}', $event)">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
-                                <a href="#">
+                                <a href="#" @click="showDeleteExternalSystemForm('{{ $index }}')">
                                     <i class="fa-solid fa-trash registry-trash {{if eq "platform" $al.Type}}inactive{{end}} "></i>
                                 </a>
                             </div>
@@ -210,8 +211,8 @@
                 </tbody>
             </table>
             <div class="link-grant-access">
-                <a class="" href="#">
-                    <img alt="Надати доступ" src="/static/img/plus.png" />
+                <a class="" href="#" @click="showExternalSystemForm('', $event)">
+                    <img alt="Додати зовнішню систему" src="/static/img/plus.png" />
                     <span>Додати зовнішню систему</span>
                 </a>
             </div>
@@ -547,6 +548,7 @@
 </div>
 
     {{template "scripts" .}}
+    <script type="text/javascript" src="{{ .BasePath }}/static/js/axios.min.js"></script>
     <script type="text/javascript" src="{{.BasePath}}/static/js/moment.min.js"></script>
     <script type="text/javascript" src="{{.BasePath}}/static/js/jquery.dataTables-1.12.1.min.js"></script>
     <script type="text/javascript" src="{{.BasePath}}/static/js/view-registry.js"></script>

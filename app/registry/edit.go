@@ -344,7 +344,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	if len(vaultSecretData) > 0 {
-		if err := a.createVaultSecrets(vaultSecretData); err != nil {
+		if err := a.createVaultSecrets(vaultSecretData, false); err != nil {
 			return errors.Wrap(err, "unable to create vault secrets")
 		}
 

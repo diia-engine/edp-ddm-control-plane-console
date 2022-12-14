@@ -23,12 +23,20 @@ let app = Vue.createApp({
             this.values = JSON.parse(this.$refs.valuesJson.value);
         }
 
+        if (this.$refs.hasOwnProperty('registryName')) {
+            this.registryName = this.$refs.registryName.value
+        }
+
         if (this.$refs.hasOwnProperty('openMergeRequests')) {
             this.openMergeRequests.has = true;
         }
+
+        this.externalSystem = this.externalSystemDefaults();
+        this.trembitaClient = this.trembitaClientDefaults();
     },
     data() {
         return {
+            registryName: '',
             values: {},
             accordion: 'general',
             externalRegPopupShow: false,
@@ -52,29 +60,21 @@ let app = Vue.createApp({
                 has: false,
                 formShow: false,
             },
-            externalSystem: {
-                registryName: '',
-                registryNameEditable: false,
-                formShow: false,
-                startValidation: false,
-                tokenInputType: 'text',
-                data: {
-                    url: '',
-                    protocol: "REST",
-                    auth: {
-                        type: 'NO_AUTH',
-                        secret: '',
-                        authUri: '',
-                        accessTokenJSONPath: '',
-                        username: '',
-                    },
-                },
-            },
-            trembitaClient: {
+            externalSystem: {},
+            trembitaClient: {},
+        }
+    }, // mrIframe
+    methods: {
+        isURL(u){
+            return /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/.test(u);
+        },
+        trembitaClientDefaults() {
+            return {
                 registryName: '',
                 formShow: false,
                 startValidation: false,
                 tokenInputType: 'text',
+                urlValidationFailed: false,
                 data: {
                     protocolVersion: '',
                     url: '',
@@ -96,10 +96,49 @@ let app = Vue.createApp({
                         },
                     },
                 },
-            },
-        }
-    }, // mrIframe
-    methods: {
+            };
+        },
+        externalSystemDefaults() {
+            return {
+                registryName: '',
+                registryNameExists: false,
+                registryNameEditable: false,
+                urlValidationFailed: false,
+                formShow: false,
+                deleteFormShow: false,
+                startValidation: false,
+                secretInputTypes: {
+                    secret: 'text',
+                    username: 'text',
+                },
+                tokenInputType: 'text',
+                data: {
+                    url: '',
+                    protocol: "REST",
+                    auth: {
+                        type: 'NO_AUTH',
+                        secret: '',
+                        'auth-uri': '',
+                        'access-token-json-path': '',
+                        username: '',
+                    },
+                },
+            };
+        },
+        hideDeleteExternalSystemForm() {
+            this.backdropShow = false;
+            this.externalSystem.deleteFormShow = false;
+            $("body").css("overflow", "scroll");
+        },
+        deleteExternalSystemLink() {
+            return `/admin/registry/external-system-delete/${this.registryName}?external-system=${this.externalSystem.registryName}`
+        },
+        showDeleteExternalSystemForm(registry) {
+            this.externalSystem.registryName = registry;
+            this.backdropShow = true;
+            this.externalSystem.deleteFormShow = true;
+            $("body").css("overflow", "hidden");
+        },
         checkForOpenMRs(e) {
             if (this.openMergeRequests.has) {
                 e.preventDefault();
@@ -120,8 +159,23 @@ let app = Vue.createApp({
             this.backdropShow = false;
             $("body").css("overflow", "scroll");
         },
+        externalSystemFormAction() {
+            if (this.externalSystem.registryNameEditable) {
+                return `/admin/registry/external-system-create/${this.registryName}`
+            }
+
+            return `/admin/registry/external-system/${this.registryName}`
+        },
         setExternalSystemForm(e) {
+            this.externalSystem.registryNameExists = false;
             this.externalSystem.startValidation = true;
+            this.externalSystem.urlValidationFailed = false;
+
+            if (this.externalSystem.data.url !== '' && !this.isURL(this.externalSystem.data.url)) {
+                e.preventDefault();
+                this.externalSystem.urlValidationFailed = true;
+                return;
+            }
 
             if (this.externalSystem.data.url === "") {
                 e.preventDefault();
@@ -140,15 +194,38 @@ let app = Vue.createApp({
             }
 
             if (this.externalSystem.data.auth.type === 'AUTH_TOKEN+BEARER' &&
-                (!this.externalSystem.data.auth.hasOwnProperty('authUri') ||
-                    this.externalSystem.data.auth['authUri'] === '' ||
-                    !this.externalSystem.data.auth.hasOwnProperty('accessTokenJSONPath') ||
-                    this.externalSystem.data.auth['accessTokenJSONPath'] === '')) {
+                (!this.externalSystem.data.auth.hasOwnProperty('auth-uri') ||
+                    this.externalSystem.data.auth['auth-uri'] === '' ||
+                    !this.externalSystem.data.auth.hasOwnProperty('access-token-json-path') ||
+                    this.externalSystem.data.auth['access-token-json-path'] === '')) {
                 e.preventDefault();
+                return;
+            }
+
+            if (this.externalSystem.registryNameEditable) {
+                e.preventDefault();
+                let $this = this;
+
+                axios.get(`/admin/registry/external-system-check/${this.registryName}`,
+                    {params: {"external-system": this.externalSystem.registryName}})
+                    .then(function (response) {
+                        $this.externalSystem.registryNameExists = true;
+                    })
+                    .catch(function (error) {
+                        $("#external-system-form").submit();
+                    });
             }
         },
         setTrembitaClientForm(e) {
             this.trembitaClient.startValidation = true;
+            this.trembitaClient.urlValidationFailed = false;
+
+            if (this.trembitaClient.data.url !== '' && !this.isURL(this.trembitaClient.data.url)) {
+               this.trembitaClient.urlValidationFailed = true;
+                e.preventDefault();
+                return;
+            }
+
             for (let i in this.trembitaClient.data) {
                 if (typeof(this.trembitaClient.data[i]) == "string" && this.trembitaClient.data[i] === "") {
                     e.preventDefault();
@@ -210,21 +287,51 @@ let app = Vue.createApp({
                 this.trembitaClient.tokenInputType = 'text';
             }
         },
-        externalSystemSecretFocus() {
-
+        externalSystemSecretFocus(name) {
+            if (this.externalSystem.secretInputTypes[name] === 'password') {
+                this.externalSystem.data.auth[name] = '';
+                this.externalSystem.secretInputTypes[name] = 'text';
+            }
         },
         showExternalSystemForm(registry, e) {
             e.preventDefault();
+
+            if (this.openMergeRequests.has) {
+                this.showOpenMRForm();
+                return;
+            }
+
+            this.externalSystem = this.externalSystemDefaults();
+
+            if (registry === '') {
+                this.externalSystem.registryNameEditable = true;
+            }
+
             this.externalSystem.registryName = registry;
             this.backdropShow = true;
             this.externalSystem.formShow = true;
 
-            //todo: load data
+            this.mergeDeep(this.externalSystem.data, this.values.externalSystems[registry]);
+
+            if (this.externalSystem.data.auth.hasOwnProperty('secret')) {
+                this.externalSystem.secretInputTypes.secret = 'password';
+            }
+
+            if (this.externalSystem.data.auth.hasOwnProperty('username')) {
+                this.externalSystem.secretInputTypes.username = 'password';
+            }
 
             $("body").css("overflow", "hidden");
         },
         showTrembitaClientForm(registry, e) {
             e.preventDefault();
+
+            if (this.openMergeRequests.has) {
+                this.showOpenMRForm();
+                return;
+            }
+
+            this.trembitaClient = this.trembitaClientDefaults();
 
             this.trembitaClient.registryName = registry;
             this.backdropShow = true;
