@@ -126,9 +126,9 @@ func (s *Service) RawCommit(message string /*user *User,*/, params ...string) er
 
 	//GIT_AUTHOR_EMAIL="you@email.com" && GIT_AUTHOR_NAME="Your Name"
 
-	bts, err := cmd.CombinedOutput()
+	msg, err := cmd.StrCombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to commit: %s", string(bts))
+		return errors.Wrapf(err, "unable to commit: %s", msg)
 	}
 
 	return nil
@@ -354,19 +354,25 @@ func (s *Service) Checkout(branch string, create bool) error {
 	return nil
 }
 
+func (s *Service) DeleteBranch(branchName string) error {
+	cmd := s.commandCreate("git", "branch", "-D", branchName)
+	cmd.SetDir(s.path)
+
+	msg, err := cmd.StrCombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "unable to delete branch, msg: %s", msg)
+	}
+
+	return nil
+}
+
 func (s *Service) Add(file string) error {
 	cmd := s.commandCreate("git", "add", file)
 	cmd.SetDir(s.path)
 
-	var msg string
-	out, err := cmd.CombinedOutput()
-
-	if out != nil && len(out) > 0 {
-		msg = string(out)
-	}
-
+	msg, err := cmd.StrCombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to run rebase, msg: %s", msg)
+		return errors.Wrapf(err, "unable to run add, msg: %s", msg)
 	}
 
 	return nil
@@ -379,13 +385,7 @@ func (s *Service) Rebase(targetBranch string, params ...string) (string, error) 
 	cmd := s.commandCreate("git", gitArgs...)
 	cmd.SetDir(s.path)
 
-	var msg string
-	out, err := cmd.CombinedOutput()
-
-	if out != nil && len(out) > 0 {
-		msg = string(out)
-	}
-
+	msg, err := cmd.StrCombinedOutput()
 	if err != nil {
 		return msg, errors.Wrap(err, "unable to run rebase")
 	}

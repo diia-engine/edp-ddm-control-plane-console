@@ -94,10 +94,12 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 // 3. backup values.yaml if it exists
 // 4. checkout source branch
 // 5. backup source branch
-// 6. rebase from target branch with automatic conflict resolution
+// 5.1 checkout to target branch
+// 6. delete source branch
+// 6.1 checkout -b source branch from target branch
 // 7. restore source branch
 // 8. manually merge values.yaml from backup with new version from source branch if it backup`ed
-// 9. create new change to source branch with commit amend
+// 9. create new change to source branch with new commit
 // 10. apply and submit change
 // 11. set merge request cr spec source branch to pass it to gerrit operator
 
@@ -143,9 +145,17 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	if err := CopyFolder(projectPath, projectBackupPath); err != nil {
 		return errors.Wrap(err, "unable to backup source branch")
 	}
-	//rebase from target branch
-	if msg, err := gitService.Rebase(targetBranch, "-X", "ours"); err != nil {
-		return errors.Wrapf(err, "unable to rebase from target branch: %s", msg)
+	//checkout to target branch
+	if err := gitService.Checkout(targetBranch, false); err != nil {
+		return errors.Wrap(err, "unable to checkout")
+	}
+	//delete source branch
+	if err := gitService.DeleteBranch(sourceBranch); err != nil {
+		return errors.Wrap(err, "unable to delete source branch")
+	}
+	//recreate source branch
+	if err := gitService.Checkout(sourceBranch, true); err != nil {
+		return errors.Wrap(err, "unable to checkout to source branch")
 	}
 	//restore source branch
 	if err := CopyFolder(fmt.Sprintf("%s/.", projectBackupPath), fmt.Sprintf("%s/", projectPath)); err != nil {
@@ -172,8 +182,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	if err := gitService.RawCommit(
 		git.CommitMessageWithChangeID(
 			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
-				targetBranch), changeID),
-		"--amend"); err != nil {
+				targetBranch), changeID)); err != nil {
 		return errors.Wrap(err, "unable to commit changes")
 	}
 

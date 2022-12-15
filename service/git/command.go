@@ -4,6 +4,7 @@ import "os/exec"
 
 type Command interface {
 	CombinedOutput() ([]byte, error)
+	StrCombinedOutput() (string, error)
 	SetEnv(env []string)
 	SetDir(dir string)
 }
@@ -25,6 +26,16 @@ type command struct {
 
 func (c *command) CombinedOutput() ([]byte, error) {
 	return c.cmd.CombinedOutput()
+}
+
+func (c *command) StrCombinedOutput() (string, error) {
+	var msg string
+	bts, err := c.cmd.CombinedOutput()
+	if bts != nil && len(bts) > 0 {
+		msg = string(bts)
+	}
+
+	return msg, err
 }
 
 func (c *command) SetEnv(env []string) {
