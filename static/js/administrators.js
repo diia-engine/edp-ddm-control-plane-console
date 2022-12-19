@@ -884,6 +884,10 @@ let app = Vue.createApp({
                 return;
             }
 
+            if (this.admins === null) {
+                this.admins = [];
+            }
+
             for (let i=0;i<this.admins.length;i++) {
                 if (this.admins[i].email.trim() === this.editAdmin.email.trim()) {
                     this.adminExistsError = true;
