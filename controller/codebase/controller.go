@@ -229,7 +229,7 @@ func (c *Controller) initCodebaseRepo(instance *codebaseService.Codebase, gitSer
 }
 
 func PrepareControllerTempFolder(tempDir, controllerFolder string) (string, error) {
-	controllerFolderPath := path.Join(tempDir, fmt.Sprintf("%s-%d", controllerFolder, time.Now().UnixNano()))
+	controllerFolderPath := path.Join(tempDir, controllerFolder)
 	if _, err := os.Stat(controllerFolderPath); err == nil {
 		if err := os.RemoveAll(controllerFolderPath); err != nil {
 			return "", errors.Wrap(err, "unable to clear repos folder")
