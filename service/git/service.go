@@ -340,6 +340,22 @@ func (s *Service) AddRemote(remoteName, url string) error {
 	return nil
 }
 
+func (s *Service) RawCheckout(branch string, create bool) error {
+	baseParams := []string{"checkout", branch}
+	if create {
+		baseParams = []string{"checkout", "-b", branch}
+	}
+
+	cmd := s.commandCreate("git", baseParams...)
+	cmd.SetDir(s.path)
+
+	if bts, err := cmd.CombinedOutput(); err != nil {
+		return errors.Wrapf(err, "unable to checkout, err: %s", string(bts))
+	}
+
+	return nil
+}
+
 func (s *Service) Checkout(branch string, create bool) error {
 	_, w, err := s.worktree()
 	if err != nil {

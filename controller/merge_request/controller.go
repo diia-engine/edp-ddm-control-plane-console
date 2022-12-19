@@ -80,7 +80,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if err := c.prepareMergeRequest(ctx, &instance); err != nil {
 		c.logger.Errorw("reconciling merge request", "Request.Namespace", request.Namespace,
-			"Request.Name", request.Name, "error", err.Error())
+			"Request.Name", request.Name, "error", fmt.Sprintf("%+v", err))
 		resultErr = errors.Wrap(err, "unable to prepare merge request")
 		return
 	}
@@ -127,7 +127,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to clone repo")
 	}
 
-	if err := gitService.Checkout(targetBranch, false); err != nil {
+	if err := gitService.RawCheckout(targetBranch, false); err != nil {
 		return errors.Wrap(err, "unable to checkout branch")
 	}
 	//backup values.yaml
@@ -137,7 +137,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to backup values yaml")
 	}
 
-	if err := gitService.Checkout(sourceBranch, false); err != nil {
+	if err := gitService.RawCheckout(sourceBranch, false); err != nil {
 		return errors.Wrap(err, "unable to checkout")
 	}
 	//backup source branch
@@ -146,7 +146,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to backup source branch")
 	}
 	//checkout to target branch
-	if err := gitService.Checkout(targetBranch, false); err != nil {
+	if err := gitService.RawCheckout(targetBranch, false); err != nil {
 		return errors.Wrap(err, "unable to checkout")
 	}
 	//delete source branch
@@ -154,7 +154,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to delete source branch")
 	}
 	//recreate source branch
-	if err := gitService.Checkout(sourceBranch, true); err != nil {
+	if err := gitService.RawCheckout(sourceBranch, true); err != nil {
 		return errors.Wrap(err, "unable to checkout to source branch")
 	}
 	//restore source branch
