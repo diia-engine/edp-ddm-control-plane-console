@@ -15,6 +15,10 @@ import (
 	"path"
 	"reflect"
 
+	"k8s.io/apimachinery/pkg/types"
+
+	k8sController "sigs.k8s.io/controller-runtime/pkg/controller"
+
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +49,9 @@ func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerr
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gerritService.GerritMergeRequest{}, builder.WithPredicates(predicate.Funcs{
-			UpdateFunc: isSpecUpdated})).
+			UpdateFunc: isSpecUpdated})).WithOptions(k8sController.Options{
+		MaxConcurrentReconciles: 1,
+	}).
 		Complete(&c); err != nil {
 		return errors.Wrap(err, "unable to create controller")
 	}
@@ -85,6 +91,9 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return
 	}
 
+	c.logger.Infow("reconciling merge request done", "Request.Namespace", request.Namespace,
+		"Request.Name", request.Name)
+
 	return
 }
 
@@ -104,7 +113,10 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 // 11. set merge request cr spec source branch to pass it to gerrit operator
 
 func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
-	if instance.Labels[registry.MRLabelAction] != registry.MRLabelActionBranchMerge || instance.Spec.SourceBranch != "" {
+	if instance.Labels[registry.MRLabelAction] != registry.MRLabelActionBranchMerge ||
+		instance.Spec.SourceBranch != "" || instance.Status.ChangeID != "" {
+		c.logger.Infow("nothing need to be done", "Request.Namespace", instance.Namespace,
+			"Request.Name", instance.Name)
 		return nil
 	}
 
@@ -190,8 +202,13 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to push repo")
 	}
 
-	instance.Spec.SourceBranch = sourceBranch
-	if err := c.k8sClient.Update(ctx, instance); err != nil {
+	var reloadInstance gerritService.GerritMergeRequest
+	if err := c.k8sClient.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}, &reloadInstance); err != nil {
+		return errors.Wrap(err, "unable to reload instance")
+	}
+
+	reloadInstance.Spec.SourceBranch = sourceBranch
+	if err := c.k8sClient.Update(ctx, &reloadInstance); err != nil {
 		return errors.Wrap(err, "unable to update merge request")
 	}
 
