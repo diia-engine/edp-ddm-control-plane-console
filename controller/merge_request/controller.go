@@ -154,7 +154,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	}
 	//backup source branch
 	projectBackupPath, err := backupProject(backupFolderPath, projectPath, instance.Spec.ProjectName)
-	if err := CopyFolder(projectPath, projectBackupPath); err != nil {
+	if err != nil {
 		return errors.Wrap(err, "unable to backup source branch")
 	}
 	//checkout to target branch

@@ -10,7 +10,8 @@ type ExtendedMergeRequests struct {
 }
 
 func (e ExtendedMergeRequests) StatusValue() string {
-	if e.Labels[MRLabelAction] == MRLabelActionBranchMerge && e.Spec.SourceBranch == "" {
+	if (e.Labels[MRLabelAction] == MRLabelActionBranchMerge && e.Spec.SourceBranch == "") || e.Status.Value == "" ||
+		(e.Status.Value == "sourceBranch or changesConfigMap must be specified" && e.Spec.SourceBranch != "") {
 		return "in progress"
 	}
 

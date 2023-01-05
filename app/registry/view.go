@@ -359,6 +359,10 @@ func (a *App) loadBranchesStatuses(ctx context.Context, branches []codebase.Code
 		status, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/%s/job/%s-Build-%s", b.Spec.CodebaseName,
 			branchName, branchName, b.Spec.CodebaseName))
 		if err != nil {
+			if strings.Contains(err.Error(), "404") {
+				continue
+			}
+
 			return errors.Wrap(err, "unable to get branch build status")
 		}
 
