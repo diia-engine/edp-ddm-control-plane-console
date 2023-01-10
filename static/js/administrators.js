@@ -60,12 +60,18 @@ let app = Vue.createApp({
             }
         }
 
+        if (this.$refs.hasOwnProperty('registryValues')) {
+            this.registryValues = JSON.parse(this.$refs.registryValues.value);
+            this.dnsPreloadDataFromValues();
+        }
+
         if (this.$refs.hasOwnProperty('registryUpdate')) {
             this.wizard.tabs.update.visible = true;
         }
     },
     data() {
         return {
+            registryValues: null,
             registryFormSubmitted: false,
             cidrChanged: true,
             officerCIDRValue: { value: '' },
@@ -120,7 +126,7 @@ let app = Vue.createApp({
             },
             wizard: {
                 registryAction: 'create',
-                activeTab: 'general',
+                activeTab: 'dns',
                 tabs: {
                     general: {
                         title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
@@ -160,11 +166,11 @@ let app = Vue.createApp({
                     },
                     resources: {title: 'Ресурси реєстру', validated: false, beginValidation: false,
                         validator: /*this.wizardResourcesValidation*/ this.wizardEmptyValidation, visible: true,},
-                    dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '', /*keycloak: ''*/},
-                        beginValidation: false, formatError: {officer: false, citizen: false, /*keycloak: false*/},
-                        requiredError: {officer: false, citizen: false, /*keycloak: false*/},
-                        typeError: {officer: false, citizen: false, /*keycloak: false*/},
-                        editVisible: {officer: true, citizen: true},
+                    dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '',},
+                        beginValidation: false, formatError: {officer: false, citizen: false, },
+                        requiredError: {officer: false, citizen: false, },
+                        typeError: {officer: false, citizen: false,},
+                        editVisible: {officer: false, citizen: false},
                         validator: this.wizardDNSValidation, visible: true,
                         preloadValues: {}},
                     cidr: {title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
@@ -283,6 +289,9 @@ let app = Vue.createApp({
 
             return this.mergeDeep(target, ...sources);
         },
+        wizardDNSEditVisibleChange(name, event){
+            console.log(name, event);
+        },
         wizardEditSubmit(event) {
             let tab = this.wizard.tabs[this.wizard.activeTab];
             let $this = this;
@@ -310,15 +319,15 @@ let app = Vue.createApp({
                 }
             }
         },
-        dnsUnsetPreloadedValue(name, e){
-            this.wizard.tabs.dns.editVisible[name] = true;
-            this.wizard.tabs.dns.data[name] = this.wizard.tabs.dns.preloadValues[name];
-            e.preventDefault();
-        },
-        dnsSetPreloadedValue(name, value) {
-            if (!this.wizard.tabs.dns.preloadValues.hasOwnProperty(name)) {
-                this.wizard.tabs.dns.editVisible[name] = false;
-                this.wizard.tabs.dns.preloadValues[name] = value;
+        dnsPreloadDataFromValues() {
+            if (this.registryValues && this.registryValues.hasOwnProperty('portals')) {
+                for (let p in this.registryValues.portals) {
+                    if(this.registryValues.portals[p].hasOwnProperty('customDns')) {
+                        this.wizard.tabs.dns.editVisible[p] =  this.registryValues.portals[p].customDns.enabled;
+                        this.wizard.tabs.dns.data[p] =  this.registryValues.portals[p].customDns.host;
+                        this.wizard.tabs.dns.preloadValues[p] = this.registryValues.portals[p].customDns.host;
+                    }
+                }
             }
         },
         wizardPrev(){
@@ -425,10 +434,11 @@ let app = Vue.createApp({
                             validationFailed = true;
                         }
 
-                        if (fileInput.files.length === 0) {
+                        if (fileInput.files.length === 0 &&
+                            (!this.wizard.tabs.dns.preloadValues.hasOwnProperty(k) || this.wizard.tabs.dns.preloadValues[k] !== this.wizard.tabs.dns.data[k])) {
                             this.wizard.tabs.dns.requiredError[k] = true;
                             validationFailed = true;
-                        } else {
+                        } else if (fileInput.files.length > 0) {
                             filesToCheck.push({name: k, file: fileInput.files[0]});
                         }
                     } else if (fileInput.files.length > 0) {
@@ -781,11 +791,12 @@ let app = Vue.createApp({
         },
         prepareDNSConfig(){
             for (let k in this.wizard.tabs.dns.data) {
-                if (this.wizard.tabs.dns.editVisible[k] && this.wizard.tabs.dns.data[k] === '' &&
-                    this.wizard.tabs.dns.preloadValues.hasOwnProperty(k)) {
-                    this.wizard.tabs.dns.preloadValues = '';
-                    this.wizard.tabs.dns.editVisible[k] = false;
-                    this.wizard.tabs.dns.data[k] = '-';
+                let fileInput = this.$refs[`${k}SSL`];
+
+                if (this.wizard.tabs.dns.editVisible[k] &&
+                    this.wizard.tabs.dns.data[k] === this.wizard.tabs.dns.preloadValues[k] &&
+                    fileInput.files.length === 0) {
+                    this.wizard.tabs.dns.data[k] = '';
                 }
             }
         },

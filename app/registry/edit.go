@@ -129,6 +129,12 @@ func (a *App) loadValuesEditConfig(ctx context.Context, registryName string, rsp
 	}
 	rspParams["registryData"] = string(registryData)
 
+	valuesJson, err := json.Marshal(values)
+	if err != nil {
+		return errors.Wrap(err, "unable to encode registry values")
+	}
+	rspParams["registryValues"] = string(valuesJson)
+
 	return nil
 }
 

@@ -520,120 +520,79 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, secretData 
 	}
 	officerDict := officer.(map[string]interface{})
 
-	if r.DNSNameOfficer != "" {
-		if r.DNSNameOfficer == "-" {
-			delete(portalsDict, "officer")
-			delete(officerDict, "customDns")
-		} else {
-			customDNS := make(map[string]interface{})
-			customDNS["enabled"] = true
-			customDNS["host"] = r.DNSNameOfficer
-			officerDict["customDns"] = customDNS
+	if r.DNSNameOfficerEnabled == "" {
+		delete(portalsDict, "officer")
+		delete(officerDict, "customDns")
+	} else if r.DNSNameOfficerEnabled != "" && r.DNSNameOfficer != "" {
+		customDNS := make(map[string]interface{})
+		customDNS["enabled"] = true
+		customDNS["host"] = r.DNSNameOfficer
+		officerDict["customDns"] = customDNS
 
-			certFile, _, err := ginContext.Request.FormFile("officer-ssl")
-			if err != nil {
-				return errors.Wrap(err, "unable to get officer ssl certificate")
-			}
-
-			certData, err := ioutil.ReadAll(certFile)
-			if err != nil {
-				return errors.Wrap(err, "unable to read officer ssl data")
-			}
-
-			caCert, cert, key, err := decodePEM(certData)
-			if err != nil {
-				return validator.ValidationErrors([]validator.FieldError{
-					router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
-			}
-
-			secretPath := strings.ReplaceAll(a.Config.VaultOfficerSSLPath, "{registry}", r.Name)
-			secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameOfficer)
-
-			if _, ok := secretData[secretPath]; !ok {
-				secretData[secretPath] = make(map[string]interface{})
-			}
-
-			secretData[secretPath][VaultKeyCACert] = caCert
-			secretData[secretPath][VaultKeyCert] = cert
-			secretData[secretPath][VaultKeyPK] = key
+		certFile, _, err := ginContext.Request.FormFile("officer-ssl")
+		if err != nil {
+			return errors.Wrap(err, "unable to get officer ssl certificate")
 		}
+
+		certData, err := ioutil.ReadAll(certFile)
+		if err != nil {
+			return errors.Wrap(err, "unable to read officer ssl data")
+		}
+
+		caCert, cert, key, err := decodePEM(certData)
+		if err != nil {
+			return validator.ValidationErrors([]validator.FieldError{
+				router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
+		}
+
+		secretPath := strings.ReplaceAll(a.Config.VaultOfficerSSLPath, "{registry}", r.Name)
+		secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameOfficer)
+
+		if _, ok := secretData[secretPath]; !ok {
+			secretData[secretPath] = make(map[string]interface{})
+		}
+
+		secretData[secretPath][VaultKeyCACert] = caCert
+		secretData[secretPath][VaultKeyCert] = cert
+		secretData[secretPath][VaultKeyPK] = key
 	}
 
-	if r.DNSNameCitizen != "" {
-		if r.DNSNameCitizen == "-" {
-			delete(portalsDict, "citizen")
-			delete(citizenDict, "customDns")
-		} else {
-			customDNS := make(map[string]interface{})
-			customDNS["enabled"] = true
-			customDNS["host"] = r.DNSNameCitizen
-			citizenDict["customDns"] = customDNS
+	if r.DNSNameCitizenEnabled == "" {
+		delete(portalsDict, "citizen")
+		delete(citizenDict, "customDns")
+	} else if r.DNSNameCitizenEnabled != "" && r.DNSNameCitizen != "" {
+		customDNS := make(map[string]interface{})
+		customDNS["enabled"] = true
+		customDNS["host"] = r.DNSNameCitizen
+		citizenDict["customDns"] = customDNS
 
-			certFile, _, err := ginContext.Request.FormFile("citizen-ssl")
-			if err != nil {
-				return errors.Wrap(err, "unable to get citizen ssl certificate")
-			}
-
-			certData, err := ioutil.ReadAll(certFile)
-			if err != nil {
-				return errors.Wrap(err, "unable to read citizen ssl data")
-			}
-
-			caCert, cert, key, err := decodePEM(certData)
-			if err != nil {
-				return validator.ValidationErrors([]validator.FieldError{
-					router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
-			}
-
-			secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
-			secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameCitizen)
-
-			if _, ok := secretData[secretPath]; !ok {
-				secretData[secretPath] = make(map[string]interface{})
-			}
-
-			secretData[secretPath][VaultKeyCACert] = caCert
-			secretData[secretPath][VaultKeyCert] = cert
-			secretData[secretPath][VaultKeyPK] = key
+		certFile, _, err := ginContext.Request.FormFile("citizen-ssl")
+		if err != nil {
+			return errors.Wrap(err, "unable to get citizen ssl certificate")
 		}
-	}
 
-	//if r.DNSNameKeycloak != "" {
-	//	certFile, _, err := ginContext.Request.FormFile("keycloak-ssl")
-	//	if err != nil {
-	//		return errors.Wrap(err, "unable to get citizen ssl certificate")
-	//	}
-	//
-	//	certData, err := ioutil.ReadAll(certFile)
-	//	if err != nil {
-	//		return errors.Wrap(err, "unable to read citizen ssl data")
-	//	}
-	//
-	//	caCert, cert, key, err := decodePEM(certData)
-	//	if err != nil {
-	//		return validator.ValidationErrors([]validator.FieldError{
-	//			router.MakeFieldError("DNSNameKeycloak", "pem-decode-error")})
-	//	}
-	//
-	//	secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
-	//	secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameKeycloak)
-	//
-	//	if _, ok := secretData[secretPath]; !ok {
-	//		secretData[secretPath] = make(map[string]interface{})
-	//	}
-	//
-	//	secretData[secretPath][VaultKeyCACert] = caCert
-	//	secretData[secretPath][VaultKeyCert] = cert
-	//	secretData[secretPath][VaultKeyPK] = key
-	//
-	//	kcInterface, ok := values["keycloak"]
-	//	if !ok {
-	//		kcInterface = make(map[string]interface{})
-	//	}
-	//	kcDict := kcInterface.(map[string]interface{})
-	//	kcDict["customHost"] = r.DNSNameKeycloak
-	//	values["keycloak"] = kcDict
-	//}
+		certData, err := ioutil.ReadAll(certFile)
+		if err != nil {
+			return errors.Wrap(err, "unable to read citizen ssl data")
+		}
+
+		caCert, cert, key, err := decodePEM(certData)
+		if err != nil {
+			return validator.ValidationErrors([]validator.FieldError{
+				router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
+		}
+
+		secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
+		secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameCitizen)
+
+		if _, ok := secretData[secretPath]; !ok {
+			secretData[secretPath] = make(map[string]interface{})
+		}
+
+		secretData[secretPath][VaultKeyCACert] = caCert
+		secretData[secretPath][VaultKeyCert] = cert
+		secretData[secretPath][VaultKeyPK] = key
+	}
 
 	if len(citizenDict) > 0 {
 		portalsDict["citizen"] = citizenDict
@@ -642,16 +601,6 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, secretData 
 	if len(officerDict) > 0 {
 		portalsDict["officer"] = officerDict
 	}
-
-	//valuesPortalsInterface, ok := values["portals"]
-	//if !ok {
-	//	valuesPortalsInterface = map[string]interface{}{}
-	//}
-	//valuesPortalsDict := valuesPortalsInterface.(map[string]interface{})
-	//
-	//for k, v := range portalsDict {
-	//	valuesPortalsDict[k] = v
-	//}
 
 	values["portals"] = portalsDict
 
