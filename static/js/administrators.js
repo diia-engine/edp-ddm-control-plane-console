@@ -126,7 +126,7 @@ let app = Vue.createApp({
             },
             wizard: {
                 registryAction: 'create',
-                activeTab: 'dns',
+                activeTab: 'general',
                 tabs: {
                     general: {
                         title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
