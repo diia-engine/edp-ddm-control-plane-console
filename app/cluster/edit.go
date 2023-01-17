@@ -33,7 +33,7 @@ type BackupConfig struct {
 }
 
 func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
@@ -112,7 +112,7 @@ func (a *App) editDataLoaders() []func(*Values, gin.H) error {
 }
 
 func (a *App) editPost(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {

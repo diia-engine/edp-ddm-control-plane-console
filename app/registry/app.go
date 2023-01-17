@@ -2,6 +2,7 @@ package registry
 
 import (
 	"ddm-admin-console/service/keycloak"
+	"ddm-admin-console/service/permissions"
 	"ddm-admin-console/service/vault"
 	"strings"
 
@@ -43,6 +44,7 @@ type Services struct {
 	Jenkins      jenkins.ServiceInterface
 	Keycloak     keycloak.ServiceInterface
 	Vault        vault.ServiceInterface
+	Perms        permissions.ServiceInterface
 }
 
 type App struct {

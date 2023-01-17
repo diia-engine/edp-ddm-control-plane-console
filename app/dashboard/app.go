@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"ddm-admin-console/service/openshift"
+	"ddm-admin-console/service/permissions"
 	"net/http"
 
 	"ddm-admin-console/config"
@@ -33,7 +34,7 @@ type App struct {
 	k8sService          k8s.ServiceInterface
 	codebaseService     codebase.ServiceInterface
 	openShiftService    openshift.ServiceInterface
-
+	permService         permissions.ServiceInterface
 	clusterCodebaseName string
 }
 
@@ -46,6 +47,7 @@ func Make(router router.Interface, oauth OAuth, services *config.Services, clust
 		openShiftService:    services.OpenShift,
 		clusterCodebaseName: clusterCodebaseName,
 		codebaseService:     services.Codebase,
+		permService:         services.PermService,
 	}
 
 	app.createRoutes()

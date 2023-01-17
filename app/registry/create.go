@@ -101,7 +101,7 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 	}
 	prjs = a.filterProjects(prjs)
 
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")
@@ -228,7 +228,7 @@ func GetINITemplateContent(path string) (string, error) {
 }
 
 func (a *App) createRegistryPost(ctx *gin.Context) (response router.Response, retErr error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {

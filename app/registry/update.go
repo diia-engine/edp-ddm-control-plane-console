@@ -26,7 +26,7 @@ type updateRequest struct {
 func (a *App) registryUpdateView(ctx *gin.Context) (router.Response, error) {
 	registryName := ctx.Param("name")
 
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
@@ -52,7 +52,7 @@ func (a *App) registryUpdateView(ctx *gin.Context) (router.Response, error) {
 }
 
 func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")
