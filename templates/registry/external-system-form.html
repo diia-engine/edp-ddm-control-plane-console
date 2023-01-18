@@ -60,11 +60,13 @@
 
                 <div class="auth-token-bearer" v-if="externalSystem.data.auth.type == 'AUTH_TOKEN+BEARER'">
                     <div class="rc-form-group"
-                         :class="{'error': externalSystem.data.auth['auth-uri'] == '' && externalSystem.startValidation}">
+                         :class="{'error': externalSystem.data.auth['auth-url'] == '' && externalSystem.startValidation}">
                         <label>Вкажіть енд-поінт аутентифікації партнера</label>
-                        <input aria-label="" type="text" name="external-system-auth-uri"
-                               v-model="externalSystem.data.auth['auth-uri']" />
-                        <span v-if="externalSystem.data.auth['auth-uri'] == '' && externalSystem.startValidation">
+                        <input aria-label="" type="text" name="external-system-auth-url"
+                               v-model="externalSystem.data.auth['auth-url']" />
+                        <p>Вказується абсолютна адреса (https://example.ua/auth) або relative path відносно адреси,
+                            вказаної в полі Адреса зовнішньої системи (/auth)</p>
+                        <span v-if="externalSystem.data.auth['auth-url'] == '' && externalSystem.startValidation">
                         Обов’язкове поле
                         </span>
                     </div>

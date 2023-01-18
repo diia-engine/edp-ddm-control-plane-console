@@ -23,7 +23,7 @@ type RegistryExternalSystemForm struct {
 	URL                 string `form:"external-system-url" binding:"required"`
 	Protocol            string `form:"external-system-protocol" binding:"required"`
 	AuthType            string `form:"external-system-auth-type" binding:"required"`
-	AuthURI             string `form:"external-system-auth-uri"`
+	AuthURL             string `form:"external-system-auth-url"`
 	AccessTokenJSONPath string `form:"external-system-auth-access-token-json-path"`
 	AuthSecret          string `form:"external-system-auth-secret"`
 	AuthUsername        string `form:"external-system-auth-username"`
@@ -51,7 +51,7 @@ func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) Exter
 	}
 
 	if f.AuthType == authTypeAuthTokenBearer {
-		es.Auth["auth-uri"] = f.AuthURI
+		es.Auth["auth-url"] = f.AuthURL
 		es.Auth["access-token-json-path"] = f.AccessTokenJSONPath
 	}
 

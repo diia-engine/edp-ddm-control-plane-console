@@ -118,7 +118,7 @@ let app = Vue.createApp({
                     auth: {
                         type: 'NO_AUTH',
                         secret: '',
-                        'auth-uri': '',
+                        'auth-url': '',
                         'access-token-json-path': '',
                         username: '',
                     },
@@ -194,8 +194,8 @@ let app = Vue.createApp({
             }
 
             if (this.externalSystem.data.auth.type === 'AUTH_TOKEN+BEARER' &&
-                (!this.externalSystem.data.auth.hasOwnProperty('auth-uri') ||
-                    this.externalSystem.data.auth['auth-uri'] === '' ||
+                (!this.externalSystem.data.auth.hasOwnProperty('auth-url') ||
+                    this.externalSystem.data.auth['auth-url'] === '' ||
                     !this.externalSystem.data.auth.hasOwnProperty('access-token-json-path') ||
                     this.externalSystem.data.auth['access-token-json-path'] === '')) {
                 e.preventDefault();
