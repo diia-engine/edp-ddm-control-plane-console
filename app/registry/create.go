@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -811,39 +810,4 @@ func (a *App) prepareRegistryCodebase(r *registry) *codebase.Codebase {
 func branchProvisioner(branch string) string {
 	return "default-" + strings.Replace(
 		strings.ToLower(branch), ".", "-", -1)
-}
-
-func validateRegistryKeys(rq *http.Request, r KeyManagement) (createKeys bool, key6Fl, caCertFl,
-	caJSONFl multipart.File, err error) {
-
-	var fieldErrors []validator.FieldError
-	caCertFl, _, err = rq.FormFile("ca-cert")
-	if err != nil {
-		if !r.KeysRequired() {
-			err = nil
-			return
-		}
-
-		fieldErrors = append(fieldErrors, router.MakeFieldError("CACertificate", "required"))
-	}
-
-	caJSONFl, _, err = rq.FormFile("ca-json")
-	if err != nil {
-		fieldErrors = append(fieldErrors, router.MakeFieldError("CAsJSON", "required"))
-	}
-
-	if r.KeyDeviceType() == KeyDeviceTypeFile {
-		key6Fl, _, err = rq.FormFile("key6")
-		if err != nil {
-			fieldErrors = append(fieldErrors, router.MakeFieldError("Key6", "required"))
-		}
-	}
-
-	if len(fieldErrors) > 0 {
-		err = validator.ValidationErrors(fieldErrors)
-		return
-	}
-
-	createKeys = true
-	return
 }

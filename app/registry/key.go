@@ -1,10 +1,13 @@
 package registry
 
 import (
+	"ddm-admin-console/router"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -162,4 +165,39 @@ func setAllowedKeysSecretData(reg KeyManagement, keySecretData map[string]interf
 	}
 
 	return nil
+}
+
+func validateRegistryKeys(rq *http.Request, r KeyManagement) (createKeys bool, key6Fl, caCertFl,
+	caJSONFl multipart.File, err error) {
+
+	var fieldErrors []validator.FieldError
+	caCertFl, _, err = rq.FormFile("ca-cert")
+	if err != nil {
+		if !r.KeysRequired() {
+			err = nil
+			return
+		}
+
+		fieldErrors = append(fieldErrors, router.MakeFieldError("CACertificate", "required"))
+	}
+
+	caJSONFl, _, err = rq.FormFile("ca-json")
+	if err != nil {
+		fieldErrors = append(fieldErrors, router.MakeFieldError("CAsJSON", "required"))
+	}
+
+	if r.KeyDeviceType() == KeyDeviceTypeFile {
+		key6Fl, _, err = rq.FormFile("key6")
+		if err != nil {
+			fieldErrors = append(fieldErrors, router.MakeFieldError("Key6", "required"))
+		}
+	}
+
+	if len(fieldErrors) > 0 {
+		err = validator.ValidationErrors(fieldErrors)
+		return
+	}
+
+	createKeys = true
+	return
 }
