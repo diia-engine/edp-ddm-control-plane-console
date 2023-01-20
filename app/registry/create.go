@@ -297,7 +297,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unable to prepare cidr config")
 	}
 
-	if err := a.prepareMailServerConfig(ginContext, r, vaultSecretData, values); err != nil {
+	if err := a.prepareMailServerConfig(r, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to prepare mail server config")
 	}
 
@@ -309,8 +309,11 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unable to prepare registry resources config")
 	}
 
-	if _, err := prepareRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService); err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
+	if _, err := PrepareRegistryKeys(keyManagement{
+		r:               r,
+		vaultSecretPath: a.vaultRegistryPathKey(r.Name, keyManagementVaultPath),
+	}, ginContext.Request, vaultSecretData, values); err != nil {
+
 	}
 
 	if err := a.createVaultSecrets(vaultSecretData); err != nil {
@@ -387,8 +390,8 @@ func (a *App) vaultRegistryPath(registryName string) string {
 		"{engine}", a.Config.VaultKVEngineName)
 }
 
-func (a *App) keyManagementRegistryVaultPath(registryName string) string {
-	return a.vaultRegistryPath(registryName) + "/key-management"
+func (a *App) vaultRegistryPathKey(registryName, key string) string {
+	return fmt.Sprintf("%s/%s", a.vaultRegistryPath(registryName), key)
 }
 
 func (a *App) prepareCIDRConfig(ginContext *gin.Context, r *registry, values map[string]interface{}) error {
@@ -463,7 +466,7 @@ func (a *App) prepareAdminsConfig(r *registry, secretData map[string]map[string]
 			return errors.Wrap(err, "unable to validate admins")
 		}
 
-		adminsVaultPath := fmt.Sprintf("%s/administrators", a.vaultRegistryPath(r.Name))
+		adminsVaultPath := a.vaultRegistryPathKey(r.Name, "administrators")
 		for i, adm := range admins {
 			adminVaultPath := fmt.Sprintf("%s/%s", adminsVaultPath, adm.Email)
 			secretData[adminVaultPath] = map[string]interface{}{
@@ -690,7 +693,7 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 	return
 }
 
-func (a *App) prepareMailServerConfig(ginContext *gin.Context, r *registry, secretData map[string]map[string]interface{},
+func (a *App) prepareMailServerConfig(r *registry, secretData map[string]map[string]interface{},
 	values map[string]interface{}) error {
 
 	notifications := make(map[string]interface{})

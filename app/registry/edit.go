@@ -306,7 +306,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 		return nil, errors.Wrap(err, "unable to parse registry form")
 	}
 
-	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService, k8sService); err != nil {
+	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService); err != nil {
 		return nil, errors.Wrap(err, "unable to edit registry")
 	}
 
@@ -315,12 +315,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 }
 
 func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *registry, cb *codebase.Codebase,
-	cbService codebase.ServiceInterface, k8sService k8s.ServiceInterface) error {
-
-	keysUpdated, err := CreateRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService)
-	if err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
-	}
+	cbService codebase.ServiceInterface) error {
 
 	cb.Spec.Description = &r.Description
 	if cb.Annotations == nil {
@@ -342,7 +337,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to prepare dns config")
 	}
 
-	if err := a.prepareMailServerConfig(ginContext, r, vaultSecretData, values); err != nil {
+	if err := a.prepareMailServerConfig(r, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to prepare mail server config")
 	}
 
@@ -358,6 +353,13 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to prepare registry resources config")
 	}
 
+	if _, err := PrepareRegistryKeys(keyManagement{
+		r:               r,
+		vaultSecretPath: a.vaultRegistryPathKey(r.Name, keyManagementVaultPath),
+	}, ginContext.Request, vaultSecretData, values); err != nil {
+		return errors.Wrap(err, "unable to create registry keys")
+	}
+
 	changedValuesHash, err := MapHash(values)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values map hash")
@@ -366,11 +368,6 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	if initialValuesHash != changedValuesHash {
 		if err := CreateEditMergeRequest(ginContext, r.Name, values, a.Gerrit); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
-		}
-	} else if keysUpdated {
-		if err := a.Services.Jenkins.CreateJobBuildRun(ctx, fmt.Sprintf("registry-update-%d", time.Now().Unix()),
-			fmt.Sprintf("%s/job/MASTER-Build-%s/", r.Name, r.Name), nil); err != nil {
-			return errors.Wrap(err, "unable to trigger jenkins job build run")
 		}
 	}
 
