@@ -44,9 +44,9 @@ func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
 			MemberClass:   tf.TrembitaServiceMemberClass,
 			XRoadInstance: tf.TrembitaServiceXRoadInstance,
 			SubsystemCode: tf.TrembitaServiceSubsystemCode,
-			Auth: map[string]string{
-				"type": tf.TrembitaServiceAuthType,
-			},
+		},
+		Auth: map[string]string{
+			"type": tf.TrembitaServiceAuthType,
 		},
 	}
 
@@ -139,7 +139,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 		}
 
 		//todo: maybe move to nested struct converter
-		trembitaRegistry.Service.Auth["secret"] = prefixedPath
+		trembitaRegistry.Auth["secret"] = prefixedPath
 	}
 
 	registriesDict[tf.TrembitaClientRegitryName] = trembitaRegistry

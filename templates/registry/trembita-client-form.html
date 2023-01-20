@@ -140,21 +140,21 @@
                 <div class="rc-form-group">
                     <label>Вкажіть тип аутентифікації</label>
                     <select aria-label="" name="trembita-service-auth-type"
-                            v-model="trembitaClient.data.service.auth.type"
+                            v-model="trembitaClient.data.auth.type"
                             @change="changeTrembitaClientAuthType">
                         <option>NO_AUTH</option>
                         <option>AUTH_TOKEN</option>
                     </select>
                 </div>
 
-                <div class="rc-form-group" v-if="trembitaClient.data.service.auth.type == 'AUTH_TOKEN'"
-                     :class="{'error': trembitaClient.data.service.auth.secret == '' && trembitaClient.startValidation}">
+                <div class="rc-form-group" v-if="trembitaClient.data.auth.type == 'AUTH_TOKEN'"
+                     :class="{'error': trembitaClient.data.auth.secret == '' && trembitaClient.startValidation}">
                     <label>Вкажіть токен авторизації</label>
                     <input aria-label="" name="trembita-service-auth-secret"
-                           v-model="trembitaClient.data.service.auth.secret"
+                           v-model="trembitaClient.data.auth.secret"
                            :type="[[ trembitaClient.tokenInputType ]]"
                            @focus="trembitaFormSecretFocus" />
-                    <span v-if="trembitaClient.data.service.auth.secret == '' && trembitaClient.startValidation">
+                    <span v-if="trembitaClient.data.auth.secret == '' && trembitaClient.startValidation">
                         Обов’язкове поле
                     </span>
                 </div>

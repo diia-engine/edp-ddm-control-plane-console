@@ -91,9 +91,9 @@ let app = Vue.createApp({
                         memberClass: '',
                         memberCode: '',
                         subsystemCode: '',
-                        auth: {
-                            type: 'NO_AUTH',
-                        },
+                    },
+                    auth: {
+                        type: 'NO_AUTH',
                     },
                 },
             };
@@ -250,8 +250,8 @@ let app = Vue.createApp({
                 }
             }
 
-            if (this.trembitaClient.data.service.auth.type === 'AUTH_TOKEN' &&
-                this.trembitaClient.data.service.auth['secret'] === '') {
+            if (this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
+                this.trembitaClient.data.auth['secret'] === '') {
                 e.preventDefault();
             }
         },
@@ -259,14 +259,14 @@ let app = Vue.createApp({
             this.externalSystem.startValidation = false;
         },
         changeTrembitaClientAuthType() {
-            if (this.trembitaClient.data.service.auth.type === 'AUTH_TOKEN' &&
-                !this.trembitaClient.data.service.auth.hasOwnProperty('secret')) {
-                this.trembitaClient.data.service.auth['secret'] = '';
+            if (this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
+                !this.trembitaClient.data.auth.hasOwnProperty('secret')) {
+                this.trembitaClient.data.auth['secret'] = '';
             }
 
-            if (this.trembitaClient.data.service.auth.type === 'NO_AUTH' &&
-                this.trembitaClient.data.service.auth.hasOwnProperty('secret')) {
-                delete this.trembitaClient.data.service.auth['secret']
+            if (this.trembitaClient.data.auth.type === 'NO_AUTH' &&
+                this.trembitaClient.data.auth.hasOwnProperty('secret')) {
+                delete this.trembitaClient.data.auth['secret']
             }
         },
         hideExternalSystemForm(e) {
@@ -283,7 +283,7 @@ let app = Vue.createApp({
         },
         trembitaFormSecretFocus() {
             if (this.trembitaClient.tokenInputType === 'password') {
-                this.trembitaClient.data.service.auth.secret = '';
+                this.trembitaClient.data.auth.secret = '';
                 this.trembitaClient.tokenInputType = 'text';
             }
         },
@@ -338,7 +338,7 @@ let app = Vue.createApp({
             this.trembitaClient.formShow = true;
 
             this.mergeDeep(this.trembitaClient.data, this.values.trembita.registries[registry]);
-            if (this.trembitaClient.data.service.auth.hasOwnProperty('secret')) {
+            if (this.trembitaClient.data.auth.hasOwnProperty('secret')) {
                 this.trembitaClient.tokenInputType = 'password';
             }
 

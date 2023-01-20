@@ -66,6 +66,7 @@ type TrembitaRegistry struct {
 	Protocol        string                  `yaml:"protocol" json:"protocol"`
 	Client          TrembitaRegistryClient  `yaml:"client" json:"client"`
 	Service         TrembitaRegistryService `yaml:"service" json:"service"`
+	Auth            map[string]string       `yaml:"auth" json:"auth"`
 }
 
 func (t TrembitaRegistry) StrType() string {
@@ -76,9 +77,9 @@ func (e ExternalSystem) StrType() string {
 	return fmt.Sprintf("type-%s", e.Type)
 }
 
-func (t TrembitaRegistry) Auth() string {
-	if t.Service.Auth != nil {
-		if t, ok := t.Service.Auth["type"]; ok {
+func (t TrembitaRegistry) StrAuth() string {
+	if t.Auth != nil {
+		if t, ok := t.Auth["type"]; ok {
 			return t
 		}
 	}
@@ -102,10 +103,8 @@ type TrembitaRegistryClient struct {
 }
 
 type TrembitaRegistryService struct {
-	//TrembitaRegistryClient
-	XRoadInstance string            `yaml:"x-road-instance" json:"xRoadInstance"`
-	MemberClass   string            `yaml:"member-class" json:"memberClass"`
-	MemberCode    string            `yaml:"member-code" json:"memberCode"`
-	SubsystemCode string            `yaml:"subsystem-code" json:"subsystemCode"`
-	Auth          map[string]string `yaml:"auth" json:"auth"`
+	XRoadInstance string `yaml:"x-road-instance" json:"xRoadInstance"`
+	MemberClass   string `yaml:"member-class" json:"memberClass"`
+	MemberCode    string `yaml:"member-code" json:"memberCode"`
+	SubsystemCode string `yaml:"subsystem-code" json:"subsystemCode"`
 }
