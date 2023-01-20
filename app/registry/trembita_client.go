@@ -40,12 +40,10 @@ func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
 			XRoadInstance: tf.TrembitaClientXRoadInstance,
 		},
 		Service: TrembitaRegistryService{
-			TrembitaRegistryClient: TrembitaRegistryClient{
-				MemberCode:    tf.TrembitaServiceMemberCode,
-				MemberClass:   tf.TrembitaServiceMemberClass,
-				XRoadInstance: tf.TrembitaServiceXRoadInstance,
-				SubsystemCode: tf.TrembitaServiceSubsystemCode,
-			},
+			MemberCode:    tf.TrembitaServiceMemberCode,
+			MemberClass:   tf.TrembitaServiceMemberClass,
+			XRoadInstance: tf.TrembitaServiceXRoadInstance,
+			SubsystemCode: tf.TrembitaServiceSubsystemCode,
 			Auth: map[string]string{
 				"type": tf.TrembitaServiceAuthType,
 			},

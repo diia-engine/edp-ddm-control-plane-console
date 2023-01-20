@@ -102,6 +102,10 @@ type TrembitaRegistryClient struct {
 }
 
 type TrembitaRegistryService struct {
-	TrembitaRegistryClient
-	Auth map[string]string `yaml:"auth" json:"auth"`
+	//TrembitaRegistryClient
+	XRoadInstance string            `yaml:"x-road-instance" json:"xRoadInstance"`
+	MemberClass   string            `yaml:"member-class" json:"memberClass"`
+	MemberCode    string            `yaml:"member-code" json:"memberCode"`
+	SubsystemCode string            `yaml:"subsystem-code" json:"subsystemCode"`
+	Auth          map[string]string `yaml:"auth" json:"auth"`
 }
