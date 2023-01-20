@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"ddm-admin-console/service/vault"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -310,12 +311,12 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 
 	if _, err := PrepareRegistryKeys(keyManagement{
 		r:               r,
-		vaultSecretPath: a.vaultRegistryPathKey(r.Name, keyManagementVaultPath),
+		vaultSecretPath: a.vaultRegistryPathKey(r.Name, KeyManagementVaultPath),
 	}, ginContext.Request, vaultSecretData, values); err != nil {
 
 	}
 
-	if err := a.createVaultSecrets(vaultSecretData); err != nil {
+	if err := CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
 		return errors.Wrap(err, "unable to create vault secrets")
 	}
 
@@ -359,11 +360,11 @@ func ModifyVaultPath(path string) string {
 	return strings.Join(pathParts, "/")
 }
 
-func (a *App) createVaultSecrets(secretData map[string]map[string]interface{}) error {
+func CreateVaultSecrets(v vault.ServiceInterface, secretData map[string]map[string]interface{}) error {
 	for vaultPath, pathSecretData := range secretData {
 		vaultPath = ModifyVaultPath(vaultPath)
 
-		if _, err := a.Vault.Write(vaultPath, map[string]interface{}{
+		if _, err := v.Write(vaultPath, map[string]interface{}{
 			"data": pathSecretData,
 		}); err != nil {
 			return errors.Wrap(err, "unable to write to vault")
@@ -708,11 +709,13 @@ func (a *App) prepareMailServerConfig(r *registry, secretData map[string]map[str
 			return errors.New("no password in mail server opts")
 		}
 
-		if _, ok := secretData[a.vaultRegistryPath(r.Name)]; !ok {
-			secretData[a.vaultRegistryPath(r.Name)] = make(map[string]interface{})
+		vaultPath := a.vaultRegistryPathKey(r.Name, "smtp")
+
+		if _, ok := secretData[vaultPath]; !ok {
+			secretData[vaultPath] = make(map[string]interface{})
 		}
 
-		secretData[a.vaultRegistryPath(r.Name)][a.Config.VaultRegistrySMTPPwdSecretKey] = pwd
+		secretData[vaultPath][a.Config.VaultRegistrySMTPPwdSecretKey] = pwd
 		//TODO: remove password from dict
 
 		port, err := strconv.ParseInt(smptOptsDict["port"], 10, 32)

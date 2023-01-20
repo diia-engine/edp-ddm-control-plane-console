@@ -581,66 +581,77 @@ let app = Vue.createApp({
                 resolve();
             });
         },
+        clusterKeyFormSubmit(e) {
+            if (!this.keyFormValidation(this.wizard.tabs.key, function () {
+
+            })) {
+                e.preventDefault();
+            }
+        },
+        keyFormValidation(tab, resolve) {
+            if (this.wizard.registryAction === 'edit' && !this.wizard.tabs.key.changed) {
+                resolve();
+                return true;
+            }
+
+            this.renderINITemplate();
+
+            tab.validated = false;
+            tab.beginValidation = true;
+            this.wizard.tabs.key.caCertRequired = false;
+            this.wizard.tabs.key.caJSONRequired = false;
+            this.wizard.tabs.key.key6Required = false;
+
+            let validationFailed = false;
+            if (this.$refs.keyCaCert.files.length === 0) {
+                this.wizard.tabs.key.caCertRequired = true;
+                validationFailed = true;
+            }
+
+            if (this.$refs.keyCaJSON.files.length === 0) {
+                this.wizard.tabs.key.caJSONRequired = true;
+                validationFailed = true;
+            }
+
+            for (let i=0;i<this.wizard.tabs.key.allowedKeys.length;i++) {
+                if (this.wizard.tabs.key.allowedKeys[i].issuer === '' ||
+                    this.wizard.tabs.key.allowedKeys[i].serial === '') {
+                    validationFailed = true;
+                }
+            }
+
+            if (this.wizard.tabs.key.deviceType === 'hardware') {
+                for (let key in this.wizard.tabs.key.hardwareData) {
+                    if (this.wizard.tabs.key.hardwareData[key] === '') {
+                        validationFailed = true;
+                    }
+                }
+            } else {
+                for (let key in this.wizard.tabs.key.fileData) {
+                    if (this.wizard.tabs.key.hardwareData[key] === '') {
+                        validationFailed = true;
+                    }
+                }
+
+                if (this.$refs.key6.files.length === 0) {
+                    this.wizard.tabs.key.key6Required = true;
+                    validationFailed = true;
+                }
+            }
+
+            if (validationFailed) {
+                return false;
+            }
+
+            tab.beginValidation = false;
+            tab.validated = true;
+
+            resolve();
+            return true;
+        },
         wizardKeyValidation(tab){
             return new Promise((resolve) => {
-                if (this.wizard.registryAction === 'edit' && !this.wizard.tabs.key.changed) {
-                    resolve();
-                    return;
-                }
-
-                this.renderINITemplate();
-
-                tab.validated = false;
-                tab.beginValidation = true;
-                this.wizard.tabs.key.caCertRequired = false;
-                this.wizard.tabs.key.caJSONRequired = false;
-                this.wizard.tabs.key.key6Required = false;
-
-                let validationFailed = false;
-                if (this.$refs.keyCaCert.files.length === 0) {
-                    this.wizard.tabs.key.caCertRequired = true;
-                    validationFailed = true;
-                }
-
-                if (this.$refs.keyCaJSON.files.length === 0) {
-                    this.wizard.tabs.key.caJSONRequired = true;
-                    validationFailed = true;
-                }
-
-                for (let i=0;i<this.wizard.tabs.key.allowedKeys.length;i++) {
-                    if (this.wizard.tabs.key.allowedKeys[i].issuer === '' ||
-                        this.wizard.tabs.key.allowedKeys[i].serial === '') {
-                        validationFailed = true;
-                    }
-                }
-
-                if (this.wizard.tabs.key.deviceType === 'hardware') {
-                    for (let key in this.wizard.tabs.key.hardwareData) {
-                        if (this.wizard.tabs.key.hardwareData[key] === '') {
-                            validationFailed = true;
-                        }
-                    }
-                } else {
-                    for (let key in this.wizard.tabs.key.fileData) {
-                        if (this.wizard.tabs.key.hardwareData[key] === '') {
-                            validationFailed = true;
-                        }
-                    }
-
-                    if (this.$refs.key6.files.length === 0) {
-                        this.wizard.tabs.key.key6Required = true;
-                        validationFailed = true;
-                    }
-                }
-
-                if (validationFailed) {
-                    return;
-                }
-
-                tab.beginValidation = false;
-                tab.validated = true;
-
-                resolve();
+                this.keyFormValidation(tab, resolve);
             });
         },
         renderINITemplate() {

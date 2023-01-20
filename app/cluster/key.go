@@ -89,12 +89,9 @@ func (k keyManagement) KeysRequired() bool {
 	return true
 }
 
-func (k keyManagement) FilesSecretName() string {
-	return "digital-signature-ops-data"
-}
-
-func (k keyManagement) EnvVarsSecretName() string {
-	return "digital-signature-ops-env-vars"
+func (a *App) vaultPlatformPathKey(key string) string {
+	return fmt.Sprintf("%s/%s",
+		strings.ReplaceAll(a.VaultClusterPathTemplate, "{engine}", a.Config.VaultKVEngineName), key)
 }
 
 func (a *App) updateKeyView(ctx *gin.Context) (router.Response, error) {
@@ -123,10 +120,9 @@ func (a *App) updateKey(ctx *gin.Context) error {
 	}
 	vaultSecretData := make(map[string]map[string]interface{})
 
-	vaultPath := fmt.Sprintf("%s/%s",
-		strings.ReplaceAll(a.VaultClusterKeyManagementPathTemplate, "{engine}", a.Config.VaultKVEngineName),
+	vaultPath := a.vaultPlatformPathKey(registry.KeyManagementVaultPath)
 
-	if err := registry.CreateRegistryKeys(keyManagement{r: &ck, vaultSecretPath: vaultPath}, ctx.Request,
+	if _, err := registry.PrepareRegistryKeys(keyManagement{r: &ck, vaultSecretPath: vaultPath}, ctx.Request,
 		vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
 	}

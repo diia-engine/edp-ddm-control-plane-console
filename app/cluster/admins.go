@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -90,9 +89,8 @@ func (a *App) createAdminsMergeRequest(userCtx context.Context, ctx *gin.Context
 
 func (a *App) setAdminsVaultPassword(admins []Admin) error {
 	for i, admin := range admins {
-		vaultPath := strings.ReplaceAll(
-			strings.ReplaceAll(a.Config.VaultClusterAdminsPathTemplate, "{admin}", admin.Email),
-			"{engine}", a.Config.VaultKVEngineName)
+		//TODO: add separate folder for admins
+		vaultPath := a.vaultPlatformPathKey(admin.Email)
 
 		admins[i].PasswordVaultSecret = vaultPath
 		vaultPath = registry.ModifyVaultPath(vaultPath)

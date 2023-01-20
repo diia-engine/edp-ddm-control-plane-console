@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	keyManagementVaultPath = "key-management"
+	KeyManagementVaultPath = "key-management"
 )
 
 type KeyManagement interface {

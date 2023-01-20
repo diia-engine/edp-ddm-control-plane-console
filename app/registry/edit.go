@@ -355,7 +355,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 
 	if _, err := PrepareRegistryKeys(keyManagement{
 		r:               r,
-		vaultSecretPath: a.vaultRegistryPathKey(r.Name, keyManagementVaultPath),
+		vaultSecretPath: a.vaultRegistryPathKey(r.Name, KeyManagementVaultPath),
 	}, ginContext.Request, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
 	}
@@ -372,7 +372,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	if len(vaultSecretData) > 0 {
-		if err := a.createVaultSecrets(vaultSecretData); err != nil {
+		if err := CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
 			return errors.Wrap(err, "unable to create vault secrets")
 		}
 	}
