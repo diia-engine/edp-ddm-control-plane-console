@@ -2,71 +2,78 @@ package openshift
 
 import (
 	"context"
-	"ddm-admin-console/service"
+	"crypto/tls"
+	"ddm-admin-console/service/k8s"
 
-	openshiftV1 "github.com/openshift/api/user/v1"
-	userV1Client "github.com/openshift/client-go/user/clientset/versioned/typed/user/v1"
 	"github.com/pkg/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"gopkg.in/resty.v1"
 	"k8s.io/client-go/rest"
 )
 
-const (
-	UserTokenKey = "access-token"
-)
-
 type Service struct {
-	service.UserConfig
-	userV1Client *userV1Client.UserV1Client
-	namespace    string
+	restConfig  *rest.Config
+	restyClient *resty.Client
+	k8sService  k8s.ServiceInterface
 }
 
-func Make(restConfig *rest.Config, namespace string) (*Service, error) {
+func Make(restConfig *rest.Config, k8sService k8s.ServiceInterface) (*Service, error) {
 	svc := Service{
-		UserConfig: service.UserConfig{
-			RestConfig: restConfig,
-		},
-		namespace: namespace,
+		restConfig: restConfig,
+		restyClient: resty.New().SetHostURL(restConfig.Host).
+			SetHeader("Accept", "application/json"),
+		k8sService: k8sService,
 	}
 
-	userCl, err := userV1Client.NewForConfig(restConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to init oc user client")
-	}
+	svc.restyClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
-	svc.userV1Client = userCl
+	//if restConfig.TLSClientConfig.Insecure {
+	//	svc.restyClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
+	//} else {
+	//	cm, err := k8sService.GetConfigMap(context.Background(), "openshift-global-ca", "openshift-controller-manager")
+	//	if err != nil {
+	//		return nil, errors.Wrap(err, "unable to get openshift ca config map")
+	//	}
+	//
+	//	ca, ok := cm.Data["ca-bundle.crt"]
+	//	if !ok {
+	//		return nil, errors.New("no service ca found in config map")
+	//	}
+	//
+	//	caCertPool := x509.NewCertPool()
+	//	if !caCertPool.AppendCertsFromPEM([]byte(ca)) {
+	//		return nil, errors.New("unable to append certs from PEM")
+	//	}
+	//
+	//	svc.restyClient.GetClient().Transport = &http.Transport{TLSClientConfig: &tls.Config{
+	//		RootCAs: caCertPool,
+	//	}}
+	//}
 
 	return &svc, nil
 }
 
-func (s *Service) serviceForContext(ctx context.Context) (*Service, error) {
-	userConfig, changed := s.UserConfig.CreateConfig(ctx)
-	if !changed {
-		return s, nil
-	}
-
-	svc, err := Make(userConfig, s.namespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create service for context")
-	}
-
-	return svc, nil
+type User struct {
+	Metadata struct {
+		Name string `json:"name"`
+	} `json:"metadata"`
+	FullName string `json:"fullName"`
 }
 
-func (s *Service) ServiceForContext(ctx context.Context) (ServiceInterface, error) {
-	return s.serviceForContext(ctx)
-}
-
-func (s *Service) GetMe(ctx context.Context) (*openshiftV1.User, error) {
-	svc, err := s.serviceForContext(ctx)
-	if err != nil {
-		return nil, err
+func (s *Service) GetMe(ctx context.Context) (*User, error) {
+	accessToken := ctx.Value("access-token")
+	if accessToken == nil {
+		return nil, errors.New("no access token in context")
 	}
 
-	usr, err := svc.userV1Client.Users().Get(ctx, "~", v1.GetOptions{})
+	var u User
+	rsp, err := s.restyClient.R().SetAuthToken(accessToken.(string)).SetResult(&u).Get("/apis/user.openshift.io/v1/users/~")
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get user")
 	}
 
-	return usr, nil
+	if rsp.StatusCode() >= 300 {
+		return nil, errors.Errorf("code: %d body: %s", rsp.StatusCode(), rsp.String())
+	}
+
+	return &u, nil
 }

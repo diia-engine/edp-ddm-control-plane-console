@@ -14,8 +14,35 @@ type ExtendedMergeRequests struct {
 	gerrit.GerritMergeRequest
 }
 
+type valuesMrConfig struct {
+	name          string
+	authorName    string
+	authorEmail   string
+	commitMessage string
+	targetBranch  string
+	targetLabel   string
+	values        string
+}
+
+func (v valuesMrConfig) TargetBranch() string {
+	if v.targetBranch == "" {
+		return "master"
+	}
+
+	return v.targetBranch
+}
+
 func (e ExtendedMergeRequests) RequestName() string {
 	return e.Name
+}
+
+func (e ExtendedMergeRequests) StatusValue() string {
+	if e.Labels[registry.MRLabelAction] == registry.MRLabelActionBranchMerge &&
+		(e.Spec.SourceBranch == "" || e.Status.Value == "sourceBranch or changesConfigMap must be specified") {
+		return "in progress"
+	}
+
+	return e.Status.Value
 }
 
 func (e ExtendedMergeRequests) Action() string {
@@ -27,8 +54,13 @@ func (e ExtendedMergeRequests) Action() string {
 		return "Обмеження доступу"
 	}
 
+	sourceBranch := e.Spec.SourceBranch
+	if sourceBranch == "" {
+		sourceBranch = e.Labels[registry.MRLabelSourceBranch]
+	}
+
 	if e.Labels[registry.MRLabelTarget] == MRTypeClusterUpdate {
-		return fmt.Sprintf("Оновлення платформи до %s", e.Spec.SourceBranch)
+		return fmt.Sprintf("Оновлення платформи до %s", sourceBranch)
 	}
 
 	return "-"
@@ -48,4 +80,24 @@ func (a *App) ClusterGetMergeRequests(userCtx context.Context) ([]ExtendedMergeR
 	}
 
 	return emrs, nil
+}
+
+func (a *App) createValuesMergeRequest(ctx context.Context, cnf *valuesMrConfig) error {
+	if err := a.Services.Gerrit.CreateMergeRequestWithContents(ctx, &gerrit.MergeRequest{
+		ProjectName:   a.Config.CodebaseName,
+		Name:          cnf.name,
+		AuthorEmail:   cnf.authorEmail,
+		AuthorName:    cnf.authorName,
+		CommitMessage: cnf.commitMessage,
+		TargetBranch:  cnf.TargetBranch(),
+		Labels: map[string]string{
+			registry.MRLabelTarget: cnf.targetLabel,
+		},
+	}, map[string]string{
+		registry.ValuesLocation: cnf.values,
+	}); err != nil {
+		return errors.Wrap(err, "unable to create MR with new values")
+	}
+
+	return nil
 }

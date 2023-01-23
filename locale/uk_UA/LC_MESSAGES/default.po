@@ -41,6 +41,12 @@ msgstr "Помилка"
 msgid "status-failure"
 msgstr "Помилка"
 
+msgid "status-FAILURE"
+msgstr "Помилка"
+
+msgid "status-SUCCESS"
+msgstr "Активний"
+
 msgid "status-inactive"
 msgstr "В обробці"
 
@@ -79,3 +85,12 @@ msgstr "Системний"
 
 msgid "type-registry"
 msgstr "Реєстровий"
+
+msgid "cron-expression"
+msgstr "Невірний вираз"
+
+msgid "only-integer"
+msgstr "Тільки цілі числа"
+
+msgid "in progress"
+msgstr "У процесі виконання"

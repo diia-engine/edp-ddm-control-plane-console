@@ -4,7 +4,6 @@ import (
 	"context"
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
-	"ddm-admin-console/service/gerrit"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,10 +16,11 @@ import (
 )
 
 const (
-	MRTypeClusterAdmins = "cluster-admins"
-	MRTypeClusterCIDR   = "cluster-cidr"
-	MRTypeClusterUpdate = "cluster-update"
-	ValuesAdminsKey     = "administrators"
+	MRTypeClusterAdmins         = "cluster-admins"
+	MRTypeClusterCIDR           = "cluster-cidr"
+	MRTypeClusterUpdate         = "cluster-update"
+	MRTypeClusterBackupSchedule = "cluster-backup-schedule"
+	ValuesAdminsKey             = "administrators"
 )
 
 type Admin struct {
@@ -74,20 +74,15 @@ func (a *App) updateAdmins(ctx *gin.Context) error {
 }
 
 func (a *App) createAdminsMergeRequest(userCtx context.Context, ctx *gin.Context, values string) error {
-	if err := a.Services.Gerrit.CreateMergeRequestWithContents(userCtx, &gerrit.MergeRequest{
-		ProjectName:   a.Config.CodebaseName,
-		Name:          fmt.Sprintf("adm-mr-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
-		AuthorEmail:   ctx.GetString(router.UserEmailSessionKey),
-		AuthorName:    ctx.GetString(router.UserNameSessionKey),
-		CommitMessage: fmt.Sprintf("update cluster admins"),
-		TargetBranch:  "master",
-		Labels: map[string]string{
-			registry.MRLabelTarget: MRTypeClusterAdmins,
-		},
-	}, map[string]string{
-		registry.ValuesLocation: values,
+	if err := a.createValuesMergeRequest(userCtx, &valuesMrConfig{
+		name:          fmt.Sprintf("adm-mr-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
+		values:        values,
+		targetLabel:   MRTypeClusterAdmins,
+		commitMessage: fmt.Sprintf("update cluster admins"),
+		authorName:    ctx.GetString(router.UserNameSessionKey),
+		authorEmail:   ctx.GetString(router.UserEmailSessionKey),
 	}); err != nil {
-		return errors.Wrap(err, "unable to create MR with new values")
+		return errors.Wrap(err, "unable to create MR")
 	}
 
 	return nil

@@ -7,7 +7,7 @@ import (
 	"ddm-admin-console/service/k8s"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -57,7 +57,7 @@ func InitOauth2(clientID, secret, discoveryURL, redirectURL string, httpClient *
 	}
 	defer rsp.Body.Close()
 
-	body, err := ioutil.ReadAll(rsp.Body)
+	body, err := io.ReadAll(rsp.Body)
 	if err != nil {
 		return nil, errors.Errorf("unable to read response body: %v", err)
 	}

@@ -10,6 +10,8 @@ import (
 	"ddm-admin-console/service/vault"
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"go.uber.org/zap"
 )
 
@@ -50,7 +52,7 @@ type App struct {
 	repo   string
 }
 
-func Make(router router.Interface, services Services, cnf Config) *App {
+func Make(router router.Interface, services Services, cnf Config) (*App, error) {
 	app := App{
 		Services: services,
 		Config:   cnf,
@@ -59,6 +61,12 @@ func Make(router router.Interface, services Services, cnf Config) *App {
 	}
 
 	app.createRoutes()
+	if err := router.AddValidator("cron-expression", CronExpressionValidator); err != nil {
+		return nil, errors.Wrap(err, "unable to add cron expression validator")
+	}
+	if err := router.AddValidator("only-integer", OnlyIntegerValidator); err != nil {
+		return nil, errors.Wrap(err, "unable to add only integer validator")
+	}
 
-	return &app
+	return &app, nil
 }

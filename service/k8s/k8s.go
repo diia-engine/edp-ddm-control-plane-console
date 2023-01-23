@@ -102,6 +102,26 @@ func (s *Service) GetConfigMap(ctx context.Context, name, namespace string) (*v1
 	return cm, nil
 }
 
+func (s *Service) GetSecretKeys(ctx context.Context, namespace, name string, keys []string) (map[string]string, error) {
+	sec, err := s.GetSecretFromNamespace(ctx, name, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get secret")
+	}
+
+	result := make(map[string]string)
+
+	for _, k := range keys {
+		val, ok := sec.Data[k]
+		if !ok {
+			return nil, errors.Errorf("key [%s] from secret [%s] in namespace [%s] not found", k, name, namespace)
+		}
+
+		result[k] = string(val)
+	}
+
+	return result, nil
+}
+
 func (s *Service) GetSecretKey(ctx context.Context, namespace, name, key string) (string, error) {
 	sec, err := s.GetSecretFromNamespace(ctx, name, namespace)
 	if err != nil {

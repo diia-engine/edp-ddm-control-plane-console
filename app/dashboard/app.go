@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"ddm-admin-console/service/openshift"
 	"net/http"
 
 	"ddm-admin-console/config"
@@ -9,7 +10,6 @@ import (
 	"ddm-admin-console/service/codebase"
 	edpComponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/k8s"
-	"ddm-admin-console/service/openshift"
 
 	"golang.org/x/oauth2"
 

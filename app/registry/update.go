@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"ddm-admin-console/service/codebase"
 	"fmt"
 	"net/http"
 	"time"
@@ -82,7 +83,7 @@ func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
 			gin.H{"page": "registry", "errorsMap": validationErrors, "registry": r, "model": r}), nil
 	}
 
-	if err := a.createMergeRequest(registryName, ur.Branch, userCtx, ctx); err != nil {
+	if err := a.createMergeRequest(cb, ur.Branch, userCtx, ctx); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -93,7 +94,7 @@ func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
 			return nil, errors.Wrap(err, "unable to update codebase provisioner")
 		}
 
-		if err := a.Services.Jenkins.CreateJobBuildRun(fmt.Sprintf("ru-create-release-%d", time.Now().Unix()),
+		if err := a.Services.Jenkins.CreateJobBuildRun(ctx, fmt.Sprintf("ru-create-release-%d", time.Now().Unix()),
 			fmt.Sprintf("%s/job/Create-release-%s/", r.Name, r.Name), map[string]string{
 				"RELEASE_NAME": cb.Spec.DefaultBranch,
 			}); err != nil {
@@ -105,23 +106,26 @@ func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
 		fmt.Sprintf("/admin/registry/view/%s", r.Name)), nil
 }
 
-func (a *App) createMergeRequest(registryName, updateBranch string, userContext context.Context, ginContext *gin.Context) error {
-	prj, err := a.Services.Gerrit.GetProject(userContext, registryName)
+func (a *App) createMergeRequest(cb *codebase.Codebase, updateBranch string, userContext context.Context, ginContext *gin.Context) error {
+	prj, err := a.Services.Gerrit.GetProject(userContext, cb.Name)
 	if err != nil {
 		return errors.Wrap(err, "unable to get registry gerrit project")
 	}
 
 	if err := a.Services.Gerrit.CreateMergeRequest(userContext, &gerrit.MergeRequest{
 		CommitMessage: fmt.Sprintf("Update registry to %s", updateBranch),
-		SourceBranch:  updateBranch,
-		ProjectName:   prj.Spec.Name,
-		Name:          fmt.Sprintf("%s-update-%d", registryName, time.Now().Unix()),
-		AuthorName:    ginContext.GetString(router.UserNameSessionKey),
-		AuthorEmail:   ginContext.GetString(router.UserEmailSessionKey),
+		//SourceBranch:  updateBranch,
+		ProjectName: prj.Spec.Name,
+		Name:        fmt.Sprintf("%s-update-%d", cb.Name, time.Now().Unix()),
+		AuthorName:  ginContext.GetString(router.UserNameSessionKey),
+		AuthorEmail: ginContext.GetString(router.UserEmailSessionKey),
 		Labels: map[string]string{
-			MRLabelTarget: MRTargetRegistryVersionUpdate,
+			MRLabelTarget:       MRTargetRegistryVersionUpdate,
+			MRLabelAction:       MRLabelActionBranchMerge,
+			MRLabelSourceBranch: updateBranch,
+			MRLabelTargetBranch: cb.Spec.DefaultBranch,
 		},
-		AdditionalArguments: []string{"-X", "ours"},
+		//AdditionalArguments: []string{"-X", "ours"},
 	}); err != nil {
 		return errors.Wrap(err, "unable to create update merge request")
 	}
