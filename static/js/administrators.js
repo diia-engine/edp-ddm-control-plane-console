@@ -173,6 +173,10 @@ let app = Vue.createApp({
                         validator: this.wizardDNSValidation, visible: true,
                         preloadValues: {}},
                     cidr: {title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
+                    supplierAuthentication: {
+                        title: 'Автентифікація надавачів послуг', validated: false, validator: this.wizardEmptyValidation,
+                        beginValidation:false,
+                    },
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
