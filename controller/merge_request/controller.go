@@ -63,7 +63,7 @@ func isSpecUpdated(e event.UpdateEvent) bool {
 	oo := e.ObjectOld.(*gerritService.GerritMergeRequest)
 	no := e.ObjectNew.(*gerritService.GerritMergeRequest)
 
-	return !reflect.DeepEqual(oo.Spec, no.Spec) ||
+	return !reflect.DeepEqual(oo.Spec, no.Spec) || !reflect.DeepEqual(oo.Status, no.Status) ||
 		(oo.GetDeletionTimestamp().IsZero() && !no.GetDeletionTimestamp().IsZero())
 }
 
@@ -95,7 +95,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return
 	}
 
-	if err := c.autoApproveMergeRequest(&instance); err != nil {
+	if err := c.autoApproveMergeRequest(ctx, &instance); err != nil {
 		resultErr = fmt.Errorf("unable to approve MR, err: %w", err)
 		return
 	}
@@ -106,7 +106,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	return
 }
 
-func (c *Controller) autoApproveMergeRequest(instance *gerritService.GerritMergeRequest) error {
+func (c *Controller) autoApproveMergeRequest(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
 	if instance.Status.ChangeID == "" || instance.Status.Value != gerritService.StatusNew {
 		return nil
 	}
@@ -119,6 +119,11 @@ func (c *Controller) autoApproveMergeRequest(instance *gerritService.GerritMerge
 	if err := c.gerrit.ApproveAndSubmitChange(instance.Status.ChangeID, instance.Spec.AuthorName,
 		instance.Spec.AuthorEmail); err != nil {
 		return fmt.Errorf("unable to approve and submit change, err: %w", err)
+	}
+
+	instance.Status.Value = gerritService.StatusMerged
+	if err := c.k8sClient.Status().Update(ctx, instance); err != nil {
+		return fmt.Errorf("unable to updat MR status, err: %w", err)
 	}
 
 	return nil
