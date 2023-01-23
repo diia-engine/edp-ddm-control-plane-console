@@ -25,6 +25,7 @@
                      :class="{'error': (trembitaClient.data.url == '' || trembitaClient.urlValidationFailed) && trembitaClient.startValidation}">
                     <label>Адреса ШБО Трембіти</label>
                     <input aria-label="" type="text" name="trembita-client-url" v-model="trembitaClient.data.url" />
+                    <p>URL, повинен починатись з http:// або https://</p>
                     <span v-if="trembitaClient.data.url == '' && trembitaClient.startValidation">
                         Обов’язкове поле
                     </span>

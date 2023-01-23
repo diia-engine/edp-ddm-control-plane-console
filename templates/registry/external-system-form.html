@@ -27,10 +27,12 @@
                      :class="{'error': (externalSystem.data.url == '' || externalSystem.urlValidationFailed) && externalSystem.startValidation}">
                     <label>Адреса зовнішньої системи</label>
                     <input aria-label="" type="text" name="external-system-url" v-model="externalSystem.data.url" />
+                    <p>URL, повинен починатись з http:// або https://</p>
                     <span v-if="externalSystem.data.url == '' && externalSystem.startValidation">
                         Обов’язкове поле
                     </span>
                     <span v-if="externalSystem.urlValidationFailed && externalSystem.startValidation">Невірний формат</span>
+
                 </div>
 
                 <div class="rc-form-group"
