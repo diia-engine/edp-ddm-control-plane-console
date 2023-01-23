@@ -133,7 +133,12 @@ let app = Vue.createApp({
         deleteExternalSystemLink() {
             return `/admin/registry/external-system-delete/${this.registryName}?external-system=${this.externalSystem.registryName}`
         },
-        showDeleteExternalSystemForm(registry) {
+        showDeleteExternalSystemForm(registry, _type, e) {
+            e.preventDefault();
+            if (_type === 'platform') {
+                return;
+            }
+
             this.externalSystem.registryName = registry;
             this.backdropShow = true;
             this.externalSystem.deleteFormShow = true;

@@ -201,7 +201,7 @@
                                 <a href="#" @click="showExternalSystemForm('{{ $index }}', $event)">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
-                                <a href="#" @click="showDeleteExternalSystemForm('{{ $index }}')">
+                                <a href="#" @click="showDeleteExternalSystemForm('{{ $index }}', '{{$al.Type}}', $event)">
                                     <i class="fa-solid fa-trash registry-trash {{if eq "platform" $al.Type}}inactive{{end}} "></i>
                                 </a>
                             </div>

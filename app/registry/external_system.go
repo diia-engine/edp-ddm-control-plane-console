@@ -107,9 +107,13 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 		return nil, errors.Wrap(err, "unable to get values")
 	}
 
-	_, ok := values.ExternalSystems[exSystemName]
+	eSys, ok := values.ExternalSystems[exSystemName]
 	if !ok {
 		return nil, errors.New("external system does not exists")
+	}
+
+	if eSys.Type == "platform" {
+		return nil, errors.New("external system is unavailable to delete")
 	}
 
 	delete(values.ExternalSystems, exSystemName)
