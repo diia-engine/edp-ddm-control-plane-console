@@ -56,13 +56,16 @@
                     <select aria-label="" name="external-system-auth-type"
                             v-model="externalSystem.data.auth.type"
                             @change="changeExternalSystemAuthType">
-                        <!--<option>NO_AUTH</option>
-                        <option>AUTH_TOKEN</option>
-                        <option>BEARER</option>
-                        <option>BASIC</option>-->
+                        <option v-if="externalSystem.registryName != 'diia'">NO_AUTH</option>
+                        <option v-if="externalSystem.registryName != 'diia'">AUTH_TOKEN</option>
+                        <option v-if="externalSystem.registryName != 'diia'">BEARER</option>
+                        <option v-if="externalSystem.registryName != 'diia'">BASIC</option>
+
                         <option>AUTH_TOKEN+BEARER</option>
                     </select>
-                    <p>Наразі підтримуються: <!--NO_AUTH, AUTH_TOKEN, BEARER, BASIC,--> AUTH_TOKEN+BEARER</p>
+                    <p>Наразі підтримуються:
+                        <template v-if="externalSystem.registryName != 'diia'">NO_AUTH, AUTH_TOKEN, BEARER, BASIC,</template>
+                        AUTH_TOKEN+BEARER</p>
                 </div>
 
                 <div class="auth-token-bearer" v-if="externalSystem.data.auth.type == 'AUTH_TOKEN+BEARER'">
