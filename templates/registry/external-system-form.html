@@ -47,7 +47,7 @@
                 </div>
 
                 <div class="rc-form-group">
-                    <label>Вкажіть тип аутентифікації</label>
+                    <label>Вкажіть тип автентифікації</label>
                     <select aria-label="" name="external-system-auth-type"
                             v-model="externalSystem.data.auth.type"
                             @change="changeExternalSystemAuthType">
@@ -63,7 +63,7 @@
                 <div class="auth-token-bearer" v-if="externalSystem.data.auth.type == 'AUTH_TOKEN+BEARER'">
                     <div class="rc-form-group"
                          :class="{'error': externalSystem.data.auth['auth-url'] == '' && externalSystem.startValidation}">
-                        <label>Вкажіть енд-поінт аутентифікації партнера</label>
+                        <label>Вкажіть енд-поінт автентифікації партнера</label>
                         <input aria-label="" type="text" name="external-system-auth-url"
                                v-model="externalSystem.data.auth['auth-url']" />
                         <p>Вказується абсолютна адреса (https://example.ua/auth) або relative path відносно адреси,
@@ -140,11 +140,11 @@
             </a>
         </div>
         <div class="popup-body">
-            <p>Ви дійсно бажаєете видалити "[[ externalSystem.registryName ]]"?</p>
+            <p>Видалити усі налаштування інтеграціїї з системою??</p>
         </div>
         <div class="popup-footer active">
-            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteExternalSystemForm">Закрити</a>
-            <a :href="deleteExternalSystemLink()">Підтвердити</a>
+            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteExternalSystemForm">Відмінити</a>
+            <a class="href-red" :href="deleteExternalSystemLink()">Видалити</a>
         </div>
     </div>
 {{end}}
