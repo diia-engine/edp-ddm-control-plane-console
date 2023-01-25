@@ -12586,3 +12586,19 @@ p.error {
 .auth-token-bearer {
     margin-bottom: 24px;
 }
+
+.href-red {
+    background: #D35D47;
+    border-radius: 4px;
+    color: #FFFFFF !important;
+}
+
+.popup-window .title-description {
+    margin: 16px 0 0 8px;
+    font-family: "Source Sans Pro", sans-serif;
+    font-size: 16px;
+}
+
+.submit-green {
+    background: #6DA300 !important;
+}

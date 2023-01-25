@@ -143,8 +143,12 @@
                     <select aria-label="" name="trembita-service-auth-type"
                             v-model="trembitaClient.data.auth.type"
                             @change="changeTrembitaClientAuthType">
-                        <option>NO_AUTH</option>
-                        <option>AUTH_TOKEN</option>
+                        <option
+                                v-if="trembitaClient.registryName == 'idp-exchange-service-registry' || trembitaClient.registryName == 'dracs-registry'">
+                                    NO_AUTH
+
+                        </option>
+                        <option v-if="trembitaClient.registryName == 'edr-registry'">AUTH_TOKEN</option>
                     </select>
                 </div>
 
