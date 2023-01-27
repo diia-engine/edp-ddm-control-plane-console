@@ -125,7 +125,7 @@ let app = Vue.createApp({
             },
             wizard: {
                 registryAction: 'create',
-                activeTab: 'general',
+                activeTab: 'supplierAuthentication',
                 tabs: {
                     general: {
                         title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
@@ -174,8 +174,17 @@ let app = Vue.createApp({
                         preloadValues: {}},
                     cidr: {title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
                     supplierAuthentication: {
-                        title: 'Автентифікація надавачів послуг', validated: false, validator: this.wizardEmptyValidation,
+                        title: 'Автентифікація надавачів послуг', validated: false, validator: this.wizardSupAuthValidation,
                         beginValidation:false, visible: true,
+                        data: {
+                            authType: 'dso-officer-auth-flow',
+                            url: '',
+                            widgetHeight: '720',
+                            clientId: '',
+                            secret: '',
+                        },
+                        urlValidationFailed: false,
+                        heightIsNotNumber: false,
                     },
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
@@ -412,6 +421,33 @@ let app = Vue.createApp({
                         tab.validated = true;
                         resolve();
                     });
+            });
+        },
+        wizardSupAuthValidation(tab){
+            return new Promise((resolve) => {
+                tab.beginValidation = true;
+                tab.validated = false;
+                tab.urlValidationFailed = false;
+
+                if (!/^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/.test(this.wizard.tabs.supplierAuthentication.data.url)) {
+                    tab.urlValidationFailed = true;
+                    return;
+                }
+
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow' &&
+                    this.wizard.tabs.supplierAuthentication.data.widgetHeight === '') {
+                    return;
+                }
+
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'id-gov-ua-officer-redirector' &&
+                    (this.wizard.tabs.supplierAuthentication.data.clientId === '' ||
+                        this.wizard.tabs.supplierAuthentication.data.secret === '')) {
+                    return
+                }
+
+                tab.validated = true;
+                tab.beginValidation = false;
+                resolve();
             });
         },
         wizardDNSValidation(tab){
