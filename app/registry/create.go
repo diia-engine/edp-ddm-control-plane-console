@@ -77,8 +77,6 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareMailServerConfig,
 		a.prepareAdminsConfig,
 		a.prepareRegistryResources,
-		a.prepareTrembitaClientConfig,
-		a.prepareRegistryExternalSystemsConfig,
 	}
 }
 

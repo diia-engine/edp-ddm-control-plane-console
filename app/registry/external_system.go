@@ -4,7 +4,6 @@ import (
 	"ddm-admin-console/router"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -56,40 +55,6 @@ func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) Exter
 	}
 
 	return es
-}
-
-func (a *App) prepareRegistryExternalSystemsConfig(ctx *gin.Context, r *registry, values map[string]interface{},
-	secrets map[string]map[string]interface{}) error {
-
-	registryExternalSystems := strings.Split(a.Config.RegistryDefaultExternalSystems, ",")
-	if len(registryExternalSystems) == 0 {
-		return nil
-	}
-
-	_, ok := values[externalSystemsKey]
-	if ok {
-		return nil
-	}
-
-	externalSystems := make(map[string]interface{})
-
-	for _, res := range registryExternalSystems {
-		resParts := strings.Split(res, ":")
-		if len(resParts) < 2 {
-			continue
-		}
-
-		externalSystems[resParts[0]] = map[string]string{
-			"type":     resParts[1],
-			"protocol": "REST",
-		}
-	}
-
-	if len(externalSystems) > 0 {
-		values[externalSystemsKey] = externalSystems
-	}
-
-	return nil
 }
 
 func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retErr error) {
