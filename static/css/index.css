@@ -12586,3 +12586,14 @@ p.error {
 .auth-token-bearer {
     margin-bottom: 24px;
 }
+
+.wizard-warning {
+    background: #FFFBE6;
+    padding: 16px 24px;
+    margin-bottom: 32px;
+    font-size: 12px;
+}
+
+.red-star {
+    color: red;
+}

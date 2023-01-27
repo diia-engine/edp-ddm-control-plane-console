@@ -1,6 +1,20 @@
 {{ define "supplier-auth" }}
     <h2>Автентифікація надавачів послуг</h2>
     <p>Є можливість використовувати власний віджет автентифікації або налаштувати інтеграцію з id.gov.ua.</p>
+    <div class="wizard-warning">Зміна типу автентифікації доступна для версій реєстру 1.9.3 і вище.</div>
     <div class="rc-form-group">
+        <label for="sup-auth-type">Вкажіть тип автентифікації</label>
+        <select id="sup-auth-type">
+            <option>Віджет</option>
+        </select>
+    </div>
+    <div class="rc-form-group">
+        <label for="sup-auth-url">Посилання <b class="red-star">*</b></label>
+        <input id="sup-auth-url" />
+        <p>URL, повинен починатись з http:// або https://</p>
+    </div>
+    <div class="rc-form-group">
+        <label for="sup-auth-widget-height">Висота віджета, px <b class="red-star">*</b></label>
+        <input id="sup-auth-widget-height">
     </div>
 {{end}}
