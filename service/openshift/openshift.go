@@ -26,37 +26,16 @@ func Make(restConfig *rest.Config, k8sService k8s.ServiceInterface) (*Service, e
 
 	svc.restyClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 
-	//if restConfig.TLSClientConfig.Insecure {
-	//	svc.restyClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	//} else {
-	//	cm, err := k8sService.GetConfigMap(context.Background(), "openshift-global-ca", "openshift-controller-manager")
-	//	if err != nil {
-	//		return nil, errors.Wrap(err, "unable to get openshift ca config map")
-	//	}
-	//
-	//	ca, ok := cm.Data["ca-bundle.crt"]
-	//	if !ok {
-	//		return nil, errors.New("no service ca found in config map")
-	//	}
-	//
-	//	caCertPool := x509.NewCertPool()
-	//	if !caCertPool.AppendCertsFromPEM([]byte(ca)) {
-	//		return nil, errors.New("unable to append certs from PEM")
-	//	}
-	//
-	//	svc.restyClient.GetClient().Transport = &http.Transport{TLSClientConfig: &tls.Config{
-	//		RootCAs: caCertPool,
-	//	}}
-	//}
-
 	return &svc, nil
 }
 
+type Metadata struct {
+	Name string `json:"name"`
+}
+
 type User struct {
-	Metadata struct {
-		Name string `json:"name"`
-	} `json:"metadata"`
-	FullName string `json:"fullName"`
+	Metadata Metadata `json:"metadata"`
+	FullName string   `json:"fullName"`
 }
 
 func (s *Service) GetMe(ctx context.Context) (*User, error) {

@@ -23,6 +23,7 @@ type Logger interface {
 
 type OAuth interface {
 	GetTokenClient(ctx context.Context, code string) (token *oauth2.Token, oauthClient *http.Client, err error)
+	AuthCodeURL() string
 }
 
 type App struct {
