@@ -39,7 +39,7 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 
 	keycloakInterface, ok := values.OriginalYaml["keycloak"]
 	if !ok {
-		keycloakInterface = map[string]interface{}
+		keycloakInterface = map[string]interface{}{}
 	}
 	keycloakDict := keycloakInterface.(map[string]interface{})
 

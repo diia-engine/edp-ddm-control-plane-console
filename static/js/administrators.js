@@ -125,7 +125,7 @@ let app = Vue.createApp({
             },
             wizard: {
                 registryAction: 'create',
-                activeTab: 'supplierAuthentication',
+                activeTab: 'general',
                 tabs: {
                     general: {
                         title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
