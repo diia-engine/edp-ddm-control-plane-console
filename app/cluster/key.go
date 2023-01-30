@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 
@@ -120,7 +121,7 @@ func (a *App) updateKey(ctx *gin.Context) error {
 	}
 	vaultSecretData := make(map[string]map[string]interface{})
 
-	vaultPath := a.vaultPlatformPathKey(registry.KeyManagementVaultPath)
+	vaultPath := a.vaultPlatformPathKey(fmt.Sprintf("%s-%s", registry.KeyManagementVaultPath, time.Now().Format("20060201T150405Z")))
 
 	if _, err := registry.PrepareRegistryKeys(keyManagement{r: &ck, vaultSecretPath: vaultPath}, ctx.Request,
 		vaultSecretData, values); err != nil {

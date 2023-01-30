@@ -35,6 +35,17 @@ type BackupConfig struct {
 func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 	userCtx := a.router.ContextWithUserAccessToken(ctx)
 
+	mrExists, err := registry.ProjectHasOpenMR(ctx, a.ClusterRepo, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check project MR exists")
+	}
+
+	if mrExists {
+		return router.MakeHTMLResponse(200, "registry/edit-mr-exists.html", gin.H{
+			"page": "cluster",
+		}), nil
+	}
+
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")

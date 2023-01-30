@@ -354,8 +354,9 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	if _, err := PrepareRegistryKeys(keyManagement{
-		r:               r,
-		vaultSecretPath: a.vaultRegistryPathKey(r.Name, KeyManagementVaultPath),
+		r: r,
+		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
+			time.Now().Format("20060201T150405Z"))),
 	}, ginContext.Request, vaultSecretData, values); err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
 	}
