@@ -326,6 +326,10 @@ let app = Vue.createApp({
                 this.externalSystem.secretInputTypes.username = 'password';
             }
 
+            if (registry === 'diia') {
+                this.externalSystem.data.auth.type = 'AUTH_TOKEN+BEARER'
+            }
+
             $("body").css("overflow", "hidden");
         },
         showTrembitaClientForm(registry, e) {
@@ -345,6 +349,12 @@ let app = Vue.createApp({
             this.mergeDeep(this.trembitaClient.data, this.values.trembita.registries[registry]);
             if (this.trembitaClient.data.auth.hasOwnProperty('secret')) {
                 this.trembitaClient.tokenInputType = 'password';
+            }
+
+            if (registry === 'idp-exchange-service-registry' || registry === 'dracs-registry') {
+                this.trembitaClient.data.auth.type = 'NO_AUTH';
+            } else {
+                this.trembitaClient.data.auth.type = 'AUTH_TOKEN';
             }
 
             $("body").css("overflow", "hidden");

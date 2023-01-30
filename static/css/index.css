@@ -12602,3 +12602,11 @@ p.error {
 .submit-green {
     background: #6DA300 !important;
 }
+
+.view-registry-warning {
+    background: #FFFBE6;
+    padding: 16px 24px;
+    /*margin-bottom: 32px;*/
+    margin: 16px 8px 0 8px;
+    font-size: 12px;
+}

@@ -11,6 +11,9 @@
             Ви можете налаштувати інтеграцію з зовнішньою системою для подальшої взаємодії згідно регламенту реєстру.
             Мережеві політики доступу будуть створені автоматично.
         </p>
+        <div class="view-registry-warning">
+            Налаштування взаємодії доступне для версій реєстру 1.9.3 і вище.
+        </div>
         <form @submit="setExternalSystemForm" id="external-system-form" method="post"
               :action="externalSystemFormAction()">
             <div class="popup-body">

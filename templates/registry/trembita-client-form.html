@@ -6,6 +6,9 @@
                 <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
             </a>
         </div>
+        <div class="view-registry-warning">
+            Налаштування взаємодії доступне для версій реєстру 1.9.3 і вище.
+        </div>
         <form @submit="setTrembitaClientForm" id="trembita-client-form" method="post"
               action="/admin/registry/trembita-client/{{.registry.Name}}">
             <div class="popup-body">
@@ -166,7 +169,7 @@
             </div>
             <div class="popup-footer active">
                 <a href="#" id="admin-cancel" class="hide-popup" @click="hideTrembitaClientForm">відмінити</a>
-                <button value="submit" name="admin-apply" type="submit">Підтвердити</button>
+                <button value="submit" class="submit-green" name="admin-apply" type="submit">Підтвердити</button>
             </div>
         </form>
     </div>
