@@ -20,7 +20,7 @@
     <div v-if="wizard.tabs.supplierAuthentication.data.authType == 'dso-officer-auth-flow'" class="rc-form-group"
          :class="{'error': wizard.tabs.supplierAuthentication.beginValidation && (wizard.tabs.supplierAuthentication.data.widgetHeight == '' || wizard.tabs.supplierAuthentication.heightIsNotNumber)}">
         <label for="sup-auth-widget-height">Висота віджета, px <b class="red-star">*</b></label>
-        <input id="sup-auth-widget-height" v-model="wizard.tabs.supplierAuthentication.data.widgetHeight">
+        <input id="sup-auth-widget-height" name="sup-auth-widget-height" v-model="wizard.tabs.supplierAuthentication.data.widgetHeight">
         <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.widgetHeight == ''">Обов’язкове поле</span>
         <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.heightIsNotNumber">Перевірте формат поля</span>
     </div>

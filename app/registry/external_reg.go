@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -104,11 +105,17 @@ func (a *App) addExternalReg(ctx *gin.Context) (router.Response, error) {
 }
 
 func GetValuesFromGit(ctx context.Context, projectName, branch string, gerritService gerrit.ServiceInterface) (*Values, map[string]interface{}, error) {
-	values, err := gerritService.GetFileContents(ctx, projectName, branch, ValuesLocation)
+	//values, err := gerritService.GetFileContents(ctx, projectName, branch, url.PathEscape(ValuesLocation))
+	//if err != nil {
+	//	return nil, nil, errors.Wrap(err, "unable to get values yaml")
+	//}
+	content, _, err := gerritService.GoGerritClient().Projects.GetBranchContent(projectName, branch,
+		url.PathEscape(ValuesLocation))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get values yaml")
 	}
-	valuesBytes := []byte(values)
+
+	valuesBytes := []byte(content)
 
 	var valuesDict map[string]interface{}
 	if err := yaml.Unmarshal(valuesBytes, &valuesDict); err != nil {

@@ -24,8 +24,8 @@ type KeycloakIdentityProviders struct {
 }
 
 type KeycloakIdentityProvidersIDGovUA struct {
-	URL       string `yaml:"url"`
-	SecretKey string `yaml:"secretKey"`
+	URL       string `yaml:"url" json:"url"`
+	SecretKey string `yaml:"secretKey" json:"secretKey"`
 }
 
 type KeycloakAuthFlows struct {
@@ -33,7 +33,7 @@ type KeycloakAuthFlows struct {
 }
 
 type KeycloakAuthFlowsOfficerAuthFlow struct {
-	WidgetHeight int `json:"widgetHeight"`
+	WidgetHeight int `yaml:"widgetHeight" json:"widgetHeight"`
 }
 
 type KeycloakRealms struct {
@@ -41,11 +41,11 @@ type KeycloakRealms struct {
 }
 
 type KeycloakRealmsOfficerPortal struct {
-	BrowserFlow string `yaml:"browserFlow"`
+	BrowserFlow string `yaml:"browserFlow" json:"browserFlow"`
 }
 
 type SignWidget struct {
-	URL string `yaml:"url"`
+	URL string `yaml:"url" json:"url"`
 }
 
 type Notifications struct {

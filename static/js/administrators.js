@@ -62,6 +62,7 @@ let app = Vue.createApp({
 
         if (this.$refs.hasOwnProperty('registryValues')) {
             this.registryValues = JSON.parse(this.$refs.registryValues.value);
+            this.loadRegistryValues();
         }
 
         if (this.$refs.hasOwnProperty('registryUpdate')) {
@@ -192,6 +193,24 @@ let app = Vue.createApp({
         }
     },
     methods: {
+        loadRegistryValues() {
+            try {
+                this.wizard.tabs.supplierAuthentication.data.authType = this.registryValues.keycloak.realms.officerPortal.browserFlow;
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
+                    this.wizard.tabs.supplierAuthentication.data.widgetHeight =
+                        this.registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
+                    this.wizard.tabs.supplierAuthentication.data.url = this.registryValues.signWidget.url;
+                } else {
+                    this.wizard.tabs.supplierAuthentication.data.url =
+                        this.registryValues.keycloak.identityProviders.idGovUa.url;
+                    this.wizard.tabs.supplierAuthentication.data.clientId = '*****';
+                    this.wizard.tabs.supplierAuthentication.data.secret = '*****';
+                }
+
+            } catch (e) {
+                console.log(e);
+            }
+        },
         removeResourcesCatFromList(name)  {
             let searchIdx = this.registryResources.cats.indexOf(name);
             if (searchIdx !== -1) {

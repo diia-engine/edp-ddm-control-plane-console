@@ -16,6 +16,10 @@ const (
 func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *Values,
 	secrets map[string]map[string]interface{}) error {
 
+	if r.SupAuthBrowserFlow == "" {
+		return nil
+	}
+
 	values.Keycloak.Realms.OfficerPortal.BrowserFlow = r.SupAuthBrowserFlow
 
 	if r.SupAuthBrowserFlow == supAuthBrowserFlowWidget {
@@ -29,10 +33,13 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 		values.Keycloak.IdentityProviders.IDGovUA.URL = r.SupAuthURL
 
 		secretPath := a.vaultRegistryPathKey(r.Name, idGovUASecretPath)
-		secrets[secretPath] = map[string]interface{}{
-			"clientId":     r.SupAuthClientID,
-			"clientSecret": r.SupAuthClientSecret,
+		if r.SupAuthClientID != "" && r.SupAuthClientID != "*****" && r.SupAuthClientSecret != "" && r.SupAuthClientSecret != "*****" {
+			secrets[secretPath] = map[string]interface{}{
+				"clientId":     r.SupAuthClientID,
+				"clientSecret": r.SupAuthClientSecret,
+			}
 		}
+		values.Keycloak.IdentityProviders.IDGovUA.SecretKey = secretPath
 	}
 
 	values.OriginalYaml["signWidget"] = values.SignWidget
