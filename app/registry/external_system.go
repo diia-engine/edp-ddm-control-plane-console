@@ -58,8 +58,10 @@ func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) Exter
 	return es
 }
 
-func (a *App) prepareRegistryExternalSystemsConfig(ctx *gin.Context, r *registry, values map[string]interface{},
+func (a *App) prepareRegistryExternalSystemsConfig(ctx *gin.Context, r *registry, _values *Values,
 	secrets map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
 
 	registryExternalSystems := strings.Split(a.Config.RegistryDefaultExternalSystems, ",")
 	if len(registryExternalSystems) == 0 {
@@ -102,7 +104,7 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 
 	exSystemName := ctx.Query("external-system")
 
-	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -135,7 +137,7 @@ func (a *App) checkExternalSystemExists(ctx *gin.Context) (rsp router.Response, 
 
 	exSystemName := ctx.Query("external-system")
 
-	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -161,7 +163,7 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -211,7 +213,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}

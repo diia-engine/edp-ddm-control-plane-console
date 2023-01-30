@@ -20,7 +20,7 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 
 	registryName := ctx.Param("name")
 
-	values, _, err := GetValuesFromGit(ctx, registryName, a.Services.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Services.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}

@@ -103,8 +103,8 @@ func (a *App) addExternalReg(ctx *gin.Context) (router.Response, error) {
 		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
 }
 
-func GetValuesFromGit(ctx context.Context, projectName string, gerritService gerrit.ServiceInterface) (*Values, map[string]interface{}, error) {
-	values, err := gerritService.GetFileContents(ctx, projectName, "master", ValuesLocation)
+func GetValuesFromGit(ctx context.Context, projectName, branch string, gerritService gerrit.ServiceInterface) (*Values, map[string]interface{}, error) {
+	values, err := gerritService.GetFileContents(ctx, projectName, branch, ValuesLocation)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get values yaml")
 	}
@@ -142,7 +142,7 @@ func decodeExternalRegsFromValues(valuesDict map[string]interface{}) ([]External
 }
 
 func (a *App) prepareRegistryValues(ctx context.Context, registryName string, er *ExternalRegistration) (string, error) {
-	_, valuesDict, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	_, valuesDict, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get values from git")
 	}
@@ -218,7 +218,7 @@ func (a *App) disableExternalReg(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.New("reg-name is required")
 	}
 
-	_, values, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	_, values, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
@@ -268,7 +268,7 @@ func (a *App) removeExternalReg(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.New("reg-name is required")
 	}
 
-	_, values, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	_, values, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}

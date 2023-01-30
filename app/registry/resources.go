@@ -27,8 +27,11 @@ func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{
 	return data, nil
 }
 
-func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, values map[string]interface{},
+func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, _values *Values,
 	_ map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
+
 	if r.Resources != "" {
 		var resources map[string]interface{}
 		if err := json.Unmarshal([]byte(r.Resources), &resources); err != nil {

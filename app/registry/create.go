@@ -68,9 +68,9 @@ type KeyManagement interface {
 	EnvVarsSecretName() string
 }
 
-func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *registry, values map[string]interface{},
+func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *registry, values *Values,
 	secrets map[string]map[string]interface{}) error {
-	return []func(*gin.Context, *registry, map[string]interface{},
+	return []func(*gin.Context, *registry, *Values,
 		map[string]map[string]interface{}) error{
 		a.prepareDNSConfig,
 		a.prepareCIDRConfig,
@@ -79,6 +79,7 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareRegistryResources,
 		a.prepareTrembitaClientConfig,
 		a.prepareRegistryExternalSystemsConfig,
+		a.prepareSupplierAuthConfig,
 	}
 }
 
@@ -322,7 +323,8 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unknown error")
 	}
 
-	values, err := a.GetValuesFromBranch(r.RegistryGitTemplate, r.RegistryGitBranch)
+	values, _, err := GetValuesFromGit(ctx, r.RegistryGitTemplate, r.RegistryGitBranch, a.Gerrit)
+	//values, err := a.GetValuesFromBranch(r.RegistryGitTemplate, r.RegistryGitBranch)
 	if err != nil {
 		return errors.Wrap(err, "unable to load values from template")
 	}
@@ -349,7 +351,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 	}
 
 	cb := a.prepareRegistryCodebase(r)
-	valuesEncoded, err := a.encodeValues(r.Name, values)
+	valuesEncoded, err := a.encodeValues(r.Name, values.OriginalYaml)
 	if err != nil {
 		return errors.Wrap(err, "unable to encode values")
 	}
@@ -435,12 +437,19 @@ func (a *App) vaultRegistryPath(registryName string) string {
 		"{engine}", a.Config.VaultKVEngineName)
 }
 
+func (a *App) vaultRegistryPathKey(registryName, key string) string {
+	return fmt.Sprintf("%s/%s", a.vaultRegistryPath(registryName), key)
+}
+
 func (a *App) keyManagementRegistryVaultPath(registryName string) string {
 	return a.vaultRegistryPath(registryName) + "/key-management"
 }
 
-func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, values map[string]interface{},
+func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
 	_ map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
+
 	//TODO: remove this check
 	if ctx.PostForm("action") == "edit" && ctx.PostForm("cidr-changed") == "" {
 		return nil
@@ -495,10 +504,12 @@ func handleCIDRCategory(cidrCategory, dictIndex string, whiteListDict map[string
 	return nil
 }
 
-func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, values map[string]interface{},
+func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
 	secrets map[string]map[string]interface{}) error {
-	//TODO: don't recreate admin secrets for existing admin
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
 
+	//TODO: don't recreate admin secrets for existing admin
 	if r.Admins != "" && r.AdminsChanged == "on" {
 		admins, err := validateAdmins(r.Admins)
 		if err != nil {
@@ -523,8 +534,12 @@ func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, values map[string
 	return nil
 }
 
-func (a *App) prepareDNSConfig(ctx *gin.Context, r *registry, values map[string]interface{},
+func (a *App) prepareDNSConfig(ctx *gin.Context, r *registry, _values *Values,
 	secrets map[string]map[string]interface{}) error {
+
+	//TODO: refactor to new values struct
+	values := _values.OriginalYaml
+
 	portals, ok := values["portals"]
 	if !ok {
 		portals = make(map[string]interface{})
@@ -622,43 +637,6 @@ func (a *App) prepareDNSConfig(ctx *gin.Context, r *registry, values map[string]
 		}
 	}
 
-	//if r.DNSNameKeycloak != "" {
-	//	certFile, _, err := ginContext.Request.FormFile("keycloak-ssl")
-	//	if err != nil {
-	//		return errors.Wrap(err, "unable to get citizen ssl certificate")
-	//	}
-	//
-	//	certData, err := ioutil.ReadAll(certFile)
-	//	if err != nil {
-	//		return errors.Wrap(err, "unable to read citizen ssl data")
-	//	}
-	//
-	//	caCert, cert, key, err := decodePEM(certData)
-	//	if err != nil {
-	//		return validator.ValidationErrors([]validator.FieldError{
-	//			router.MakeFieldError("DNSNameKeycloak", "pem-decode-error")})
-	//	}
-	//
-	//	secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
-	//	secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameKeycloak)
-	//
-	//	if _, ok := secretData[secretPath]; !ok {
-	//		secretData[secretPath] = make(map[string]interface{})
-	//	}
-	//
-	//	secretData[secretPath][VaultKeyCACert] = caCert
-	//	secretData[secretPath][VaultKeyCert] = cert
-	//	secretData[secretPath][VaultKeyPK] = key
-	//
-	//	kcInterface, ok := values["keycloak"]
-	//	if !ok {
-	//		kcInterface = make(map[string]interface{})
-	//	}
-	//	kcDict := kcInterface.(map[string]interface{})
-	//	kcDict["customHost"] = r.DNSNameKeycloak
-	//	values["keycloak"] = kcDict
-	//}
-
 	if len(citizenDict) > 0 {
 		portalsDict["citizen"] = citizenDict
 	}
@@ -666,16 +644,6 @@ func (a *App) prepareDNSConfig(ctx *gin.Context, r *registry, values map[string]
 	if len(officerDict) > 0 {
 		portalsDict["officer"] = officerDict
 	}
-
-	//valuesPortalsInterface, ok := values["portals"]
-	//if !ok {
-	//	valuesPortalsInterface = map[string]interface{}{}
-	//}
-	//valuesPortalsDict := valuesPortalsInterface.(map[string]interface{})
-	//
-	//for k, v := range portalsDict {
-	//	valuesPortalsDict[k] = v
-	//}
 
 	values["portals"] = portalsDict
 
@@ -734,8 +702,10 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 	return
 }
 
-func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, values map[string]interface{},
+func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Values,
 	secrets map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
 
 	notifications := make(map[string]interface{})
 

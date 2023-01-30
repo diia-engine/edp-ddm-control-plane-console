@@ -22,6 +22,10 @@ import (
 	"ddm-admin-console/service/k8s"
 )
 
+const (
+	MasterBranch = "master"
+)
+
 func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retErr error) {
 	registryName := ctx.Param("name")
 
@@ -88,7 +92,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		"action":               "edit",
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
@@ -309,12 +313,12 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		cb.Annotations = make(map[string]string)
 	}
 
-	_, values, err := GetValuesFromGit(ctx, r.Name, a.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, r.Name, MasterBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}
 
-	initialValuesHash, err := MapHash(values)
+	initialValuesHash, err := MapHash(values.OriginalYaml)
 	if err != nil {
 		return errors.Wrap(err, "unable to hash values")
 	}
@@ -327,13 +331,13 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		}
 	}
 
-	changedValuesHash, err := MapHash(values)
+	changedValuesHash, err := MapHash(values.OriginalYaml)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values map hash")
 	}
 
 	if initialValuesHash != changedValuesHash {
-		if err := CreateEditMergeRequest(ginContext, r.Name, values, a.Gerrit); err != nil {
+		if err := CreateEditMergeRequest(ginContext, r.Name, values.OriginalYaml, a.Gerrit); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}
 	} else if keysUpdated {

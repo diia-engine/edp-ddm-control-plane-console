@@ -53,8 +53,10 @@ func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
 	return tr
 }
 
-func (a *App) prepareTrembitaClientConfig(ctx *gin.Context, r *registry, values map[string]interface{},
+func (a *App) prepareTrembitaClientConfig(ctx *gin.Context, r *registry, _values *Values,
 	secrets map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
 
 	trembita, ok := values[trembitaValuesKey]
 	if !ok {
@@ -101,7 +103,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
