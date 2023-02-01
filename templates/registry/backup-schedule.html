@@ -15,7 +15,8 @@
             <input @change="wizardCronExpressionChange" placeholder="5 4 * * *" type="text" id="cron-schedule"
                    name="cron-schedule" v-model="wizard.tabs.backupSchedule.data.cronSchedule" />
             <p>Використовується Cron-формат.</p>
-            <span></span>
+            <span v-if="wizard.tabs.backupSchedule.wrongCronFormat && wizard.tabs.backupSchedule.beginValidation">Невірний формат</span>
+            <span v-if="wizard.tabs.backupSchedule.data.cronSchedule == '' && wizard.tabs.backupSchedule.beginValidation">Обов’язкове поле</span>
         </div>
 
         <div v-show="wizard.tabs.backupSchedule.nextLaunches" class="rc-form-group">
@@ -25,12 +26,15 @@
             </ul>
         </div>
 
-        <div class="rc-form-group">
+        <div class="rc-form-group"
+             :class="{'error': (wizard.tabs.backupSchedule.data.days == '' || wizard.tabs.backupSchedule.wrongDaysFormat) && wizard.tabs.backupSchedule.beginValidation}">
             <label for="cron-schedule-days">Час зберігання (днів)</label>
             <input placeholder="3" type="text" id="cron-schedule-days" name="cron-schedule-days"
                    v-model="wizard.tabs.backupSchedule.data.days" />
             <p>Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час
                 збереження більшим за період між створенням копій.</p>
+            <span v-if="wizard.tabs.backupSchedule.wrongDaysFormat && wizard.tabs.backupSchedule.beginValidation">Невірний формат</span>
+            <span v-if="wizard.tabs.backupSchedule.data.days == '' && wizard.tabs.backupSchedule.beginValidation">Обов’язкове поле</span>
         </div>
     </div>
 {{end}}

@@ -189,7 +189,7 @@ let app = Vue.createApp({
                     },
                     backupSchedule: {
                         title: 'Резервне копіювання', validated: false, beginValidation:false, visible: true,
-                        validator: this.wizardEmptyValidation, enabled: false,
+                        validator: this.wizardBackupScheduleValidation, enabled: false,
                         nextLaunches: false,
                         wrongCronFormat: false,
                         wrongDaysFormat: false,
@@ -224,6 +224,7 @@ let app = Vue.createApp({
                     dt = next;
                 }
                 bs.nextLaunches = true;
+                bs.wrongCronFormat = false;
             } catch (e) {
                 bs.nextLaunches = false;
                 bs.wrongCronFormat = true;
@@ -484,9 +485,16 @@ let app = Vue.createApp({
         },
         wizardBackupScheduleValidation(tab) {
             return new Promise((resolve) => {
+                let bs = this.wizard.tabs.backupSchedule;
+
+                if (!bs.enabled) {
+                    resolve();
+                    return;
+                }
+
                 tab.beginValidation = true;
                 tab.validated = false;
-                let bs = this.wizard.tabs.backupSchedule;
+
                 bs.wrongCronFormat = false;
                 bs.wrongDaysFormat = false;
 
