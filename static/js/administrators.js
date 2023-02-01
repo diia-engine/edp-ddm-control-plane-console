@@ -179,7 +179,7 @@ let app = Vue.createApp({
                         beginValidation:false, visible: true,
                         data: {
                             authType: 'dso-officer-auth-flow',
-                            url: '',
+                            url: 'https://eu.iit.com.ua/sign-widget/v20200922/',
                             widgetHeight: '720',
                             clientId: '',
                             secret: '',
@@ -195,7 +195,10 @@ let app = Vue.createApp({
     methods: {
         loadRegistryValues() {
             try {
-                this.wizard.tabs.supplierAuthentication.data.authType = this.registryValues.keycloak.realms.officerPortal.browserFlow;
+                if (this.registryValues.keycloak.realms.officerPortal.browserFlow !== '') {
+                    this.wizard.tabs.supplierAuthentication.data.authType = this.registryValues.keycloak.realms.officerPortal.browserFlow;
+                }
+
                 if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
                     this.wizard.tabs.supplierAuthentication.data.widgetHeight =
                         this.registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
