@@ -23,8 +23,6 @@ func (cnf *Settings) RegistryConfig() registry.Config {
 		TempFolder:                      cnf.TempFolder,
 		RegistryDNSManualPath:           cnf.RegistryDNSManualPath,
 		DDMManualEDPComponent:           cnf.DDMManualEDPComponent,
-		RegistryDefaultExternalSystems:  cnf.RegistryDefaultExternalSystems,
-		TrembitaClientDefaultRegistries: cnf.TrembitaClientDefaultRegistries,
 	}
 }
 

@@ -12610,3 +12610,14 @@ p.error {
     margin: 16px 8px 0 8px;
     font-size: 12px;
 }
+
+.wizard-warning {
+    background: #FFFBE6;
+    padding: 16px 24px;
+    margin-bottom: 32px;
+    font-size: 12px;
+}
+
+.red-star {
+    color: red;
+}

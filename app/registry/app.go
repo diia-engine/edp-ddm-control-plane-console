@@ -33,8 +33,6 @@ type Config struct {
 	TempFolder                      string
 	RegistryDNSManualPath           string
 	DDMManualEDPComponent           string
-	TrembitaClientDefaultRegistries string
-	RegistryDefaultExternalSystems  string
 }
 
 type Services struct {

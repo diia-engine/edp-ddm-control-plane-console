@@ -1,0 +1,42 @@
+{{ define "supplier-auth" }}
+    <h2>Автентифікація надавачів послуг</h2>
+    <p>Є можливість використовувати власний віджет автентифікації або налаштувати інтеграцію з id.gov.ua.</p>
+    <div class="wizard-warning">Зміна типу автентифікації доступна для версій реєстру 1.9.3 і вище.</div>
+    <div class="rc-form-group">
+        <label for="sup-auth-type">Вкажіть тип автентифікації</label>
+        <select name="sup-auth-browser-flow" id="sup-auth-type" v-model="wizard.tabs.supplierAuthentication.data.authType">
+            <option value="dso-officer-auth-flow">Віджет</option>
+            <option value="id-gov-ua-officer-redirector">id.gov.ua</option>
+        </select>
+    </div>
+    <div class="rc-form-group"
+         :class="{'error': wizard.tabs.supplierAuthentication.beginValidation && (wizard.tabs.supplierAuthentication.data.url == '' || wizard.tabs.supplierAuthentication.urlValidationFailed)}">
+        <label for="sup-auth-url">Посилання <b class="red-star">*</b></label>
+        <input name="sup-auth-url" id="sup-auth-url" v-model="wizard.tabs.supplierAuthentication.data.url" />
+        <p>URL, повинен починатись з http:// або https://</p>
+        <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.url == ''">Обов’язкове поле</span>
+        <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.urlValidationFailed">Перевірте формат поля</span>
+    </div>
+    <div v-if="wizard.tabs.supplierAuthentication.data.authType == 'dso-officer-auth-flow'" class="rc-form-group"
+         :class="{'error': wizard.tabs.supplierAuthentication.beginValidation && (wizard.tabs.supplierAuthentication.data.widgetHeight == '' || wizard.tabs.supplierAuthentication.heightIsNotNumber)}">
+        <label for="sup-auth-widget-height">Висота віджета, px <b class="red-star">*</b></label>
+        <input id="sup-auth-widget-height" name="sup-auth-widget-height" v-model="wizard.tabs.supplierAuthentication.data.widgetHeight">
+        <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.widgetHeight == ''">Обов’язкове поле</span>
+        <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.heightIsNotNumber">Перевірте формат поля</span>
+    </div>
+
+    <div v-if="wizard.tabs.supplierAuthentication.data.authType == 'id-gov-ua-officer-redirector'">
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.clientId == ''}">
+            <label for="diia-client-id">Ідентифікатор клієнта (client_id) <b class="red-star">*</b></label>
+            <input name="sup-auth-client-id" id="diia-client-id" v-model="wizard.tabs.supplierAuthentication.data.clientId">
+            <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.clientId == ''">Обов’язкове поле</span>
+        </div>
+        <div class="rc-form-group"
+             :class="{'error': wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.secret == ''}">
+            <label for="diia-client-secret">Клієнтський секрет (secret) <b class="red-star">*</b></label>
+            <input name="sup-auth-client-secret" id="diia-client-secret" v-model="wizard.tabs.supplierAuthentication.data.secret" />
+            <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.secret == ''">Обов’язкове поле</span>
+        </div>
+    </div>
+{{end}}

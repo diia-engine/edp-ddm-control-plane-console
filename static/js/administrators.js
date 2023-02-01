@@ -62,6 +62,7 @@ let app = Vue.createApp({
 
         if (this.$refs.hasOwnProperty('registryValues')) {
             this.registryValues = JSON.parse(this.$refs.registryValues.value);
+            this.loadRegistryValues();
         }
 
         if (this.$refs.hasOwnProperty('registryUpdate')) {
@@ -173,12 +174,43 @@ let app = Vue.createApp({
                         validator: this.wizardDNSValidation, visible: true,
                         preloadValues: {}},
                     cidr: {title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
+                    supplierAuthentication: {
+                        title: 'Автентифікація надавачів послуг', validated: false, validator: this.wizardSupAuthValidation,
+                        beginValidation:false, visible: true,
+                        data: {
+                            authType: 'dso-officer-auth-flow',
+                            url: '',
+                            widgetHeight: '720',
+                            clientId: '',
+                            secret: '',
+                        },
+                        urlValidationFailed: false,
+                        heightIsNotNumber: false,
+                    },
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
         }
     },
     methods: {
+        loadRegistryValues() {
+            try {
+                this.wizard.tabs.supplierAuthentication.data.authType = this.registryValues.keycloak.realms.officerPortal.browserFlow;
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
+                    this.wizard.tabs.supplierAuthentication.data.widgetHeight =
+                        this.registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
+                    this.wizard.tabs.supplierAuthentication.data.url = this.registryValues.signWidget.url;
+                } else {
+                    this.wizard.tabs.supplierAuthentication.data.url =
+                        this.registryValues.keycloak.identityProviders.idGovUa.url;
+                    this.wizard.tabs.supplierAuthentication.data.clientId = '*****';
+                    this.wizard.tabs.supplierAuthentication.data.secret = '*****';
+                }
+
+            } catch (e) {
+                console.log(e);
+            }
+        },
         removeResourcesCatFromList(name)  {
             let searchIdx = this.registryResources.cats.indexOf(name);
             if (searchIdx !== -1) {
@@ -408,6 +440,33 @@ let app = Vue.createApp({
                         tab.validated = true;
                         resolve();
                     });
+            });
+        },
+        wizardSupAuthValidation(tab){
+            return new Promise((resolve) => {
+                tab.beginValidation = true;
+                tab.validated = false;
+                tab.urlValidationFailed = false;
+
+                if (!/^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/.test(this.wizard.tabs.supplierAuthentication.data.url)) {
+                    tab.urlValidationFailed = true;
+                    return;
+                }
+
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow' &&
+                    this.wizard.tabs.supplierAuthentication.data.widgetHeight === '') {
+                    return;
+                }
+
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'id-gov-ua-officer-redirector' &&
+                    (this.wizard.tabs.supplierAuthentication.data.clientId === '' ||
+                        this.wizard.tabs.supplierAuthentication.data.secret === '')) {
+                    return
+                }
+
+                tab.validated = true;
+                tab.beginValidation = false;
+                resolve();
             });
         },
         wizardDNSValidation(tab){

@@ -7,7 +7,45 @@ type Values struct {
 	ExternalSystems map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
 	Global          Global                    `yaml:"global" json:"global"`
 	Trembita        Trembita                  `yaml:"trembita" json:"trembita"`
-	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
+	SignWidget      SignWidget                `yaml:"signWidget" json:"signWidget"`
+	Keycloak        Keycloak                  `yaml:"keycloak" json:"keycloak"`
+
+	OriginalYaml map[string]interface{} `yaml:"-" json:"-"`
+}
+
+type Keycloak struct {
+	Realms            KeycloakRealms            `yaml:"realms" json:"realms"`
+	AuthFlows         KeycloakAuthFlows         `yaml:"authFlows" json:"authFlows"`
+	IdentityProviders KeycloakIdentityProviders `yaml:"identityProviders" json:"identityProviders"`
+}
+
+type KeycloakIdentityProviders struct {
+	IDGovUA KeycloakIdentityProvidersIDGovUA `yaml:"idGovUa" json:"idGovUa"`
+}
+
+type KeycloakIdentityProvidersIDGovUA struct {
+	URL       string `yaml:"url" json:"url"`
+	SecretKey string `yaml:"secretKey" json:"secretKey"`
+}
+
+type KeycloakAuthFlows struct {
+	OfficerAuthFlow KeycloakAuthFlowsOfficerAuthFlow `yaml:"officerAuthFlow" json:"officerAuthFlow"`
+}
+
+type KeycloakAuthFlowsOfficerAuthFlow struct {
+	WidgetHeight int `yaml:"widgetHeight" json:"widgetHeight"`
+}
+
+type KeycloakRealms struct {
+	OfficerPortal KeycloakRealmsOfficerPortal `yaml:"officerPortal" json:"officerPortal"`
+}
+
+type KeycloakRealmsOfficerPortal struct {
+	BrowserFlow string `yaml:"browserFlow" json:"browserFlow"`
+}
+
+type SignWidget struct {
+	URL string `yaml:"url" json:"url"`
 }
 
 type Notifications struct {

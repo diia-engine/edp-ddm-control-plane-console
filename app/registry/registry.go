@@ -46,6 +46,11 @@ type registry struct {
 	CIDRAdmin           string   `form:"admin-cidr"`
 	CIDRChanged         string   `form:"cidr-changed"`
 	Resources           string   `form:"resources"`
+	SupAuthBrowserFlow  string   `form:"sup-auth-browser-flow"`
+	SupAuthURL          string   `form:"sup-auth-url"`
+	SupAuthWidgetHeight string   `form:"sup-auth-widget-height"`
+	SupAuthClientID     string   `form:"sup-auth-client-id"`
+	SupAuthClientSecret string   `form:"sup-auth-client-secret"`
 }
 
 func (r *registry) KeysRequired() bool {

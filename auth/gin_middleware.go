@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"ddm-admin-console/app/dashboard"
 	"net/http"
 	"strings"
 
@@ -9,7 +10,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func MakeGinMiddleware(o *OAuth2, tokenSessionKey, tokenValidSessionKey, filterPath string) func(ctx *gin.Context) {
+func MakeGinMiddleware(o dashboard.OAuth, tokenSessionKey, tokenValidSessionKey, filterPath string) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
 		tokenValid := tokenIsValid(ctx, tokenSessionKey)
 		ctx.Set(tokenValidSessionKey, tokenValid)
@@ -43,6 +44,6 @@ func tokenIsValid(ctx *gin.Context, tokenSessionKey string) bool {
 	return token.Valid()
 }
 
-func ginStartAuth(o *OAuth2, ctx *gin.Context) {
+func ginStartAuth(o dashboard.OAuth, ctx *gin.Context) {
 	ctx.Redirect(http.StatusFound, o.AuthCodeURL())
 }

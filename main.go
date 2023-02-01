@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	mergeRequestController "ddm-admin-console/controller/merge_request"
+	"ddm-admin-console/mocks"
 	"ddm-admin-console/service/openshift"
 	"ddm-admin-console/service/vault"
 	"encoding/gob"
@@ -31,7 +32,6 @@ import (
 	"ddm-admin-console/app/cluster"
 	"ddm-admin-console/app/dashboard"
 	"ddm-admin-console/app/registry"
-	"ddm-admin-console/auth"
 	oauth "ddm-admin-console/auth"
 	"ddm-admin-console/config"
 	codebaseController "ddm-admin-console/controller/codebase"
@@ -132,6 +132,10 @@ func getLogger(level, encoding string) (*zap.Logger, error) {
 }
 
 func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Settings) (*config.Services, error) {
+	if appConf.Mock != "" {
+		return mocks.InitServices(appConf), nil
+	}
+
 	var err error
 	serviceItems := config.Services{}
 
@@ -184,6 +188,10 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 
 func initControllers(sch *runtime.Scheme, namespace string, logger *zap.Logger, cnf *config.Settings,
 	services *config.Services) error {
+	if cnf.Mock != "" {
+		return nil
+	}
+
 	cfg := ctrl.GetConfigOrDie()
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -274,33 +282,41 @@ func initKubeConfig() (*rest.Config, error) {
 	return restConfig, nil
 }
 
-func initOauth(k8sConfig *rest.Config, cfg *config.Settings, r *gin.Engine, k8sService k8s.ServiceInterface) (*auth.OAuth2, error) {
-	transport, err := rest.TransportFor(k8sConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create transport for k8s config")
-	}
+func initOauth(k8sConfig *rest.Config, cfg *config.Settings, r *gin.Engine, k8sService k8s.ServiceInterface) (dashboard.OAuth, error) {
+	var oAuth dashboard.OAuth
+	if cfg.Mock != "" {
+		oAuth = mocks.OAuth()
+	} else {
 
-	oa, err := oauth.InitOauth2(
-		cfg.OCClientID,
-		cfg.OCClientSecret,
-		k8sConfig.Host,
-		cfg.Host+"/auth/callback",
-		&http.Client{Transport: transport})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to init oauth2 client")
-	}
-
-	if !cfg.OAuthUseExternalTokenURL {
-		if err := oa.UseInternalTokenService(context.Background(), cfg.OAuthInternalTokenHost, k8sService); err != nil {
-			return nil, errors.Wrap(err, "unable to load internal oauth host")
+		transport, err := rest.TransportFor(k8sConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create transport for k8s config")
 		}
+
+		oa, err := oauth.InitOauth2(
+			cfg.OCClientID,
+			cfg.OCClientSecret,
+			k8sConfig.Host,
+			cfg.Host+"/auth/callback",
+			&http.Client{Transport: transport})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to init oauth2 client")
+		}
+
+		if !cfg.OAuthUseExternalTokenURL {
+			if err := oa.UseInternalTokenService(context.Background(), cfg.OAuthInternalTokenHost, k8sService); err != nil {
+				return nil, errors.Wrap(err, "unable to load internal oauth host")
+			}
+		}
+
+		oAuth = oa
 	}
 
 	gob.Register(&oauth2.Token{})
-	r.Use(oauth.MakeGinMiddleware(oa, router.AuthTokenSessionKey, router.AuthTokenValidSessionKey, "/admin/"))
+	r.Use(oauth.MakeGinMiddleware(oAuth, router.AuthTokenSessionKey, router.AuthTokenValidSessionKey, "/admin/"))
 	r.Use(router.UserDataMiddleware)
 
-	return oa, nil
+	return oAuth, nil
 }
 
 func i18n(word ...string) string {

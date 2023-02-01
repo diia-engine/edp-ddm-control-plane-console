@@ -64,7 +64,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
