@@ -116,6 +116,9 @@
                 <div class="wizard-tab" v-show="wizard.activeTab == 'supplierAuthentication'">
                     {{template "supplier-auth" .}}
                 </div>
+                <div class="wizard-tab" v-show="wizard.activeTab == 'backupSchedule'">
+                    {{template "backup-schedule" .}}
+                </div>
                 <div class="wizard-tab" v-show="wizard.activeTab == 'confirmation'">
                     <h2>Підтвердження</h2>
                     <p>Усе готово для створення реєстру. Ви можете перевірити внесені дані або натисніть "Створити реєстр".</p>

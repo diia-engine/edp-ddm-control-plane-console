@@ -126,7 +126,7 @@ let app = Vue.createApp({
             },
             wizard: {
                 registryAction: 'create',
-                activeTab: 'general',
+                activeTab: 'backupSchedule',
                 tabs: {
                     general: {
                         title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
@@ -187,12 +187,48 @@ let app = Vue.createApp({
                         urlValidationFailed: false,
                         heightIsNotNumber: false,
                     },
+                    backupSchedule: {
+                        title: 'Резервне копіювання', validated: false, beginValidation:false, visible: true,
+                        validator: this.wizardEmptyValidation, enabled: false,
+                        nextLaunches: false,
+                        wrongCronFormat: false,
+                        wrongDaysFormat: false,
+                        data: {
+                            cronSchedule: '',
+                            days: '',
+                        },
+                        nextDates: [],
+
+                    },
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
         }
     },
     methods: {
+        wizardCronExpressionChange(e) {
+            let bs = this.wizard.tabs.backupSchedule;
+            if (bs.data.cronSchedule === '') {
+                bs.nextLaunches = false;
+                bs.wrongCronFormat = false;
+                return;
+            }
+
+            try {
+                const cron = cronSchedule.parseCronExpression(bs.data.cronSchedule)
+                bs.nextDates = [];
+                let dt = new Date();
+                for (let i=0;i<3;i++) {
+                    let next = cron.getNextDate(dt);
+                    bs.nextDates.push(`${next.toLocaleDateString('uk')} ${next.toLocaleTimeString('uk')}`);
+                    dt = next;
+                }
+                bs.nextLaunches = true;
+            } catch (e) {
+                bs.nextLaunches = false;
+                bs.wrongCronFormat = true;
+            }
+        },
         loadRegistryValues() {
             try {
                 this.wizard.tabs.supplierAuthentication.data.authType = this.registryValues.keycloak.realms.officerPortal.browserFlow;
@@ -320,6 +356,10 @@ let app = Vue.createApp({
 
             return this.mergeDeep(target, ...sources);
         },
+        wizardBackupScheduleChange(e) {
+            // e.preventDefault();
+            console.log(e);
+        },
         wizardEditSubmit(event) {
             let tab = this.wizard.tabs[this.wizard.activeTab];
             let $this = this;
@@ -440,6 +480,33 @@ let app = Vue.createApp({
                         tab.validated = true;
                         resolve();
                     });
+            });
+        },
+        wizardBackupScheduleValidation(tab) {
+            return new Promise((resolve) => {
+                tab.beginValidation = true;
+                tab.validated = false;
+                let bs = this.wizard.tabs.backupSchedule;
+                bs.wrongCronFormat = false;
+                bs.wrongDaysFormat = false;
+
+                try {
+                    cronSchedule.parseCronExpression(bs.data.cronSchedule)
+                } catch (e) {
+                    bs.nextLaunches = false;
+                    bs.wrongCronFormat = true;
+                    return;
+                }
+
+                const days = parseInt(bs.data.days);
+                if (isNaN(days)) {
+                    bs.wrongDaysFormat = true;
+                    return;
+                }
+
+                tab.validated = true;
+                tab.beginValidation = false;
+                resolve();
             });
         },
         wizardSupAuthValidation(tab){

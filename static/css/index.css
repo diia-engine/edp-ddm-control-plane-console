@@ -12621,3 +12621,11 @@ p.error {
 .red-star {
     color: red;
 }
+
+.backup-switch {
+    margin: 32px 0;
+}
+
+.cron-next-dates {
+    padding-left: 25px;
+}
