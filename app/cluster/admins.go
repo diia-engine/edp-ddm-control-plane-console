@@ -54,7 +54,7 @@ func (a *App) updateAdmins(ctx *gin.Context) error {
 		return errors.Wrap(err, "unable to create admins secrets")
 	}
 
-	valuesDict, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
+	_, valuesDict, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to decode values yaml")
 	}
@@ -116,7 +116,7 @@ func (a *App) setAdminsVaultPassword(admins []Admin) error {
 }
 
 func (a *App) getAdminsJSON(ctx context.Context) (string, error) {
-	valuesDict, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
+	_, valuesDict, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to decode values")
 	}

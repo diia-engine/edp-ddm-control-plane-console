@@ -19,9 +19,26 @@ let hasNewMergeRequests = function () {
 
 let app = Vue.createApp({
     mounted() {
+        if (this.$refs.hasOwnProperty('valuesJson')) {
+            this.values = JSON.parse(this.$refs.valuesJson.value);
+        }
+
+        if (this.$refs.hasOwnProperty('registryName')) {
+            this.registryName = this.$refs.registryName.value
+        }
+
+        if (this.$refs.hasOwnProperty('openMergeRequests')) {
+            this.openMergeRequests.has = true;
+        }
+
+        this.externalSystem = this.externalSystemDefaults();
+        this.trembitaClient = this.trembitaClientDefaults();
     },
     data() {
         return {
+            registryName: '',
+            values: {},
+            accordion: 'general',
             externalRegPopupShow: false,
             backdropShow: false,
             internalRegistryReg: true,
@@ -39,9 +56,333 @@ let app = Vue.createApp({
             accessGrantError: false,
             mrView: false,
             mrSrc: '',
+            openMergeRequests: {
+                has: false,
+                formShow: false,
+            },
+            externalSystem: {},
+            trembitaClient: {},
         }
     }, // mrIframe
     methods: {
+        isURL(u){
+            return /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/.test(u);
+        },
+        trembitaClientDefaults() {
+            return {
+                registryName: '',
+                formShow: false,
+                startValidation: false,
+                tokenInputType: 'text',
+                urlValidationFailed: false,
+                data: {
+                    protocolVersion: '',
+                    url: '',
+                    userId: '',
+                    protocol: "SOAP",
+                    client: {
+                        xRoadInstance: '',
+                        memberClass: '',
+                        memberCode: '',
+                        subsystemCode: '',
+                    },
+                    service: {
+                        xRoadInstance: '',
+                        memberClass: '',
+                        memberCode: '',
+                        subsystemCode: '',
+                    },
+                    auth: {
+                        type: 'NO_AUTH',
+                    },
+                },
+            };
+        },
+        externalSystemDefaults() {
+            return {
+                registryName: '',
+                registryNameExists: false,
+                registryNameEditable: false,
+                urlValidationFailed: false,
+                formShow: false,
+                deleteFormShow: false,
+                startValidation: false,
+                secretInputTypes: {
+                    secret: 'text',
+                    username: 'text',
+                },
+                tokenInputType: 'text',
+                data: {
+                    url: '',
+                    protocol: "REST",
+                    auth: {
+                        type: 'NO_AUTH',
+                        secret: '',
+                        'auth-url': '',
+                        'access-token-json-path': '',
+                        username: '',
+                    },
+                },
+            };
+        },
+        hideDeleteExternalSystemForm() {
+            this.backdropShow = false;
+            this.externalSystem.deleteFormShow = false;
+            $("body").css("overflow", "scroll");
+        },
+        deleteExternalSystemLink() {
+            return `/admin/registry/external-system-delete/${this.registryName}?external-system=${this.externalSystem.registryName}`
+        },
+        showDeleteExternalSystemForm(registry, _type, e) {
+            e.preventDefault();
+            if (_type === 'platform') {
+                return;
+            }
+
+            this.externalSystem.registryName = registry;
+            this.backdropShow = true;
+            this.externalSystem.deleteFormShow = true;
+            $("body").css("overflow", "hidden");
+        },
+        checkForOpenMRs(e) {
+            if (this.openMergeRequests.has) {
+                e.preventDefault();
+                this.showOpenMRForm();
+            }
+        },
+        showOpenMRForm() {
+            this.backdropShow = true;
+            this.openMergeRequests.formShow = true;
+            this.accordion = 'merge-requests';
+            //todo: load data
+
+            $("body").css("overflow", "hidden");
+        },
+        hideOpenMRForm(e) {
+            e.preventDefault();
+            this.openMergeRequests.formShow = false;
+            this.backdropShow = false;
+            $("body").css("overflow", "scroll");
+        },
+        externalSystemFormAction() {
+            if (this.externalSystem.registryNameEditable) {
+                return `/admin/registry/external-system-create/${this.registryName}`
+            }
+
+            return `/admin/registry/external-system/${this.registryName}`
+        },
+        setExternalSystemForm(e) {
+            this.externalSystem.registryNameExists = false;
+            this.externalSystem.startValidation = true;
+            this.externalSystem.urlValidationFailed = false;
+
+            if (this.externalSystem.data.url !== '' && !this.isURL(this.externalSystem.data.url)) {
+                e.preventDefault();
+                this.externalSystem.urlValidationFailed = true;
+                return;
+            }
+
+            if (this.externalSystem.data.url === "") {
+                e.preventDefault();
+                return;
+            }
+
+            if (this.externalSystem.data.auth.type !== 'NO_AUTH' &&
+                (!this.externalSystem.data.auth.hasOwnProperty('secret') || this.externalSystem.data.auth['secret'] === '')) {
+                e.preventDefault();
+                return;
+            }
+
+            if (this.externalSystem.data.auth.type === 'BASIC' && this.externalSystem.data.auth['username'] === '') {
+                e.preventDefault();
+                return;
+            }
+
+            if (this.externalSystem.data.auth.type === 'AUTH_TOKEN+BEARER' &&
+                (!this.externalSystem.data.auth.hasOwnProperty('auth-url') ||
+                    this.externalSystem.data.auth['auth-url'] === '' ||
+                    !this.externalSystem.data.auth.hasOwnProperty('access-token-json-path') ||
+                    this.externalSystem.data.auth['access-token-json-path'] === '')) {
+                e.preventDefault();
+                return;
+            }
+
+            if (this.externalSystem.registryNameEditable) {
+                e.preventDefault();
+                let $this = this;
+
+                axios.get(`/admin/registry/external-system-check/${this.registryName}`,
+                    {params: {"external-system": this.externalSystem.registryName}})
+                    .then(function (response) {
+                        $this.externalSystem.registryNameExists = true;
+                    })
+                    .catch(function (error) {
+                        $("#external-system-form").submit();
+                    });
+            }
+        },
+        setTrembitaClientForm(e) {
+            this.trembitaClient.startValidation = true;
+            this.trembitaClient.urlValidationFailed = false;
+
+            if (this.trembitaClient.data.url !== '' && !this.isURL(this.trembitaClient.data.url)) {
+               this.trembitaClient.urlValidationFailed = true;
+                e.preventDefault();
+                return;
+            }
+
+            for (let i in this.trembitaClient.data) {
+                if (typeof(this.trembitaClient.data[i]) == "string" && this.trembitaClient.data[i] === "") {
+                    e.preventDefault();
+                    return;
+                }
+
+            }
+
+            for (let i in this.trembitaClient.data.client) {
+                if (typeof(this.trembitaClient.data.client[i]) == "string" &&
+                    this.trembitaClient.data.client[i] === "") {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            for (let i in this.trembitaClient.data.service) {
+                if (typeof(this.trembitaClient.data.service[i]) == "string" &&
+                    this.trembitaClient.data.service[i] === "") {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            if (this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
+                this.trembitaClient.data.auth['secret'] === '') {
+                e.preventDefault();
+            }
+        },
+        changeExternalSystemAuthType() {
+            this.externalSystem.startValidation = false;
+        },
+        changeTrembitaClientAuthType() {
+            if (this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
+                !this.trembitaClient.data.auth.hasOwnProperty('secret')) {
+                this.trembitaClient.data.auth['secret'] = '';
+            }
+
+            if (this.trembitaClient.data.auth.type === 'NO_AUTH' &&
+                this.trembitaClient.data.auth.hasOwnProperty('secret')) {
+                delete this.trembitaClient.data.auth['secret']
+            }
+        },
+        hideExternalSystemForm(e) {
+            e.preventDefault();
+            this.backdropShow = false;
+            this.externalSystem.formShow = false;
+            $("body").css("overflow", "scroll");
+        },
+        hideTrembitaClientForm(e) {
+            e.preventDefault();
+            this.backdropShow = false;
+            this.trembitaClient.formShow = false;
+            $("body").css("overflow", "scroll");
+        },
+        trembitaFormSecretFocus() {
+            if (this.trembitaClient.tokenInputType === 'password') {
+                this.trembitaClient.data.auth.secret = '';
+                this.trembitaClient.tokenInputType = 'text';
+            }
+        },
+        externalSystemSecretFocus(name) {
+            if (this.externalSystem.secretInputTypes[name] === 'password') {
+                this.externalSystem.data.auth[name] = '';
+                this.externalSystem.secretInputTypes[name] = 'text';
+            }
+        },
+        showExternalSystemForm(registry, e) {
+            e.preventDefault();
+
+            if (this.openMergeRequests.has) {
+                this.showOpenMRForm();
+                return;
+            }
+
+            this.externalSystem = this.externalSystemDefaults();
+
+            if (registry === '') {
+                this.externalSystem.registryNameEditable = true;
+            }
+
+            this.externalSystem.registryName = registry;
+            this.backdropShow = true;
+            this.externalSystem.formShow = true;
+
+            this.mergeDeep(this.externalSystem.data, this.values.externalSystems[registry]);
+
+            if (this.externalSystem.data.auth.hasOwnProperty('secret')) {
+                this.externalSystem.secretInputTypes.secret = 'password';
+            }
+
+            if (this.externalSystem.data.auth.hasOwnProperty('username')) {
+                this.externalSystem.secretInputTypes.username = 'password';
+            }
+
+            if (registry === 'diia') {
+                this.externalSystem.data.auth.type = 'AUTH_TOKEN+BEARER'
+            }
+
+            $("body").css("overflow", "hidden");
+        },
+        showTrembitaClientForm(registry, e) {
+            e.preventDefault();
+
+            if (this.openMergeRequests.has) {
+                this.showOpenMRForm();
+                return;
+            }
+
+            this.trembitaClient = this.trembitaClientDefaults();
+
+            this.trembitaClient.registryName = registry;
+            this.backdropShow = true;
+            this.trembitaClient.formShow = true;
+
+            this.mergeDeep(this.trembitaClient.data, this.values.trembita.registries[registry]);
+            if (this.trembitaClient.data.auth.hasOwnProperty('secret')) {
+                this.trembitaClient.tokenInputType = 'password';
+            }
+
+            if (registry === 'idp-exchange-service-registry' || registry === 'dracs-registry') {
+                this.trembitaClient.data.auth.type = 'NO_AUTH';
+            } else {
+                this.trembitaClient.data.auth.type = 'AUTH_TOKEN';
+            }
+
+            $("body").css("overflow", "hidden");
+        },
+        isObject(item) {
+            return (item && typeof item === 'object' && !Array.isArray(item));
+        },
+        mergeDeep(target, ...sources) {
+            if (!sources.length) return target;
+            const source = sources.shift();
+
+            if (this.isObject(target) && this.isObject(source)) {
+                for (const key in source) {
+                    if (source[key] === null || source[key] === "") {
+                        continue
+                    }
+
+                    if (this.isObject(source[key])) {
+                        if (!target[key]) Object.assign(target, { [key]: {} });
+                        this.mergeDeep(target[key], source[key]);
+                    } else {
+                        Object.assign(target, { [key]: source[key] });
+                    }
+                }
+            }
+
+            return this.mergeDeep(target, ...sources);
+        },
         hideMrView(e) {
             $("body").css("overflow", "scroll");
             this.backdropShow = false;

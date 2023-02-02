@@ -53,7 +53,7 @@ func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerr
 		MaxConcurrentReconciles: 1,
 	}).
 		Complete(&c); err != nil {
-		return errors.Wrap(err, "unable to create controller")
+		return fmt.Errorf("unable to create controller, err: %w", err)
 	}
 
 	return nil
@@ -63,12 +63,18 @@ func isSpecUpdated(e event.UpdateEvent) bool {
 	oo := e.ObjectOld.(*gerritService.GerritMergeRequest)
 	no := e.ObjectNew.(*gerritService.GerritMergeRequest)
 
-	return !reflect.DeepEqual(oo.Spec, no.Spec) ||
+	return !reflect.DeepEqual(oo.Spec, no.Spec) || !reflect.DeepEqual(oo.Status, no.Status) ||
 		(oo.GetDeletionTimestamp().IsZero() && !no.GetDeletionTimestamp().IsZero())
 }
 
 func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result,
 	resultErr error) {
+	defer func() {
+		if resultErr != nil {
+			c.logger.Errorw("reconciling merge request", "Request.Namespace", request.Namespace,
+				"Request.Name", request.Name, "error", fmt.Sprintf("%+v", resultErr))
+		}
+	}()
 
 	c.logger.Infow("reconciling merge request", "Request.Namespace", request.Namespace,
 		"Request.Name", request.Name)
@@ -80,14 +86,17 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 			return
 		}
 
-		resultErr = errors.Wrap(err, "unable to get merge request from k8s")
+		resultErr = fmt.Errorf("unable to get merge request from k8s, err: %w", err)
 		return
 	}
 
 	if err := c.prepareMergeRequest(ctx, &instance); err != nil {
-		c.logger.Errorw("reconciling merge request", "Request.Namespace", request.Namespace,
-			"Request.Name", request.Name, "error", fmt.Sprintf("%+v", err))
-		resultErr = errors.Wrap(err, "unable to prepare merge request")
+		resultErr = fmt.Errorf("unable to prepare merge request, err: %w", err)
+		return
+	}
+
+	if err := c.autoApproveMergeRequest(ctx, &instance); err != nil {
+		resultErr = fmt.Errorf("unable to approve MR, err: %w", err)
 		return
 	}
 
@@ -95,6 +104,29 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		"Request.Name", request.Name)
 
 	return
+}
+
+func (c *Controller) autoApproveMergeRequest(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
+	if instance.Status.ChangeID == "" || instance.Status.Value != gerritService.StatusNew {
+		return nil
+	}
+
+	label, ok := instance.Labels[registry.MRLabelApprove]
+	if !ok || label != registry.MRLabelApproveAuto {
+		return nil
+	}
+
+	if err := c.gerrit.ApproveAndSubmitChange(instance.Status.ChangeID, instance.Spec.AuthorName,
+		instance.Spec.AuthorEmail); err != nil {
+		return fmt.Errorf("unable to approve and submit change, err: %w", err)
+	}
+
+	instance.Status.Value = gerritService.StatusMerged
+	if err := c.k8sClient.Status().Update(ctx, instance); err != nil {
+		return fmt.Errorf("unable to updat MR status, err: %w", err)
+	}
+
+	return nil
 }
 
 // actions
@@ -122,94 +154,94 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 
 	_, backupFolderPath, projectPath, err := prepareControllerFolders(c.cnf.TempFolder, instance.Spec.ProjectName)
 	if err != nil {
-		return errors.Wrap(err, "unable to prepare controller tmp folders")
+		return fmt.Errorf("unable to prepare controller tmp folders, err: %w", err)
 	}
 
 	gitService, err := c.initGitService(ctx, projectPath)
 	if err != nil {
-		return errors.Wrap(err, "unable to init git service")
+		return fmt.Errorf("unable to init git service, err: %w", err)
 	}
 
 	targetBranch, sourceBranch, err := getBranchesFromLabels(instance.Labels)
 	if err != nil {
-		return errors.Wrap(err, "unable to get branches from instance labels")
+		return fmt.Errorf("unable to get branches from instance labels, err: %w", err)
 	}
 
 	if err := gitService.Clone(fmt.Sprintf("%s/%s", codebase.GerritSSHURL(c.cnf), instance.Spec.ProjectName)); err != nil {
-		return errors.Wrap(err, "unable to clone repo")
+		return fmt.Errorf("unable to clone repo, err: %w", err)
 	}
 
 	if err := gitService.RawCheckout(targetBranch, false); err != nil {
-		return errors.Wrap(err, "unable to checkout branch")
+		return fmt.Errorf("unable to checkout branch, err: %w", err)
 	}
 	//backup values.yaml
 	valuesBackupPath := path.Join(backupFolderPath, "backup-values.yaml")
 	projectValuesPath := path.Join(projectPath, registry.ValuesLocation)
 	if err := CopyFile(projectValuesPath, valuesBackupPath); err != nil {
-		return errors.Wrap(err, "unable to backup values yaml")
+		return fmt.Errorf("unable to backup values yaml, err: %w", err)
 	}
 
 	if err := gitService.RawCheckout(sourceBranch, false); err != nil {
-		return errors.Wrap(err, "unable to checkout")
+		return fmt.Errorf("unable to checkout, err: %w", err)
 	}
 	//backup source branch
 	projectBackupPath, err := backupProject(backupFolderPath, projectPath, instance.Spec.ProjectName)
 	if err != nil {
-		return errors.Wrap(err, "unable to backup source branch")
+		return fmt.Errorf("unable to backup source branch, err: %w", err)
 	}
 	//checkout to target branch
 	if err := gitService.RawCheckout(targetBranch, false); err != nil {
-		return errors.Wrap(err, "unable to checkout")
+		return fmt.Errorf("unable to checkout, err: %w", err)
 	}
 	//delete source branch
 	if err := gitService.DeleteBranch(sourceBranch); err != nil {
-		return errors.Wrap(err, "unable to delete source branch")
+		return fmt.Errorf("unable to delete source branch, err: %w", err)
 	}
 	//recreate source branch
 	if err := gitService.RawCheckout(sourceBranch, true); err != nil {
-		return errors.Wrap(err, "unable to checkout to source branch")
+		return fmt.Errorf("unable to checkout to source branch, err: %w", err)
 	}
 	//restore source branch
 	if err := CopyFolder(fmt.Sprintf("%s/.", projectBackupPath), fmt.Sprintf("%s/", projectPath)); err != nil {
-		return errors.Wrap(err, "unable to restore source branch")
+		return fmt.Errorf("unable to restore source branch, err: %w", err)
 	}
 	//merge values from target branch
 	if err := MergeValuesFiles(valuesBackupPath, projectValuesPath); err != nil {
-		return errors.Wrap(err, "unable to merge values")
+		return fmt.Errorf("unable to merge values, err: %w", err)
 	}
 	//add all changes
 	if err := gitService.Add("."); err != nil {
-		return errors.Wrap(err, "unable to add all files")
+		return fmt.Errorf("unable to add all files, err: %w", err)
 	}
 
 	changeID, err := gitService.GenerateChangeID()
 	if err != nil {
-		return errors.Wrap(err, "unable to generate change id")
+		return fmt.Errorf("unable to generate change id, err: %w", err)
 	}
 
 	if err := gitService.SetAuthor(&git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail}); err != nil {
-		return errors.Wrap(err, "unable to set author")
+		return fmt.Errorf("unable to set author, err: %w", err)
 	}
 
 	if err := gitService.RawCommit(
 		git.CommitMessageWithChangeID(
 			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
 				targetBranch), changeID)); err != nil {
-		return errors.Wrap(err, "unable to commit changes")
+		return fmt.Errorf("unable to commit changes, err: %w", err)
 	}
 
 	if err := gitService.Push("origin", fmt.Sprintf("refs/heads/%s:%s", sourceBranch, sourceBranch), "--force"); err != nil {
-		return errors.Wrap(err, "unable to push repo")
+		return fmt.Errorf("unable to push repo, err: %w", err)
 	}
 
 	var reloadInstance gerritService.GerritMergeRequest
 	if err := c.k8sClient.Get(ctx, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}, &reloadInstance); err != nil {
-		return errors.Wrap(err, "unable to reload instance")
+		return fmt.Errorf("unable to reload instance, err: %w", err)
 	}
 
 	reloadInstance.Spec.SourceBranch = sourceBranch
 	if err := c.k8sClient.Update(ctx, &reloadInstance); err != nil {
-		return errors.Wrap(err, "unable to update merge request")
+		return fmt.Errorf("unable to update merge request, err: %w", err)
 	}
 
 	return nil
@@ -218,10 +250,10 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 func backupProject(backupFolderPath, projectPath, projectName string) (string, error) {
 	projectBackupPath := path.Join(backupFolderPath, fmt.Sprintf("backup-%s", projectName))
 	if err := CopyFolder(projectPath, projectBackupPath); err != nil {
-		return "", errors.Wrap(err, "unable to backup source branch")
+		return "", fmt.Errorf("unable to backup source branch, err: %w", err)
 	}
 	if err := os.RemoveAll(path.Join(projectBackupPath, ".git")); err != nil {
-		return "", errors.Wrap(err, "unable to remove .git folder from backup")
+		return "", fmt.Errorf("unable to remove .git folder from backup, err: %w", err)
 	}
 
 	return projectBackupPath, nil
@@ -230,7 +262,7 @@ func backupProject(backupFolderPath, projectPath, projectName string) (string, e
 func (c *Controller) initGitService(ctx context.Context, projectPath string) (*git.Service, error) {
 	privateKey, err := codebase.GetGerritPrivateKey(ctx, c.k8sClient, c.cnf)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get gerrit private key")
+		return nil, fmt.Errorf("unable to get gerrit private key, err: %w", err)
 	}
 
 	return git.Make(projectPath, c.cnf.GitUsername, privateKey), nil
@@ -271,12 +303,12 @@ func prepareControllerFolders(tempFolder, projectName string) (controllerFolderP
 func MergeValuesFiles(src, dst string) error {
 	srcFp, err := os.Open(src)
 	if err != nil {
-		return errors.Wrap(err, "unable to open src file")
+		return fmt.Errorf("unable to open src file, err: %w", err)
 	}
 
 	dstFp, err := os.Open(dst)
 	if err != nil {
-		return errors.Wrap(err, "unable to open dst file")
+		return fmt.Errorf("unable to open dst file, err: %w", err)
 	}
 
 	var (
@@ -285,19 +317,19 @@ func MergeValuesFiles(src, dst string) error {
 	)
 
 	if err := yaml.NewDecoder(srcFp).Decode(&srcData); err != nil {
-		return errors.Wrap(err, "unable to decode src values")
+		return fmt.Errorf("unable to decode src values, err: %w", err)
 	}
 
 	if err := yaml.NewDecoder(dstFp).Decode(&dstData); err != nil {
-		return errors.Wrap(err, "unable to decode dst values")
+		return fmt.Errorf("unable to decode dst values, err: %w", err)
 	}
 
 	if err := srcFp.Close(); err != nil {
-		return errors.Wrap(err, "unable to close src")
+		return fmt.Errorf("unable to close src, err: %w", err)
 	}
 
 	if err := dstFp.Close(); err != nil {
-		return errors.Wrap(err, "unable to close dst")
+		return fmt.Errorf("unable to close dst, err: %w", err)
 	}
 
 	//merge global
@@ -326,15 +358,15 @@ func MergeValuesFiles(src, dst string) error {
 
 	dstFp, err = os.Create(dst)
 	if err != nil {
-		return errors.Wrap(err, "unable to recreate dst")
+		return fmt.Errorf("unable to recreate dst, err: %w", err)
 	}
 
 	if err := yaml.NewEncoder(dstFp).Encode(dstData); err != nil {
-		return errors.Wrap(err, "unable to encode dst data")
+		return fmt.Errorf("unable to encode dst data, err: %w", err)
 	}
 
 	if err := dstFp.Close(); err != nil {
-		return errors.Wrap(err, "unable to close dst")
+		return fmt.Errorf("unable to close dst, err: %w", err)
 	}
 
 	return nil
@@ -349,7 +381,7 @@ func CopyFolder(src, dst string) error {
 	}
 
 	if err != nil {
-		return errors.Wrapf(err, "unable to copy folder %s", msg)
+		return fmt.Errorf("unable to copy folder %s, err: %w", msg, err)
 	}
 
 	return nil
@@ -358,30 +390,30 @@ func CopyFolder(src, dst string) error {
 func CopyFile(src, dst string) error {
 	if _, err := os.Stat(dst); err == nil {
 		if err := os.Remove(dst); err != nil {
-			return errors.Wrap(err, "unable to remove file")
+			return fmt.Errorf("unable to remove file, err: %w", err)
 		}
 	}
 
 	srcFp, err := os.Open(src)
 	if err != nil {
-		return errors.Wrap(err, "unable to open file")
+		return fmt.Errorf("unable to open file, err: %w", err)
 	}
 
 	dstFp, err := os.Create(dst)
 	if err != nil {
-		return errors.Wrap(err, "unable to create file")
+		return fmt.Errorf("unable to create file, err: %w", err)
 	}
 
 	if _, err := io.Copy(dstFp, srcFp); err != nil {
-		return errors.Wrap(err, "unable to copy files")
+		return fmt.Errorf("unable to copy files, err: %w", err)
 	}
 
 	if err := srcFp.Close(); err != nil {
-		return errors.Wrap(err, "unable to close file")
+		return fmt.Errorf("unable to close file, err: %w", err)
 	}
 
 	if err := dstFp.Close(); err != nil {
-		return errors.Wrap(err, "unable to close file")
+		return fmt.Errorf("unable to close file, err: %w", err)
 	}
 
 	return nil

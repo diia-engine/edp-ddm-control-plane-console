@@ -15,6 +15,11 @@ func (a *App) createRoutes() {
 	a.router.GET("/admin/registry/view/:name", a.viewRegistry)
 	a.router.POST("/admin/registry/update/:name", a.registryUpdate)
 	a.router.GET("/admin/registry/update/:name", a.registryUpdateView)
+	a.router.POST("/admin/registry/trembita-client/:name", a.setTrembitaClientRegistryData)
+	a.router.POST("/admin/registry/external-system/:name", a.setExternalSystemRegistryData)
+	a.router.POST("/admin/registry/external-system-create/:name", a.createExternalSystemRegistry)
+	a.router.GET("/admin/registry/external-system-check/:name", a.checkExternalSystemExists)
+	a.router.GET("/admin/registry/external-system-delete/:name", a.deleteExternalSystem)
 
 	a.router.POST("/admin/registry/external-reg-add/:name", a.addExternalReg)
 	a.router.POST("/admin/registry/external-reg-remove/:name", a.removeExternalReg)

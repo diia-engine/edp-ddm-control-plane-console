@@ -88,24 +88,25 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		"action":               "edit",
 	}
 
-	if err := a.loadValuesEditConfig(ctx, registryName, responseParams, &model); err != nil {
+	values, _, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get values from git")
+	}
+
+	if err := a.loadValuesEditConfig(values, responseParams, &model); err != nil {
 		return nil, errors.Wrap(err, "unable to load edit values from config")
 	}
 
-	if err := a.viewDNSConfig(userCtx, registryName, responseParams); err != nil {
+	if err := a.viewDNSConfig(ctx, registryName, values, responseParams); err != nil {
 		return nil, errors.Wrap(err, "unable to load dns config")
 	}
 
 	return router.MakeHTMLResponse(200, "registry/edit.html", responseParams), nil
 }
 
-func (a *App) loadValuesEditConfig(ctx context.Context, registryName string, rspParams gin.H, r *registry) error {
-	values, err := GetValuesFromGit(ctx, registryName, a.Gerrit)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values from git")
-	}
+func (a *App) loadValuesEditConfig(values *Values, rspParams gin.H, r *registry) error {
 
-	if err := a.loadSMTPConfig(values, rspParams); err != nil {
+	if err := a.loadSMTPConfig(values.OriginalYaml, rspParams); err != nil {
 		return errors.Wrap(err, "unable to load smtp config")
 	}
 
@@ -113,11 +114,13 @@ func (a *App) loadValuesEditConfig(ctx context.Context, registryName string, rsp
 		return errors.Wrap(err, "unable to load cidr config")
 	}
 
-	if err := a.loadAdminsConfig(values, r); err != nil {
+	//TODO: refactor to values struct
+	if err := a.loadAdminsConfig(values.OriginalYaml, r); err != nil {
 		return errors.Wrap(err, "unable to load admins config")
 	}
 
-	if err := a.loadRegistryResourcesConfig(values, r); err != nil {
+	//TODO: refactor to values struct
+	if err := a.loadRegistryResourcesConfig(values.OriginalYaml, r); err != nil {
 		return errors.Wrap(err, "unable to load resources config")
 	}
 
@@ -196,40 +199,13 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 	return nil
 }
 
-func (a *App) loadCIDRConfig(valuesDict map[string]interface{}, rspParams gin.H) error {
-	rspParams["cidrConfig"] = "{}"
+func (a *App) loadCIDRConfig(values *Values, rspParams gin.H) error {
+	//TODO: remove this and pass whole values yaml to edit view
+	whiteListIPDict := make(map[string][]string)
 
-	//TODO: refactor
-	global, ok := valuesDict["global"]
-	if !ok {
-		return nil
-	}
-	globalDict, ok := global.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	whiteListIP, ok := globalDict["whiteListIP"]
-	if !ok {
-		return nil
-	}
-
-	whiteListIPDict, ok := whiteListIP.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	if adminRoutes, ok := whiteListIPDict["adminRoutes"]; ok {
-		whiteListIPDict["admin"] = strings.Split(adminRoutes.(string), " ")
-	}
-
-	if citizenPortal, ok := whiteListIPDict["citizenPortal"]; ok {
-		whiteListIPDict["citizen"] = strings.Split(citizenPortal.(string), " ")
-	}
-
-	if officerPortal, ok := whiteListIPDict["officerPortal"]; ok {
-		whiteListIPDict["officer"] = strings.Split(officerPortal.(string), " ")
-	}
+	whiteListIPDict["admin"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
+	whiteListIPDict["citizen"] = strings.Split(values.Global.WhiteListIP.CitizenPortal, " ")
+	whiteListIPDict["officer"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
 
 	cidrConfig, err := json.Marshal(whiteListIPDict)
 	if err != nil {
@@ -333,7 +309,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		cb.Annotations = make(map[string]string)
 	}
 
-	values, err := GetValuesFromGit(ctx, r.Name, a.Gerrit)
+	_, values, err := GetValuesFromGit(ctx, r.Name, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}
@@ -344,24 +320,11 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	vaultSecretData := make(map[string]map[string]interface{})
-	if err := a.prepareDNSConfig(ginContext, r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare dns config")
-	}
 
-	if err := a.prepareMailServerConfig(ginContext, r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare mail server config")
-	}
-
-	if err := a.prepareCIDRConfig(ginContext, r, values); err != nil {
-		return errors.Wrap(err, "unable to prepare cidr config")
-	}
-
-	if err := a.prepareAdminsConfig(r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare admin values config")
-	}
-
-	if err := a.prepareRegistryResources(r, values); err != nil {
-		return errors.Wrap(err, "unable to prepare registry resources config")
+	for _, proc := range a.createUpdateRegistryProcessors() {
+		if err := proc(ginContext, r, values, vaultSecretData); err != nil {
+			return errors.Wrap(err, "error during registry create")
+		}
 	}
 
 	changedValuesHash, err := MapHash(values)
@@ -381,7 +344,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	if len(vaultSecretData) > 0 {
-		if err := a.createVaultSecrets(vaultSecretData); err != nil {
+		if err := a.createVaultSecrets(vaultSecretData, false); err != nil {
 			return errors.Wrap(err, "unable to create vault secrets")
 		}
 	}
@@ -404,16 +367,21 @@ func MapHash(v map[string]interface{}) (string, error) {
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map[string]interface{},
-	gerritService gerrit.ServiceInterface) error {
-	values, err := GetValuesFromGit(ctx, projectName, gerritService)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values from git")
-	}
+type MRLabel struct {
+	Key   string
+	Value string
+}
 
-	for k, v := range editValues {
-		values[k] = v
-	}
+func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[string]interface{},
+	gerritService gerrit.ServiceInterface, labels ...MRLabel) error {
+	//_, values, err := GetValuesFromGit(ctx, projectName, gerritService)
+	//if err != nil {
+	//	return errors.Wrap(err, "unable to get values from git")
+	//}
+	//
+	//for k, v := range editValues {
+	//	values[k] = v
+	//}
 
 	valuesYaml, err := yaml.Marshal(values)
 	if err != nil {
@@ -440,6 +408,14 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map
 		}
 	}
 
+	_labels := map[string]string{
+		MRLabelTarget: mrTargetEditRegistry,
+	}
+
+	for _, l := range labels {
+		_labels[l.Key] = l.Value
+	}
+
 	if err := gerritService.CreateMergeRequestWithContents(ctx, &gerrit.MergeRequest{
 		ProjectName:   projectName,
 		Name:          fmt.Sprintf("reg-edit-mr-%s-%d", projectName, time.Now().Unix()),
@@ -447,10 +423,8 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, editValues map
 		AuthorName:    ctx.GetString(router.UserNameSessionKey),
 		CommitMessage: fmt.Sprintf("edit registry"),
 		TargetBranch:  "master",
-		Labels: map[string]string{
-			MRLabelTarget: mrTargetEditRegistry,
-		},
-		Annotations: map[string]string{},
+		Labels:        _labels,
+		Annotations:   map[string]string{},
 	}, map[string]string{
 		ValuesLocation: string(valuesYaml),
 	}); err != nil {

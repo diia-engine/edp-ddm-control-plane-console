@@ -80,6 +80,12 @@ msgstr "Відхилено"
 msgid "MERGED"
 msgstr "Підтверджено"
 
+msgid "type-platform"
+msgstr "Системний"
+
+msgid "type-registry"
+msgstr "Реєстровий"
+
 msgid "cron-expression"
 msgstr "Невірний вираз"
 
