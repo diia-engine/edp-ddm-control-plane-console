@@ -243,7 +243,14 @@ let app = Vue.createApp({
                     this.wizard.tabs.supplierAuthentication.data.clientId = '*****';
                     this.wizard.tabs.supplierAuthentication.data.secret = '*****';
                 }
+            } catch (e) {
+                console.log(e);
+            }
 
+            try {
+                this.wizard.tabs.backupSchedule.enabled = this.registryValues.registryBackup.enabled;
+                this.wizard.tabs.backupSchedule.data.cronSchedule = this.registryValues.registryBackup.schedule;
+                this.wizard.tabs.backupSchedule.data.days = this.registryValues.registryBackup.expiresInDays;
             } catch (e) {
                 console.log(e);
             }

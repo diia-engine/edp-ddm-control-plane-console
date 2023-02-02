@@ -20,15 +20,18 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 		return nil
 	}
 
-	days, err := strconv.ParseInt(r.CronScheduleDays, 10, 64)
-	if err != nil {
-		return fmt.Errorf("wrong backup days: %w", err)
+	if r.BackupScheduleEnabled != "" {
+		days, err := strconv.ParseInt(r.CronScheduleDays, 10, 64)
+		if err != nil {
+			return fmt.Errorf("wrong backup days: %w", err)
+		}
+
+		values.RegistryBackup.ExpiresInDays = int(days)
+		values.RegistryBackup.Schedule = r.CronSchedule
+		values.RegistryBackup.Enabled = true
+
+		values.OriginalYaml[registryBackupIndex] = values.RegistryBackup
 	}
-
-	values.RegistryBackup.ExpiresInDays = int(days)
-	values.RegistryBackup.Schedule = r.CronSchedule
-
-	values.OriginalYaml[registryBackupIndex] = values.RegistryBackup
 
 	return nil
 }
