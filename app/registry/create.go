@@ -519,8 +519,8 @@ func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, values map[string
 	return nil
 }
 
-func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, secretData map[string]map[string]interface{},
-	values map[string]interface{}) error {
+func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, values map[string]interface{},
+	secretData map[string]map[string]interface{}) error {
 	portals, ok := values["portals"]
 	if !ok {
 		portals = make(map[string]interface{})
