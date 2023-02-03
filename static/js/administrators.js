@@ -470,8 +470,7 @@ let app = Vue.createApp({
                         return;
                     }
 
-                    let n = parseInt(this.wizard.tabs.supplierAuthentication.data.widgetHeight);
-                    if (isNaN(n)) {
+                    if (!/^[0-9]+$/.test(this.wizard.tabs.supplierAuthentication.data.widgetHeight)) {
                         this.wizard.tabs.supplierAuthentication.heightIsNotNumber = true;
                         return;
                     }
