@@ -195,33 +195,35 @@ let app = Vue.createApp({
     },
     methods: {
         wizardSupAuthFlowChange() {
+            this.wizard.tabs.supplierAuthentication.validated = false;
+            this.wizard.tabs.supplierAuthentication.beginValidation = false;
+
+            let registryValues = this.registryValues;
+
             if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
-                if (this.registryValues.signWidget.url !== '') {
-                    this.wizard.tabs.supplierAuthentication.data.url = this.registryValues.signWidget.url;
+                if (registryValues && registryValues.signWidget.url !== '') {
+                    this.wizard.tabs.supplierAuthentication.data.url = registryValues.signWidget.url;
                 } else {
                     this.wizard.tabs.supplierAuthentication.data.url = this.wizard.tabs.supplierAuthentication.dsoDefaultURL;
                 }
 
-                if (this.registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight !== 0) {
+                if (registryValues && registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight !== 0) {
                     this.wizard.tabs.supplierAuthentication.data.widgetHeight =
-                        this.registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
+                        registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
                 }
 
             } else {
-                if (this.registryValues.keycloak.identityProviders.idGovUa.url !== '') {
-                    this.wizard.tabs.supplierAuthentication.data.url = this.registryValues.keycloak.identityProviders.idGovUa.url;
+                if (registryValues && registryValues.keycloak.identityProviders.idGovUa.url !== '') {
+                    this.wizard.tabs.supplierAuthentication.data.url = registryValues.keycloak.identityProviders.idGovUa.url;
                 } else {
                     this.wizard.tabs.supplierAuthentication.data.url = '';
                 }
 
-                if (this.registryValues.keycloak.identityProviders.idGovUa.clientId !== '') {
-                    this.wizard.tabs.supplierAuthentication.data.clientId = this.registryValues.keycloak.identityProviders.idGovUa.clientId;
+                if (registryValues && registryValues.keycloak.identityProviders.idGovUa.clientId !== '') {
+                    this.wizard.tabs.supplierAuthentication.data.clientId = registryValues.keycloak.identityProviders.idGovUa.clientId;
                     this.wizard.tabs.supplierAuthentication.data.secret = '*****';
                 }
             }
-
-            this.wizard.tabs.supplierAuthentication.validated = false;
-            this.wizard.tabs.supplierAuthentication.beginValidation = false;
         },
         loadRegistryValues() {
             try {
