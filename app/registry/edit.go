@@ -149,8 +149,7 @@ func (a *App) loadValuesEditConfig(values *Values, rspParams gin.H, r *registry)
 }
 
 func (a *App) loadIDGovUAClientID(values *Values) error {
-	if values.Keycloak.Realms.OfficerPortal.BrowserFlow != supAuthBrowserFlowIdGovUa ||
-		values.Keycloak.IdentityProviders.IDGovUA.SecretKey == "" {
+	if values.Keycloak.IdentityProviders.IDGovUA.SecretKey == "" {
 		return nil
 	}
 
