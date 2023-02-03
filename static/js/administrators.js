@@ -460,7 +460,7 @@ let app = Vue.createApp({
                 tab.urlValidationFailed = false;
                 tab.heightIsNotNumber = false;
 
-                if (!/^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/.test(this.wizard.tabs.supplierAuthentication.data.url)) {
+                if (!/^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=,]*)$/.test(this.wizard.tabs.supplierAuthentication.data.url)) {
                     tab.urlValidationFailed = true;
                     return;
                 }
