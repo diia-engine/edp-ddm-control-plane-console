@@ -26,6 +26,7 @@ type KeycloakIdentityProviders struct {
 type KeycloakIdentityProvidersIDGovUA struct {
 	URL       string `yaml:"url" json:"url"`
 	SecretKey string `yaml:"secretKey" json:"secretKey"`
+	ClientID  string `yaml:"-" json:"clientId"`
 }
 
 type KeycloakAuthFlows struct {

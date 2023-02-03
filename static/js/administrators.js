@@ -177,6 +177,7 @@ let app = Vue.createApp({
                     supplierAuthentication: {
                         title: 'Автентифікація надавачів послуг', validated: false, validator: this.wizardSupAuthValidation,
                         beginValidation:false, visible: true,
+                        dsoDefaultURL: 'https://eu.iit.com.ua/sign-widget/v20200922/',
                         data: {
                             authType: 'dso-officer-auth-flow',
                             url: 'https://eu.iit.com.ua/sign-widget/v20200922/',
@@ -193,6 +194,13 @@ let app = Vue.createApp({
         }
     },
     methods: {
+        wizardSupAuthFlowChange() {
+            if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
+                this.wizard.tabs.supplierAuthentication.data.url = this.wizard.tabs.supplierAuthentication.dsoDefaultURL;
+            } else {
+                this.wizard.tabs.supplierAuthentication.data.url = '';
+            }
+        },
         loadRegistryValues() {
             try {
                 if (this.registryValues.keycloak.realms.officerPortal.browserFlow !== '') {
@@ -206,7 +214,7 @@ let app = Vue.createApp({
                 } else {
                     this.wizard.tabs.supplierAuthentication.data.url =
                         this.registryValues.keycloak.identityProviders.idGovUa.url;
-                    this.wizard.tabs.supplierAuthentication.data.clientId = '*****';
+                    this.wizard.tabs.supplierAuthentication.data.clientId = this.registryValues.keycloak.identityProviders.idGovUa.clientId;;
                     this.wizard.tabs.supplierAuthentication.data.secret = '*****';
                 }
 
@@ -450,15 +458,23 @@ let app = Vue.createApp({
                 tab.beginValidation = true;
                 tab.validated = false;
                 tab.urlValidationFailed = false;
+                tab.heightIsNotNumber = false;
 
                 if (!/^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/.test(this.wizard.tabs.supplierAuthentication.data.url)) {
                     tab.urlValidationFailed = true;
                     return;
                 }
 
-                if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow' &&
-                    this.wizard.tabs.supplierAuthentication.data.widgetHeight === '') {
-                    return;
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
+                    if (this.wizard.tabs.supplierAuthentication.data.widgetHeight === '') {
+                        return;
+                    }
+
+                    let n = parseInt(this.wizard.tabs.supplierAuthentication.data.widgetHeight);
+                    if (isNaN(n)) {
+                        this.wizard.tabs.supplierAuthentication.heightIsNotNumber = true;
+                        return;
+                    }
                 }
 
                 if (this.wizard.tabs.supplierAuthentication.data.authType === 'id-gov-ua-officer-redirector' &&
