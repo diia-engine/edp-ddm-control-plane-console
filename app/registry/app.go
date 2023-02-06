@@ -5,6 +5,8 @@ import (
 	"ddm-admin-console/service/vault"
 	"strings"
 
+	"github.com/patrickmn/go-cache"
+
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	edpComponent "ddm-admin-console/service/edp_component"
@@ -43,6 +45,7 @@ type Services struct {
 	Jenkins      jenkins.ServiceInterface
 	Keycloak     keycloak.ServiceInterface
 	Vault        vault.ServiceInterface
+	Cache        *cache.Cache //TODO: replace with interface
 }
 
 type App struct {

@@ -123,12 +123,18 @@ func (a *App) updateKey(ctx *gin.Context) error {
 
 	vaultPath := a.vaultPlatformPathKey(fmt.Sprintf("%s-%s", registry.KeyManagementVaultPath, time.Now().Format("20060201T150405Z")))
 
+	repoFiles := make(map[string]string)
+
 	if _, err := registry.PrepareRegistryKeys(keyManagement{r: &ck, vaultSecretPath: vaultPath}, ctx.Request,
-		vaultSecretData, values); err != nil {
+		vaultSecretData, values, repoFiles); err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
 	}
 
-	if len(values) > 0 {
+	if err := registry.CacheRepoFiles(a.TempFolder, a.ClusterRepo, repoFiles, a.appCache); err != nil {
+		return fmt.Errorf("unable to cache repo files")
+	}
+
+	if len(values) > 0 || len(repoFiles) > 0 {
 		if err := registry.CreateEditMergeRequest(ctx, a.Config.CodebaseName, values, a.Gerrit); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}

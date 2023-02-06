@@ -56,7 +56,7 @@ type DigitalSignatureEnv struct {
 }
 
 func PrepareRegistryKeys(reg KeyManagement, rq *http.Request, secretData map[string]map[string]interface{},
-	values map[string]interface{}) (bool, error) {
+	values map[string]interface{}, repoFiles map[string]string) (bool, error) {
 	createKeys, key6Fl, caCertFl, caJSONFl, err := validateRegistryKeys(rq, reg)
 	if err != nil {
 		return false, fmt.Errorf("unable to validate registry keys, err: %w", err)
@@ -78,7 +78,7 @@ func PrepareRegistryKeys(reg KeyManagement, rq *http.Request, secretData map[str
 
 	keySecretData := make(map[string]interface{})
 
-	if err := setCASecretData(keySecretData, caCertFl, caJSONFl); err != nil {
+	if err := setCASecretData(repoFiles, caCertFl, caJSONFl); err != nil {
 		return false, fmt.Errorf("unable to set ca secret data for registry, err: %w", err)
 	}
 
@@ -96,18 +96,18 @@ func PrepareRegistryKeys(reg KeyManagement, rq *http.Request, secretData map[str
 	return true, nil
 }
 
-func setCASecretData(filesSecretData map[string]interface{}, caCertFl, caJSONFl multipart.File) error {
+func setCASecretData(repoFiles map[string]string, caCertFl, caJSONFl multipart.File) error {
 	caCertBytes, err := ioutil.ReadAll(caCertFl)
 	if err != nil {
 		return fmt.Errorf("unable to read file, err: %w", err)
 	}
-	filesSecretData["CACertificates.p7b"] = string(caCertBytes)
+	repoFiles["config/dso/CACertificates.p7b"] = string(caCertBytes)
 
 	casJSONBytes, err := ioutil.ReadAll(caJSONFl)
 	if err != nil {
 		return fmt.Errorf("unable to read file, err: %w", err)
 	}
-	filesSecretData["CAs.json"] = string(casJSONBytes)
+	repoFiles["config/dso/CAs.json"] = string(casJSONBytes)
 
 	return nil
 }

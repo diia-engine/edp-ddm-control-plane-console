@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/patrickmn/go-cache"
+
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
@@ -40,18 +42,20 @@ type Controller struct {
 	mgr       ctrl.Manager
 	k8sClient client.Client
 	cnf       *config.Settings
+	appCache  *cache.Cache
 }
 
 type AdminSyncer interface {
 	SyncAdmins(ctx context.Context, registryName string, admins []registry.Admin) error
 }
 
-func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings) error {
+func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, _c *cache.Cache) error {
 	c := Controller{
 		mgr:       mgr,
 		logger:    logger,
 		k8sClient: mgr.GetClient(),
 		cnf:       cnf,
+		appCache:  _c,
 	}
 
 	if err := ctrl.NewControllerManagedBy(mgr).
@@ -175,8 +179,25 @@ func (c *Controller) pushRegistryTemplate(ctx context.Context, instance *codebas
 		return errors.Wrap(err, "unable to pull")
 	}
 
-	if err := updateRegistryValues(instance, gitService); err != nil {
+	cachedToCommit, err := c.setCachedFiles(instance, gitService)
+	if err != nil {
+		return fmt.Errorf("unable to set cached files, %w", err)
+	}
+
+	valuesToCommit, err := updateRegistryValues(instance, gitService)
+	if err != nil {
 		return errors.Wrap(err, "unable to update registry values")
+	}
+
+	if cachedToCommit || valuesToCommit {
+		if err := gitService.SetAuthor(&git.User{Name: instance.Annotations[registry.AnnotationCreatorUsername],
+			Email: instance.Annotations[registry.AnnotationCreatorEmail]}); err != nil {
+			return errors.Wrap(err, "unable to set author")
+		}
+
+		if err := gitService.RawCommit("set initial values.yaml from admin console"); err != nil {
+			return fmt.Errorf("unable to commit values, %w", err)
+		}
 	}
 
 	if err := gitService.Push(registryRemoteName, "--all"); err != nil {
@@ -258,15 +279,53 @@ func GetGerritPrivateKey(ctx context.Context, k8sClient client.Client, cnf *conf
 	return string(key), nil
 }
 
-func updateRegistryValues(instance *codebaseService.Codebase, gitService *git.Service) error {
+func (c *Controller) setCachedFiles(instance *codebaseService.Codebase, gitService *git.Service) (bool, error) {
+	files, ok := c.appCache.Get(registry.CachedFilesIndex(instance.Name))
+	if !ok {
+		return false, nil
+	}
+
+	cachedFiles, ok := files.([]registry.CachedFile)
+	if !ok {
+		return false, errors.New("wrong files type")
+	}
+
+	updatedFiles := 0
+
+	for _, f := range cachedFiles {
+		bts, err := os.ReadFile(f.TempPath)
+		if err != nil {
+			return false, fmt.Errorf("unable to read file, %w", err)
+		}
+
+		repoContents, err := gitService.GetFileContents(f.RepoPath)
+		if err == nil && repoContents == string(bts) {
+			continue
+		}
+
+		if err := gitService.SetFileContents(f.RepoPath, string(bts)); err != nil {
+			return false, fmt.Errorf("unable to set file contents, %w", err)
+		}
+
+		if err := gitService.Add(f.RepoPath); err != nil {
+			return false, fmt.Errorf("unable to add file to git, %w", err)
+		}
+
+		updatedFiles += 1
+	}
+
+	return updatedFiles > 0, nil
+}
+
+func updateRegistryValues(instance *codebaseService.Codebase, gitService *git.Service) (bool, error) {
 	valuesStr, err := gitService.GetFileContents(registry.ValuesLocation)
 	if err != nil {
-		return errors.Wrap(err, "unable to get values from repo")
+		return false, errors.Wrap(err, "unable to get values from repo")
 	}
 
 	var raw map[string]interface{}
 	if err := yaml.Unmarshal([]byte(valuesStr), &raw); err != nil {
-		return errors.Wrap(err, "unable to decode values")
+		return false, errors.Wrap(err, "unable to decode values")
 	}
 	if raw == nil {
 		raw = make(map[string]interface{})
@@ -274,7 +333,7 @@ func updateRegistryValues(instance *codebaseService.Codebase, gitService *git.Se
 
 	var values map[string]interface{}
 	if err := json.Unmarshal([]byte(instance.Annotations[registry.AnnotationValues]), &values); err != nil {
-		return errors.Wrap(err, "unable to decode codebase values")
+		return false, errors.Wrap(err, "unable to decode codebase values")
 	}
 
 	for k, v := range values {
@@ -283,26 +342,32 @@ func updateRegistryValues(instance *codebaseService.Codebase, gitService *git.Se
 
 	bts, err := yaml.Marshal(raw)
 	if err != nil {
-		return errors.Wrap(err, "unable to encode values yaml")
+		return false, errors.Wrap(err, "unable to encode values yaml")
 	}
 
 	newContents := string(bts)
 
 	if newContents != valuesStr {
 		if err := gitService.SetFileContents(registry.ValuesLocation, newContents); err != nil {
-			return errors.Wrap(err, "unable to set values yaml file contents")
+			return false, errors.Wrap(err, "unable to set values yaml file contents")
 		}
 
-		if err := gitService.Commit("set initial values.yaml from admin console",
-			[]string{registry.ValuesLocation}, &git.User{
-				Name:  instance.Annotations[registry.AnnotationCreatorUsername],
-				Email: instance.Annotations[registry.AnnotationCreatorEmail],
-			}); err != nil {
-			return errors.Wrap(err, "unable to commit values yaml")
+		if err := gitService.Add(registry.ValuesLocation); err != nil {
+			return false, fmt.Errorf("unable to add values file to git, %w", err)
 		}
+
+		return true, nil
+
+		//if err := gitService.Commit("set initial values.yaml from admin console",
+		//	[]string{registry.ValuesLocation}, &git.User{
+		//		Name:  instance.Annotations[registry.AnnotationCreatorUsername],
+		//		Email: instance.Annotations[registry.AnnotationCreatorEmail],
+		//	}); err != nil {
+		//	return errors.Wrap(err, "unable to commit values yaml")
+		//}
 	}
 
-	return nil
+	return false, nil
 }
 
 func (c *Controller) getGerritProject(ctx context.Context, name string) (*gerritService.GerritProject, error) {

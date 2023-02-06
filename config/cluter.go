@@ -23,5 +23,6 @@ func (cnf *Settings) ClusterConfig() cluster.Config {
 		VaultClusterPathTemplate:      cnf.VaultClusterPathTemplate,
 		VaultKVEngineName:             cnf.VaultKVEngineName,
 		HardwareINITemplatePath:       cnf.RegistryHardwareKeyINITemplatePath,
+		TempFolder:                    cnf.TempFolder,
 	}
 }

@@ -73,14 +73,14 @@ func Make(s *runtime.Scheme, k8sConfig *rest.Config, config Config) (*Service, e
 		&GerritMergeRequestList{})
 
 	if err := builder.AddToScheme(s); err != nil {
-		return nil, errors.Wrap(err, "error during builder add to scheme")
+		return nil, fmt.Errorf("error during builder add to scheme, %w", err)
 	}
 
 	cl, err := client.New(k8sConfig, client.Options{
 		Scheme: s,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to init k8s jenkins client")
+		return nil, fmt.Errorf("unable to init k8s jenkins client, %w", err)
 	}
 
 	svc := Service{
@@ -94,7 +94,7 @@ func Make(s *runtime.Scheme, k8sConfig *rest.Config, config Config) (*Service, e
 	}
 
 	if err := svc.initRestyClient(); err != nil {
-		return nil, errors.Wrap(err, "unable to init resty client")
+		return nil, fmt.Errorf("unable to init resty client, %w", err)
 	}
 
 	return &svc, nil
@@ -103,7 +103,7 @@ func Make(s *runtime.Scheme, k8sConfig *rest.Config, config Config) (*Service, e
 func (s *Service) GetProjects(ctx context.Context) ([]GerritProject, error) {
 	var projectList GerritProjectList
 	if err := s.k8sClient.List(ctx, &projectList); err != nil {
-		return nil, errors.Wrap(err, "unable to list gerrit projects")
+		return nil, fmt.Errorf("unable to list gerrit projects, %w", err)
 	}
 
 	return projectList.Items, nil
@@ -112,7 +112,7 @@ func (s *Service) GetProjects(ctx context.Context) ([]GerritProject, error) {
 func (s *Service) GetProject(ctx context.Context, name string) (*GerritProject, error) {
 	prjs, err := s.GetProjects(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get projects")
+		return nil, fmt.Errorf("unable to get projects, %w", err)
 	}
 
 	for _, prj := range prjs {
@@ -136,7 +136,7 @@ func (s *Service) CreateProject(ctx context.Context, name string) error {
 			Parent:            "All-Projects",
 		},
 	}); err != nil {
-		return errors.Wrap(err, "unable to create gerrit project")
+		return fmt.Errorf("unable to create gerrit project, %w", err)
 	}
 
 	return nil
@@ -145,7 +145,7 @@ func (s *Service) CreateProject(ctx context.Context, name string) error {
 func (s *Service) GetMergeRequests(ctx context.Context) ([]GerritMergeRequest, error) {
 	var mrs GerritMergeRequestList
 	if err := s.k8sClient.List(ctx, &mrs); err != nil {
-		return nil, errors.Wrap(err, "unable to get merge requests")
+		return nil, fmt.Errorf("unable to get merge requests, %w", err)
 	}
 
 	return mrs.Items, nil
@@ -154,16 +154,34 @@ func (s *Service) GetMergeRequests(ctx context.Context) ([]GerritMergeRequest, e
 func (s *Service) GetMergeRequest(ctx context.Context, name string) (*GerritMergeRequest, error) {
 	var mr GerritMergeRequest
 	if err := s.k8sClient.Get(ctx, types.NamespacedName{Name: name, Namespace: s.Namespace}, &mr); err != nil {
-		return nil, errors.Wrap(err, "unable to get gerrit merge request")
+		return nil, fmt.Errorf("unable to get gerrit merge request, %w", err)
 	}
 
 	return &mr, nil
 }
 
+func (s *Service) GetChangeDetails(changeID string) (*goGerrit.ChangeInfo, error) {
+	info, _, err := s.goGerritClient.Changes.GetChangeDetail(changeID, nil)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get change, %w", err)
+	}
+
+	return info, nil
+}
+
+func (s *Service) GetProjectInfo(projectName string) (*goGerrit.ProjectInfo, error) {
+	info, _, err := s.goGerritClient.Projects.GetProject(projectName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get project info, %w", err)
+	}
+
+	return info, nil
+}
+
 func (s *Service) GetMergeRequestByChangeID(ctx context.Context, changeID string) (*GerritMergeRequest, error) {
 	var mrs GerritMergeRequestList
 	if err := s.k8sClient.List(ctx, &mrs); err != nil {
-		return nil, errors.Wrap(err, "unable to list gerrit merge requests")
+		return nil, fmt.Errorf("unable to list gerrit merge requests, %w", err)
 	}
 
 	for _, mr := range mrs.Items {
@@ -177,7 +195,7 @@ func (s *Service) GetMergeRequestByChangeID(ctx context.Context, changeID string
 
 func (s *Service) UpdateMergeRequestStatus(ctx context.Context, mr *GerritMergeRequest) error {
 	if err := s.k8sClient.Status().Update(ctx, mr); err != nil {
-		return errors.Wrap(err, "unable to update mr status")
+		return fmt.Errorf("unable to update mr status, %w", err)
 	}
 
 	return nil
@@ -186,7 +204,7 @@ func (s *Service) UpdateMergeRequestStatus(ctx context.Context, mr *GerritMergeR
 func (s *Service) GetMergeRequestByProject(ctx context.Context, projectName string) ([]GerritMergeRequest, error) {
 	var mrs GerritMergeRequestList
 	if err := s.k8sClient.List(ctx, &mrs); err != nil {
-		return nil, errors.Wrap(err, "unable to list gerrit merge requests")
+		return nil, fmt.Errorf("unable to list gerrit merge requests, %w", err)
 	}
 
 	var result []GerritMergeRequest
@@ -214,7 +232,7 @@ func (s *Service) CreateMergeRequest(ctx context.Context, mr *MergeRequest) erro
 			AdditionalArguments: mr.AdditionalArguments,
 		},
 	}); err != nil {
-		return errors.Wrap(err, "unable to create merge request")
+		return fmt.Errorf("unable to create merge request, %w", err)
 	}
 
 	return nil
@@ -227,7 +245,7 @@ func (s *Service) CreateMergeRequestWithContents(ctx context.Context, mr *MergeR
 	for filePath, content := range contents {
 		bts, err := json.Marshal(MRConfigMapFile{Path: filePath, Contents: content})
 		if err != nil {
-			return errors.Wrap(err, "unable to encode file")
+			return fmt.Errorf("unable to encode file, %w", err)
 		}
 
 		cmData[filepath.Base(filePath)] = string(bts)
@@ -239,7 +257,7 @@ func (s *Service) CreateMergeRequestWithContents(ctx context.Context, mr *MergeR
 	}
 
 	if err := s.k8sClient.Create(ctx, &mergeRequestConfigMap); err != nil {
-		return errors.Wrap(err, "unable to create changes config map")
+		return fmt.Errorf("unable to create changes config map, %w", err)
 	}
 
 	if err := s.k8sClient.Create(ctx, &GerritMergeRequest{
@@ -256,7 +274,7 @@ func (s *Service) CreateMergeRequestWithContents(ctx context.Context, mr *MergeR
 			SourceBranch:     "",
 		},
 	}); err != nil {
-		return errors.Wrap(err, "unable to create merge request")
+		return fmt.Errorf("unable to create merge request, %w", err)
 	}
 
 	return nil
@@ -275,7 +293,7 @@ func (s *Service) ApproveAndSubmitChange(changeID, username, email string) error
 			return errors.Wrapf(err, "unable to review change, error: %s", string(body))
 		}
 
-		return errors.Wrap(err, "unable to review change")
+		return fmt.Errorf("unable to review change, %w", err)
 	}
 
 	if _, rsp, err := s.GoGerritClient().Changes.SubmitChange(changeID, &goGerrit.SubmitInput{}); err != nil {
@@ -284,7 +302,7 @@ func (s *Service) ApproveAndSubmitChange(changeID, username, email string) error
 			return errors.Wrapf(err, "unable to submit change, error: %s", string(body))
 		}
 
-		return errors.Wrap(err, "unable to submit change")
+		return fmt.Errorf("unable to submit change, %w", err)
 	}
 
 	return nil

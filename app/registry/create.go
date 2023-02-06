@@ -309,12 +309,18 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unable to prepare registry resources config")
 	}
 
+	repoFiles := make(map[string]string)
+
 	if _, err := PrepareRegistryKeys(keyManagement{
 		r: r,
 		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
 			time.Now().Format("20060201T150405Z"))),
-	}, ginContext.Request, vaultSecretData, values); err != nil {
+	}, ginContext.Request, vaultSecretData, values, repoFiles); err != nil {
 		return errors.Wrap(err, "unable to prepare registry keys")
+	}
+
+	if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
+		return fmt.Errorf("unable to cache repo file, %w", err)
 	}
 
 	if err := CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
@@ -333,8 +339,6 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 
 	cb.Annotations = map[string]string{
 		AnnotationTemplateName:    r.RegistryGitTemplate,
-		AnnotationSMPTType:        r.MailServerType, //TODO: remove
-		AnnotationSMPTOpts:        r.MailServerOpts, //TODO: remove
 		AnnotationCreatorUsername: ginContext.GetString(router.UserNameSessionKey),
 		AnnotationCreatorEmail:    ginContext.GetString(router.UserEmailSessionKey),
 		AnnotationValues:          valuesEncoded,

@@ -9,6 +9,8 @@ import (
 	"ddm-admin-console/service/keycloak"
 	"ddm-admin-console/service/openshift"
 	"ddm-admin-console/service/vault"
+
+	"github.com/patrickmn/go-cache"
 )
 
 type Settings struct {
@@ -69,4 +71,5 @@ type Services struct {
 	Jenkins      jenkins.ServiceInterface
 	Keycloak     keycloak.ServiceInterface
 	Vault        vault.ServiceInterface
+	Cache        *cache.Cache //TODO: make interface
 }

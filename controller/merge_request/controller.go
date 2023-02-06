@@ -10,10 +10,13 @@ import (
 	"ddm-admin-console/service/git"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path"
 	"reflect"
+
+	"github.com/patrickmn/go-cache"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -36,15 +39,18 @@ type Controller struct {
 	k8sClient client.Client
 	cnf       *config.Settings
 	gerrit    gerritService.ServiceInterface
+	appCache  *cache.Cache
 }
 
-func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerrit gerritService.ServiceInterface) error {
+func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerrit gerritService.ServiceInterface,
+	appCache *cache.Cache) error {
 	c := Controller{
 		mgr:       mgr,
 		logger:    logger,
 		k8sClient: mgr.GetClient(),
 		cnf:       cnf,
 		gerrit:    gerrit,
+		appCache:  appCache,
 	}
 
 	if err := ctrl.NewControllerManagedBy(mgr).
@@ -63,7 +69,7 @@ func isSpecUpdated(e event.UpdateEvent) bool {
 	oo := e.ObjectOld.(*gerritService.GerritMergeRequest)
 	no := e.ObjectNew.(*gerritService.GerritMergeRequest)
 
-	return !reflect.DeepEqual(oo.Spec, no.Spec) ||
+	return !reflect.DeepEqual(oo.Spec, no.Spec) || !reflect.DeepEqual(oo.Status, no.Status) ||
 		(oo.GetDeletionTimestamp().IsZero() && !no.GetDeletionTimestamp().IsZero())
 }
 
@@ -91,10 +97,67 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return
 	}
 
+	if err := c.addCachedFiles(ctx, &instance); err != nil {
+		c.logger.Errorw("unable to proceed cached files", "Request.Namespace", request.Namespace,
+			"Request.Name", request.Name, "error", fmt.Sprintf("%+v", err))
+		resultErr = errors.Wrap(err, "unable to prepare merge request")
+		return
+	}
+
 	c.logger.Infow("reconciling merge request done", "Request.Namespace", request.Namespace,
 		"Request.Name", request.Name)
 
 	return
+}
+
+func (c *Controller) addCachedFiles(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
+	if instance.Status.Value != gerritService.StatusNew {
+		return nil
+	}
+
+	files, ok := c.appCache.Get(registry.CachedFilesIndex(instance.Spec.ProjectName))
+	if !ok {
+		return nil
+	}
+
+	cachedFiles, ok := files.([]registry.CachedFile)
+	if !ok {
+		return errors.New("wrong files type")
+	}
+	log.Println(cachedFiles)
+
+	_, _, projectPath, err := prepareControllerFolders(c.cnf.TempFolder, instance.Spec.ProjectName)
+	if err != nil {
+		return errors.Wrap(err, "unable to prepare controller tmp folders")
+	}
+
+	gitService, err := c.initGitService(ctx, projectPath)
+	if err != nil {
+		return errors.Wrap(err, "unable to init git service")
+	}
+
+	if err := gitService.Clone(fmt.Sprintf("%s/%s", codebase.GerritSSHURL(c.cnf), instance.Spec.ProjectName)); err != nil {
+		return errors.Wrap(err, "unable to clone repo")
+	}
+
+	projectInfo, err := c.gerrit.GetProjectInfo(instance.Spec.ProjectName)
+	if err != nil {
+		return fmt.Errorf("unable to get project info, %w", err)
+	}
+
+	detail, err := c.gerrit.GetChangeDetails(instance.Status.ChangeID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get change details")
+	}
+
+	//WRONG PROJECT ID
+	if err := gitService.RawPull("origin", fmt.Sprintf("refs/changes/%s/%d/1", projectInfo.ID, detail.Number)); err != nil {
+		return fmt.Errorf("unable to pull refs, %w", err)
+	}
+
+	log.Println(detail)
+
+	return nil
 }
 
 // actions

@@ -353,12 +353,18 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to prepare registry resources config")
 	}
 
+	repoFiles := make(map[string]string)
+
 	if _, err := PrepareRegistryKeys(keyManagement{
 		r: r,
 		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
 			time.Now().Format("20060201T150405Z"))),
-	}, ginContext.Request, vaultSecretData, values); err != nil {
+	}, ginContext.Request, vaultSecretData, values, repoFiles); err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
+	}
+
+	if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
+		return fmt.Errorf("unable to cache repo file, %w", err)
 	}
 
 	changedValuesHash, err := MapHash(values)
@@ -366,7 +372,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to get values map hash")
 	}
 
-	if initialValuesHash != changedValuesHash {
+	if initialValuesHash != changedValuesHash || len(repoFiles) > 0 {
 		if err := CreateEditMergeRequest(ginContext, r.Name, values, a.Gerrit); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}

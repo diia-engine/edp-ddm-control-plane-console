@@ -240,6 +240,27 @@ func IsErrReferenceNotFound(err error) bool {
 	return errors.Cause(err).Error() == "reference not found"
 }
 
+func (s *Service) RawPull(params ...string) error {
+	keyPath, err := s.keyFilePath()
+	if err != nil {
+		return errors.Wrap(err, "unable to init auth")
+	}
+
+	baseParams := []string{"pull"}
+	baseParams = append(baseParams, params...)
+
+	cmd := s.commandCreate("git", baseParams...)
+	cmd.SetEnv(s.authEnv(keyPath))
+	cmd.SetDir(s.path)
+
+	msg, err := cmd.StrCombinedOutput()
+	if err != nil {
+		return errors.Errorf("unable to pull: %s, %w", msg, err)
+	}
+
+	return nil
+}
+
 func (s *Service) Pull(remoteName string) (*object.Commit, error) {
 	r, w, err := s.worktree()
 	if err != nil {
@@ -297,6 +318,13 @@ func (s *Service) Push(remoteName string, pushParams ...string) error {
 
 func (s *Service) SetFileContents(filePath, contents string) error {
 	filePath = path.Join(s.path, filePath)
+
+	dir := path.Dir(filePath)
+	if _, err := os.Stat(dir); err != nil {
+		if err := os.MkdirAll(dir, 0777); err != nil {
+			return fmt.Errorf("unable to create dir, %w", err)
+		}
+	}
 
 	fp, err := os.Create(filePath)
 	if err != nil {
