@@ -1,0 +1,176 @@
+{{ define "trembita-client-form" }}
+    <div id="trembita-client-popup" class="popup-window admin-window visible scrollable-popup" v-cloak v-if="trembitaClient.formShow">
+        <div class="popup-header">
+            <p>Налаштувати взаємодію з реєстром через Трембіту</p>
+            <a href="#" @click="hideTrembitaClientForm" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+        <div class="view-registry-warning">
+            Налаштування взаємодії доступне для версій реєстру 1.9.3 і вище.
+        </div>
+        <form @submit="setTrembitaClientForm" id="trembita-client-form" method="post"
+              action="/admin/registry/trembita-client/{{.registry.Name}}">
+            <div class="popup-body">
+                <div class="popup-body-header">Налаштування ШБО Трембіти</div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.protocolVersion == '' && trembitaClient.startValidation}">
+                    <label>Версія протоколу</label>
+                    <input aria-label="" name="trembita-client-protocol-version" type="text"
+                           v-model="trembitaClient.data.protocolVersion" />
+                    <span v-if="trembitaClient.data.protocolVersion == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': (trembitaClient.data.url == '' || trembitaClient.urlValidationFailed) && trembitaClient.startValidation}">
+                    <label>Адреса ШБО Трембіти</label>
+                    <input aria-label="" type="text" name="trembita-client-url" v-model="trembitaClient.data.url" />
+                    <p>URL, повинен починатись з http:// або https://</p>
+                    <span v-if="trembitaClient.data.url == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                    <span v-if="trembitaClient.urlValidationFailed && trembitaClient.startValidation">Невірний формат</span>
+                </div>
+
+                <div class="popup-body-header">Налаштування клієнта Трембіти</div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.userId == '' && trembitaClient.startValidation}">
+                    <label>Ідентифікатор клієнту</label>
+                    <input aria-label="" type="text" name="trembita-client-user-id" v-model="trembitaClient.data.userId" />
+                    <span v-if="trembitaClient.data.userId == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.client.xRoadInstance == '' && trembitaClient.startValidation}">
+                    <label>X-Road Instance</label>
+                    <input aria-label="" type="text" name="trembita-client-x-road-instance"
+                           v-model="trembitaClient.data.client.xRoadInstance" />
+                    <span v-if="trembitaClient.data.client.xRoadInstance == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.client.memberClass == '' && trembitaClient.startValidation}">
+                    <label>Member Class</label>
+                    <input aria-label="" type="text" name="trembita-client-member-class"
+                           v-model="trembitaClient.data.client.memberClass" />
+                    <span v-if="trembitaClient.data.client.memberClass == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.client.memberCode == '' && trembitaClient.startValidation}">
+                    <label>Member Code</label>
+                    <input aria-label="" type="text" name="trembita-client-member-code"
+                           v-model="trembitaClient.data.client.memberCode" />
+                    <span v-if="trembitaClient.data.client.memberCode == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.client.subsystemCode == '' && trembitaClient.startValidation}">
+                    <label>Subsystem Code</label>
+                    <input aria-label="" type="text" name="trembita-client-subsystem-code"
+                           v-model="trembitaClient.data.client.subsystemCode" />
+                    <span v-if="trembitaClient.data.client.subsystemCode == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="popup-body-header">Налаштування сервісу для інтеграції</div>
+
+                <div class="rc-form-group">
+                    <label>Службова назва реєстру</label>
+                    <input aria-label="" type="text" readonly name="trembita-client-regitry-name"
+                           v-model="trembitaClient.registryName" />
+                </div>
+
+                <div class="rc-form-group">
+                    <label>Протокол інтеграції</label>
+                    <input aria-label="" type="text" readonly name="trembita-client-protocol"
+                           v-model="trembitaClient.data.protocol" />
+                    <p>Наразі підтримується лише SOAP-протокол інтеграції.</p>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.service.xRoadInstance == '' && trembitaClient.startValidation}">
+                    <label>X-Road Instance</label>
+                    <input aria-label="" type="text" name="trembita-service-x-road-instance"
+                           v-model="trembitaClient.data.service.xRoadInstance" />
+                    <span v-if="trembitaClient.data.service.xRoadInstance == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.service.memberClass == '' && trembitaClient.startValidation}">
+                    <label>Member Class</label>
+                    <input aria-label="" type="text" name="trembita-service-member-class"
+                           v-model="trembitaClient.data.service.memberClass" />
+                    <span v-if="trembitaClient.data.service.memberClass == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.service.memberCode == '' && trembitaClient.startValidation}">
+                    <label>Member Code</label>
+                    <input aria-label="" type="text" name="trembita-service-member-code"
+                           v-model="trembitaClient.data.service.memberCode" />
+                    <span v-if="trembitaClient.data.service.memberCode == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group"
+                     :class="{'error': trembitaClient.data.service.subsystemCode == '' && trembitaClient.startValidation}">
+                    <label>Subsystem Code</label>
+                    <input aria-label="" type="text" name="trembita-service-subsystem-code"
+                           v-model="trembitaClient.data.service.subsystemCode" />
+                    <span v-if="trembitaClient.data.service.subsystemCode == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+
+                <div class="rc-form-group">
+                    <label>Вкажіть тип автентифікації</label>
+                    <select aria-label="" name="trembita-service-auth-type"
+                            v-model="trembitaClient.data.auth.type"
+                            @change="changeTrembitaClientAuthType">
+                        <option
+                                v-if="trembitaClient.registryName == 'idp-exchange-service-registry' || trembitaClient.registryName == 'dracs-registry'">
+                                    NO_AUTH
+
+                        </option>
+                        <option v-if="trembitaClient.registryName == 'edr-registry'">AUTH_TOKEN</option>
+                    </select>
+                </div>
+
+                <div class="rc-form-group" v-if="trembitaClient.data.auth.type == 'AUTH_TOKEN'"
+                     :class="{'error': trembitaClient.data.auth.secret == '' && trembitaClient.startValidation}">
+                    <label>Вкажіть токен авторизації</label>
+                    <input aria-label="" name="trembita-service-auth-secret"
+                           v-model="trembitaClient.data.auth.secret"
+                           :type="[[ trembitaClient.tokenInputType ]]"
+                           @focus="trembitaFormSecretFocus" />
+                    <span v-if="trembitaClient.data.auth.secret == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                </div>
+            </div>
+            <div class="popup-footer active">
+                <a href="#" id="admin-cancel" class="hide-popup" @click="hideTrembitaClientForm">відмінити</a>
+                <button value="submit" class="submit-green" name="admin-apply" type="submit">Підтвердити</button>
+            </div>
+        </form>
+    </div>
+{{end}}

@@ -20,11 +20,13 @@
                   enctype="multipart/form-data" action="" ref="registryWizardForm">
                 <input type="hidden" ref="wizardAction" name="action" value="{{ .action }}" />
                 <input type="hidden" ref="registryData" value="{{ .registryData }}" />
+                {{if .registryValues}}
+                <input type="hidden" ref="registryValues" value="{{.registryValues}}" />
+                {{end}}
 
                 {{ if .error }}
                     <div class="rc-global-error">{{.error}}</div>
                 {{ end }}
-
                 <div class="wizard-tab" v-show="wizard.activeTab == 'general'">
                     <h2>Загальні налаштування</h2>
                     <div class="rc-title">
