@@ -39,8 +39,8 @@ type DigitalSignature struct {
 }
 
 type DigitalSignatureData struct {
-	CACertificates string `yaml:"CACertificates" json:"CACertificates"`
-	CAs            string `yaml:"CAs" json:"CAs"`
+	//CACertificates string `yaml:"CACertificates" json:"CACertificates"`
+	//CAs            string `yaml:"CAs" json:"CAs"`
 	Key6Dat        string `yaml:"Key-6-dat" json:"Key-6-dat"`
 	AllowedKeysYml string `yaml:"allowed-keys-yml" json:"allowed-keys-yml"`
 	OsplmIni       string `yaml:"osplm.ini" json:"osplm.ini"`
@@ -70,8 +70,8 @@ func PrepareRegistryKeys(reg KeyManagement, rq *http.Request, secretData map[str
 			SignKeyDeviceType: reg.KeyDeviceType(),
 		},
 		Data: DigitalSignatureData{
-			CACertificates: reg.VaultSecretPath(),
-			CAs:            reg.VaultSecretPath(),
+			//CACertificates: reg.VaultSecretPath(),
+			//CAs:            reg.VaultSecretPath(),
 			AllowedKeysYml: reg.VaultSecretPath(),
 		},
 	}

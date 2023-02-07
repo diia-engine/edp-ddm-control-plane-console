@@ -115,16 +115,16 @@ func (s *Service) SetAuthor(user *User) error {
 	return nil
 }
 
-func (s *Service) RawCommit(message string /*user *User,*/, params ...string) error {
-	baseParams := []string{"commit" /* fmt.Sprintf("--author=\"%s <%s>\"", user.Name, user.Email),*/, "-m", message}
+func (s *Service) RawCommit(u *User, message string, params ...string) error {
+	if err := s.SetAuthor(u); err != nil {
+		return errors.Wrap(err, "unable to set author")
+	}
+
+	baseParams := []string{"commit", "-m", message}
 	baseParams = append(baseParams, params...)
 
 	cmd := s.commandCreate("git", baseParams...)
 	cmd.SetDir(s.path)
-	//cmd.SetEnv([]string{fmt.Sprintf("GIT_AUTHOR_EMAIL=\"%s\"", user.Email),
-	//	fmt.Sprintf("GIT_AUTHOR_NAME=\"%s\"", user.Name)})
-
-	//GIT_AUTHOR_EMAIL="you@email.com" && GIT_AUTHOR_NAME="Your Name"
 
 	msg, err := cmd.StrCombinedOutput()
 	if err != nil {

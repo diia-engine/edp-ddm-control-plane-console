@@ -161,7 +161,7 @@ func (s *Service) GetMergeRequest(ctx context.Context, name string) (*GerritMerg
 }
 
 func (s *Service) GetChangeDetails(changeID string) (*goGerrit.ChangeInfo, error) {
-	info, _, err := s.goGerritClient.Changes.GetChangeDetail(changeID, nil)
+	info, _, err := s.goGerritClient.Changes.GetChangeDetail(changeID, &goGerrit.ChangeOptions{AdditionalFields: []string{"ALL_REVISIONS"}})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get change, %w", err)
 	}

@@ -179,7 +179,7 @@ func (c *Controller) pushRegistryTemplate(ctx context.Context, instance *codebas
 		return errors.Wrap(err, "unable to pull")
 	}
 
-	cachedToCommit, err := c.setCachedFiles(instance, gitService)
+	cachedToCommit, err := SetCachedFiles(instance.Name, c.appCache, gitService)
 	if err != nil {
 		return fmt.Errorf("unable to set cached files, %w", err)
 	}
@@ -190,12 +190,8 @@ func (c *Controller) pushRegistryTemplate(ctx context.Context, instance *codebas
 	}
 
 	if cachedToCommit || valuesToCommit {
-		if err := gitService.SetAuthor(&git.User{Name: instance.Annotations[registry.AnnotationCreatorUsername],
-			Email: instance.Annotations[registry.AnnotationCreatorEmail]}); err != nil {
-			return errors.Wrap(err, "unable to set author")
-		}
-
-		if err := gitService.RawCommit("set initial values.yaml from admin console"); err != nil {
+		if err := gitService.RawCommit(&git.User{Name: instance.Annotations[registry.AnnotationCreatorUsername],
+			Email: instance.Annotations[registry.AnnotationCreatorEmail]}, "set initial values.yaml from admin console"); err != nil {
 			return fmt.Errorf("unable to commit values, %w", err)
 		}
 	}
@@ -279,8 +275,9 @@ func GetGerritPrivateKey(ctx context.Context, k8sClient client.Client, cnf *conf
 	return string(key), nil
 }
 
-func (c *Controller) setCachedFiles(instance *codebaseService.Codebase, gitService *git.Service) (bool, error) {
-	files, ok := c.appCache.Get(registry.CachedFilesIndex(instance.Name))
+func SetCachedFiles(projectName string, appCache *cache.Cache, gitService *git.Service) (bool, error) {
+	//TODO: remove cached files
+	files, ok := appCache.Get(registry.CachedFilesIndex(projectName))
 	if !ok {
 		return false, nil
 	}

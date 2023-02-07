@@ -10,7 +10,6 @@ import (
 	"ddm-admin-console/service/git"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -120,11 +119,10 @@ func (c *Controller) addCachedFiles(ctx context.Context, instance *gerritService
 		return nil
 	}
 
-	cachedFiles, ok := files.([]registry.CachedFile)
+	_, ok = files.([]registry.CachedFile)
 	if !ok {
 		return errors.New("wrong files type")
 	}
-	log.Println(cachedFiles)
 
 	_, _, projectPath, err := prepareControllerFolders(c.cnf.TempFolder, instance.Spec.ProjectName)
 	if err != nil {
@@ -140,22 +138,47 @@ func (c *Controller) addCachedFiles(ctx context.Context, instance *gerritService
 		return errors.Wrap(err, "unable to clone repo")
 	}
 
-	projectInfo, err := c.gerrit.GetProjectInfo(instance.Spec.ProjectName)
-	if err != nil {
-		return fmt.Errorf("unable to get project info, %w", err)
-	}
-
 	detail, err := c.gerrit.GetChangeDetails(instance.Status.ChangeID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get change details")
 	}
 
-	//WRONG PROJECT ID
-	if err := gitService.RawPull("origin", fmt.Sprintf("refs/changes/%s/%d/1", projectInfo.ID, detail.Number)); err != nil {
+	var (
+		ref           string
+		commitMessage string
+	)
+	for _, v := range detail.Revisions {
+		ref = v.Ref
+		commitMessage = v.Commit.Message
+	}
+
+	if ref == "" {
+		return errors.New("empty ref")
+	}
+
+	if commitMessage == "" {
+		commitMessage = fmt.Sprintf("edit registry\n\nChange-Id: %s", instance.Status.ChangeID)
+	}
+
+	if err := gitService.RawPull("origin", ref); err != nil {
 		return fmt.Errorf("unable to pull refs, %w", err)
 	}
 
-	log.Println(detail)
+	changed, err := codebase.SetCachedFiles(instance.Spec.ProjectName, c.appCache, gitService)
+	if err != nil {
+		return fmt.Errorf("unable to set cached files, %w", err)
+	}
+
+	if changed {
+		if err := gitService.RawCommit(&git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail},
+			commitMessage, "--amend"); err != nil {
+			return fmt.Errorf("unable to commit, %w", err)
+		}
+
+		if err := gitService.Push("origin", fmt.Sprintf("HEAD:refs/for/%s", instance.TargetBranch())); err != nil {
+			return fmt.Errorf("unable to push refs, %w", err)
+		}
+	}
 
 	return nil
 }
@@ -250,14 +273,11 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return errors.Wrap(err, "unable to generate change id")
 	}
 
-	if err := gitService.SetAuthor(&git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail}); err != nil {
-		return errors.Wrap(err, "unable to set author")
-	}
-
-	if err := gitService.RawCommit(
+	if err := gitService.RawCommit(&git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail},
 		git.CommitMessageWithChangeID(
 			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
-				targetBranch), changeID)); err != nil {
+				targetBranch),
+			changeID)); err != nil {
 		return errors.Wrap(err, "unable to commit changes")
 	}
 
