@@ -48,7 +48,7 @@ func Make(path, user, key string) *Service {
 func (s *Service) GenerateChangeID() (string, error) {
 	h := sha1.New()
 	if _, err := h.Write([]byte(time.Now().Format(time.RFC3339))); err != nil {
-		return "", errors.Wrap(err, "unable to write hash")
+		return "", fmt.Errorf("unable to write hash, %w", err)
 	}
 	return fmt.Sprintf("I%x", h.Sum(nil)), nil
 }
@@ -56,12 +56,12 @@ func (s *Service) GenerateChangeID() (string, error) {
 func (s *Service) Clean() error {
 	if s._keyFilePath != "" {
 		if err := os.RemoveAll(s._keyFilePath); err != nil {
-			return errors.Wrap(err, "unable to clear key file")
+			return fmt.Errorf("unable to clear key file, %w", err)
 		}
 	}
 
 	if err := os.RemoveAll(s.path); err != nil {
-		return errors.Wrap(err, "unable to clear repo path")
+		return fmt.Errorf("unable to clear repo path, %w", err)
 	}
 
 	return nil
@@ -70,18 +70,18 @@ func (s *Service) Clean() error {
 func (s *Service) Clone(url string) error {
 	keyPath, err := s.keyFilePath()
 	if err != nil {
-		return errors.Wrap(err, "unable to create key file")
+		return fmt.Errorf("unable to create key file, %w", err)
 	}
 
 	cloneCMD := s.commandCreate("git", "clone", "--mirror", url, s.path)
 	cloneCMD.SetEnv(s.authEnv(keyPath))
 
 	if bts, err := cloneCMD.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to clone repo: %s", string(bts))
+		return fmt.Errorf("unable to clone repo: %s, %w", string(bts), err)
 	}
 
 	if err := s.bareToNormal(s.path); err != nil {
-		return errors.Wrap(err, "unable to covert bare repo to normal")
+		return fmt.Errorf("unable to covert bare repo to normal, %w", err)
 	}
 
 	fetchCMD := s.commandCreate("git", "--git-dir", path.Join(s.path, ".git"), "pull", "origin", "master",
@@ -89,7 +89,7 @@ func (s *Service) Clone(url string) error {
 	fetchCMD.SetEnv(s.authEnv(keyPath))
 	bts, err := fetchCMD.CombinedOutput()
 	if err != nil && !strings.Contains(string(bts), "does not make sense") {
-		return errors.Wrapf(err, "unable to pull unshallow repo: %s", string(bts))
+		return fmt.Errorf("unable to pull unshallow repo: %s, %w", string(bts), err)
 	}
 
 	return nil
@@ -101,7 +101,7 @@ func (s *Service) SetAuthor(user *User) error {
 
 	bts, err := cmd.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to commit: %s", string(bts))
+		return fmt.Errorf("unable to commit: %s, %w", string(bts), err)
 	}
 
 	cmd = s.commandCreate("git", "config", "user.name", user.Name)
@@ -109,7 +109,7 @@ func (s *Service) SetAuthor(user *User) error {
 
 	bts, err = cmd.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to commit: %s", string(bts))
+		return fmt.Errorf("unable to commit: %s, %w", string(bts), err)
 	}
 
 	return nil
@@ -117,7 +117,7 @@ func (s *Service) SetAuthor(user *User) error {
 
 func (s *Service) RawCommit(u *User, message string, params ...string) error {
 	if err := s.SetAuthor(u); err != nil {
-		return errors.Wrap(err, "unable to set author")
+		return fmt.Errorf("unable to set author, %w", err)
 	}
 
 	baseParams := []string{"commit", "-m", message}
@@ -128,7 +128,7 @@ func (s *Service) RawCommit(u *User, message string, params ...string) error {
 
 	msg, err := cmd.StrCombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to commit: %s", msg)
+		return fmt.Errorf("unable to commit: %s, %w", msg, err)
 	}
 
 	return nil
@@ -137,19 +137,19 @@ func (s *Service) RawCommit(u *User, message string, params ...string) error {
 func (s *Service) Commit(message string, files []string, user *User) error {
 	_, w, err := s.worktree()
 	if err != nil {
-		return errors.Wrap(err, "unable to get worktree")
+		return fmt.Errorf("unable to get worktree, %w", err)
 	}
 
 	for _, f := range files {
 		if _, err := w.Add(f); err != nil {
-			return errors.Wrapf(err, "unable to add file: %s", f)
+			return fmt.Errorf("unable to add file: %s, %w", f, err)
 		}
 	}
 
 	if _, err := w.Commit(message, &git.CommitOptions{
 		Author: &object.Signature{Name: user.Name, Email: user.Email, When: time.Now()},
 	}); err != nil {
-		return errors.Wrap(err, "unable to perform git commit")
+		return fmt.Errorf("unable to perform git commit, %w", err)
 	}
 
 	return nil
@@ -162,12 +162,12 @@ func (s *Service) authEnv(keyPath string) []string {
 
 func (s *Service) bareToNormal(path string) error {
 	if err := os.MkdirAll(fmt.Sprintf("%s/.git", path), 0777); err != nil {
-		return errors.Wrap(err, "unable to create .git folder")
+		return fmt.Errorf("unable to create .git folder, %w", err)
 	}
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return errors.Wrap(err, "unable to list dir")
+		return fmt.Errorf("unable to list dir, %w", err)
 	}
 
 	for _, f := range files {
@@ -177,7 +177,7 @@ func (s *Service) bareToNormal(path string) error {
 
 		if err := os.Rename(fmt.Sprintf("%s/%s", path, f.Name()),
 			fmt.Sprintf("%s/.git/%s", path, f.Name())); err != nil {
-			return errors.Wrap(err, "unable to rename file")
+			return fmt.Errorf("unable to rename file, %w", err)
 		}
 	}
 
@@ -210,21 +210,21 @@ func (s *Service) keyFilePath() (string, error) {
 
 	keyFile, err := os.Create(fmt.Sprintf("%s/sshkey_%d", s.TempDir, time.Now().UnixNano()))
 	if err != nil {
-		return "", errors.Wrap(err, "unable to create temp file for ssh key")
+		return "", fmt.Errorf("unable to create temp file for ssh key, %w", err)
 	}
 	keyFileInfo, _ := keyFile.Stat()
 	keyFilePath := fmt.Sprintf("%s/%s", s.TempDir, keyFileInfo.Name())
 
 	if _, err = keyFile.WriteString(s.key); err != nil {
-		return "", errors.Wrap(err, "unable to write ssh key")
+		return "", fmt.Errorf("unable to write ssh key, %w", err)
 	}
 
 	if err = keyFile.Close(); err != nil {
-		return "", errors.Wrap(err, "unable to close file")
+		return "", fmt.Errorf("unable to close file, %w", err)
 	}
 
 	if err := os.Chmod(keyFilePath, 0400); err != nil {
-		return "", errors.Wrap(err, "unable to chmod ssh key file")
+		return "", fmt.Errorf("unable to chmod ssh key file, %w", err)
 	}
 
 	s._keyFilePath = keyFilePath
@@ -243,7 +243,7 @@ func IsErrReferenceNotFound(err error) bool {
 func (s *Service) RawPull(params ...string) error {
 	keyPath, err := s.keyFilePath()
 	if err != nil {
-		return errors.Wrap(err, "unable to init auth")
+		return fmt.Errorf("unable to init auth, %w", err)
 	}
 
 	baseParams := []string{"pull"}
@@ -255,7 +255,7 @@ func (s *Service) RawPull(params ...string) error {
 
 	msg, err := cmd.StrCombinedOutput()
 	if err != nil {
-		return errors.Errorf("unable to pull: %s, %w", msg, err)
+		return fmt.Errorf("unable to pull: %s, %w", msg, err)
 	}
 
 	return nil
@@ -264,32 +264,32 @@ func (s *Service) RawPull(params ...string) error {
 func (s *Service) Pull(remoteName string) (*object.Commit, error) {
 	r, w, err := s.worktree()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get worktree")
+		return nil, fmt.Errorf("unable to get worktree, %w", err)
 	}
 
 	keyPath, err := s.keyFilePath()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create key file")
+		return nil, fmt.Errorf("unable to create key file, %w", err)
 	}
 
 	publicKeys, err := ssh.NewPublicKeysFromFile(s.user, keyPath, "")
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create public keys")
+		return nil, fmt.Errorf("unable to create public keys, %w", err)
 	}
 	publicKeys.HostKeyCallback = cssh.InsecureIgnoreHostKey()
 
 	if err := w.Pull(&git.PullOptions{RemoteName: remoteName, Auth: publicKeys}); err != nil {
-		return nil, errors.Wrap(err, "unable to pull")
+		return nil, fmt.Errorf("unable to pull, %w", err)
 	}
 
 	ref, err := r.Head()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get ref")
+		return nil, fmt.Errorf("unable to get ref, %w", err)
 	}
 
 	commit, err := r.CommitObject(ref.Hash())
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get last commit")
+		return nil, fmt.Errorf("unable to get last commit, %w", err)
 	}
 
 	return commit, nil
@@ -298,7 +298,7 @@ func (s *Service) Pull(remoteName string) (*object.Commit, error) {
 func (s *Service) Push(remoteName string, pushParams ...string) error {
 	keyPath, err := s.keyFilePath()
 	if err != nil {
-		return errors.Wrap(err, "unable to init auth")
+		return fmt.Errorf("unable to init auth, %w", err)
 	}
 
 	basePushParams := []string{"--git-dir", path.Join(s.path, ".git"),
@@ -310,7 +310,7 @@ func (s *Service) Push(remoteName string, pushParams ...string) error {
 	pushCMD.SetDir(s.path)
 
 	if bts, err := pushCMD.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to push changes, err: %s", string(bts))
+		return fmt.Errorf("unable to push changes, err: %s, %w", string(bts), err)
 	}
 
 	return nil
@@ -328,15 +328,15 @@ func (s *Service) SetFileContents(filePath, contents string) error {
 
 	fp, err := os.Create(filePath)
 	if err != nil {
-		return errors.Wrapf(err, "unable to create file: %s", filePath)
+		return fmt.Errorf("unable to create file: %s, %w", filePath, err)
 	}
 
 	if _, err := fp.WriteString(contents); err != nil {
-		return errors.Wrapf(err, "unable to put file contents, file: %s", filePath)
+		return fmt.Errorf("unable to put file contents, file: %s, %w", filePath, err)
 	}
 
 	if err := fp.Close(); err != nil {
-		return errors.Wrapf(err, "unable to close file: %s", filePath)
+		return fmt.Errorf("unable to close file: %s, %w", filePath, err)
 	}
 
 	return nil
@@ -346,12 +346,12 @@ func (s *Service) GetFileContents(filePath string) (string, error) {
 	filePath = path.Join(s.path, filePath)
 	fp, err := os.Open(filePath)
 	if err != nil {
-		return "", errors.Wrapf(err, "unable to open file: %s", filePath)
+		return "", fmt.Errorf("unable to open file: %s, %w", filePath, err)
 	}
 
 	bts, err := ioutil.ReadAll(fp)
 	if err != nil {
-		return "", errors.Wrapf(err, "unable to read file: %s", filePath)
+		return "", fmt.Errorf("unable to read file: %s, %w", filePath, err)
 	}
 
 	return string(bts), nil
@@ -362,7 +362,7 @@ func (s *Service) AddRemote(remoteName, url string) error {
 	cmd.SetDir(s.path)
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to add remote, err: %s", string(bts))
+		return fmt.Errorf("unable to add remote, err: %s, %w", string(bts), err)
 	}
 
 	return nil
@@ -378,7 +378,7 @@ func (s *Service) RawCheckout(branch string, create bool) error {
 	cmd.SetDir(s.path)
 
 	if bts, err := cmd.CombinedOutput(); err != nil {
-		return errors.Wrapf(err, "unable to checkout, err: %s", string(bts))
+		return fmt.Errorf("unable to checkout, err: %s, %w", string(bts), err)
 	}
 
 	return nil
@@ -387,12 +387,12 @@ func (s *Service) RawCheckout(branch string, create bool) error {
 func (s *Service) Checkout(branch string, create bool) error {
 	_, w, err := s.worktree()
 	if err != nil {
-		return errors.Wrap(err, "unable to get worktree")
+		return fmt.Errorf("unable to get worktree, %w", err)
 	}
 
 	if err := w.Checkout(&git.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(branch), Create: create}); err != nil {
-		return errors.Wrap(err, "unable to checkout branch")
+		return fmt.Errorf("unable to checkout branch, %w", err)
 	}
 
 	return nil
@@ -404,7 +404,7 @@ func (s *Service) DeleteBranch(branchName string) error {
 
 	msg, err := cmd.StrCombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to delete branch, msg: %s", msg)
+		return fmt.Errorf("unable to delete branch, msg: %s, %w", msg, err)
 	}
 
 	return nil
@@ -416,7 +416,7 @@ func (s *Service) Add(file string) error {
 
 	msg, err := cmd.StrCombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "unable to run add, msg: %s", msg)
+		return fmt.Errorf("unable to run add, msg: %s, %w", msg, err)
 	}
 
 	return nil
@@ -431,7 +431,7 @@ func (s *Service) Rebase(targetBranch string, params ...string) (string, error) 
 
 	msg, err := cmd.StrCombinedOutput()
 	if err != nil {
-		return msg, errors.Wrap(err, "unable to run rebase")
+		return msg, fmt.Errorf("unable to run rebase, %w", err)
 	}
 
 	return msg, nil
@@ -440,12 +440,12 @@ func (s *Service) Rebase(targetBranch string, params ...string) (string, error) 
 func (s *Service) worktree() (*git.Repository, *git.Worktree, error) {
 	r, err := git.PlainOpen(s.path)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to open repo")
+		return nil, nil, fmt.Errorf("unable to open repo, %w", err)
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get worktree")
+		return nil, nil, fmt.Errorf("unable to get worktree, %w", err)
 	}
 
 	return r, w, nil
@@ -454,19 +454,19 @@ func (s *Service) worktree() (*git.Repository, *git.Worktree, error) {
 func (s *Service) RemoveBranch(name string) error {
 	r, err := git.PlainOpen(s.path)
 	if err != nil {
-		return errors.Wrap(err, "unable to open repo")
+		return fmt.Errorf("unable to open repo, %w", err)
 	}
 
 	headRef, err := r.Head()
 	if err != nil {
-		return errors.Wrap(err, "unable to get head ref")
+		return fmt.Errorf("unable to get head ref, %w", err)
 	}
 
 	err = r.Storer.RemoveReference(
 		plumbing.NewHashReference(plumbing.NewBranchReferenceName(name), headRef.Hash()).Name())
 
 	if err != nil {
-		return errors.Wrap(err, "unable to remove branch")
+		return fmt.Errorf("unable to remove branch, %w", err)
 	}
 
 	return nil
