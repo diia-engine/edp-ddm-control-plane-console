@@ -106,6 +106,10 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	return
 }
 
+func (c *Controller) triggerJobProvisioner(ctx context.Context.) error {
+	return nil
+}
+
 func (c *Controller) autoApproveMergeRequest(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
 	if instance.Status.ChangeID == "" || instance.Status.Value != gerritService.StatusNew {
 		return nil

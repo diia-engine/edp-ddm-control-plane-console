@@ -13,7 +13,7 @@ const (
 )
 
 func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions []string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 
 	if r.BackupScheduleEnabled == "" && values.RegistryBackup.Enabled {
 		values.RegistryBackup.Enabled = false
@@ -32,7 +32,7 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 		values.RegistryBackup.Enabled = true
 
 		values.OriginalYaml[registryBackupIndex] = values.RegistryBackup
-		mrActions = append(mrActions, mrActionBackupSchedule)
+		*mrActions = append(*mrActions, mrActionBackupSchedule)
 	}
 
 	return nil

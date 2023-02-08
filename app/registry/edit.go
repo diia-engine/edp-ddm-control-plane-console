@@ -327,7 +327,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	mrActions := make([]string, 0)
 
 	for _, proc := range a.createUpdateRegistryProcessors() {
-		if err := proc(ginContext, r, values, vaultSecretData, mrActions); err != nil {
+		if err := proc(ginContext, r, values, vaultSecretData, &mrActions); err != nil {
 			return errors.Wrap(err, "error during registry create")
 		}
 	}

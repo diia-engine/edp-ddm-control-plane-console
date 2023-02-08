@@ -69,9 +69,9 @@ type KeyManagement interface {
 }
 
 func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions []string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 	return []func(*gin.Context, *registry, *Values,
-		map[string]map[string]interface{}, []string) error{
+		map[string]map[string]interface{}, *[]string) error{
 		a.prepareDNSConfig,
 		a.prepareCIDRConfig,
 		a.prepareMailServerConfig,
@@ -332,7 +332,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 	mrActions := make([]string, 0)
 
 	for _, proc := range a.createUpdateRegistryProcessors() {
-		if err := proc(ginContext, r, values, vaultSecretData, mrActions); err != nil {
+		if err := proc(ginContext, r, values, vaultSecretData, &mrActions); err != nil {
 			return errors.Wrap(err, "error during registry create")
 		}
 	}
@@ -446,7 +446,7 @@ func (a *App) keyManagementRegistryVaultPath(registryName string) string {
 }
 
 func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
-	_ map[string]map[string]interface{}, mrActions []string) error {
+	_ map[string]map[string]interface{}, mrActions *[]string) error {
 	values := _values.OriginalYaml
 	//TODO: refactor to new values
 
@@ -505,7 +505,7 @@ func handleCIDRCategory(cidrCategory, dictIndex string, whiteListDict map[string
 }
 
 func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
-	secrets map[string]map[string]interface{}, mrActions []string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 	values := _values.OriginalYaml
 	//TODO: refactor to new values
 
@@ -535,7 +535,7 @@ func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
 }
 
 func (a *App) prepareDNSConfig(ctx *gin.Context, r *registry, _values *Values,
-	secrets map[string]map[string]interface{}, mrActions []string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 
 	//TODO: refactor to new values struct
 	values := _values.OriginalYaml
@@ -703,7 +703,7 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 }
 
 func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Values,
-	secrets map[string]map[string]interface{}, mrActions []string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 	values := _values.OriginalYaml
 	//TODO: refactor to new values
 
