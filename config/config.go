@@ -8,6 +8,7 @@ import (
 	"ddm-admin-console/service/k8s"
 	"ddm-admin-console/service/keycloak"
 	"ddm-admin-console/service/openshift"
+	"ddm-admin-console/service/permissions"
 	"ddm-admin-console/service/vault"
 )
 
@@ -73,4 +74,5 @@ type Services struct {
 	Jenkins      jenkins.ServiceInterface
 	Keycloak     keycloak.ServiceInterface
 	Vault        vault.ServiceInterface
+	PermService  permissions.ServiceInterface
 }

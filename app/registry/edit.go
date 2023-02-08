@@ -41,7 +41,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		}), nil
 	}
 
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
@@ -293,7 +293,7 @@ func (a *App) checkUpdateAccess(codebaseName string, userK8sService k8s.ServiceI
 }
 
 func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retErr error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")

@@ -81,7 +81,7 @@ func (e ExternalRegistration) Status() string {
 }
 
 func (a *App) addExternalReg(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	registryName := ctx.Param("name")
 	er := ExternalRegistration{
@@ -217,7 +217,7 @@ func (a *App) createErMergeRequest(userCtx context.Context, ctx *gin.Context, re
 }
 
 func (a *App) disableExternalReg(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	registryName := ctx.Param("name")
 	systemName := ctx.PostForm("reg-name")
@@ -267,7 +267,7 @@ func (a *App) disableExternalReg(ctx *gin.Context) (router.Response, error) {
 }
 
 func (a *App) removeExternalReg(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	registryName := ctx.Param("name")
 	systemName := ctx.PostForm("reg-name")

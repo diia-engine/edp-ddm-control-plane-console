@@ -37,5 +37,6 @@ func (s *Services) RegistryServices() registry.Services {
 		Gerrit:       s.Gerrit,
 		EDPComponent: s.EDPComponent,
 		Vault:        s.Vault,
+		Perms:        s.PermService,
 	}
 }

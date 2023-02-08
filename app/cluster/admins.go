@@ -41,7 +41,7 @@ func (a *App) updateAdminsView(ctx *gin.Context) (router.Response, error) {
 }
 
 func (a *App) updateAdmins(ctx *gin.Context) error {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	adminsValue := ctx.PostForm("admins")
 

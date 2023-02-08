@@ -5,6 +5,7 @@ import (
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	"ddm-admin-console/service/k8s"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -22,15 +23,20 @@ func (a *App) auth(ctx *gin.Context) (response router.Response, retErr error) {
 	session := sessions.Default(ctx)
 	session.Set(router.AuthTokenSessionKey, token)
 
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	user, err := a.openShiftService.GetMe(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get open shift user")
 	}
 
-	session.Set(router.UserNameSessionKey, user.FullName)
-	session.Set(router.UserEmailSessionKey, user.Metadata.Name)
+	if user.FullName == "" && user.Metadata.Name == "kube:admin" {
+		session.Set(router.UserNameSessionKey, "kubeadmin")
+		session.Set(router.UserEmailSessionKey, "kubeadmin@example.com")
+	} else {
+		session.Set(router.UserNameSessionKey, user.FullName)
+		session.Set(router.UserEmailSessionKey, user.Metadata.Name)
+	}
 
 	if err := a.setRegistryPermissionsToSession(userCtx, session); err != nil {
 		return nil, errors.Wrap(err, "unable to set registry permissions to session")
@@ -39,6 +45,12 @@ func (a *App) auth(ctx *gin.Context) (response router.Response, retErr error) {
 	if err := session.Save(); err != nil {
 		return nil, errors.Wrap(err, "unable to save session")
 	}
+
+	go func() {
+		if err := a.permService.LoadUserRegistries(ctx); err != nil {
+			a.logger.Error(err.Error())
+		}
+	}()
 
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/registry/overview"), nil
 }
@@ -90,6 +102,10 @@ func (a *App) hasAccessToRegistries(k8sService k8s.ServiceInterface) (bool, erro
 }
 
 func (a *App) logout(ctx *gin.Context) (router.Response, error) {
+	if err := a.permService.DeleteTokenContext(ctx); err != nil {
+		return nil, fmt.Errorf("unable to delete token: %w", err)
+	}
+
 	session := sessions.Default(ctx)
 	session.Clear()
 

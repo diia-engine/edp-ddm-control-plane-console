@@ -24,7 +24,7 @@ func (a *App) updateCIDRView(ctx *gin.Context) (router.Response, error) {
 }
 
 func (a *App) updateCIDR(ctx *gin.Context) error {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	cidrValue := ctx.PostForm("admin-cidr")
 
