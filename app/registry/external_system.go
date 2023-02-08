@@ -4,7 +4,6 @@ import (
 	"ddm-admin-console/router"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -58,42 +57,6 @@ func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) Exter
 	return es
 }
 
-func (a *App) prepareRegistryExternalSystemsConfig(ctx *gin.Context, r *registry, _values *Values,
-	secrets map[string]map[string]interface{}) error {
-	values := _values.OriginalYaml
-	//TODO: refactor to new values
-
-	registryExternalSystems := strings.Split(a.Config.RegistryDefaultExternalSystems, ",")
-	if len(registryExternalSystems) == 0 {
-		return nil
-	}
-
-	_, ok := values[externalSystemsKey]
-	if ok {
-		return nil
-	}
-
-	externalSystems := make(map[string]interface{})
-
-	for _, res := range registryExternalSystems {
-		resParts := strings.Split(res, ":")
-		if len(resParts) < 2 {
-			continue
-		}
-
-		externalSystems[resParts[0]] = map[string]string{
-			"type":     resParts[1],
-			"protocol": "REST",
-		}
-	}
-
-	if len(externalSystems) > 0 {
-		values[externalSystemsKey] = externalSystems
-	}
-
-	return nil
-}
-
 func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retErr error) {
 	registryName := ctx.Param("name")
 
@@ -109,9 +72,13 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 		return nil, errors.Wrap(err, "unable to get values")
 	}
 
-	_, ok := values.ExternalSystems[exSystemName]
+	eSys, ok := values.ExternalSystems[exSystemName]
 	if !ok {
 		return nil, errors.New("external system does not exists")
+	}
+
+	if eSys.Type == "platform" {
+		return nil, errors.New("external system is unavailable to delete")
 	}
 
 	delete(values.ExternalSystems, exSystemName)

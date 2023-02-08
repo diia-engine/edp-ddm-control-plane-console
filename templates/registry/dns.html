@@ -2,16 +2,19 @@
     <h2>Налаштування DNS</h2>
 
     <div class="rc-form-group show-errors-span dns-inputs">
-        <label for="officer-dns">Доменне імʼя для кабінету чиновника</label>
-        {{if .officerPortalHost}}
-        <div v-show="!wizard.tabs.dns.editVisible.officer" class="reg-dns-preload-value">
-            <div :val="dnsSetPreloadedValue('officer', '{{.officerPortalHost}}')">[[ wizard.tabs.dns.preloadValues.officer ]]</div>
-            <a @click="dnsUnsetPreloadedValue('officer', $event)" href="#"><i class="fa-solid fa-pen-to-square"></i></a>
+        <label for="officer-dns">Налаштування DNS для кабінету чиновника</label>
+        <div class="toggle-switch">
+            <input @change="wizardDNSEditVisibleChange('officer', $event)" v-model="wizard.tabs.dns.editVisible.officer"
+                   class="switch-input" type="checkbox"
+                   id="officer-switch-input" name="officer-dns-enabled" />
+            <label for="officer-switch-input">Toggle</label>
+            <span>Використати власні значення</span>
         </div>
-        {{end}}
+
         <input :class="{'error': wizard.tabs.dns.formatError.officer}" v-show="wizard.tabs.dns.editVisible.officer"
                 pattern="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$"
-                type="text" name="officer-dns" id="officer-dns" v-model="wizard.tabs.dns.data.officer" />
+                type="text" name="officer-dns" id="officer-dns" v-model="wizard.tabs.dns.data.officer"
+               :placeholder="wizard.tabs.dns.preloadValues.officer" />
         <span v-if="wizard.tabs.dns.formatError.officer">Невірний формат</span>
         <label v-show="wizard.tabs.dns.editVisible.officer" for="">SSL-сертифікат для кабінету чиновника (розширення .pem)</label>
         <input v-show="wizard.tabs.dns.editVisible.officer" ref="officerSSL" id="officer-ssl" name="officer-ssl" type="file"
@@ -22,16 +25,20 @@
     </div>
 
     <div class="rc-form-group show-errors-span dns-inputs">
-        <label for="citizen-dns">Доменне імʼя для кабінету громадянина</label>
-        {{if .citizenPortalHost}}
-        <div v-show="!wizard.tabs.dns.editVisible.citizen" class="reg-dns-preload-value">
-            <div :val="dnsSetPreloadedValue('citizen', '{{.citizenPortalHost}}')">[[ wizard.tabs.dns.preloadValues.citizen ]]</div>
-            <a @click="dnsUnsetPreloadedValue('citizen', $event)" href="#"><i class="fa-solid fa-pen-to-square"></i></a>
+        <label for="citizen-dns">Налаштування DNS для кабінету громадянина</label>
+
+        <div class="toggle-switch">
+            <input @change="wizardDNSEditVisibleChange('citizen', $event)" v-model="wizard.tabs.dns.editVisible.citizen"
+                   class="switch-input" type="checkbox"
+                   id="citizen-switch-input" name="citizen-dns-enabled" />
+            <label for="citizen-switch-input">Toggle</label>
+            <span>Використати власні значення</span>
         </div>
-        {{end}}
+
         <input :class="{'error': wizard.tabs.dns.formatError.citizen }" v-show="wizard.tabs.dns.editVisible.citizen"
                 pattern="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$"
-                type="text" name="citizen-dns" id="citizen-dns" v-model="wizard.tabs.dns.data.citizen" />
+                type="text" name="citizen-dns" id="citizen-dns" v-model="wizard.tabs.dns.data.citizen"
+               :placeholder="wizard.tabs.dns.preloadValues.citizen" />
         <span v-if="wizard.tabs.dns.formatError.citizen">Невірний формат</span>
         <label v-show="wizard.tabs.dns.editVisible.citizen" for="">SSL-сертифікат для кабінету громадянина (розширення .pem)</label>
         <input v-show="wizard.tabs.dns.editVisible.citizen" ref="citizenSSL" id="citizen-ssl" name="citizen-ssl" type="file"
@@ -40,19 +47,7 @@
         <span v-if="wizard.tabs.dns.requiredError.citizen">Обов’язкове поле</span>
         <span v-if="wizard.tabs.dns.typeError.citizen">Невірний тип файлу</span>
     </div>
-{{/*    <div class="rc-form-group show-errors-span">*/}}
-{{/*        <label for="keycloak-dns">Доменне імʼя для keycloak</label>*/}}
-{{/*        <input :class="{'error': wizard.tabs.dns.formatError.keycloak }"*/}}
-{{/*                pattern="^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$"*/}}
-{{/*                type="text" name="keycloak-dns" id="keycloak-dns" v-model="wizard.tabs.dns.data.keycloak" />*/}}
-{{/*        <span v-if="wizard.tabs.dns.formatError.keycloak">Невірний формат</span>*/}}
-{{/*        <label for="">SSL-сертифікат для keycloak (розширення .pem)</label>*/}}
-{{/*        <input ref="keycloakSSL" id="keycloak-ssl" name="keycloak-ssl" type="file"*/}}
-{{/*               :class="{'error': wizard.tabs.dns.requiredError.keycloak || wizard.tabs.dns.typeError.keycloak}"*/}}
-{{/*            @change="wizard.tabs.dns.requiredError.keycloak = false;"/>*/}}
-{{/*        <span v-if="wizard.tabs.dns.requiredError.keycloak">Обов’язкове поле</span>*/}}
-{{/*        <span v-if="wizard.tabs.dns.typeError.keycloak">Невірний тип файлу</span>*/}}
-{{/*    </div>*/}}
+
     <div class="yellow-banner">
         <div class="banner-title">
             Увага!

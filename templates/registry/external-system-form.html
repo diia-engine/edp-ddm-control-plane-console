@@ -1,10 +1,18 @@
 {{ define "registry-external-system" }}
     <div id="external-system-popup" class="popup-window admin-window visible scrollable-popup" v-cloak v-if="externalSystem.formShow">
         <div class="popup-header">
-            <p>Налаштувати зовнішню систему для взаємодії</p>
+            <p v-if="!externalSystem.registryNameEditable">Налаштувати зовнішню систему для взаємодії</p>
+            <p v-if="externalSystem.registryNameEditable">Додати зовнішню систему для взаємодії</p>
             <a href="#" @click="hideExternalSystemForm" class="popup-close hide-popup">
                 <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
             </a>
+        </div>
+        <p class="title-description" v-if="externalSystem.registryNameEditable">
+            Ви можете налаштувати інтеграцію з зовнішньою системою для подальшої взаємодії згідно регламенту реєстру.
+            Мережеві політики доступу будуть створені автоматично.
+        </p>
+        <div class="view-registry-warning">
+            Налаштування взаємодії доступне для версій реєстру 1.9.3 і вище.
         </div>
         <form @submit="setExternalSystemForm" id="external-system-form" method="post"
               :action="externalSystemFormAction()">
@@ -47,23 +55,26 @@
                 </div>
 
                 <div class="rc-form-group">
-                    <label>Вкажіть тип аутентифікації</label>
+                    <label>Вкажіть тип автентифікації</label>
                     <select aria-label="" name="external-system-auth-type"
                             v-model="externalSystem.data.auth.type"
                             @change="changeExternalSystemAuthType">
-                        <option>NO_AUTH</option>
-                        <option>AUTH_TOKEN</option>
-                        <option>BEARER</option>
-                        <option>BASIC</option>
+                        <option v-if="externalSystem.registryName != 'diia'">NO_AUTH</option>
+                        <option v-if="externalSystem.registryName != 'diia'">AUTH_TOKEN</option>
+                        <option v-if="externalSystem.registryName != 'diia'">BEARER</option>
+                        <option v-if="externalSystem.registryName != 'diia'">BASIC</option>
+
                         <option>AUTH_TOKEN+BEARER</option>
                     </select>
-                    <p>Наразі підтримуються: NO_AUTH, AUTH_TOKEN, BEARER, BASIC, AUTH_TOKEN+BEARER</p>
+                    <p>Наразі підтримуються:
+                        <template v-if="externalSystem.registryName != 'diia'">NO_AUTH, AUTH_TOKEN, BEARER, BASIC,</template>
+                        AUTH_TOKEN+BEARER</p>
                 </div>
 
                 <div class="auth-token-bearer" v-if="externalSystem.data.auth.type == 'AUTH_TOKEN+BEARER'">
                     <div class="rc-form-group"
                          :class="{'error': externalSystem.data.auth['auth-url'] == '' && externalSystem.startValidation}">
-                        <label>Вкажіть енд-поінт аутентифікації партнера</label>
+                        <label>Вкажіть енд-поінт автентифікації партнера</label>
                         <input aria-label="" type="text" name="external-system-auth-url"
                                v-model="externalSystem.data.auth['auth-url']" />
                         <p>Вказується абсолютна адреса (https://example.ua/auth) або relative path відносно адреси,
@@ -126,7 +137,10 @@
             </div>
             <div class="popup-footer active">
                 <a href="#" id="admin-cancel" class="hide-popup" @click="hideExternalSystemForm">відмінити</a>
-                <button value="submit" name="admin-apply" type="submit">Підтвердити</button>
+                <button class="submit-green" value="submit" name="admin-apply" type="submit">
+                    <span v-if="!externalSystem.registryNameEditable">Підтвердити</span>
+                    <span v-if="externalSystem.registryNameEditable">Додати</span>
+                </button>
             </div>
         </form>
     </div>
@@ -140,11 +154,11 @@
             </a>
         </div>
         <div class="popup-body">
-            <p>Ви дійсно бажаєете видалити "[[ externalSystem.registryName ]]"?</p>
+            <p>Видалити усі налаштування інтеграціїї з системою??</p>
         </div>
         <div class="popup-footer active">
-            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteExternalSystemForm">Закрити</a>
-            <a :href="deleteExternalSystemLink()">Підтвердити</a>
+            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteExternalSystemForm">Відмінити</a>
+            <a class="href-red" :href="deleteExternalSystemLink()">Видалити</a>
         </div>
     </div>
 {{end}}

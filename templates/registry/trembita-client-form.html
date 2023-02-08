@@ -6,6 +6,9 @@
                 <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
             </a>
         </div>
+        <div class="view-registry-warning">
+            Налаштування взаємодії доступне для версій реєстру 1.9.3 і вище.
+        </div>
         <form @submit="setTrembitaClientForm" id="trembita-client-form" method="post"
               action="/admin/registry/trembita-client/{{.registry.Name}}">
             <div class="popup-body">
@@ -139,12 +142,16 @@
                 </div>
 
                 <div class="rc-form-group">
-                    <label>Вкажіть тип аутентифікації</label>
+                    <label>Вкажіть тип автентифікації</label>
                     <select aria-label="" name="trembita-service-auth-type"
                             v-model="trembitaClient.data.auth.type"
                             @change="changeTrembitaClientAuthType">
-                        <option>NO_AUTH</option>
-                        <option>AUTH_TOKEN</option>
+                        <option
+                                v-if="trembitaClient.registryName == 'idp-exchange-service-registry' || trembitaClient.registryName == 'dracs-registry'">
+                                    NO_AUTH
+
+                        </option>
+                        <option v-if="trembitaClient.registryName == 'edr-registry'">AUTH_TOKEN</option>
                     </select>
                 </div>
 
@@ -162,7 +169,7 @@
             </div>
             <div class="popup-footer active">
                 <a href="#" id="admin-cancel" class="hide-popup" @click="hideTrembitaClientForm">відмінити</a>
-                <button value="submit" name="admin-apply" type="submit">Підтвердити</button>
+                <button value="submit" class="submit-green" name="admin-apply" type="submit">Підтвердити</button>
             </div>
         </form>
     </div>

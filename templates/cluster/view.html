@@ -40,9 +40,9 @@
                 {{if .cidr}}
                     <div class="rg-info-line-horizontal">
                         <span>CIDR для адміністративних компонент</span>
-                        <span>
+                        <span class="cidr-values">
                             {{range .cidr}}
-                                <p class="view-cidr">{{ . }}</p>
+                                <div class="view-cidr">{{ . }}</div>
                             {{end}}
                         </span>
                     </div>

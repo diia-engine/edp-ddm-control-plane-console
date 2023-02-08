@@ -12529,6 +12529,10 @@ p.error {
 
 .toggle-switch span {
     margin-left: 8px;
+    /*color: #000000;
+    font-size: 16px;
+    font-family: "Source Sans Pro", sans-serif;
+    font-weight: 300;*/
 }
 
 .trembita-client-settings {
@@ -12596,4 +12600,28 @@ p.error {
 
 .red-star {
     color: red;
+}
+
+.href-red {
+    background: #D35D47;
+    border-radius: 4px;
+    color: #FFFFFF !important;
+}
+
+.popup-window .title-description {
+    margin: 16px 0 0 8px;
+    font-family: "Source Sans Pro", sans-serif;
+    font-size: 16px;
+}
+
+.submit-green {
+    background: #6DA300 !important;
+}
+
+.view-registry-warning {
+    background: #FFFBE6;
+    padding: 16px 24px;
+    /*margin-bottom: 32px;*/
+    margin: 16px 8px 0 8px;
+    font-size: 12px;
 }

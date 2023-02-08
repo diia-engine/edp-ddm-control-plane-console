@@ -105,9 +105,9 @@
             {{if .citizenCIDR}}
             <div class="rg-info-line-horizontal">
                 <span>CIDR для портала громадянина</span>
-                <span>
+                <span class="cidr-values">
                     {{range .citizenCIDR}}
-                        <p class="view-cidr">{{ . }}</p>
+                        <div class="view-cidr">{{ . }}</div>
                     {{end}}
                 </span>
             </div>
@@ -115,9 +115,9 @@
             {{if .adminCIDR}}
             <div class="rg-info-line-horizontal">
                 <span>CIDR для адміністративних компонент</span>
-                <span>
+                <span class="cidr-values">
                     {{range .adminCIDR}}
-                        <p class="view-cidr">{{ . }}</p>
+                        <div class="view-cidr">{{ . }}</div>
                     {{end}}
                 </span>
             </div>
@@ -140,7 +140,7 @@
                     <th>Назва</th>
                     <th>Рівень</th>
                     <th>Протокол інтеграції</th>
-                    <th>Тип аутентифікації</th>
+                    <th>Тип автентифікації</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -182,7 +182,7 @@
                     <th>Назва</th>
                     <th>Рівень</th>
                     <th>Протокол інтеграції</th>
-                    <th>Тип аутентифікації</th>
+                    <th>Тип автентифікації</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -201,7 +201,7 @@
                                 <a href="#" @click="showExternalSystemForm('{{ $index }}', $event)">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
-                                <a href="#" @click="showDeleteExternalSystemForm('{{ $index }}')">
+                                <a {{if eq "platform" $al.Type}}title="Система недоступна для видалення"{{end}} href="#" @click="showDeleteExternalSystemForm('{{ $index }}', '{{$al.Type}}', $event)">
                                     <i class="fa-solid fa-trash registry-trash {{if eq "platform" $al.Type}}inactive{{end}} "></i>
                                 </a>
                             </div>
