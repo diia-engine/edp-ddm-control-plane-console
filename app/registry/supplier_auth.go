@@ -14,7 +14,7 @@ const (
 )
 
 func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}) error {
+	secrets map[string]map[string]interface{}, mrActions []string) error {
 
 	if r.SupAuthBrowserFlow == "" {
 		return nil

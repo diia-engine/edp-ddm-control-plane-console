@@ -24,6 +24,7 @@ const (
 	MRLabelAction              = "console/action"
 	MRLabelActionBranchMerge   = "branch-merge"
 	mrAnnotationRegName        = "ext-reg/name"
+	MRAnnotationActions        = "actions"
 	mrAnnotationRegType        = "ext-reg/type"
 	externalSystemTypeExternal = "external-system"
 	erValuesIndex              = "nontrembita-external-registration"

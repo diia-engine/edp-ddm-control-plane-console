@@ -324,9 +324,10 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	vaultSecretData := make(map[string]map[string]interface{})
+	mrActions := make([]string, 0)
 
 	for _, proc := range a.createUpdateRegistryProcessors() {
-		if err := proc(ginContext, r, values, vaultSecretData); err != nil {
+		if err := proc(ginContext, r, values, vaultSecretData, mrActions); err != nil {
 			return errors.Wrap(err, "error during registry create")
 		}
 	}
@@ -337,7 +338,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	}
 
 	if initialValuesHash != changedValuesHash {
-		if err := CreateEditMergeRequest(ginContext, r.Name, values.OriginalYaml, a.Gerrit); err != nil {
+		if err := CreateEditMergeRequest(ginContext, r.Name, values.OriginalYaml, a.Gerrit, mrActions); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}
 	} else if keysUpdated {
@@ -377,7 +378,7 @@ type MRLabel struct {
 }
 
 func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[string]interface{},
-	gerritService gerrit.ServiceInterface, labels ...MRLabel) error {
+	gerritService gerrit.ServiceInterface, mrActions []string, labels ...MRLabel) error {
 	//_, values, err := GetValuesFromGit(ctx, projectName, gerritService)
 	//if err != nil {
 	//	return errors.Wrap(err, "unable to get values from git")
@@ -420,6 +421,11 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[str
 		_labels[l.Key] = l.Value
 	}
 
+	mrActionsJsonBts, err := json.Marshal(mrActions)
+	if err != nil {
+		return fmt.Errorf("unable to encode mr actions, %w", err)
+	}
+
 	if err := gerritService.CreateMergeRequestWithContents(ctx, &gerrit.MergeRequest{
 		ProjectName:   projectName,
 		Name:          fmt.Sprintf("reg-edit-mr-%s-%d", projectName, time.Now().Unix()),
@@ -428,7 +434,9 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[str
 		CommitMessage: fmt.Sprintf("edit registry"),
 		TargetBranch:  "master",
 		Labels:        _labels,
-		Annotations:   map[string]string{},
+		Annotations: map[string]string{
+			MRAnnotationActions: string(mrActionsJsonBts),
+		},
 	}, map[string]string{
 		ValuesLocation: string(valuesYaml),
 	}); err != nil {
