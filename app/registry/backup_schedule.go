@@ -9,7 +9,7 @@ import (
 
 const (
 	registryBackupIndex    = "registryBackup"
-	mrActionBackupSchedule = "backup-schedule"
+	MRActionBackupSchedule = "backup-schedule"
 )
 
 func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Values,
@@ -32,7 +32,7 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 		values.RegistryBackup.Enabled = true
 
 		values.OriginalYaml[registryBackupIndex] = values.RegistryBackup
-		*mrActions = append(*mrActions, mrActionBackupSchedule)
+		*mrActions = append(*mrActions, MRActionBackupSchedule)
 	}
 
 	return nil

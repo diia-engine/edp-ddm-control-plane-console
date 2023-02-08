@@ -6,14 +6,18 @@ import (
 	"ddm-admin-console/config"
 	"ddm-admin-console/controller"
 	"ddm-admin-console/controller/codebase"
+	codebaseSvc "ddm-admin-console/service/codebase"
 	gerritService "ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/git"
+	"ddm-admin-console/service/jenkins"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path"
 	"reflect"
+	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -31,20 +35,25 @@ import (
 )
 
 type Controller struct {
-	logger    controller.Logger
-	mgr       ctrl.Manager
-	k8sClient client.Client
-	cnf       *config.Settings
-	gerrit    gerritService.ServiceInterface
+	logger          controller.Logger
+	mgr             ctrl.Manager
+	k8sClient       client.Client
+	cnf             *config.Settings
+	gerrit          gerritService.ServiceInterface
+	codebaseService codebaseSvc.ServiceInterface
+	jenkinsService  jenkins.ServiceInterface
 }
 
-func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerrit gerritService.ServiceInterface) error {
+func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerrit gerritService.ServiceInterface,
+	cbService codebaseSvc.ServiceInterface, jenkinsService jenkins.ServiceInterface) error {
 	c := Controller{
-		mgr:       mgr,
-		logger:    logger,
-		k8sClient: mgr.GetClient(),
-		cnf:       cnf,
-		gerrit:    gerrit,
+		mgr:             mgr,
+		logger:          logger,
+		k8sClient:       mgr.GetClient(),
+		cnf:             cnf,
+		gerrit:          gerrit,
+		codebaseService: cbService,
+		jenkinsService:  jenkinsService,
 	}
 
 	if err := ctrl.NewControllerManagedBy(mgr).
@@ -100,13 +109,74 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return
 	}
 
+	if err := c.triggerJobProvisioner(ctx, &instance); err != nil {
+		resultErr = fmt.Errorf("unable to triggerJobProvisioner MR, err: %w", err)
+		return
+	}
+
 	c.logger.Infow("reconciling merge request done", "Request.Namespace", request.Namespace,
 		"Request.Name", request.Name)
 
 	return
 }
 
-func (c *Controller) triggerJobProvisioner(ctx context.Context.) error {
+func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
+	if instance.Status.Value != gerritService.StatusMerged {
+		return nil
+	}
+
+	js, ok := instance.Annotations[registry.MRAnnotationActions]
+	if !ok {
+		return nil
+	}
+
+	var actions []string
+	if err := json.Unmarshal([]byte(js), &actions); err != nil {
+		return fmt.Errorf("unable to unmarshal actions")
+	}
+
+	backupSchedule := false
+	for _, a := range actions {
+		if a == registry.MRActionBackupSchedule {
+			backupSchedule = true
+		}
+	}
+
+	if !backupSchedule {
+		return nil
+	}
+
+	cb, err := c.codebaseService.Get(instance.Spec.ProjectName)
+	if err != nil {
+		return fmt.Errorf("unable to get project codebase, %w", err)
+	}
+
+	if cb.Spec.JobProvisioning == nil {
+		return fmt.Errorf("project has no job provisioning")
+	}
+
+	if err := c.jenkinsService.CreateJobBuildRun(ctx, fmt.Sprintf("backup-schedule-%d", time.Now().Unix()),
+		fmt.Sprintf("/job-provisions/ci/%s", *cb.Spec.JobProvisioning), map[string]string{}); err != nil {
+		return fmt.Errorf("unable to create job build run")
+	}
+
+	var replaceActions []string
+	for _, a := range actions {
+		if a != registry.MRActionBackupSchedule {
+			replaceActions = append(replaceActions, a)
+		}
+	}
+
+	bts, err := json.Marshal(replaceActions)
+	if err != nil {
+		return fmt.Errorf("unable to marshal json, %w", err)
+	}
+
+	instance.Annotations[registry.MRAnnotationActions] = string(bts)
+	if err := c.k8sClient.Update(ctx, instance); err != nil {
+		return fmt.Errorf("unable to update MR instance, %w", err)
+	}
+
 	return nil
 }
 
