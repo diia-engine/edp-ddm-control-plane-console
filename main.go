@@ -210,7 +210,7 @@ func initControllers(sch *runtime.Scheme, namespace string, logger *zap.Logger, 
 		return errors.Wrap(err, "unable to init codebase controller")
 	}
 
-	if err := mergeRequestController.Make(mgr, l, cnf, services.Gerrit); err != nil {
+	if err := mergeRequestController.Make(mgr, l, cnf, services.Gerrit, services.Codebase, services.Jenkins); err != nil {
 		return errors.Wrap(err, "unable to init merge request controller")
 	}
 
