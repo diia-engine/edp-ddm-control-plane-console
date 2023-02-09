@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path"
 	"reflect"
+	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 
@@ -143,7 +144,7 @@ func (c *Controller) autoApproveMergeRequest(ctx context.Context, instance *gerr
 // 9. create new change to source branch with new commit
 // 10. apply and submit change
 // 11. set merge request cr spec source branch to pass it to gerrit operator
-
+//TODO: move this logic to registry upgrade app, to remove MR duplication
 func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
 	if instance.Labels[registry.MRLabelAction] != registry.MRLabelActionBranchMerge ||
 		instance.Spec.SourceBranch != "" || instance.Status.ChangeID != "" {
@@ -240,8 +241,14 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	}
 
 	reloadInstance.Spec.SourceBranch = sourceBranch
-	if err := c.k8sClient.Update(ctx, &reloadInstance); err != nil {
-		return fmt.Errorf("unable to update merge request, err: %w", err)
+	reloadInstance.Name = fmt.Sprintf("%s-update-%d", instance.Spec.ProjectName, time.Now().Unix())
+	reloadInstance.ResourceVersion = ""
+	if err := c.k8sClient.Create(ctx, &reloadInstance); err != nil {
+		return fmt.Errorf("unable to create duplicate instance, %w", err)
+	}
+
+	if err := c.k8sClient.Delete(ctx, instance); err != nil {
+		return fmt.Errorf("unable to delete old mr CR, %w", err)
 	}
 
 	return nil

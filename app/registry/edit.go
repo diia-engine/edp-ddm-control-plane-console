@@ -245,9 +245,15 @@ func (a *App) loadCIDRConfig(values *Values, rspParams gin.H) error {
 	//TODO: remove this and pass whole values yaml to edit view
 	whiteListIPDict := make(map[string][]string)
 
-	whiteListIPDict["admin"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
-	whiteListIPDict["citizen"] = strings.Split(values.Global.WhiteListIP.CitizenPortal, " ")
-	whiteListIPDict["officer"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
+	if values.Global.WhiteListIP.AdminRoutes != "" {
+		whiteListIPDict["admin"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
+	}
+	if values.Global.WhiteListIP.CitizenPortal != "" {
+		whiteListIPDict["citizen"] = strings.Split(values.Global.WhiteListIP.CitizenPortal, " ")
+	}
+	if values.Global.WhiteListIP.OfficerPortal != "" {
+		whiteListIPDict["officer"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
+	}
 
 	cidrConfig, err := json.Marshal(whiteListIPDict)
 	if err != nil {
