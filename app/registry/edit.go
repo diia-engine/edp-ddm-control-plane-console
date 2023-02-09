@@ -41,7 +41,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		}), nil
 	}
 
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
@@ -109,7 +109,6 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 }
 
 func (a *App) loadValuesEditConfig(values *Values, rspParams gin.H, r *registry) error {
-
 	if err := a.loadSMTPConfig(values.OriginalYaml, rspParams); err != nil {
 		return errors.Wrap(err, "unable to load smtp config")
 	}
@@ -128,6 +127,10 @@ func (a *App) loadValuesEditConfig(values *Values, rspParams gin.H, r *registry)
 		return errors.Wrap(err, "unable to load resources config")
 	}
 
+	if err := a.loadIDGovUAClientID(values); err != nil {
+		return fmt.Errorf("unable to load secret: %w", err)
+	}
+
 	rspParams["model"] = r
 
 	registryData, err := json.Marshal(r)
@@ -142,6 +145,41 @@ func (a *App) loadValuesEditConfig(values *Values, rspParams gin.H, r *registry)
 	}
 	rspParams["registryValues"] = string(valuesJson)
 
+	return nil
+}
+
+func (a *App) loadIDGovUAClientID(values *Values) error {
+	if values.Keycloak.IdentityProviders.IDGovUA.SecretKey == "" {
+		return nil
+	}
+
+	modPath := ModifyVaultPath(values.Keycloak.IdentityProviders.IDGovUA.SecretKey)
+	s, err := a.Vault.Read(modPath)
+	if err != nil {
+		return fmt.Errorf("unable to load id-gov-ua secret, err: %w", err)
+	}
+
+	data, ok := s.Data["data"]
+	if !ok {
+		return nil
+	}
+
+	dataDict, ok := data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	d, ok := dataDict[idGovUASecretClientID]
+	if !ok {
+		return nil
+	}
+
+	str, ok := d.(string)
+	if !ok {
+		return nil
+	}
+
+	values.Keycloak.IdentityProviders.IDGovUA.ClientID = str
 	return nil
 }
 
@@ -255,7 +293,7 @@ func (a *App) checkUpdateAccess(codebaseName string, userK8sService k8s.ServiceI
 }
 
 func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retErr error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")

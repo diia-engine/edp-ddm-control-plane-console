@@ -1,6 +1,7 @@
 package codebase
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -23,25 +24,41 @@ func (r WithPermissions) FormattedCreatedAtTimezone(timezone string) string {
 	return r.Codebase.CreationTimestamp.In(loc).Format(ViewTimeFormat)
 }
 
+func CheckCodebasePermission(name string, k8sService k8s.ServiceInterface) (canGet, canUpdate, canDelete bool, retErr error) {
+	canGet, err := k8sService.CanI("v2.edp.epam.com", "codebases", "get", name)
+	if err != nil {
+		retErr = fmt.Errorf("unable to check access for codebase: %s, err: %w", name, err)
+		return
+	}
+	if !canGet {
+		return
+	}
+
+	canUpdate, err = k8sService.CanI("v2.edp.epam.com", "codebases", "update", name)
+	if err != nil {
+		retErr = fmt.Errorf("unable to check access for codebase: %s, err: %w", name, err)
+		return
+	}
+
+	canDelete, err = k8sService.CanI("v2.edp.epam.com", "codebases", "delete", name)
+	if err != nil {
+		retErr = fmt.Errorf("unable to check access for codebase: %s, err: %w", name, err)
+		return
+	}
+
+	return
+}
+
 func (s Service) CheckPermissions(initial []Codebase, k8sService k8s.ServiceInterface) ([]WithPermissions, error) {
 	codebases := make([]WithPermissions, 0, len(initial))
 	for i := range initial {
-		canGet, err := k8sService.CanI("v2.edp.epam.com", "codebases", "get", initial[i].Name)
+		canGet, canUpdate, canDelete, err := CheckCodebasePermission(initial[i].Name, k8sService)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to check access for codebase: %s", initial[i].Name)
+			return nil, fmt.Errorf("unable to check codebase permissions: %w", err)
 		}
+
 		if !canGet {
 			continue
-		}
-
-		canUpdate, err := k8sService.CanI("v2.edp.epam.com", "codebases", "update", initial[i].Name)
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to check access for codebase: %s", initial[i].Name)
-		}
-
-		canDelete, err := k8sService.CanI("v2.edp.epam.com", "codebases", "delete", initial[i].Name)
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to check access for codebase: %s", initial[i].Name)
 		}
 
 		codebases = append(codebases, WithPermissions{Codebase: &initial[i], CanDelete: canDelete,

@@ -16,7 +16,7 @@ import (
 )
 
 func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	registryName := ctx.Param("name")
 

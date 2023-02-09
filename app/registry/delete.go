@@ -9,7 +9,7 @@ import (
 )
 
 func (a *App) deleteRegistry(ctx *gin.Context) (response router.Response, retErr error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")
@@ -20,6 +20,8 @@ func (a *App) deleteRegistry(ctx *gin.Context) (response router.Response, retErr
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get registry")
 	}
+
+	a.Perms.DeleteRegistry(registryName)
 
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/registry/overview"), nil
 }

@@ -4,7 +4,8 @@
     <div class="wizard-warning">Зміна типу автентифікації доступна для версій реєстру 1.9.3 і вище.</div>
     <div class="rc-form-group">
         <label for="sup-auth-type">Вкажіть тип автентифікації</label>
-        <select name="sup-auth-browser-flow" id="sup-auth-type" v-model="wizard.tabs.supplierAuthentication.data.authType">
+        <select name="sup-auth-browser-flow" id="sup-auth-type"
+                v-model="wizard.tabs.supplierAuthentication.data.authType" @change="wizardSupAuthFlowChange">
             <option value="dso-officer-auth-flow">Віджет</option>
             <option value="id-gov-ua-officer-redirector">id.gov.ua</option>
         </select>
@@ -12,10 +13,12 @@
     <div class="rc-form-group"
          :class="{'error': wizard.tabs.supplierAuthentication.beginValidation && (wizard.tabs.supplierAuthentication.data.url == '' || wizard.tabs.supplierAuthentication.urlValidationFailed)}">
         <label for="sup-auth-url">Посилання <b class="red-star">*</b></label>
-        <input name="sup-auth-url" id="sup-auth-url" v-model="wizard.tabs.supplierAuthentication.data.url" />
-        <p>URL, повинен починатись з http:// або https://</p>
+        <!--<input name="sup-auth-url" id="sup-auth-url" v-model="wizard.tabs.supplierAuthentication.data.url" />-->
+        <textarea rows="3" id="sup-auth-url" name="sup-auth-url" v-model="wizard.tabs.supplierAuthentication.data.url"></textarea>
         <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.url == ''">Обов’язкове поле</span>
         <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.urlValidationFailed">Перевірте формат поля</span>
+        <p>URL, повинен починатись з http:// або https://</p>
+
     </div>
     <div v-if="wizard.tabs.supplierAuthentication.data.authType == 'dso-officer-auth-flow'" class="rc-form-group"
          :class="{'error': wizard.tabs.supplierAuthentication.beginValidation && (wizard.tabs.supplierAuthentication.data.widgetHeight == '' || wizard.tabs.supplierAuthentication.heightIsNotNumber)}">
@@ -35,7 +38,7 @@
         <div class="rc-form-group"
              :class="{'error': wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.secret == ''}">
             <label for="diia-client-secret">Клієнтський секрет (secret) <b class="red-star">*</b></label>
-            <input name="sup-auth-client-secret" id="diia-client-secret" v-model="wizard.tabs.supplierAuthentication.data.secret" />
+            <input type="password" name="sup-auth-client-secret" id="diia-client-secret" v-model="wizard.tabs.supplierAuthentication.data.secret" />
             <span v-if="wizard.tabs.supplierAuthentication.beginValidation && wizard.tabs.supplierAuthentication.data.secret == ''">Обов’язкове поле</span>
         </div>
     </div>

@@ -5,6 +5,7 @@ import (
 	mergeRequestController "ddm-admin-console/controller/merge_request"
 	"ddm-admin-console/mocks"
 	"ddm-admin-console/service/openshift"
+	"ddm-admin-console/service/permissions"
 	"ddm-admin-console/service/vault"
 	"encoding/gob"
 	"flag"
@@ -182,6 +183,8 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init vault service")
 	}
+
+	serviceItems.PermService = permissions.Make(serviceItems.Codebase, serviceItems.K8S)
 
 	return &serviceItems, nil
 }

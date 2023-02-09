@@ -11,6 +11,7 @@ const (
 	supAuthBrowserFlowWidget  = "dso-officer-auth-flow"
 	supAuthBrowserFlowIdGovUa = "id-gov-ua-officer-redirector"
 	idGovUASecretPath         = "officer-id-gov-ua-client-info"
+	idGovUASecretClientID     = "clientId"
 )
 
 func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *Values,
@@ -33,10 +34,10 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 		values.Keycloak.IdentityProviders.IDGovUA.URL = r.SupAuthURL
 
 		secretPath := a.vaultRegistryPathKey(r.Name, idGovUASecretPath)
-		if r.SupAuthClientID != "" && r.SupAuthClientID != "*****" && r.SupAuthClientSecret != "" && r.SupAuthClientSecret != "*****" {
+		if r.SupAuthClientID != "" && r.SupAuthClientSecret != "" && r.SupAuthClientSecret != "*****" {
 			secrets[secretPath] = map[string]interface{}{
-				"clientId":     r.SupAuthClientID,
-				"clientSecret": r.SupAuthClientSecret,
+				idGovUASecretClientID: r.SupAuthClientID,
+				"clientSecret":        r.SupAuthClientSecret,
 			}
 		}
 		values.Keycloak.IdentityProviders.IDGovUA.SecretKey = secretPath
