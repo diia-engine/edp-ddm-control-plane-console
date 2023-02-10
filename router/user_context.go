@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -18,19 +19,34 @@ const (
 	CanCreateRegistriesSessionKey      = "can-create-registries"
 )
 
-func (r *Router) ContextWithUserAccessToken(ctx *gin.Context) context.Context {
+var ErrTokenNotFound = errors.New("token not found")
+
+func ExtractToken(ctx *gin.Context) (*oauth2.Token, error) {
 	session := sessions.Default(ctx)
 	token := session.Get(AuthTokenSessionKey)
 	if token == nil {
-		return context.Background()
+		return nil, ErrTokenNotFound
 	}
 
 	tokenData, ok := token.(*oauth2.Token)
 	if !ok {
+		return nil, ErrTokenNotFound
+	}
+
+	return tokenData, nil
+}
+
+func ContextWithUserAccessToken(ctx *gin.Context) context.Context {
+	tokenData, err := ExtractToken(ctx)
+	if err != nil {
 		return context.Background()
 	}
 
-	return context.WithValue(context.Background(), AuthTokenSessionKey, tokenData.AccessToken)
+	return ContextWithUserAccessTokenString(tokenData.AccessToken)
+}
+
+func ContextWithUserAccessTokenString(token string) context.Context {
+	return context.WithValue(context.Background(), AuthTokenSessionKey, token)
 }
 
 func UserDataMiddleware(ctx *gin.Context) {

@@ -12529,6 +12529,10 @@ p.error {
 
 .toggle-switch span {
     margin-left: 8px;
+    /*color: #000000;
+    font-size: 16px;
+    font-family: "Source Sans Pro", sans-serif;
+    font-weight: 300;*/
 }
 
 .trembita-client-settings {
@@ -12585,6 +12589,13 @@ p.error {
 
 .auth-token-bearer {
     margin-bottom: 24px;
+}
+
+.wizard-warning {
+    background: #FFFBE6;
+    padding: 16px 24px;
+    margin-bottom: 32px;
+    font-size: 12px;
 }
 
 .href-red {
