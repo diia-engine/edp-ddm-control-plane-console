@@ -162,7 +162,7 @@ func (r *Registry) FilterCodebases(ginContext *gin.Context, cbs []codebase.Codeb
 				return nil, fmt.Errorf("unable to check perms: %w", err)
 			}
 
-			perm = &RegistryPermission{CanUpdate: canUpdate, CanDelete: canDelete, CanGet: true, Expiry: tok.Expiry}
+			perm = &RegistryPermission{CanUpdate: canUpdate, CanDelete: canDelete, CanGet: canGet, Expiry: tok.Expiry}
 			r.SetPermission(tok.AccessToken, cb.Name, *perm)
 
 			if !canGet {
