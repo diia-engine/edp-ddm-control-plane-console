@@ -28,6 +28,7 @@ rules:
     - create
     - watch
     - update
+    - delete
 - apiGroups:
   - '*'
   attributeRestrictions: null
