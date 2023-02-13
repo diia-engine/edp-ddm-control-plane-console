@@ -156,7 +156,17 @@ func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerrit
 	}
 
 	if err := c.jenkinsService.CreateJobBuildRun(ctx, fmt.Sprintf("backup-schedule-%d", time.Now().Unix()),
-		fmt.Sprintf("/job-provisions/job/ci/job/%s", *cb.Spec.JobProvisioning), map[string]string{}); err != nil {
+		fmt.Sprintf("/job-provisions/job/ci/job/%s", *cb.Spec.JobProvisioning), map[string]string{
+			"NAME":                     cb.Name,
+			"TYPE":                     cb.Spec.Type,
+			"BUILD_TOOL":               cb.Spec.BuildTool,
+			"BRANCH":                   cb.Spec.DefaultBranch,
+			"GIT_SERVER_CR_NAME":       cb.Spec.GitServer,
+			"GIT_SERVER_CR_VERSION":    "v2",
+			"GIT_CREDENTIALS_ID":       "gerrit-ciuser-sshkey",
+			"REPOSITORY_PATH":          fmt.Sprintf("ssh://jenkins@gerrit:31000/%s", cb.Name),
+			"JIRA_INTEGRATION_ENABLED": "false",
+		}); err != nil {
 		return fmt.Errorf("unable to create job build run")
 	}
 
