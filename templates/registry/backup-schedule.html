@@ -20,7 +20,7 @@
         </div>
 
         <div v-show="wizard.tabs.backupSchedule.nextLaunches" class="rc-form-group">
-            <label>Наступні запуски резервного копіювання (за київським часом)</label>
+            <label>Наступні запуски резервного копіювання (UTC)</label>
             <ul class="cron-next-dates">
                 <li v-for="date in wizard.tabs.backupSchedule.nextDates">[[ date ]]</li>
             </ul>
