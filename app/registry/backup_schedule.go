@@ -18,6 +18,7 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 	if r.BackupScheduleEnabled == "" && values.RegistryBackup.Enabled {
 		values.RegistryBackup.Enabled = false
 		values.OriginalYaml[registryBackupIndex] = values.RegistryBackup
+		*mrActions = append(*mrActions, MRActionBackupSchedule)
 		return nil
 	}
 
