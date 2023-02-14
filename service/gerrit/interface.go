@@ -21,4 +21,6 @@ type ServiceInterface interface {
 	UpdateMergeRequestStatus(ctx context.Context, mr *GerritMergeRequest) error
 	ApproveAndSubmitChange(changeID, username, email string) error
 	GetMergeListCommits(ctx context.Context, changeID, revision string) ([]Commit, error)
+	GetChangeDetails(changeID string) (*goGerrit.ChangeInfo, error)
+	GetProjectInfo(projectName string) (*goGerrit.ProjectInfo, error)
 }

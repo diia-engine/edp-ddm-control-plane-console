@@ -19,16 +19,15 @@ import (
 	"reflect"
 	"time"
 
-	"k8s.io/apimachinery/pkg/types"
-
-	k8sController "sigs.k8s.io/controller-runtime/pkg/controller"
-
+	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	k8sController "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -40,18 +39,20 @@ type Controller struct {
 	k8sClient       client.Client
 	cnf             *config.Settings
 	gerrit          gerritService.ServiceInterface
+	appCache        *cache.Cache
 	codebaseService codebaseSvc.ServiceInterface
 	jenkinsService  jenkins.ServiceInterface
 }
 
 func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerrit gerritService.ServiceInterface,
-	cbService codebaseSvc.ServiceInterface, jenkinsService jenkins.ServiceInterface) error {
+	cbService codebaseSvc.ServiceInterface, jenkinsService jenkins.ServiceInterface, appCache *cache.Cache) error {
 	c := Controller{
 		mgr:             mgr,
 		logger:          logger,
 		k8sClient:       mgr.GetClient(),
 		cnf:             cnf,
 		gerrit:          gerrit,
+		appCache:        appCache,
 		codebaseService: cbService,
 		jenkinsService:  jenkinsService,
 	}
@@ -111,6 +112,13 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if err := c.triggerJobProvisioner(ctx, &instance); err != nil {
 		resultErr = fmt.Errorf("unable to triggerJobProvisioner MR, err: %w", err)
+		return
+	}
+
+	if err := c.addCachedFiles(ctx, &instance); err != nil {
+		c.logger.Errorw("unable to proceed cached files", "Request.Namespace", request.Namespace,
+			"Request.Name", request.Name, "error", fmt.Sprintf("%+v", err))
+		resultErr = errors.Wrap(err, "unable to prepare merge request")
 		return
 	}
 
@@ -185,6 +193,78 @@ func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerrit
 	instance.Annotations[registry.MRAnnotationActions] = string(bts)
 	if err := c.k8sClient.Update(ctx, instance); err != nil {
 		return fmt.Errorf("unable to update MR instance, %w", err)
+
+	}
+
+	return nil
+}
+
+func (c *Controller) addCachedFiles(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
+	if instance.Status.Value != gerritService.StatusNew {
+		return nil
+	}
+
+	files, ok := c.appCache.Get(registry.CachedFilesIndex(instance.Spec.ProjectName))
+
+	_, ok = files.([]registry.CachedFile)
+	if !ok {
+		return errors.New("wrong files type")
+	}
+
+	_, _, projectPath, err := prepareControllerFolders(c.cnf.TempFolder, instance.Spec.ProjectName)
+	if err != nil {
+		return errors.Wrap(err, "unable to prepare controller tmp folders")
+	}
+
+	gitService, err := c.initGitService(ctx, projectPath)
+	if err != nil {
+		return errors.Wrap(err, "unable to init git service")
+	}
+
+	if err := gitService.Clone(fmt.Sprintf("%s/%s", codebase.GerritSSHURL(c.cnf), instance.Spec.ProjectName)); err != nil {
+		return errors.Wrap(err, "unable to clone repo")
+	}
+
+	detail, err := c.gerrit.GetChangeDetails(instance.Status.ChangeID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get change details")
+	}
+
+	var (
+		ref           string
+		commitMessage string
+	)
+	for _, v := range detail.Revisions {
+		ref = v.Ref
+		commitMessage = v.Commit.Message
+	}
+
+	if ref == "" {
+		return errors.New("empty ref")
+	}
+
+	if commitMessage == "" {
+		commitMessage = fmt.Sprintf("edit registry\n\nChange-Id: %s", instance.Status.ChangeID)
+	}
+
+	if err := gitService.RawPull("origin", ref); err != nil {
+		return fmt.Errorf("unable to pull refs, %w", err)
+	}
+
+	changed, err := codebase.SetCachedFiles(instance.Spec.ProjectName, c.appCache, gitService)
+	if err != nil {
+		return fmt.Errorf("unable to set cached files, %w", err)
+	}
+
+	if changed {
+		if err := gitService.RawCommit(&git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail},
+			commitMessage, "--amend"); err != nil {
+			return fmt.Errorf("unable to commit, %w", err)
+		}
+
+		if err := gitService.Push("origin", fmt.Sprintf("HEAD:refs/for/%s", instance.TargetBranch())); err != nil {
+			return fmt.Errorf("unable to push refs, %w", err)
+		}
 	}
 
 	return nil
@@ -303,15 +383,12 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		return fmt.Errorf("unable to generate change id, err: %w", err)
 	}
 
-	if err := gitService.SetAuthor(&git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail}); err != nil {
-		return fmt.Errorf("unable to set author, err: %w", err)
-	}
-
-	if err := gitService.RawCommit(
+	if err := gitService.RawCommit(&git.User{Name: instance.Spec.AuthorName, Email: instance.Spec.AuthorEmail},
 		git.CommitMessageWithChangeID(
 			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
-				targetBranch), changeID)); err != nil {
-		return fmt.Errorf("unable to commit changes, err: %w", err)
+				targetBranch),
+			changeID)); err != nil {
+		return errors.Wrap(err, "unable to commit changes")
 	}
 
 	if err := gitService.Push("origin", fmt.Sprintf("refs/heads/%s:%s", sourceBranch, sourceBranch), "--force"); err != nil {

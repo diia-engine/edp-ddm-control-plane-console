@@ -330,7 +330,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 		return nil, errors.Wrap(err, "unable to parse registry form")
 	}
 
-	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService, k8sService); err != nil {
+	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService); err != nil {
 		return nil, errors.Wrap(err, "unable to edit registry")
 	}
 
@@ -339,12 +339,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 }
 
 func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *registry, cb *codebase.Codebase,
-	cbService codebase.ServiceInterface, k8sService k8s.ServiceInterface) error {
-
-	keysUpdated, err := CreateRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService)
-	if err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
-	}
+	cbService codebase.ServiceInterface) error {
 
 	cb.Spec.Description = &r.Description
 	if cb.Annotations == nil {
@@ -370,24 +365,33 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		}
 	}
 
+	repoFiles := make(map[string]string)
+
+	if _, err := PrepareRegistryKeys(keyManagement{
+		r: r,
+		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
+			time.Now().Format("20060201T150405Z"))),
+	}, ginContext.Request, vaultSecretData, values.OriginalYaml, repoFiles); err != nil {
+		return errors.Wrap(err, "unable to create registry keys")
+	}
+
+	if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
+		return fmt.Errorf("unable to cache repo file, %w", err)
+	}
+
 	changedValuesHash, err := MapHash(values.OriginalYaml)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values map hash")
 	}
 
-	if initialValuesHash != changedValuesHash {
+	if initialValuesHash != changedValuesHash || len(repoFiles) > 0 {
 		if err := CreateEditMergeRequest(ginContext, r.Name, values.OriginalYaml, a.Gerrit, mrActions); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
-		}
-	} else if keysUpdated {
-		if err := a.Services.Jenkins.CreateJobBuildRun(ctx, fmt.Sprintf("registry-update-%d", time.Now().Unix()),
-			fmt.Sprintf("%s/job/MASTER-Build-%s/", r.Name, r.Name), nil); err != nil {
-			return errors.Wrap(err, "unable to trigger jenkins job build run")
 		}
 	}
 
 	if len(vaultSecretData) > 0 {
-		if err := a.createVaultSecrets(vaultSecretData, false); err != nil {
+		if err := CreateVaultSecrets(a.Vault, vaultSecretData, false); err != nil {
 			return errors.Wrap(err, "unable to create vault secrets")
 		}
 	}
@@ -417,14 +421,6 @@ type MRLabel struct {
 
 func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[string]interface{},
 	gerritService gerrit.ServiceInterface, mrActions []string, labels ...MRLabel) error {
-	//_, values, err := GetValuesFromGit(ctx, projectName, gerritService)
-	//if err != nil {
-	//	return errors.Wrap(err, "unable to get values from git")
-	//}
-	//
-	//for k, v := range editValues {
-	//	values[k] = v
-	//}
 
 	valuesYaml, err := yaml.Marshal(values)
 	if err != nil {

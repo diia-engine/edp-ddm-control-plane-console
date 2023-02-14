@@ -247,7 +247,7 @@ func (a *App) setExternalSystemRegistrySecrets(f *RegistryExternalSystemForm, re
 		return nil
 	}
 
-	if err := a.createVaultSecrets(map[string]map[string]interface{}{
+	if err := CreateVaultSecrets(a.Vault, map[string]map[string]interface{}{
 		secretPath: secretData,
 	}, true); err != nil {
 		return errors.Wrap(err, "unable to create auth token secret")

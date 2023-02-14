@@ -15,14 +15,14 @@ func (s *Services) ClusterServices() cluster.Services {
 
 func (cnf *Settings) ClusterConfig() cluster.Config {
 	return cluster.Config{
-		RegistryRepoHost:                      cnf.RegistryRepoHost,
-		BackupSecretName:                      cnf.BackupSecretName,
-		ClusterRepo:                           cnf.ClusterRepo,
-		CodebaseName:                          cnf.ClusterCodebaseName,
-		VaultClusterAdminsPasswordKey:         cnf.VaultClusterAdminsPasswordKey,
-		VaultClusterAdminsPathTemplate:        cnf.VaultClusterAdminsPathTemplate,
-		VaultKVEngineName:                     cnf.VaultKVEngineName,
-		HardwareINITemplatePath:               cnf.RegistryHardwareKeyINITemplatePath,
-		VaultClusterKeyManagementPathTemplate: cnf.VaultClusterKeyManagementPathTemplate,
+		RegistryRepoHost:              cnf.RegistryRepoHost,
+		BackupSecretName:              cnf.BackupSecretName,
+		ClusterRepo:                   cnf.ClusterRepo,
+		CodebaseName:                  cnf.ClusterCodebaseName,
+		VaultClusterAdminsPasswordKey: cnf.VaultClusterAdminsPasswordKey,
+		VaultClusterPathTemplate:      cnf.VaultClusterPathTemplate,
+		VaultKVEngineName:             cnf.VaultKVEngineName,
+		HardwareINITemplatePath:       cnf.RegistryHardwareKeyINITemplatePath,
+		TempFolder:                    cnf.TempFolder,
 	}
 }

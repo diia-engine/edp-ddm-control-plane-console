@@ -58,3 +58,7 @@ go test -coverprofile=coverage.out && go tool cover -html=coverage.out && rm -rf
 - `oc port-forward -n control-plane service/gerrit 31000:31000 8090:8080`
 - `oc port-forward -n control-plane service/jenkins 8099:8080`
 - `oc port-forward -n user-management service/hashicorp-vault 8200:8200 8201:8201`
+
+## Generate mocks
+
+`mockery --keeptree -r --dir ./service/ --all`

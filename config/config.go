@@ -10,6 +10,8 @@ import (
 	"ddm-admin-console/service/openshift"
 	"ddm-admin-console/service/permissions"
 	"ddm-admin-console/service/vault"
+
+	"github.com/patrickmn/go-cache"
 )
 
 type Settings struct {
@@ -47,6 +49,7 @@ type Settings struct {
 	VaultKVEngineName                     string `envconfig:"VAULT_KV_ENGINE_NAME" default:"registry-kv"`
 	VaultClusterAdminsPathTemplate        string `envconfig:"V_CLS_ADM_PATH_TPL" default:"{engine}/cluster/{admin}"`
 	VaultClusterAdminsPasswordKey         string `envconfig:"V_CLS_ADMIN_SEC_KEY" default:"password"`
+	VaultClusterPathTemplate              string `envconfig:"V_CLS_ADM_PATH_TPL" default:"{engine}/cluster"`
 	VaultClusterKeyManagementPathTemplate string `envconfig:"V_CLS_KEYM_PATH_TPL" default:"{engine}/cluster/key-management"`
 	VaultCitizenSSLPath                   string `encvonfig:"V_SSL_CITIZEN_PATH" default:"custom-dns-names/{registry}/citizen-portal/{host}"`
 	VaultOfficerSSLPath                   string `encvonfig:"V_SSL_CITIZEN_PATH" default:"custom-dns-names/{registry}/officer-portal/{host}"`
@@ -72,5 +75,6 @@ type Services struct {
 	Jenkins      jenkins.ServiceInterface
 	Keycloak     keycloak.ServiceInterface
 	Vault        vault.ServiceInterface
+	Cache        *cache.Cache //TODO: make interface
 	PermService  permissions.ServiceInterface
 }
