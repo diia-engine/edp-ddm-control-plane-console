@@ -86,7 +86,7 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 	values.OriginalYaml[externalSystemsKey] = values.ExternalSystems
 
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -158,7 +158,7 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 	}
 
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -208,7 +208,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 	}
 
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -247,7 +247,7 @@ func (a *App) setExternalSystemRegistrySecrets(f *RegistryExternalSystemForm, re
 		return nil
 	}
 
-	if err := a.createVaultSecrets(map[string]map[string]interface{}{
+	if err := CreateVaultSecrets(a.Vault, map[string]map[string]interface{}{
 		secretPath: secretData,
 	}, true); err != nil {
 		return errors.Wrap(err, "unable to create auth token secret")

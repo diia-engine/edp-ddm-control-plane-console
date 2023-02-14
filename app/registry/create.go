@@ -8,11 +8,11 @@ import (
 	"ddm-admin-console/service/codebase"
 	"ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/k8s"
+	"ddm-admin-console/service/vault"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -24,7 +24,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -49,33 +48,17 @@ const (
 	trembitaRegistriesValuesKet   = "registries"
 )
 
-type KeyManagement interface {
-	KeyDeviceType() string
-	AllowedKeysIssuer() []string
-	AllowedKeysSerial() []string
-	SignKeyIssuer() string
-	SignKeyPwd() string
-	RemoteType() string
-	RemoteSerialNumber() string
-	RemoteKeyPort() string
-	RemoteKeyHost() string
-	RemoteKeyPassword() string
-	INIConfig() string
-	KeysRequired() bool
-	FilesSecretName() string
-	EnvVarsSecretName() string
-}
-
 func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 	return []func(*gin.Context, *registry, *Values,
-		map[string]map[string]interface{}) error{
+		map[string]map[string]interface{}, *[]string) error{
 		a.prepareDNSConfig,
 		a.prepareCIDRConfig,
 		a.prepareMailServerConfig,
 		a.prepareAdminsConfig,
 		a.prepareRegistryResources,
 		a.prepareSupplierAuthConfig,
+		a.prepareBackupSchedule,
 	}
 }
 
@@ -326,24 +309,34 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 	}
 
 	vaultSecretData := make(map[string]map[string]interface{})
+	mrActions := make([]string, 0)
 
 	for _, proc := range a.createUpdateRegistryProcessors() {
-		if err := proc(ginContext, r, values, vaultSecretData); err != nil {
+		if err := proc(ginContext, r, values, vaultSecretData, &mrActions); err != nil {
 			return errors.Wrap(err, "error during registry create")
 		}
 	}
 
-	if err := a.createVaultSecrets(vaultSecretData, false); err != nil {
+	repoFiles := make(map[string]string)
+
+	if _, err := PrepareRegistryKeys(keyManagement{
+		r: r,
+		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
+			time.Now().Format("20060201T150405Z"))),
+	}, ginContext.Request, vaultSecretData, values.OriginalYaml, repoFiles); err != nil {
+		return errors.Wrap(err, "unable to prepare registry keys")
+	}
+
+	if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
+		return fmt.Errorf("unable to cache repo file, %w", err)
+	}
+
+	if err := CreateVaultSecrets(a.Vault, vaultSecretData, false); err != nil {
 		return errors.Wrap(err, "unable to create vault secrets")
 	}
 
 	if err := a.Services.Gerrit.CreateProject(ctx, r.Name); err != nil {
 		return errors.Wrap(err, "unable to create gerrit project")
-	}
-
-	//TODO: move to values yaml
-	if _, err := CreateRegistryKeys(keyManagement{r: r}, ginContext.Request, k8sService); err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
 	}
 
 	cb := a.prepareRegistryCodebase(r)
@@ -354,8 +347,6 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 
 	cb.Annotations = map[string]string{
 		AnnotationTemplateName:    r.RegistryGitTemplate,
-		AnnotationSMPTType:        r.MailServerType, //TODO: remove
-		AnnotationSMPTOpts:        r.MailServerOpts, //TODO: remove
 		AnnotationCreatorUsername: ginContext.GetString(router.UserNameSessionKey),
 		AnnotationCreatorEmail:    ginContext.GetString(router.UserEmailSessionKey),
 		AnnotationValues:          valuesEncoded,
@@ -382,12 +373,12 @@ func ModifyVaultPath(path string) string {
 	return strings.Join(pathParts, "/")
 }
 
-func (a *App) createVaultSecrets(secretData map[string]map[string]interface{}, append bool) error {
+func CreateVaultSecrets(v vault.ServiceInterface, secretData map[string]map[string]interface{}, append bool) error {
 	for vPath, pathSecretData := range secretData {
 		modPath := ModifyVaultPath(vPath)
 
 		if append {
-			sec, err := a.Vault.Read(modPath)
+			sec, err := v.Read(modPath)
 			if err != nil {
 				return errors.Wrap(err, "unable to read secret")
 			}
@@ -407,7 +398,7 @@ func (a *App) createVaultSecrets(secretData map[string]map[string]interface{}, a
 			}
 		}
 
-		if _, err := a.Vault.Write(modPath, map[string]interface{}{
+		if _, err := v.Write(modPath, map[string]interface{}{
 			"data": pathSecretData,
 		}); err != nil {
 			return errors.Wrap(err, "unable to write to vault")
@@ -442,7 +433,7 @@ func (a *App) keyManagementRegistryVaultPath(registryName string) string {
 }
 
 func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
-	_ map[string]map[string]interface{}) error {
+	_ map[string]map[string]interface{}, mrActions *[]string) error {
 	values := _values.OriginalYaml
 	//TODO: refactor to new values
 
@@ -501,7 +492,7 @@ func handleCIDRCategory(cidrCategory, dictIndex string, whiteListDict map[string
 }
 
 func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
-	secrets map[string]map[string]interface{}) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 	values := _values.OriginalYaml
 	//TODO: refactor to new values
 
@@ -512,7 +503,7 @@ func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
 			return errors.Wrap(err, "unable to validate admins")
 		}
 
-		adminsVaultPath := fmt.Sprintf("%s/administrators", a.vaultRegistryPath(r.Name))
+		adminsVaultPath := a.vaultRegistryPathKey(r.Name, "administrators")
 		for i, adm := range admins {
 			adminVaultPath := fmt.Sprintf("%s/%s", adminsVaultPath, adm.Email)
 			secrets[adminVaultPath] = map[string]interface{}{
@@ -531,8 +522,7 @@ func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
 }
 
 func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Values,
-	secretData map[string]map[string]interface{}) error {
-
+	secretData map[string]map[string]interface{}, mrActions *[]string) error {
 	//TODO: refactor to new values struct
 	values := _values.OriginalYaml
 
@@ -694,7 +684,7 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 }
 
 func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Values,
-	secrets map[string]map[string]interface{}) error {
+	secretData map[string]map[string]interface{}, mrActions *[]string) error {
 	values := _values.OriginalYaml
 	//TODO: refactor to new values
 
@@ -711,11 +701,13 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 			return errors.New("no password in mail server opts")
 		}
 
-		if _, ok := secrets[a.vaultRegistryPath(r.Name)]; !ok {
-			secrets[a.vaultRegistryPath(r.Name)] = make(map[string]interface{})
+		vaultPath := a.vaultRegistryPathKey(r.Name, "smtp")
+
+		if _, ok := secretData[vaultPath]; !ok {
+			secretData[vaultPath] = make(map[string]interface{})
 		}
 
-		secrets[a.vaultRegistryPath(r.Name)][a.Config.VaultRegistrySMTPPwdSecretKey] = pwd
+		secretData[vaultPath][a.Config.VaultRegistrySMTPPwdSecretKey] = pwd
 		//TODO: remove password from dict
 
 		port, err := strconv.ParseInt(smptOptsDict["port"], 10, 32)
@@ -813,154 +805,4 @@ func (a *App) prepareRegistryCodebase(r *registry) *codebase.Codebase {
 func branchProvisioner(branch string) string {
 	return "default-" + strings.Replace(
 		strings.ToLower(branch), ".", "-", -1)
-}
-
-func validateRegistryKeys(rq *http.Request, r KeyManagement) (createKeys bool, key6Fl, caCertFl,
-	caJSONFl multipart.File, err error) {
-
-	var fieldErrors []validator.FieldError
-	caCertFl, _, err = rq.FormFile("ca-cert")
-	if err != nil {
-		if !r.KeysRequired() {
-			err = nil
-			return
-		}
-
-		fieldErrors = append(fieldErrors, router.MakeFieldError("CACertificate", "required"))
-	}
-
-	caJSONFl, _, err = rq.FormFile("ca-json")
-	if err != nil {
-		fieldErrors = append(fieldErrors, router.MakeFieldError("CAsJSON", "required"))
-	}
-
-	if r.KeyDeviceType() == KeyDeviceTypeFile {
-		key6Fl, _, err = rq.FormFile("key6")
-		if err != nil {
-			fieldErrors = append(fieldErrors, router.MakeFieldError("Key6", "required"))
-		}
-	}
-
-	if len(fieldErrors) > 0 {
-		err = validator.ValidationErrors(fieldErrors)
-		return
-	}
-
-	createKeys = true
-	return
-}
-
-func CreateRegistryKeys(reg KeyManagement, rq *http.Request, k8sService k8s.ServiceInterface) (bool, error) {
-	createKeys, key6Fl, caCertFl, caJSONFl, err := validateRegistryKeys(rq, reg)
-	if err != nil {
-		return false, errors.Wrap(err, "unable to validate registry keys")
-	}
-	if !createKeys {
-		return false, nil
-	}
-
-	filesSecretData := make(map[string][]byte)
-	envVarsSecretData := map[string][]byte{
-		"sign.key.device-type": []byte(reg.KeyDeviceType()),
-	}
-
-	if err := SetCASecretData(filesSecretData, caCertFl, caJSONFl); err != nil {
-		return false, errors.Wrap(err, "unable to set ca secret data for registry")
-	}
-
-	if err := SetKeySecretDataFromRegistry(reg, key6Fl, filesSecretData, envVarsSecretData); err != nil {
-		return false, errors.Wrap(err, "unable to set key vars from registry form")
-	}
-
-	if err := SetAllowedKeysSecretData(filesSecretData, reg); err != nil {
-		return false, errors.Wrap(err, "unable to set allowed keys secret data")
-	}
-
-	if err := k8sService.RecreateSecret(reg.FilesSecretName(), filesSecretData); err != nil {
-		return false, errors.Wrap(err, "unable to create secret")
-	}
-
-	if err := k8sService.RecreateSecret(reg.EnvVarsSecretName(), envVarsSecretData); err != nil {
-		return false, errors.Wrap(err, "unable to create secret")
-	}
-
-	return true, nil
-}
-
-func SetCASecretData(filesSecretData map[string][]byte, caCertFl, caJSONFl multipart.File) error {
-	caCertBytes, err := ioutil.ReadAll(caCertFl)
-	if err != nil {
-		return errors.Wrap(err, "unable to read file")
-	}
-	filesSecretData["CACertificates.p7b"] = caCertBytes
-
-	casJSONBytes, err := ioutil.ReadAll(caJSONFl)
-	if err != nil {
-		return errors.Wrap(err, "unable to read file")
-	}
-	filesSecretData["CAs.json"] = casJSONBytes
-
-	return nil
-}
-
-func SetKeySecretDataFromRegistry(reg KeyManagement, key6Fl multipart.File,
-	filesSecretData, envVarsSecretData map[string][]byte) error {
-
-	if reg.KeyDeviceType() == KeyDeviceTypeFile {
-		key6Bytes, err := ioutil.ReadAll(key6Fl)
-		if err != nil {
-			return errors.Wrap(err, "unable to read file")
-		}
-		filesSecretData["Key-6.dat"] = key6Bytes
-		envVarsSecretData["sign.key.file.issuer"] = []byte(reg.SignKeyIssuer())
-		envVarsSecretData["sign.key.file.password"] = []byte(reg.SignKeyPwd())
-
-		//TODO: temporary hack, remote in future
-		envVarsSecretData["sign.key.hardware.type"] = []byte{}
-		envVarsSecretData["sign.key.hardware.device"] = []byte{}
-		envVarsSecretData["sign.key.hardware.password"] = []byte{}
-		filesSecretData["osplm.ini"] = []byte{}
-		// end todo
-
-	} else if reg.KeyDeviceType() == KeyDeviceTypeHardware {
-		envVarsSecretData["sign.key.hardware.type"] = []byte(reg.RemoteType())
-		envVarsSecretData["sign.key.hardware.device"] = []byte(fmt.Sprintf("%s:%s (%s)",
-			reg.RemoteSerialNumber(), reg.RemoteKeyPort(), reg.RemoteKeyHost()))
-		envVarsSecretData["sign.key.hardware.password"] = []byte(reg.RemoteKeyPassword())
-		filesSecretData["osplm.ini"] = []byte(reg.INIConfig())
-
-		//TODO: temporary hack, remote in future
-		filesSecretData["Key-6.dat"] = []byte{}
-		envVarsSecretData["sign.key.file.issuer"] = []byte{}
-		envVarsSecretData["sign.key.file.password"] = []byte{}
-		// end todo
-	}
-
-	return nil
-}
-
-func SetAllowedKeysSecretData(filesSecretData map[string][]byte, reg KeyManagement) error {
-	//TODO tmp hack, remote in future
-	filesSecretData["allowed-keys.yml"] = []byte{}
-	//end todo
-
-	allowedKeysIssuer := reg.AllowedKeysIssuer()
-	allowedKeysSerial := reg.AllowedKeysSerial()
-
-	if len(allowedKeysIssuer) > 0 {
-		var allowedKeysConf allowedKeysConfig
-		for i := range allowedKeysIssuer {
-			allowedKeysConf.AllowedKeys = append(allowedKeysConf.AllowedKeys, allowedKey{
-				Issuer: allowedKeysIssuer[i],
-				Serial: allowedKeysSerial[i],
-			})
-		}
-		allowedKeysYaml, err := yaml.Marshal(&allowedKeysConf)
-		if err != nil {
-			return errors.Wrap(err, "unable to encode allowed keys to yaml")
-		}
-		filesSecretData["allowed-keys.yml"] = allowedKeysYaml
-	}
-
-	return nil
 }

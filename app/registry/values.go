@@ -9,8 +9,14 @@ type Values struct {
 	Trembita        Trembita                  `yaml:"trembita" json:"trembita"`
 	SignWidget      SignWidget                `yaml:"signWidget" json:"signWidget"`
 	Keycloak        Keycloak                  `yaml:"keycloak" json:"keycloak"`
+	RegistryBackup  RegistryBackup            `yaml:"registryBackup" json:"registryBackup"`
+	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
+}
 
-	OriginalYaml map[string]interface{} `yaml:"-" json:"-"`
+type RegistryBackup struct {
+	Enabled       bool   `yaml:"enabled" json:"enabled"`
+	Schedule      string `yaml:"schedule" json:"schedule"`
+	ExpiresInDays int    `yaml:"expiresInDays" json:"expiresInDays"`
 }
 
 type Keycloak struct {

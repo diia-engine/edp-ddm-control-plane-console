@@ -190,12 +190,49 @@ let app = Vue.createApp({
                         urlValidationFailed: false,
                         heightIsNotNumber: false,
                     },
+                    backupSchedule: {
+                        title: 'Резервне копіювання', validated: false, beginValidation:false, visible: true,
+                        validator: this.wizardBackupScheduleValidation, enabled: false,
+                        nextLaunches: false,
+                        wrongCronFormat: false,
+                        wrongDaysFormat: false,
+                        data: {
+                            cronSchedule: '',
+                            days: '',
+                        },
+                        nextDates: [],
+
+                    },
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
         }
     },
     methods: {
+        wizardCronExpressionChange(e) {
+            let bs = this.wizard.tabs.backupSchedule;
+            if (bs.data.cronSchedule === '') {
+                bs.nextLaunches = false;
+                bs.wrongCronFormat = false;
+                return;
+            }
+
+            try {
+                const cron = cronSchedule.parseCronExpression(bs.data.cronSchedule)
+                bs.nextDates = [];
+                let dt = new Date();
+                for (let i = 0; i < 3; i++) {
+                    let next = cron.getNextDate(dt);
+                    bs.nextDates.push(`${next.toLocaleDateString('uk')} ${next.toLocaleTimeString('uk')}`);
+                    dt = next;
+                }
+                bs.nextLaunches = true;
+                bs.wrongCronFormat = false;
+            } catch (e) {
+                bs.nextLaunches = false;
+                bs.wrongCronFormat = true;
+            }
+        },
         wizardSupAuthFlowChange() {
             this.wizard.tabs.supplierAuthentication.validated = false;
             this.wizard.tabs.supplierAuthentication.beginValidation = false;
@@ -243,7 +280,14 @@ let app = Vue.createApp({
                     this.wizard.tabs.supplierAuthentication.data.clientId = this.registryValues.keycloak.identityProviders.idGovUa.clientId;
                     this.wizard.tabs.supplierAuthentication.data.secret = '*****';
                 }
+            } catch (e) {
+                console.log(e);
+            }
 
+            try {
+                this.wizard.tabs.backupSchedule.enabled = this.registryValues.registryBackup.enabled;
+                this.wizard.tabs.backupSchedule.data.cronSchedule = this.registryValues.registryBackup.schedule;
+                this.wizard.tabs.backupSchedule.data.days = this.registryValues.registryBackup.expiresInDays;
             } catch (e) {
                 console.log(e);
             }
@@ -356,6 +400,9 @@ let app = Vue.createApp({
             }
 
             return this.mergeDeep(target, ...sources);
+        },
+        wizardBackupScheduleChange(e) {
+            console.log(e);
         },
         wizardDNSEditVisibleChange(name, event){
             console.log(name, event);
@@ -480,6 +527,40 @@ let app = Vue.createApp({
                         tab.validated = true;
                         resolve();
                     });
+            });
+        },
+        wizardBackupScheduleValidation(tab) {
+            return new Promise((resolve) => {
+                let bs = this.wizard.tabs.backupSchedule;
+
+                if (!bs.enabled) {
+                    resolve();
+                    return;
+                }
+
+                tab.beginValidation = true;
+                tab.validated = false;
+
+                bs.wrongCronFormat = false;
+                bs.wrongDaysFormat = false;
+
+                try {
+                    cronSchedule.parseCronExpression(bs.data.cronSchedule)
+                } catch (e) {
+                    bs.nextLaunches = false;
+                    bs.wrongCronFormat = true;
+                    return;
+                }
+
+                const days = parseInt(bs.data.days);
+                if (isNaN(days)) {
+                    bs.wrongDaysFormat = true;
+                    return;
+                }
+
+                tab.validated = true;
+                tab.beginValidation = false;
+                resolve();
             });
         },
         wizardSupAuthValidation(tab){
@@ -693,66 +774,77 @@ let app = Vue.createApp({
                 resolve();
             });
         },
+        clusterKeyFormSubmit(e) {
+            if (!this.keyFormValidation(this.wizard.tabs.key, function () {
+
+            })) {
+                e.preventDefault();
+            }
+        },
+        keyFormValidation(tab, resolve) {
+            if (this.wizard.registryAction === 'edit' && !this.wizard.tabs.key.changed) {
+                resolve();
+                return true;
+            }
+
+            this.renderINITemplate();
+
+            tab.validated = false;
+            tab.beginValidation = true;
+            this.wizard.tabs.key.caCertRequired = false;
+            this.wizard.tabs.key.caJSONRequired = false;
+            this.wizard.tabs.key.key6Required = false;
+
+            let validationFailed = false;
+            if (this.$refs.keyCaCert.files.length === 0) {
+                this.wizard.tabs.key.caCertRequired = true;
+                validationFailed = true;
+            }
+
+            if (this.$refs.keyCaJSON.files.length === 0) {
+                this.wizard.tabs.key.caJSONRequired = true;
+                validationFailed = true;
+            }
+
+            for (let i=0;i<this.wizard.tabs.key.allowedKeys.length;i++) {
+                if (this.wizard.tabs.key.allowedKeys[i].issuer === '' ||
+                    this.wizard.tabs.key.allowedKeys[i].serial === '') {
+                    validationFailed = true;
+                }
+            }
+
+            if (this.wizard.tabs.key.deviceType === 'hardware') {
+                for (let key in this.wizard.tabs.key.hardwareData) {
+                    if (this.wizard.tabs.key.hardwareData[key] === '') {
+                        validationFailed = true;
+                    }
+                }
+            } else {
+                for (let key in this.wizard.tabs.key.fileData) {
+                    if (this.wizard.tabs.key.hardwareData[key] === '') {
+                        validationFailed = true;
+                    }
+                }
+
+                if (this.$refs.key6.files.length === 0) {
+                    this.wizard.tabs.key.key6Required = true;
+                    validationFailed = true;
+                }
+            }
+
+            if (validationFailed) {
+                return false;
+            }
+
+            tab.beginValidation = false;
+            tab.validated = true;
+
+            resolve();
+            return true;
+        },
         wizardKeyValidation(tab){
             return new Promise((resolve) => {
-                if (this.wizard.registryAction === 'edit' && !this.wizard.tabs.key.changed) {
-                    resolve();
-                    return;
-                }
-
-                this.renderINITemplate();
-
-                tab.validated = false;
-                tab.beginValidation = true;
-                this.wizard.tabs.key.caCertRequired = false;
-                this.wizard.tabs.key.caJSONRequired = false;
-                this.wizard.tabs.key.key6Required = false;
-
-                let validationFailed = false;
-                if (this.$refs.keyCaCert.files.length === 0) {
-                    this.wizard.tabs.key.caCertRequired = true;
-                    validationFailed = true;
-                }
-
-                if (this.$refs.keyCaJSON.files.length === 0) {
-                    this.wizard.tabs.key.caJSONRequired = true;
-                    validationFailed = true;
-                }
-
-                for (let i=0;i<this.wizard.tabs.key.allowedKeys.length;i++) {
-                    if (this.wizard.tabs.key.allowedKeys[i].issuer === '' ||
-                        this.wizard.tabs.key.allowedKeys[i].serial === '') {
-                        validationFailed = true;
-                    }
-                }
-
-                if (this.wizard.tabs.key.deviceType === 'hardware') {
-                    for (let key in this.wizard.tabs.key.hardwareData) {
-                        if (this.wizard.tabs.key.hardwareData[key] === '') {
-                            validationFailed = true;
-                        }
-                    }
-                } else {
-                    for (let key in this.wizard.tabs.key.fileData) {
-                        if (this.wizard.tabs.key.hardwareData[key] === '') {
-                            validationFailed = true;
-                        }
-                    }
-
-                    if (this.$refs.key6.files.length === 0) {
-                        this.wizard.tabs.key.key6Required = true;
-                        validationFailed = true;
-                    }
-                }
-
-                if (validationFailed) {
-                    return;
-                }
-
-                tab.beginValidation = false;
-                tab.validated = true;
-
-                resolve();
+                this.keyFormValidation(tab, resolve);
             });
         },
         renderINITemplate() {

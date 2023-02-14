@@ -10,6 +10,8 @@ import (
 	"ddm-admin-console/service/vault"
 	"fmt"
 
+	"github.com/patrickmn/go-cache"
+
 	"github.com/pkg/errors"
 
 	"go.uber.org/zap"
@@ -34,30 +36,32 @@ type Services struct {
 }
 
 type Config struct {
-	CodebaseName                          string
-	BackupSecretName                      string
-	RegistryRepoHost                      string
-	ClusterRepo                           string
-	VaultClusterAdminsPathTemplate        string
-	VaultClusterKeyManagementPathTemplate string
-	VaultClusterAdminsPasswordKey         string
-	VaultKVEngineName                     string
-	HardwareINITemplatePath               string
+	CodebaseName                  string
+	BackupSecretName              string
+	RegistryRepoHost              string
+	ClusterRepo                   string
+	VaultClusterPathTemplate      string
+	VaultClusterAdminsPasswordKey string
+	VaultKVEngineName             string
+	HardwareINITemplatePath       string
+	TempFolder                    string
 }
 
 type App struct {
 	Services
 	Config
-	router router.Interface
-	repo   string
+	router   router.Interface
+	repo     string
+	appCache *cache.Cache //TODO: change to interface
 }
 
-func Make(router router.Interface, services Services, cnf Config) (*App, error) {
+func Make(router router.Interface, services Services, cnf Config, appCache *cache.Cache) (*App, error) {
 	app := App{
 		Services: services,
 		Config:   cnf,
 		router:   router,
 		repo:     fmt.Sprintf("%s/%s", cnf.RegistryRepoHost, cnf.ClusterRepo),
+		appCache: appCache,
 	}
 
 	app.createRoutes()

@@ -53,6 +53,9 @@ type registry struct {
 	SupAuthWidgetHeight   string   `form:"sup-auth-widget-height"`
 	SupAuthClientID       string   `form:"sup-auth-client-id"`
 	SupAuthClientSecret   string   `form:"sup-auth-client-secret"`
+	BackupScheduleEnabled string   `form:"backup-schedule-enabled"`
+	CronSchedule          string   `form:"cron-schedule"`
+	CronScheduleDays      string   `form:"cron-schedule-days"`
 }
 
 func (r *registry) KeysRequired() bool {

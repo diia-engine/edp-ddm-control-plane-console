@@ -55,16 +55,16 @@ func (a *App) submitChange(ctx *gin.Context) (response router.Response, retErr e
 }
 
 func (a *App) updateMRStatus(ctx context.Context, changeID, status string) error {
-	mr, err := a.Gerrit.GetMergeRequestByChangeID(ctx, changeID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get MR")
-	}
-
-	mr.Status.Value = status
-
 	for i := 0; i < 5; i++ {
+		mr, err := a.Gerrit.GetMergeRequestByChangeID(ctx, changeID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get MR")
+		}
+
+		mr.Status.Value = status
+
 		if err := a.Gerrit.UpdateMergeRequestStatus(ctx, mr); err != nil {
-			if strings.Contains(err.Error(), "changed") {
+			if strings.Contains(err.Error(), "modified") {
 				continue
 			}
 
