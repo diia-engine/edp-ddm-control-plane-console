@@ -49,6 +49,7 @@ type Settings struct {
 	VaultKVEngineName                     string `envconfig:"VAULT_KV_ENGINE_NAME" default:"registry-kv"`
 	VaultClusterAdminsPathTemplate        string `envconfig:"V_CLS_ADM_PATH_TPL" default:"{engine}/cluster/{admin}"`
 	VaultClusterAdminsPasswordKey         string `envconfig:"V_CLS_ADMIN_SEC_KEY" default:"password"`
+	VaultClusterPathTemplate              string `envconfig:"V_CLS_ADM_PATH_TPL" default:"{engine}/cluster"`
 	VaultClusterKeyManagementPathTemplate string `envconfig:"V_CLS_KEYM_PATH_TPL" default:"{engine}/cluster/key-management"`
 	VaultCitizenSSLPath                   string `encvonfig:"V_SSL_CITIZEN_PATH" default:"custom-dns-names/{registry}/citizen-portal/{host}"`
 	VaultOfficerSSLPath                   string `encvonfig:"V_SSL_CITIZEN_PATH" default:"custom-dns-names/{registry}/officer-portal/{host}"`

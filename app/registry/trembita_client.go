@@ -92,7 +92,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 		prefixedPath := fmt.Sprintf("vault:%s", vaultPath)
 
 		if tf.TrembitaServiceAuthSecret != prefixedPath {
-			if err := a.createVaultSecrets(map[string]map[string]interface{}{
+			if err := CreateVaultSecrets(a.Vault, map[string]map[string]interface{}{
 				vaultPath: {
 					fmt.Sprintf("trembita.registries.%s.auth.secret.token", tf.TrembitaClientRegitryName): tf.TrembitaServiceAuthSecret,
 				},

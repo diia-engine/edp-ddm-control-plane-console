@@ -115,7 +115,7 @@ func (a *App) updateKey(ctx *gin.Context) error {
 		return err
 	}
 
-	values, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, a.Gerrit)
+	values, _, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, registry.MasterBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}
@@ -126,7 +126,7 @@ func (a *App) updateKey(ctx *gin.Context) error {
 	repoFiles := make(map[string]string)
 
 	if _, err := registry.PrepareRegistryKeys(keyManagement{r: &ck, vaultSecretPath: vaultPath}, ctx.Request,
-		vaultSecretData, values, repoFiles); err != nil {
+		vaultSecretData, values.OriginalYaml, repoFiles); err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
 	}
 
@@ -134,14 +134,14 @@ func (a *App) updateKey(ctx *gin.Context) error {
 		return fmt.Errorf("unable to cache repo files")
 	}
 
-	if len(values) > 0 || len(repoFiles) > 0 {
-		if err := registry.CreateEditMergeRequest(ctx, a.Config.CodebaseName, values, a.Gerrit); err != nil {
+	if len(values.OriginalYaml) > 0 || len(repoFiles) > 0 {
+		if err := registry.CreateEditMergeRequest(ctx, a.Config.CodebaseName, values.OriginalYaml, a.Gerrit); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}
 	}
 
 	if len(vaultSecretData) > 0 {
-		if err := registry.CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
+		if err := registry.CreateVaultSecrets(a.Vault, vaultSecretData, false); err != nil {
 			return errors.Wrap(err, "unable to create vault secrets")
 		}
 	}

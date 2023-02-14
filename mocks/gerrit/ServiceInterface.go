@@ -72,6 +72,29 @@ func (_m *ServiceInterface) CreateProject(ctx context.Context, name string) erro
 	return r0
 }
 
+// GetChangeDetails provides a mock function with given fields: changeID
+func (_m *ServiceInterface) GetChangeDetails(changeID string) (*go_gerrit.ChangeInfo, error) {
+	ret := _m.Called(changeID)
+
+	var r0 *go_gerrit.ChangeInfo
+	if rf, ok := ret.Get(0).(func(string) *go_gerrit.ChangeInfo); ok {
+		r0 = rf(changeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*go_gerrit.ChangeInfo)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(changeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetFileContents provides a mock function with given fields: ctx, projectName, branch, filePath
 func (_m *ServiceInterface) GetFileContents(ctx context.Context, projectName string, branch string, filePath string) (string, error) {
 	ret := _m.Called(ctx, projectName, branch, filePath)
@@ -224,6 +247,29 @@ func (_m *ServiceInterface) GetProject(ctx context.Context, name string) (*gerri
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetProjectInfo provides a mock function with given fields: projectName
+func (_m *ServiceInterface) GetProjectInfo(projectName string) (*go_gerrit.ProjectInfo, error) {
+	ret := _m.Called(projectName)
+
+	var r0 *go_gerrit.ProjectInfo
+	if rf, ok := ret.Get(0).(func(string) *go_gerrit.ProjectInfo); ok {
+		r0 = rf(projectName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*go_gerrit.ProjectInfo)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(projectName)
 	} else {
 		r1 = ret.Error(1)
 	}

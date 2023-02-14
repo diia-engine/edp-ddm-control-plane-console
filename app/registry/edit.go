@@ -420,14 +420,6 @@ type MRLabel struct {
 
 func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[string]interface{},
 	gerritService gerrit.ServiceInterface, labels ...MRLabel) error {
-	//_, values, err := GetValuesFromGit(ctx, projectName, gerritService)
-	//if err != nil {
-	//	return errors.Wrap(err, "unable to get values from git")
-	//}
-	//
-	//for k, v := range editValues {
-	//	values[k] = v
-	//}
 
 	valuesYaml, err := yaml.Marshal(values)
 	if err != nil {
