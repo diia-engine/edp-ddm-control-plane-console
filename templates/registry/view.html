@@ -2,6 +2,12 @@
     {{template "header" .}}
     <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/datatables.custom.css" />
 <div class="registry" id="registry-view">
+    <input type="hidden" value="{{ .valuesJson }}" ref="valuesJson" />
+    {{if .openMergeRequests}}
+    <input type="hidden" value="{{.openMergeRequests}}" ref="openMergeRequests" />
+    {{template "open-mr-form" .}}
+    {{end}}
+    <input type="hidden" value="{{ .registry.Name }}" ref="registryName" />
     <div class="registry-header">
         <a href="{{ .BasePath }}/admin/registry/overview" class="registry-add">
             <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
@@ -13,13 +19,12 @@
         {{if .allowedToEdit}}
             <div class="registry-view-actions">
             {{if .hasUpdate}}
-                <a href="{{ .BasePath }}/admin/registry/update/{{.registry.Name}}" class="registry-add">
-                    <!--<img alt="add registry" src="{{ .BasePath }}/static/img/action-edit.png" />-->
+                <a href="{{ .BasePath }}/admin/registry/update/{{.registry.Name}}" @click="checkForOpenMRs" class="registry-add">
                     <i class="fa-solid fa-arrow-up"></i>
                     <span>Оновити</span>
                 </a>
             {{end}}
-                <a href="{{ .BasePath }}/admin/registry/edit/{{.registry.Name}}" class="registry-add">
+                <a href="{{ .BasePath }}/admin/registry/edit/{{.registry.Name}}" @click="checkForOpenMRs" class="registry-add">
                     <img alt="add registry" src="{{ .BasePath }}/static/img/action-edit.png" />
                     <span>Редагувати</span>
                 </a>
@@ -29,11 +34,14 @@
     <div class="registry-description">Інформація про реєстр.</div>
 
     <div class="rg-info-block">
-        <div class="rg-info-block-header">
+        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'general'}"
+        @click="accordion = 'general'">
             <span>Загальна інформація</span>
-            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+            <i class="fa-solid"
+               :class="{ 'fa-caret-up': accordion == 'general', 'fa-caret-down': accordion != 'general' }">
+            </i>
         </div>
-        <div class="rg-info-block-body">
+        <div class="rg-info-block-body" v-show="accordion == 'general'" >
             <div class="rg-info-line-horizontal">
                 <span>Назва</span>
                 <span>{{ .registry.Name }}</span>
@@ -49,7 +57,7 @@
                     <span>Адміністратори</span>
                     <span class="cidr-values">
                         {{range $index, $adm := .admins}}
-                            <div class="view-cidr">{{ $adm.email }}</div>
+                            <div class="view-cidr">{{ $adm.Email }}</div>
                         {{end}}
                     </span>
                 </div>
@@ -97,9 +105,9 @@
             {{if .citizenCIDR}}
             <div class="rg-info-line-horizontal">
                 <span>CIDR для портала громадянина</span>
-                <span>
+                <span class="cidr-values">
                     {{range .citizenCIDR}}
-                        <p class="view-cidr">{{ . }}</p>
+                        <div class="view-cidr">{{ . }}</div>
                     {{end}}
                 </span>
             </div>
@@ -107,9 +115,9 @@
             {{if .adminCIDR}}
             <div class="rg-info-line-horizontal">
                 <span>CIDR для адміністративних компонент</span>
-                <span>
+                <span class="cidr-values">
                     {{range .adminCIDR}}
-                        <p class="view-cidr">{{ . }}</p>
+                        <div class="view-cidr">{{ . }}</div>
                     {{end}}
                 </span>
             </div>
@@ -118,11 +126,108 @@
         </div>
     </div>
     <div class="rg-info-block">
-        <div class="rg-info-block-header">
-            <span>Доступ для реєстрів платформи та зовнішніх систем</span>
-            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'trembita-client'}"
+             @click="accordion = 'trembita-client'">
+            <span>налаштування взаємодії з реєстрами через Трембіту</span>
+            <i class="fa-solid"
+               :class="{ 'fa-caret-up': accordion == 'trembita-client', 'fa-caret-down': accordion != 'trembita-client' }"></i>
         </div>
-        <div class="rg-info-block-body">
+        <div class="rg-info-block-body" v-show="accordion == 'trembita-client'">
+            <table class="rg-info-table rg-info-table-config">
+                <thead>
+                <tr>
+                    <th>Статус</th>
+                    <th>Назва</th>
+                    <th>Рівень</th>
+                    <th>Протокол інтеграції</th>
+                    <th>Тип автентифікації</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range $index, $al := .values.Trembita.Registries}}
+                    <tr>
+                        <td>
+                            <i class="fa-solid fa-{{$al.FaStatus}}"></i>
+                        </td>
+                        <td>{{ $index }}</td>
+                        <td>{{ i18n $al.StrType}}</td>
+                        <td>{{$al.Protocol}}</td>
+                        <td>{{$al.StrAuth}}</td>
+                        <td>
+                            <a href="#" @click="showTrembitaClientForm('{{ $index }}', $event)">
+                                <img alt="edit" src="/static/img/action-edit.png" />
+                            </a>
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+
+            {{template "trembita-client-form" .}}
+        </div>
+    </div>
+    <div class="rg-info-block">
+        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'external-systems'}"
+             @click="accordion = 'external-systems'">
+            <span>налаштування взаємодії з іншими системами</span>
+            <i class="fa-solid"
+               :class="{ 'fa-caret-up': accordion == 'external-systems', 'fa-caret-down': accordion != 'external-systems' }"></i>
+        </div>
+        <div class="rg-info-block-body" v-show="accordion == 'external-systems'">
+            <table class="rg-info-table rg-info-table-config">
+                <thead>
+                <tr>
+                    <th>Статус</th>
+                    <th>Назва</th>
+                    <th>Рівень</th>
+                    <th>Протокол інтеграції</th>
+                    <th>Тип автентифікації</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range $index, $al := .values.ExternalSystems}}
+                    <tr>
+                        <td>
+                            <i class="fa-solid fa-{{$al.FaStatus}}"></i>
+                        </td>
+                        <td>{{ $index }}</td>
+                        <td>{{ i18n $al.StrType}}</td>
+                        <td>{{$al.Protocol}}</td>
+                        <td>{{$al.StrAuth}}</td>
+                        <td>
+                            <div class="trembita-actions">
+                                <a href="#" @click="showExternalSystemForm('{{ $index }}', $event)">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a {{if eq "platform" $al.Type}}title="Система недоступна для видалення"{{end}} href="#" @click="showDeleteExternalSystemForm('{{ $index }}', '{{$al.Type}}', $event)">
+                                    <i class="fa-solid fa-trash registry-trash {{if eq "platform" $al.Type}}inactive{{end}} "></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+            <div class="link-grant-access">
+                <a class="" href="#" @click="showExternalSystemForm('', $event)">
+                    <img alt="Додати зовнішню систему" src="/static/img/plus.png" />
+                    <span>Додати зовнішню систему</span>
+                </a>
+            </div>
+        </div>
+
+        {{template "registry-external-system" .}}
+    </div>
+    <div class="rg-info-block">
+        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'external-access'}"
+             @click="accordion = 'external-access'">
+            <span>Доступ для реєстрів платформи та зовнішніх систем</span>
+            <i class="fa-solid"
+               :class="{ 'fa-caret-up': accordion == 'external-access', 'fa-caret-down': accordion != 'external-access' }"></i>
+        </div>
+        <div class="rg-info-block-body" v-show="accordion == 'external-access'">
             {{if .externalRegs}}
             <table class="rg-info-table rg-info-table-config">
                 <thead>
@@ -193,11 +298,13 @@
 
     {{if .branches }}
     <div class="rg-info-block">
-        <div class="rg-info-block-header">
+        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'configuration'}"
+             @click="accordion = 'configuration'">
             <span>Конфігурація</span>
-            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+            <i class="fa-solid"
+               :class="{ 'fa-caret-up': accordion == 'configuration', 'fa-caret-down': accordion != 'configuration' }"></i>
         </div>
-        <div class="rg-info-block-body">
+        <div class="rg-info-block-body" v-show="accordion == 'configuration'">
             <table class="rg-info-table rg-info-table-config">
                 <thead>
                 <tr>
@@ -241,45 +348,15 @@
         </div>
     </div>
     {{end}}
-    {{if .actionLog}}
     <div class="rg-info-block">
-        <div class="rg-info-block-header">
-            <span>Журнал подій</span>
-            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
-        </div>
-        <div class="rg-info-block-body">
-            <table class="rg-info-table rg-info-table-config">
-                <thead>
-                <tr>
-                    <th>Дата</th>
-                    <th>Користувач</th>
-                    <th>Дія</th>
-                    <th>Результат</th>
-                    <th>Повідомлення</th>
-                </tr>
-                </thead>
-                <tbody>
-                {{range $index, $al := .registry.ActionLog}}
-                <tr>
-                    <td>{{$al.FormattedLastTimeUpdate}}</td>
-                    <td>{{$al.UserName}}</td>
-                    <td>{{$al.Action}}</td>
-                    <td>{{$al.Result}}</td>
-                    <td>{{$al.Message}}</td>
-                </tr>
-                {{end}}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {{end}}
-
-    <div class="rg-info-block">
-        <div class="rg-info-block-header">
+        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'merge-requests'}"
+             @click="accordion = 'merge-requests'">
             <span>Запити на оновлення</span>
-            <img src="{{ .BasePath }}/static/img/action-toggle.png" alt="toggle block" />
+            <i class="fa-solid"
+               :class="{ 'fa-caret-up': accordion == 'merge-requests', 'fa-caret-down': accordion != 'merge-requests' }">
+            </i>
         </div>
-        <div class="rg-info-block-body mr-block-table">
+        <div class="rg-info-block-body mr-block-table" v-show="accordion == 'merge-requests'">
             {{ if .mergeRequests}}
             <table class="rg-info-table rg-info-table-config" id="mr-table">
                 <thead>
@@ -325,18 +402,29 @@
     </div>
 
     {{ if .edpComponents}}
-    <div class="dashboard-panel registry-dashboard-panel">
-        <ul>
-            {{range $index, $ec := .edpComponents}}
-            <li>
-                <img src="data:image/svg+xml;base64,{{$ec.Spec.Icon}}" alt="{{$ec.Spec.Type}} logo" />
-                <div class="dashboard-item-content">
-                    <a target="_blank" href="{{$ec.Spec.Url}}">{{$ec.Spec.Type}} <img src="{{$.BasePath}}/static/img/action-link.png"
-                                                                      alt="{{$ec.Spec.Type}} link"></a>
-                </div>
-            </li>
-            {{end}}
-        </ul>
+    <div class="rg-info-block">
+        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'edp-components'}"
+             @click="accordion = 'edp-components'">
+            <span>Компоненти реєстру</span>
+            <i class="fa-solid"
+               :class="{ 'fa-caret-up': accordion == 'edp-components', 'fa-caret-down': accordion != 'edp-components' }">
+            </i>
+        </div>
+        <div class="rg-info-block-body mr-block-table" v-show="accordion == 'edp-components'">
+            <div class="dashboard-panel registry-dashboard-panel">
+                <ul>
+                    {{range $index, $ec := .edpComponents}}
+                    <li>
+                        <img src="data:image/svg+xml;base64,{{$ec.Spec.Icon}}" alt="{{$ec.Spec.Type}} logo" />
+                        <div class="dashboard-item-content">
+                            <a target="_blank" href="{{$ec.Spec.Url}}">{{$ec.Spec.Type}} <img src="{{$.BasePath}}/static/img/action-link.png"
+                                                                              alt="{{$ec.Spec.Type}} link"></a>
+                        </div>
+                    </li>
+                    {{end}}
+                </ul>
+            </div>
+        </div>
     </div>
     {{end}}
 
@@ -460,6 +548,7 @@
 </div>
 
     {{template "scripts" .}}
+    <script type="text/javascript" src="{{ .BasePath }}/static/js/axios.min.js"></script>
     <script type="text/javascript" src="{{.BasePath}}/static/js/moment.min.js"></script>
     <script type="text/javascript" src="{{.BasePath}}/static/js/jquery.dataTables-1.12.1.min.js"></script>
     <script type="text/javascript" src="{{.BasePath}}/static/js/view-registry.js"></script>

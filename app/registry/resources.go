@@ -12,7 +12,26 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (a *App) prepareRegistryResources(r *registry, values map[string]interface{}) error {
+func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{}, error) {
+	content, _, err := a.Gerrit.GoGerritClient().Projects.GetBranchContent(project, branch,
+		url.PathEscape(ValuesLocation))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get project content")
+	}
+
+	var data map[string]interface{}
+	if err := yaml.Unmarshal([]byte(content), &data); err != nil {
+		return nil, errors.Wrap(err, "unable to decode yaml")
+	}
+
+	return data, nil
+}
+
+func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, _values *Values,
+	_ map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
+
 	if r.Resources != "" {
 		var resources map[string]interface{}
 		if err := json.Unmarshal([]byte(r.Resources), &resources); err != nil {
@@ -31,21 +50,6 @@ func (a *App) prepareRegistryResources(r *registry, values map[string]interface{
 	}
 
 	return nil
-}
-
-func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{}, error) {
-	content, _, err := a.Gerrit.GoGerritClient().Projects.GetBranchContent(project, branch,
-		url.PathEscape(ValuesLocation))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get project content")
-	}
-
-	var data map[string]interface{}
-	if err := yaml.Unmarshal([]byte(content), &data); err != nil {
-		return nil, errors.Wrap(err, "unable to decode yaml")
-	}
-
-	return data, nil
 }
 
 func (a *App) preloadTemplateResources(ctx *gin.Context) (rsp router.Response, retErr error) {

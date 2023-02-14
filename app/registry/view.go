@@ -16,17 +16,29 @@ import (
 )
 
 func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	registryName := ctx.Param("name")
 
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Services.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get values from git")
+	}
+
+	valuesJson, err := json.Marshal(values)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode values")
+	}
+
 	viewParams := gin.H{
-		"page":     "registry",
-		"timezone": a.Config.Timezone,
+		"page":       "registry",
+		"timezone":   a.Config.Timezone,
+		"values":     values,
+		"valuesJson": string(valuesJson),
 	}
 
 	for _, f := range a.viewRegistryProcessFunctions() {
-		if err := f(userCtx, registryName, viewParams); err != nil {
+		if err := f(userCtx, registryName, values, viewParams); err != nil {
 			return nil, errors.Wrap(err, "error during view registry function")
 		}
 	}
@@ -34,8 +46,8 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 	return router.MakeHTMLResponse(200, "registry/view.html", viewParams), nil
 }
 
-func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registryName string, viewParams gin.H) error {
-	return []func(ctx context.Context, registryName string, viewParams gin.H) error{
+func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registryName string, values *Values, viewParams gin.H) error {
+	return []func(ctx context.Context, registryName string, values *Values, viewParams gin.H) error{
 		a.viewRegistryAllowedToEdit,
 		a.viewRegistryGetRegistryAndBranches,
 		a.viewRegistryGetEDPComponents,
@@ -49,7 +61,7 @@ func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registr
 	}
 }
 
-func (a *App) viewRegistryHasUpdates(userCtx context.Context, registryName string, viewParams gin.H) error {
+func (a *App) viewRegistryHasUpdates(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
 	registry, ok := viewParams["registry"]
 	if !ok {
 		return nil
@@ -64,7 +76,7 @@ func (a *App) viewRegistryHasUpdates(userCtx context.Context, registryName strin
 	return nil
 }
 
-func (a *App) viewRegistryExternalRegistration(userCtx context.Context, registryName string, viewParams gin.H) error {
+func (a *App) viewRegistryExternalRegistration(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
 	eRegs, mergeRequestsForER := make([]ExternalRegistration, 0), make(map[string]struct{})
 	mrs, err := a.Services.Gerrit.GetMergeRequestByProject(userCtx, registryName)
 	if err != nil {
@@ -82,12 +94,8 @@ func (a *App) viewRegistryExternalRegistration(userCtx context.Context, registry
 		}
 	}
 
-	values, err := GetValuesFromGit(userCtx, registryName, a.Gerrit)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values from git")
-	}
-
-	_eRegs, err := decodeExternalRegsFromValues(values)
+	//TODO: refactor to values struct
+	_eRegs, err := decodeExternalRegsFromValues(values.OriginalYaml)
 	if err != nil {
 		return errors.Wrap(err, "unable to decode external regs")
 	}
@@ -170,104 +178,38 @@ func convertExternalRegFromInterface(in interface{}) ([]ExternalRegistration, er
 	return res, nil
 }
 
-func (a *App) viewGetValues(userCtx context.Context, registryName string, viewParams gin.H) (map[string]interface{}, error) {
-	values, ok := viewParams["values"]
-	if !ok {
-		_values, err := GetValuesFromGit(userCtx, registryName, a.Gerrit)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get values from git")
-		}
-		values = _values
-	}
-
-	valuesDict, ok := values.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("wrong values format")
-	}
-
-	return valuesDict, nil
-}
-
-func (a *App) viewAdministratorsConfig(userCtx context.Context, registryName string, viewParams gin.H) error {
-	valuesDict, err := a.viewGetValues(userCtx, registryName, viewParams)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values")
-	}
-
-	admins, ok := valuesDict[AdministratorsValuesKey]
-	if !ok {
-		return nil
-	}
-
-	viewParams["admins"] = admins.([]interface{})
+func (a *App) viewAdministratorsConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+	viewParams["admins"] = values.Administrators
 	return nil
 }
 
-func (a *App) viewCIDRConfig(userCtx context.Context, registryName string, viewParams gin.H) error {
-	valuesDict, err := a.viewGetValues(userCtx, registryName, viewParams)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values")
+func (a *App) viewCIDRConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+	if values.Global.WhiteListIP.AdminRoutes != "" {
+		viewParams["adminCIDR"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
 	}
 
-	globalInterface, ok := valuesDict["global"]
-	if !ok {
-		return nil
-	}
-	globalDict, ok := globalInterface.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	whiteListInterface, ok := globalDict["whiteListIP"]
-	if !ok {
-		return nil
-	}
-	whiteListDict, ok := whiteListInterface.(map[string]interface{})
-	if !ok {
-		return nil
+	if values.Global.WhiteListIP.CitizenPortal != "" {
+		viewParams["citizenCIDR"] = strings.Split(values.Global.WhiteListIP.CitizenPortal, " ")
 	}
 
-	if _, ok := whiteListDict["adminRoutes"]; ok {
-		viewParams["adminCIDR"] = strings.Split(whiteListDict["adminRoutes"].(string), " ")
-	}
-
-	if _, ok := whiteListDict["citizenPortal"]; ok {
-		viewParams["citizenCIDR"] = strings.Split(whiteListDict["citizenPortal"].(string), " ")
-	}
-
-	if _, ok := whiteListDict["officerPortal"]; ok {
-		viewParams["officerCIDR"] = strings.Split(whiteListDict["officerPortal"].(string), " ")
+	if values.Global.WhiteListIP.OfficerPortal != "" {
+		viewParams["officerCIDR"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
 	}
 
 	return nil
 }
 
-func (a *App) viewSMTPConfig(userCtx context.Context, registryName string, viewParams gin.H) error {
-	valuesDict, err := a.viewGetValues(userCtx, registryName, viewParams)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values")
+func (a *App) viewSMTPConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+	if values.Global.Notifications.Email.Type != "" {
+		viewParams["smtpType"] = values.Global.Notifications.Email.Type
 	}
 
-	global, ok := valuesDict["global"]
-	if !ok {
-		return nil
-	}
-
-	globalDict := global.(map[string]interface{})
-	notifications, ok := globalDict["notifications"]
-	if !ok {
-		return nil
-	}
-
-	mailType := notifications.(map[string]interface{})["email"].(map[string]interface{})["type"].(string)
-	viewParams["smtpType"] = mailType
 	return nil
 }
 
-func (a *App) viewDNSConfig(userCtx context.Context, registryName string, viewParams gin.H) error {
-	valuesDict, err := a.viewGetValues(userCtx, registryName, viewParams)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values")
-	}
+func (a *App) viewDNSConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+	//TODO: refactor to values struct
+	valuesDict := values.OriginalYaml
 
 	portals, ok := valuesDict["portals"]
 	if !ok {
@@ -293,7 +235,7 @@ func (a *App) viewDNSConfig(userCtx context.Context, registryName string, viewPa
 	return nil
 }
 
-func (a *App) viewRegistryGetMergeRequests(userCtx context.Context, registryName string, viewParams gin.H) error {
+func (a *App) viewRegistryGetMergeRequests(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
 	mrs, err := a.Services.Gerrit.GetMergeRequestByProject(userCtx, registryName)
 	if err != nil {
 		return errors.Wrap(err, "unable to list gerrit merge requests")
@@ -303,6 +245,9 @@ func (a *App) viewRegistryGetMergeRequests(userCtx context.Context, registryName
 
 	emrs := make([]ExtendedMergeRequests, 0, len(mrs))
 	for _, mr := range mrs {
+		if mr.Status.Value == gerrit.StatusNew {
+			viewParams["openMergeRequests"] = true
+		}
 		emrs = append(emrs, ExtendedMergeRequests{GerritMergeRequest: mr})
 	}
 
@@ -310,7 +255,7 @@ func (a *App) viewRegistryGetMergeRequests(userCtx context.Context, registryName
 	return nil
 }
 
-func (a *App) viewRegistryAllowedToEdit(userCtx context.Context, registryName string, viewParams gin.H) error {
+func (a *App) viewRegistryAllowedToEdit(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
 		return errors.Wrap(err, "unable to init service for user context")
@@ -325,7 +270,7 @@ func (a *App) viewRegistryAllowedToEdit(userCtx context.Context, registryName st
 	return nil
 }
 
-func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, registryName string, viewParams gin.H) error {
+func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
 		return errors.Wrap(err, "unable to init service for user context")
@@ -372,7 +317,7 @@ func (a *App) loadBranchesStatuses(ctx context.Context, branches []codebase.Code
 	return nil
 }
 
-func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, registryName string, viewParams gin.H) error {
+func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
 	jenkinsComponent, err := a.Services.EDPComponent.Get(userCtx, "jenkins")
 	if err != nil {
 		return errors.Wrap(err, "unable to get jenkins edp component")

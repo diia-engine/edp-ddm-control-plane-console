@@ -11,7 +11,7 @@ import (
 )
 
 func (a *App) listRegistry(ctx *gin.Context) (response router.Response, retErr error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")
@@ -31,7 +31,8 @@ func (a *App) listRegistry(ctx *gin.Context) (response router.Response, retErr e
 		return nil, errors.Wrap(err, "unable to load registry versions")
 	}
 
-	registries, err := a.Services.Codebase.CheckPermissions(cbs, k8sService)
+	registries, err := a.Services.Perms.FilterCodebases(ctx, cbs, k8sService)
+	//registries, err := a.Services.Codebase.CheckPermissions(cbs, k8sService)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check codebase permissions")
 	}

@@ -175,6 +175,8 @@ func (c *Controller) pushRegistryTemplate(ctx context.Context, instance *codebas
 		if err := c.replaceDefaultBranch(instance, gitService); err != nil {
 			return errors.Wrap(err, "unable to replace default branch")
 		}
+	} else if git.IsErrNonFastForwardUpdate(err) {
+		return nil
 	} else if err != nil {
 		return errors.Wrap(err, "unable to pull")
 	}

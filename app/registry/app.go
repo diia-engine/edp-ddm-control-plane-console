@@ -1,18 +1,18 @@
 package registry
 
 import (
-	"ddm-admin-console/service/keycloak"
-	"ddm-admin-console/service/vault"
-	"strings"
-
-	"github.com/patrickmn/go-cache"
-
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	edpComponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/jenkins"
 	"ddm-admin-console/service/k8s"
+	"ddm-admin-console/service/keycloak"
+	"ddm-admin-console/service/permissions"
+	"ddm-admin-console/service/vault"
+	"strings"
+
+	"github.com/patrickmn/go-cache"
 
 	"github.com/pkg/errors"
 )
@@ -35,6 +35,8 @@ type Config struct {
 	TempFolder                      string
 	RegistryDNSManualPath           string
 	DDMManualEDPComponent           string
+	TrembitaClientDefaultRegistries string
+	RegistryDefaultExternalSystems  string
 }
 
 type Services struct {
@@ -46,6 +48,7 @@ type Services struct {
 	Keycloak     keycloak.ServiceInterface
 	Vault        vault.ServiceInterface
 	Cache        *cache.Cache //TODO: replace with interface
+	Perms        permissions.ServiceInterface
 }
 
 type App struct {

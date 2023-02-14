@@ -23,6 +23,8 @@ func (cnf *Settings) RegistryConfig() registry.Config {
 		TempFolder:                      cnf.TempFolder,
 		RegistryDNSManualPath:           cnf.RegistryDNSManualPath,
 		DDMManualEDPComponent:           cnf.DDMManualEDPComponent,
+		RegistryDefaultExternalSystems:  cnf.RegistryDefaultExternalSystems,
+		TrembitaClientDefaultRegistries: cnf.TrembitaClientDefaultRegistries,
 	}
 }
 
@@ -36,5 +38,6 @@ func (s *Services) RegistryServices() registry.Services {
 		EDPComponent: s.EDPComponent,
 		Vault:        s.Vault,
 		Cache:        s.Cache,
+		Perms:        s.PermService,
 	}
 }

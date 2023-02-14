@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"ddm-admin-console/router"
+	"ddm-admin-console/service/codebase"
+	"ddm-admin-console/service/gerrit"
+	"ddm-admin-console/service/k8s"
 	"ddm-admin-console/service/vault"
 	"encoding/json"
 	"encoding/pem"
@@ -17,11 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"ddm-admin-console/router"
-	"ddm-admin-console/service/codebase"
-	"ddm-admin-console/service/gerrit"
-	"ddm-admin-console/service/k8s"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
@@ -30,18 +29,37 @@ import (
 )
 
 const (
-	AnnotationSMPTType        = "registry-parameters/smtp-type"
-	AnnotationSMPTOpts        = "registry-parameters/smtp-opts"
-	AnnotationTemplateName    = "registry-parameters/template-name"
-	AnnotationCreatorUsername = "registry-parameters/creator-username"
-	AnnotationCreatorEmail    = "registry-parameters/creator-email"
-	AnnotationValues          = "registry-parameters/values"
-	AdministratorsValuesKey   = "administrators"
-	ResourcesValuesKey        = "registry"
-	VaultKeyCACert            = "caCertificate"
-	VaultKeyCert              = "certificate"
-	VaultKeyPK                = "key"
+	AnnotationSMPTType            = "registry-parameters/smtp-type"
+	AnnotationSMPTOpts            = "registry-parameters/smtp-opts"
+	AnnotationTemplateName        = "registry-parameters/template-name"
+	AnnotationCreatorUsername     = "registry-parameters/creator-username"
+	AnnotationCreatorEmail        = "registry-parameters/creator-email"
+	AnnotationValues              = "registry-parameters/values"
+	AdministratorsValuesKey       = "administrators"
+	ResourcesValuesKey            = "registry"
+	VaultKeyCACert                = "caCertificate"
+	VaultKeyCert                  = "certificate"
+	VaultKeyPK                    = "key"
+	externalSystemsKey            = "external-systems"
+	externalSystemDefaultProtocol = "REST"
+	externalSystemDeletableType   = "registry"
+	trembitaRegistriesKey         = "registries"
+	trembitaValuesKey             = "trembita"
+	trembitaRegistriesValuesKet   = "registries"
 )
+
+func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *registry, values *Values,
+	secrets map[string]map[string]interface{}) error {
+	return []func(*gin.Context, *registry, *Values,
+		map[string]map[string]interface{}) error{
+		a.prepareDNSConfig,
+		a.prepareCIDRConfig,
+		a.prepareMailServerConfig,
+		a.prepareAdminsConfig,
+		a.prepareRegistryResources,
+		a.prepareSupplierAuthConfig,
+	}
+}
 
 func (a *App) validatePEMFile(ctx *gin.Context) (rsp router.Response, retErr error) {
 	file, _, err := ctx.Request.FormFile("file")
@@ -82,7 +100,7 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 	}
 	prjs = a.filterProjects(prjs)
 
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to init service for user context")
@@ -209,7 +227,7 @@ func GetINITemplateContent(path string) (string, error) {
 }
 
 func (a *App) createRegistryPost(ctx *gin.Context) (response router.Response, retErr error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
@@ -283,30 +301,18 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unknown error")
 	}
 
-	values, err := a.GetValuesFromBranch(r.RegistryGitTemplate, r.RegistryGitBranch)
+	values, _, err := GetValuesFromGit(ctx, r.RegistryGitTemplate, r.RegistryGitBranch, a.Gerrit)
+	//values, err := a.GetValuesFromBranch(r.RegistryGitTemplate, r.RegistryGitBranch)
 	if err != nil {
 		return errors.Wrap(err, "unable to load values from template")
 	}
 
 	vaultSecretData := make(map[string]map[string]interface{})
-	if err := a.prepareDNSConfig(ginContext, r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare dns config")
-	}
 
-	if err := a.prepareCIDRConfig(ginContext, r, values); err != nil {
-		return errors.Wrap(err, "unable to prepare cidr config")
-	}
-
-	if err := a.prepareMailServerConfig(r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare mail server config")
-	}
-
-	if err := a.prepareAdminsConfig(r, vaultSecretData, values); err != nil {
-		return errors.Wrap(err, "unable to prepare admins config")
-	}
-
-	if err := a.prepareRegistryResources(r, values); err != nil {
-		return errors.Wrap(err, "unable to prepare registry resources config")
+	for _, proc := range a.createUpdateRegistryProcessors() {
+		if err := proc(ginContext, r, values, vaultSecretData); err != nil {
+			return errors.Wrap(err, "error during registry create")
+		}
 	}
 
 	repoFiles := make(map[string]string)
@@ -315,7 +321,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		r: r,
 		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
 			time.Now().Format("20060201T150405Z"))),
-	}, ginContext.Request, vaultSecretData, values, repoFiles); err != nil {
+	}, ginContext.Request, vaultSecretData, values.OriginalYaml, repoFiles); err != nil {
 		return errors.Wrap(err, "unable to prepare registry keys")
 	}
 
@@ -323,7 +329,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return fmt.Errorf("unable to cache repo file, %w", err)
 	}
 
-	if err := CreateVaultSecrets(a.Vault, vaultSecretData); err != nil {
+	if err := CreateVaultSecrets(a.Vault, vaultSecretData, false); err != nil {
 		return errors.Wrap(err, "unable to create vault secrets")
 	}
 
@@ -332,7 +338,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 	}
 
 	cb := a.prepareRegistryCodebase(r)
-	valuesEncoded, err := a.encodeValues(r.Name, values)
+	valuesEncoded, err := a.encodeValues(r.Name, values.OriginalYaml)
 	if err != nil {
 		return errors.Wrap(err, "unable to encode values")
 	}
@@ -365,11 +371,32 @@ func ModifyVaultPath(path string) string {
 	return strings.Join(pathParts, "/")
 }
 
-func CreateVaultSecrets(v vault.ServiceInterface, secretData map[string]map[string]interface{}) error {
-	for vaultPath, pathSecretData := range secretData {
-		vaultPath = ModifyVaultPath(vaultPath)
+func CreateVaultSecrets(v vault.ServiceInterface, secretData map[string]map[string]interface{}, append bool) error {
+	for vPath, pathSecretData := range secretData {
+		modPath := ModifyVaultPath(vPath)
 
-		if _, err := v.Write(vaultPath, map[string]interface{}{
+		if append {
+			sec, err := v.Read(modPath)
+			if err != nil {
+				return errors.Wrap(err, "unable to read secret")
+			}
+
+			if sec != nil {
+				currentSecretData, ok := sec.Data["data"]
+				if ok {
+					currentSecretData, ok := currentSecretData.(map[string]interface{})
+					if ok {
+						for k, v := range pathSecretData {
+							currentSecretData[k] = v
+						}
+
+						pathSecretData = currentSecretData
+					}
+				}
+			}
+		}
+
+		if _, err := v.Write(modPath, map[string]interface{}{
 			"data": pathSecretData,
 		}); err != nil {
 			return errors.Wrap(err, "unable to write to vault")
@@ -399,8 +426,17 @@ func (a *App) vaultRegistryPathKey(registryName, key string) string {
 	return fmt.Sprintf("%s/%s", a.vaultRegistryPath(registryName), key)
 }
 
-func (a *App) prepareCIDRConfig(ginContext *gin.Context, r *registry, values map[string]interface{}) error {
-	if ginContext.PostForm("action") == "edit" && ginContext.PostForm("cidr-changed") == "" {
+func (a *App) keyManagementRegistryVaultPath(registryName string) string {
+	return a.vaultRegistryPath(registryName) + "/key-management"
+}
+
+func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
+	_ map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
+
+	//TODO: remove this check
+	if ctx.PostForm("action") == "edit" && ctx.PostForm("cidr-changed") == "" {
 		return nil
 	}
 
@@ -416,43 +452,16 @@ func (a *App) prepareCIDRConfig(ginContext *gin.Context, r *registry, values map
 	}
 	whiteListDict := whiteListInterface.(map[string]interface{})
 
-	if r.CIDRCitizen != "" {
-		var cidr []string
-		if err := json.Unmarshal([]byte(r.CIDRCitizen), &cidr); err != nil {
-			return errors.Wrap(err, "unable to decode cidr")
-		}
-
-		if len(cidr) > 0 {
-			whiteListDict["citizenPortal"] = strings.Join(cidr, " ")
-		} else if _, ok = whiteListDict["citizenPortal"]; ok {
-			delete(whiteListDict, "citizenPortal")
-		}
+	if err := handleCIDRCategory(r.CIDRCitizen, "citizenPortal", whiteListDict); err != nil {
+		return errors.Wrap(err, "unable to handle cidr category")
 	}
 
-	if r.CIDROfficer != "" {
-		var cidr []string
-		if err := json.Unmarshal([]byte(r.CIDROfficer), &cidr); err != nil {
-			return errors.Wrap(err, "unable to decode cidr")
-		}
-
-		if len(cidr) > 0 {
-			whiteListDict["officerPortal"] = strings.Join(cidr, " ")
-		} else if _, ok = whiteListDict["officerPortal"]; ok {
-			delete(whiteListDict, "officerPortal")
-		}
+	if err := handleCIDRCategory(r.CIDROfficer, "officerPortal", whiteListDict); err != nil {
+		return errors.Wrap(err, "unable to handle cidr category")
 	}
 
-	if r.CIDRAdmin != "" {
-		var cidr []string
-		if err := json.Unmarshal([]byte(r.CIDRAdmin), &cidr); err != nil {
-			return errors.Wrap(err, "unable to decode cidr")
-		}
-
-		if len(cidr) > 0 {
-			whiteListDict["adminRoutes"] = strings.Join(cidr, " ")
-		} else if _, ok = whiteListDict["adminRoutes"]; ok {
-			delete(whiteListDict, "adminRoutes")
-		}
+	if err := handleCIDRCategory(r.CIDRAdmin, "adminRoutes", whiteListDict); err != nil {
+		return errors.Wrap(err, "unable to handle cidr category")
 	}
 
 	globalDict["whiteListIP"] = whiteListDict
@@ -461,10 +470,31 @@ func (a *App) prepareCIDRConfig(ginContext *gin.Context, r *registry, values map
 	return nil
 }
 
-func (a *App) prepareAdminsConfig(r *registry, secretData map[string]map[string]interface{},
-	values map[string]interface{}) error {
-	//TODO: don't recreate admin secrets for existing admin
+func handleCIDRCategory(cidrCategory, dictIndex string, whiteListDict map[string]interface{}) error {
+	if cidrCategory == "" {
+		return nil
+	}
 
+	var cidr []string
+	if err := json.Unmarshal([]byte(cidrCategory), &cidr); err != nil {
+		return errors.Wrap(err, "unable to decode cidr")
+	}
+
+	if len(cidr) > 0 {
+		whiteListDict[dictIndex] = strings.Join(cidr, " ")
+	} else if _, ok := whiteListDict[dictIndex]; ok {
+		delete(whiteListDict, dictIndex)
+	}
+
+	return nil
+}
+
+func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
+	secrets map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
+
+	//TODO: don't recreate admin secrets for existing admin
 	if r.Admins != "" && r.AdminsChanged == "on" {
 		admins, err := validateAdmins(r.Admins)
 		if err != nil {
@@ -474,7 +504,7 @@ func (a *App) prepareAdminsConfig(r *registry, secretData map[string]map[string]
 		adminsVaultPath := a.vaultRegistryPathKey(r.Name, "administrators")
 		for i, adm := range admins {
 			adminVaultPath := fmt.Sprintf("%s/%s", adminsVaultPath, adm.Email)
-			secretData[adminVaultPath] = map[string]interface{}{
+			secrets[adminVaultPath] = map[string]interface{}{
 				"password": adm.TmpPassword,
 			}
 
@@ -489,8 +519,12 @@ func (a *App) prepareAdminsConfig(r *registry, secretData map[string]map[string]
 	return nil
 }
 
-func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, secretData map[string]map[string]interface{},
-	values map[string]interface{}) error {
+func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Values,
+	secretData map[string]map[string]interface{}) error {
+
+	//TODO: refactor to new values struct
+	values := _values.OriginalYaml
+
 	portals, ok := values["portals"]
 	if !ok {
 		portals = make(map[string]interface{})
@@ -509,120 +543,79 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, secretData 
 	}
 	officerDict := officer.(map[string]interface{})
 
-	if r.DNSNameOfficer != "" {
-		if r.DNSNameOfficer == "-" {
-			delete(portalsDict, "officer")
-			delete(officerDict, "customDns")
-		} else {
-			customDNS := make(map[string]interface{})
-			customDNS["enabled"] = true
-			customDNS["host"] = r.DNSNameOfficer
-			officerDict["customDns"] = customDNS
+	if r.DNSNameOfficerEnabled == "" {
+		delete(portalsDict, "officer")
+		delete(officerDict, "customDns")
+	} else if r.DNSNameOfficerEnabled != "" && r.DNSNameOfficer != "" {
+		customDNS := make(map[string]interface{})
+		customDNS["enabled"] = true
+		customDNS["host"] = r.DNSNameOfficer
+		officerDict["customDns"] = customDNS
 
-			certFile, _, err := ginContext.Request.FormFile("officer-ssl")
-			if err != nil {
-				return errors.Wrap(err, "unable to get officer ssl certificate")
-			}
-
-			certData, err := ioutil.ReadAll(certFile)
-			if err != nil {
-				return errors.Wrap(err, "unable to read officer ssl data")
-			}
-
-			caCert, cert, key, err := decodePEM(certData)
-			if err != nil {
-				return validator.ValidationErrors([]validator.FieldError{
-					router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
-			}
-
-			secretPath := strings.ReplaceAll(a.Config.VaultOfficerSSLPath, "{registry}", r.Name)
-			secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameOfficer)
-
-			if _, ok := secretData[secretPath]; !ok {
-				secretData[secretPath] = make(map[string]interface{})
-			}
-
-			secretData[secretPath][VaultKeyCACert] = caCert
-			secretData[secretPath][VaultKeyCert] = cert
-			secretData[secretPath][VaultKeyPK] = key
+		certFile, _, err := ginContext.Request.FormFile("officer-ssl")
+		if err != nil {
+			return errors.Wrap(err, "unable to get officer ssl certificate")
 		}
+
+		certData, err := ioutil.ReadAll(certFile)
+		if err != nil {
+			return errors.Wrap(err, "unable to read officer ssl data")
+		}
+
+		caCert, cert, key, err := decodePEM(certData)
+		if err != nil {
+			return validator.ValidationErrors([]validator.FieldError{
+				router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
+		}
+
+		secretPath := strings.ReplaceAll(a.Config.VaultOfficerSSLPath, "{registry}", r.Name)
+		secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameOfficer)
+
+		if _, ok := secretData[secretPath]; !ok {
+			secretData[secretPath] = make(map[string]interface{})
+		}
+
+		secretData[secretPath][VaultKeyCACert] = caCert
+		secretData[secretPath][VaultKeyCert] = cert
+		secretData[secretPath][VaultKeyPK] = key
 	}
 
-	if r.DNSNameCitizen != "" {
-		if r.DNSNameCitizen == "-" {
-			delete(portalsDict, "citizen")
-			delete(citizenDict, "customDns")
-		} else {
-			customDNS := make(map[string]interface{})
-			customDNS["enabled"] = true
-			customDNS["host"] = r.DNSNameCitizen
-			citizenDict["customDns"] = customDNS
+	if r.DNSNameCitizenEnabled == "" {
+		delete(portalsDict, "citizen")
+		delete(citizenDict, "customDns")
+	} else if r.DNSNameCitizenEnabled != "" && r.DNSNameCitizen != "" {
+		customDNS := make(map[string]interface{})
+		customDNS["enabled"] = true
+		customDNS["host"] = r.DNSNameCitizen
+		citizenDict["customDns"] = customDNS
 
-			certFile, _, err := ginContext.Request.FormFile("citizen-ssl")
-			if err != nil {
-				return errors.Wrap(err, "unable to get citizen ssl certificate")
-			}
-
-			certData, err := ioutil.ReadAll(certFile)
-			if err != nil {
-				return errors.Wrap(err, "unable to read citizen ssl data")
-			}
-
-			caCert, cert, key, err := decodePEM(certData)
-			if err != nil {
-				return validator.ValidationErrors([]validator.FieldError{
-					router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
-			}
-
-			secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
-			secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameCitizen)
-
-			if _, ok := secretData[secretPath]; !ok {
-				secretData[secretPath] = make(map[string]interface{})
-			}
-
-			secretData[secretPath][VaultKeyCACert] = caCert
-			secretData[secretPath][VaultKeyCert] = cert
-			secretData[secretPath][VaultKeyPK] = key
+		certFile, _, err := ginContext.Request.FormFile("citizen-ssl")
+		if err != nil {
+			return errors.Wrap(err, "unable to get citizen ssl certificate")
 		}
-	}
 
-	//if r.DNSNameKeycloak != "" {
-	//	certFile, _, err := ginContext.Request.FormFile("keycloak-ssl")
-	//	if err != nil {
-	//		return errors.Wrap(err, "unable to get citizen ssl certificate")
-	//	}
-	//
-	//	certData, err := ioutil.ReadAll(certFile)
-	//	if err != nil {
-	//		return errors.Wrap(err, "unable to read citizen ssl data")
-	//	}
-	//
-	//	caCert, cert, key, err := decodePEM(certData)
-	//	if err != nil {
-	//		return validator.ValidationErrors([]validator.FieldError{
-	//			router.MakeFieldError("DNSNameKeycloak", "pem-decode-error")})
-	//	}
-	//
-	//	secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
-	//	secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameKeycloak)
-	//
-	//	if _, ok := secretData[secretPath]; !ok {
-	//		secretData[secretPath] = make(map[string]interface{})
-	//	}
-	//
-	//	secretData[secretPath][VaultKeyCACert] = caCert
-	//	secretData[secretPath][VaultKeyCert] = cert
-	//	secretData[secretPath][VaultKeyPK] = key
-	//
-	//	kcInterface, ok := values["keycloak"]
-	//	if !ok {
-	//		kcInterface = make(map[string]interface{})
-	//	}
-	//	kcDict := kcInterface.(map[string]interface{})
-	//	kcDict["customHost"] = r.DNSNameKeycloak
-	//	values["keycloak"] = kcDict
-	//}
+		certData, err := ioutil.ReadAll(certFile)
+		if err != nil {
+			return errors.Wrap(err, "unable to read citizen ssl data")
+		}
+
+		caCert, cert, key, err := decodePEM(certData)
+		if err != nil {
+			return validator.ValidationErrors([]validator.FieldError{
+				router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
+		}
+
+		secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
+		secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameCitizen)
+
+		if _, ok := secretData[secretPath]; !ok {
+			secretData[secretPath] = make(map[string]interface{})
+		}
+
+		secretData[secretPath][VaultKeyCACert] = caCert
+		secretData[secretPath][VaultKeyCert] = cert
+		secretData[secretPath][VaultKeyPK] = key
+	}
 
 	if len(citizenDict) > 0 {
 		portalsDict["citizen"] = citizenDict
@@ -631,16 +624,6 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, secretData 
 	if len(officerDict) > 0 {
 		portalsDict["officer"] = officerDict
 	}
-
-	//valuesPortalsInterface, ok := values["portals"]
-	//if !ok {
-	//	valuesPortalsInterface = map[string]interface{}{}
-	//}
-	//valuesPortalsDict := valuesPortalsInterface.(map[string]interface{})
-	//
-	//for k, v := range portalsDict {
-	//	valuesPortalsDict[k] = v
-	//}
 
 	values["portals"] = portalsDict
 
@@ -663,7 +646,8 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 		if block.Type == "CERTIFICATE" {
 			x509Cert, err := x509.ParseCertificate(block.Bytes)
 			if err != nil {
-				panic(err)
+				retErr = err
+				return
 			}
 
 			if x509Cert.IsCA {
@@ -698,8 +682,10 @@ func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retEr
 	return
 }
 
-func (a *App) prepareMailServerConfig(r *registry, secretData map[string]map[string]interface{},
-	values map[string]interface{}) error {
+func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Values,
+	secretData map[string]map[string]interface{}) error {
+	values := _values.OriginalYaml
+	//TODO: refactor to new values
 
 	notifications := make(map[string]interface{})
 

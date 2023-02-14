@@ -1,0 +1,16 @@
+{{ define "open-mr-form" }}
+    <div class="popup-window admin-window visible" v-cloak v-if="openMergeRequests.formShow">
+        <div class="popup-header">
+            <p>Дія недоступна</p>
+            <a href="#" @click="hideOpenMRForm" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+            <div class="popup-body">
+                <p>Реєстр має не підтверджені запити на оновлення.</p>
+            </div>
+            <div class="popup-footer active">
+                <a href="#" id="admin-cancel" class="hide-popup" @click="hideOpenMRForm">Закрити</a>
+            </div>
+    </div>
+{{end}}

@@ -261,6 +261,14 @@ func (s *Service) RawPull(params ...string) error {
 	return nil
 }
 
+func IsErrNonFastForwardUpdate(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "non-fast-forward update")
+}
+
 func (s *Service) Pull(remoteName string) (*object.Commit, error) {
 	r, w, err := s.worktree()
 	if err != nil {

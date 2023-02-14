@@ -60,12 +60,20 @@ let app = Vue.createApp({
             }
         }
 
+        if (this.$refs.hasOwnProperty('registryValues')) {
+            this.registryValues = JSON.parse(this.$refs.registryValues.value);
+
+            this.loadRegistryValues();
+            this.dnsPreloadDataFromValues();
+        }
+
         if (this.$refs.hasOwnProperty('registryUpdate')) {
             this.wizard.tabs.update.visible = true;
         }
     },
     data() {
         return {
+            registryValues: null,
             registryFormSubmitted: false,
             cidrChanged: true,
             officerCIDRValue: { value: '' },
@@ -160,20 +168,86 @@ let app = Vue.createApp({
                     },
                     resources: {title: 'Ресурси реєстру', validated: false, beginValidation: false,
                         validator: /*this.wizardResourcesValidation*/ this.wizardEmptyValidation, visible: true,},
-                    dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '', /*keycloak: ''*/},
-                        beginValidation: false, formatError: {officer: false, citizen: false, /*keycloak: false*/},
-                        requiredError: {officer: false, citizen: false, /*keycloak: false*/},
-                        typeError: {officer: false, citizen: false, /*keycloak: false*/},
-                        editVisible: {officer: true, citizen: true},
+                    dns: {title: 'DNS', validated: false, data: {officer: '', citizen: '',},
+                        beginValidation: false, formatError: {officer: false, citizen: false, },
+                        requiredError: {officer: false, citizen: false, },
+                        typeError: {officer: false, citizen: false,},
+                        editVisible: {officer: false, citizen: false},
                         validator: this.wizardDNSValidation, visible: true,
                         preloadValues: {}},
                     cidr: {title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
+                    supplierAuthentication: {
+                        title: 'Автентифікація надавачів послуг', validated: false, validator: this.wizardSupAuthValidation,
+                        beginValidation:false, visible: true,
+                        dsoDefaultURL: 'https://eu.iit.com.ua/sign-widget/v20200922/',
+                        data: {
+                            authType: 'dso-officer-auth-flow',
+                            url: 'https://eu.iit.com.ua/sign-widget/v20200922/',
+                            widgetHeight: '720',
+                            clientId: '',
+                            secret: '',
+                        },
+                        urlValidationFailed: false,
+                        heightIsNotNumber: false,
+                    },
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
         }
     },
     methods: {
+        wizardSupAuthFlowChange() {
+            this.wizard.tabs.supplierAuthentication.validated = false;
+            this.wizard.tabs.supplierAuthentication.beginValidation = false;
+
+            let registryValues = this.registryValues;
+
+            if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
+                if (registryValues && registryValues.signWidget.url !== '') {
+                    this.wizard.tabs.supplierAuthentication.data.url = registryValues.signWidget.url;
+                } else {
+                    this.wizard.tabs.supplierAuthentication.data.url = this.wizard.tabs.supplierAuthentication.dsoDefaultURL;
+                }
+
+                if (registryValues && registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight !== 0) {
+                    this.wizard.tabs.supplierAuthentication.data.widgetHeight =
+                        registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
+                }
+
+            } else {
+                if (registryValues && registryValues.keycloak.identityProviders.idGovUa.url !== '') {
+                    this.wizard.tabs.supplierAuthentication.data.url = registryValues.keycloak.identityProviders.idGovUa.url;
+                } else {
+                    this.wizard.tabs.supplierAuthentication.data.url = '';
+                }
+
+                if (registryValues && registryValues.keycloak.identityProviders.idGovUa.clientId !== '') {
+                    this.wizard.tabs.supplierAuthentication.data.clientId = registryValues.keycloak.identityProviders.idGovUa.clientId;
+                    this.wizard.tabs.supplierAuthentication.data.secret = '*****';
+                }
+            }
+        },
+        loadRegistryValues() {
+            try {
+                if (this.registryValues.keycloak.realms.officerPortal.browserFlow !== '') {
+                    this.wizard.tabs.supplierAuthentication.data.authType = this.registryValues.keycloak.realms.officerPortal.browserFlow;
+                }
+
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
+                    this.wizard.tabs.supplierAuthentication.data.widgetHeight =
+                        this.registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
+                    this.wizard.tabs.supplierAuthentication.data.url = this.registryValues.signWidget.url;
+                } else {
+                    this.wizard.tabs.supplierAuthentication.data.url =
+                        this.registryValues.keycloak.identityProviders.idGovUa.url;
+                    this.wizard.tabs.supplierAuthentication.data.clientId = this.registryValues.keycloak.identityProviders.idGovUa.clientId;
+                    this.wizard.tabs.supplierAuthentication.data.secret = '*****';
+                }
+
+            } catch (e) {
+                console.log(e);
+            }
+        },
         removeResourcesCatFromList(name)  {
             let searchIdx = this.registryResources.cats.indexOf(name);
             if (searchIdx !== -1) {
@@ -283,6 +357,9 @@ let app = Vue.createApp({
 
             return this.mergeDeep(target, ...sources);
         },
+        wizardDNSEditVisibleChange(name, event){
+            console.log(name, event);
+        },
         wizardEditSubmit(event) {
             let tab = this.wizard.tabs[this.wizard.activeTab];
             let $this = this;
@@ -310,15 +387,15 @@ let app = Vue.createApp({
                 }
             }
         },
-        dnsUnsetPreloadedValue(name, e){
-            this.wizard.tabs.dns.editVisible[name] = true;
-            this.wizard.tabs.dns.data[name] = this.wizard.tabs.dns.preloadValues[name];
-            e.preventDefault();
-        },
-        dnsSetPreloadedValue(name, value) {
-            if (!this.wizard.tabs.dns.preloadValues.hasOwnProperty(name)) {
-                this.wizard.tabs.dns.editVisible[name] = false;
-                this.wizard.tabs.dns.preloadValues[name] = value;
+        dnsPreloadDataFromValues() {
+            if (this.registryValues && this.registryValues.hasOwnProperty('portals')) {
+                for (let p in this.registryValues.portals) {
+                    if(this.registryValues.portals[p].hasOwnProperty('customDns')) {
+                        this.wizard.tabs.dns.editVisible[p] =  this.registryValues.portals[p].customDns.enabled;
+                        this.wizard.tabs.dns.data[p] =  this.registryValues.portals[p].customDns.host;
+                        this.wizard.tabs.dns.preloadValues[p] = this.registryValues.portals[p].customDns.host;
+                    }
+                }
             }
         },
         wizardPrev(){
@@ -405,6 +482,40 @@ let app = Vue.createApp({
                     });
             });
         },
+        wizardSupAuthValidation(tab){
+            return new Promise((resolve) => {
+                tab.beginValidation = true;
+                tab.validated = false;
+                tab.urlValidationFailed = false;
+                tab.heightIsNotNumber = false;
+
+                if (!/^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=,]*)$/.test(this.wizard.tabs.supplierAuthentication.data.url)) {
+                    tab.urlValidationFailed = true;
+                    return;
+                }
+
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'dso-officer-auth-flow') {
+                    if (this.wizard.tabs.supplierAuthentication.data.widgetHeight === '') {
+                        return;
+                    }
+
+                    if (!/^[0-9]+$/.test(this.wizard.tabs.supplierAuthentication.data.widgetHeight)) {
+                        this.wizard.tabs.supplierAuthentication.heightIsNotNumber = true;
+                        return;
+                    }
+                }
+
+                if (this.wizard.tabs.supplierAuthentication.data.authType === 'id-gov-ua-officer-redirector' &&
+                    (this.wizard.tabs.supplierAuthentication.data.clientId === '' ||
+                        this.wizard.tabs.supplierAuthentication.data.secret === '')) {
+                    return
+                }
+
+                tab.validated = true;
+                tab.beginValidation = false;
+                resolve();
+            });
+        },
         wizardDNSValidation(tab){
             return new Promise((resolve) => {
                 tab.beginValidation = true;
@@ -425,10 +536,11 @@ let app = Vue.createApp({
                             validationFailed = true;
                         }
 
-                        if (fileInput.files.length === 0) {
+                        if (fileInput.files.length === 0 &&
+                            (!this.wizard.tabs.dns.preloadValues.hasOwnProperty(k) || this.wizard.tabs.dns.preloadValues[k] !== this.wizard.tabs.dns.data[k])) {
                             this.wizard.tabs.dns.requiredError[k] = true;
                             validationFailed = true;
-                        } else {
+                        } else if (fileInput.files.length > 0) {
                             filesToCheck.push({name: k, file: fileInput.files[0]});
                         }
                     } else if (fileInput.files.length > 0) {
@@ -792,11 +904,12 @@ let app = Vue.createApp({
         },
         prepareDNSConfig(){
             for (let k in this.wizard.tabs.dns.data) {
-                if (this.wizard.tabs.dns.editVisible[k] && this.wizard.tabs.dns.data[k] === '' &&
-                    this.wizard.tabs.dns.preloadValues.hasOwnProperty(k)) {
-                    this.wizard.tabs.dns.preloadValues = '';
-                    this.wizard.tabs.dns.editVisible[k] = false;
-                    this.wizard.tabs.dns.data[k] = '-';
+                let fileInput = this.$refs[`${k}SSL`];
+
+                if (this.wizard.tabs.dns.editVisible[k] &&
+                    this.wizard.tabs.dns.data[k] === this.wizard.tabs.dns.preloadValues[k] &&
+                    fileInput.files.length === 0) {
+                    this.wizard.tabs.dns.data[k] = '';
                 }
             }
         },

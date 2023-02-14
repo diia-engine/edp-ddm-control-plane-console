@@ -3,13 +3,10 @@ package cluster
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +30,7 @@ type BackupConfig struct {
 }
 
 func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
 
 	mrExists, err := registry.ProjectHasOpenMR(ctx, a.ClusterRepo, a.Gerrit)
 	if err != nil {
@@ -123,50 +120,50 @@ func (a *App) editDataLoaders() []func(*Values, gin.H) error {
 }
 
 func (a *App) editPost(ctx *gin.Context) (router.Response, error) {
-	userCtx := a.router.ContextWithUserAccessToken(ctx)
-
-	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to init service for user context")
-	}
-
-	canUpdateCluster, err := k8sService.CanI("v2.edp.epam.com", "codebases", "update", a.Config.CodebaseName)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check access to cluster codebase")
-	}
-	if !canUpdateCluster {
-		return nil, errors.Wrap(err, "access denied")
-	}
-
-	jenkinsService, err := a.Services.Jenkins.ServiceForContext(userCtx)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to init jenkins client")
-	}
-
-	var backupConfig BackupConfig
-	if err := ctx.ShouldBind(&backupConfig); err != nil {
-		validationErrors, ok := err.(validator.ValidationErrors)
-		if !ok {
-			return nil, errors.Wrap(err, "unable to parse registry form")
-		}
-
-		return router.MakeHTMLResponse(200, "cluster/edit.html",
-			gin.H{"page": "cluster", "errorsMap": validationErrors, "backupConf": backupConfig}), nil
-	}
-
-	if err := k8sService.RecreateSecret(a.Config.BackupSecretName, map[string][]byte{
-		StorageLocation:          []byte(backupConfig.StorageLocation),
-		StorageType:              []byte(backupConfig.StorageType),
-		StorageCredentialsKey:    []byte(backupConfig.StorageCredentialsKey),
-		StorageCredentialsSecret: []byte(backupConfig.StorageCredentialsSecret),
-	}); err != nil {
-		return nil, errors.Wrap(err, "unable to recreate backup secret")
-	}
-
-	if err := jenkinsService.CreateJobBuildRun(ctx, fmt.Sprintf("cluster-update-%d", time.Now().Unix()),
-		fmt.Sprintf("%s/job/MASTER-Build-%s/", a.Config.CodebaseName, a.Config.CodebaseName), nil); err != nil {
-		return nil, errors.Wrap(err, "unable to trigger jenkins job build run")
-	}
+	//userCtx := a.router.ContextWithUserAccessToken(ctx)
+	//
+	//k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "unable to init service for user context")
+	//}
+	//
+	//canUpdateCluster, err := k8sService.CanI("v2.edp.epam.com", "codebases", "update", a.Config.CodebaseName)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "unable to check access to cluster codebase")
+	//}
+	//if !canUpdateCluster {
+	//	return nil, errors.Wrap(err, "access denied")
+	//}
+	//
+	//jenkinsService, err := a.Services.Jenkins.ServiceForContext(userCtx)
+	//if err != nil {
+	//	return nil, errors.Wrap(err, "unable to init jenkins client")
+	//}
+	//
+	//var backupConfig BackupConfig
+	//if err := ctx.ShouldBind(&backupConfig); err != nil {
+	//	validationErrors, ok := err.(validator.ValidationErrors)
+	//	if !ok {
+	//		return nil, errors.Wrap(err, "unable to parse registry form")
+	//	}
+	//
+	//	return router.MakeHTMLResponse(200, "cluster/edit.html",
+	//		gin.H{"page": "cluster", "errorsMap": validationErrors, "backupConf": backupConfig}), nil
+	//}
+	//
+	//if err := k8sService.RecreateSecret(a.Config.BackupSecretName, map[string][]byte{
+	//	StorageLocation:          []byte(backupConfig.StorageLocation),
+	//	StorageType:              []byte(backupConfig.StorageType),
+	//	StorageCredentialsKey:    []byte(backupConfig.StorageCredentialsKey),
+	//	StorageCredentialsSecret: []byte(backupConfig.StorageCredentialsSecret),
+	//}); err != nil {
+	//	return nil, errors.Wrap(err, "unable to recreate backup secret")
+	//}
+	//
+	//if err := jenkinsService.CreateJobBuildRun(ctx, fmt.Sprintf("cluster-update-%d", time.Now().Unix()),
+	//	fmt.Sprintf("%s/job/MASTER-Build-%s/", a.Config.CodebaseName, a.Config.CodebaseName), nil); err != nil {
+	//	return nil, errors.Wrap(err, "unable to trigger jenkins job build run")
+	//}
 
 	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
 }
