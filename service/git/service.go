@@ -237,7 +237,7 @@ func IsErrReferenceNotFound(err error) bool {
 		return false
 	}
 
-	return errors.Cause(err).Error() == "reference not found"
+	return strings.Contains(err.Error(), "reference not found")
 }
 
 func (s *Service) RawPull(params ...string) error {
