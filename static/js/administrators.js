@@ -546,19 +546,21 @@ let app = Vue.createApp({
                 bs.wrongCronFormat = false;
                 bs.wrongDaysFormat = false;
 
-                try {
-                    cronSchedule.parseCronExpression(bs.data.cronSchedule)
-                } catch (e) {
-                    bs.nextLaunches = false;
-                    bs.wrongCronFormat = true;
+                if (bs.data.cronSchedule !== '') {
+                    try {
+                        cronSchedule.parseCronExpression(bs.data.cronSchedule)
+                    } catch (e) {
+                        bs.nextLaunches = false;
+                        bs.wrongCronFormat = true;
+                    }
                 }
 
                 const days = parseInt(bs.data.days);
-                if (!/^[0-9]+$/.test(bs.data.days) || isNaN(days) || days <= 0) {
+                if (bs.data.days !== '' && (!/^[0-9]+$/.test(bs.data.days) || isNaN(days) || days <= 0)) {
                     bs.wrongDaysFormat = true;
                 }
 
-                if (bs.wrongDaysFormat || bs.wrongCronFormat) {
+                if (bs.wrongDaysFormat || bs.wrongCronFormat|| bs.data.cronSchedule === '' || bs.data.days === '') {
                     return;
                 }
 
