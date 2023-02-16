@@ -65,6 +65,7 @@ let app = Vue.createApp({
 
             this.loadRegistryValues();
             this.dnsPreloadDataFromValues();
+            this.wizardCronExpressionChange();
         }
 
         if (this.$refs.hasOwnProperty('registryUpdate')) {
@@ -532,6 +533,7 @@ let app = Vue.createApp({
         wizardBackupScheduleValidation(tab) {
             return new Promise((resolve) => {
                 let bs = this.wizard.tabs.backupSchedule;
+                bs.data.cronSchedule = bs.data.cronSchedule.trim();
 
                 if (!bs.enabled) {
                     resolve();
@@ -549,12 +551,14 @@ let app = Vue.createApp({
                 } catch (e) {
                     bs.nextLaunches = false;
                     bs.wrongCronFormat = true;
-                    return;
                 }
 
                 const days = parseInt(bs.data.days);
-                if (isNaN(days)) {
+                if (!/^[0-9]+$/.test(bs.data.days) || isNaN(days) || days <= 0) {
                     bs.wrongDaysFormat = true;
+                }
+
+                if (bs.wrongDaysFormat || bs.wrongCronFormat) {
                     return;
                 }
 
