@@ -2,6 +2,7 @@ package registry
 
 import (
 	"ddm-admin-console/router"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
@@ -39,8 +40,6 @@ type DigitalSignature struct {
 }
 
 type DigitalSignatureData struct {
-	//CACertificates string `yaml:"CACertificates" json:"CACertificates"`
-	//CAs            string `yaml:"CAs" json:"CAs"`
 	Key6Dat        string `yaml:"Key-6-dat" json:"Key-6-dat"`
 	AllowedKeysYml string `yaml:"allowed-keys-yml" json:"allowed-keys-yml"`
 	OsplmIni       string `yaml:"osplm.ini" json:"osplm.ini"`
@@ -70,8 +69,6 @@ func PrepareRegistryKeys(reg KeyManagement, rq *http.Request, secretData map[str
 			SignKeyDeviceType: reg.KeyDeviceType(),
 		},
 		Data: DigitalSignatureData{
-			//CACertificates: reg.VaultSecretPath(),
-			//CAs:            reg.VaultSecretPath(),
 			AllowedKeysYml: reg.VaultSecretPath(),
 		},
 	}
@@ -121,7 +118,7 @@ func setKeySecretDataFromRegistry(reg KeyManagement, key6Fl multipart.File,
 			return errors.Wrap(err, "unable to read file")
 		}
 
-		keySecretData["Key-6.dat"] = string(key6Bytes)
+		keySecretData["Key-6.dat"] = base64.StdEncoding.EncodeToString(key6Bytes)
 		keySecretData["sign.key.file.issuer"] = reg.SignKeyIssuer()
 		keySecretData["sign.key.file.password"] = reg.SignKeyPwd()
 
