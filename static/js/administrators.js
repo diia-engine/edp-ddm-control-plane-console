@@ -286,9 +286,9 @@ let app = Vue.createApp({
             }
 
             try {
-                this.wizard.tabs.backupSchedule.enabled = this.registryValues.registryBackup.enabled;
-                this.wizard.tabs.backupSchedule.data.cronSchedule = this.registryValues.registryBackup.schedule;
-                this.wizard.tabs.backupSchedule.data.days = this.registryValues.registryBackup.expiresInDays;
+                this.wizard.tabs.backupSchedule.enabled = this.registryValues.global.registryBackup.enabled;
+                this.wizard.tabs.backupSchedule.data.cronSchedule = this.registryValues.global.registryBackup.schedule;
+                this.wizard.tabs.backupSchedule.data.days = this.registryValues.global.registryBackup.expiresInDays;
             } catch (e) {
                 console.log(e);
             }

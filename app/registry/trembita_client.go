@@ -9,6 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	MRLabelTargetTrembitaRegistryUpdate = "trembita-registry-update"
+	MRLabelTrembitaRegsitryName         = "trembita-registry-name"
+)
+
 type TrembitaClientRegistryForm struct {
 	TrembitaClientProtocolVersion string `form:"trembita-client-protocol-version" binding:"required"`
 	TrembitaClientURL             string `form:"trembita-client-url" binding:"required"`
@@ -110,7 +115,9 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 	values.OriginalYaml[trembitaValuesKey] = trembitaDict
 
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto},
+		MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
+		MRLabel{Key: MRLabelTrembitaRegsitryName, Value: tf.TrembitaClientRegitryName}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 

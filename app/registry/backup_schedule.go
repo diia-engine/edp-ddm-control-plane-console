@@ -15,9 +15,9 @@ const (
 func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Values,
 	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 
-	if r.BackupScheduleEnabled == "" && values.RegistryBackup.Enabled {
-		values.RegistryBackup.Enabled = false
-		values.OriginalYaml[registryBackupIndex] = values.RegistryBackup
+	if r.BackupScheduleEnabled == "" && values.Global.RegistryBackup.Enabled {
+		values.Global.RegistryBackup.Enabled = false
+		values.OriginalYaml[registryBackupIndex] = values.Global.RegistryBackup
 		*mrActions = append(*mrActions, MRActionBackupSchedule)
 		return nil
 	}
@@ -28,11 +28,19 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 			return fmt.Errorf("wrong backup days: %w", err)
 		}
 
-		values.RegistryBackup.ExpiresInDays = int(days)
-		values.RegistryBackup.Schedule = r.CronSchedule
-		values.RegistryBackup.Enabled = true
+		values.Global.RegistryBackup.ExpiresInDays = int(days)
+		values.Global.RegistryBackup.Schedule = r.CronSchedule
+		values.Global.RegistryBackup.Enabled = true
 
-		values.OriginalYaml[registryBackupIndex] = values.RegistryBackup
+		globalRaw, ok := values.OriginalYaml["global"]
+		if !ok {
+			globalRaw = make(map[string]interface{})
+		}
+
+		globalDict := globalRaw.(map[string]interface{})
+		globalDict[registryBackupIndex] = values.Global.RegistryBackup
+		values.OriginalYaml["global"] = globalDict
+
 		*mrActions = append(*mrActions, MRActionBackupSchedule)
 	}
 

@@ -9,8 +9,8 @@ type Values struct {
 	Trembita        Trembita                  `yaml:"trembita" json:"trembita"`
 	SignWidget      SignWidget                `yaml:"signWidget" json:"signWidget"`
 	Keycloak        Keycloak                  `yaml:"keycloak" json:"keycloak"`
-	RegistryBackup  RegistryBackup            `yaml:"registryBackup" json:"registryBackup"`
-	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
+
+	OriginalYaml map[string]interface{} `yaml:"-" json:"-"`
 }
 
 type RegistryBackup struct {
@@ -89,8 +89,9 @@ func (e ExternalSystem) FaStatus() string {
 }
 
 type Global struct {
-	WhiteListIP   WhiteListIP   `json:"whiteListIP" yaml:"whiteListIP"`
-	Notifications Notifications `json:"notifications" yaml:"notifications"`
+	WhiteListIP    WhiteListIP    `json:"whiteListIP" yaml:"whiteListIP"`
+	Notifications  Notifications  `json:"notifications" yaml:"notifications"`
+	RegistryBackup RegistryBackup `yaml:"registryBackup" json:"registryBackup"`
 }
 
 type WhiteListIP struct {
