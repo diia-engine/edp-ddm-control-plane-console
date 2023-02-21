@@ -12,7 +12,7 @@ import (
 func TestVersionFilterMake(t *testing.T) {
 	versions := []string{">=1.5.2", "==1.3.2", ">1.8.1", "<1.9.2", "<=5.0.0"}
 	for _, v := range versions {
-		_, err := makeVersionFilter(v)
+		_, err := MakeVersionFilter(v)
 		assert.NoError(t, err)
 	}
 }
@@ -49,29 +49,26 @@ func TestVersionFilter(t *testing.T) {
 		},
 	}
 
-	f, err := makeVersionFilter("<=1.9.2")
+	f, err := MakeVersionFilter("<=1.9.2")
 	assert.NoError(t, err)
 
-	filteredCBS, err := f.filterCodebases(cbs)
-	assert.NoError(t, err)
+	filteredCBS := f.FilterCodebases(cbs)
 	assert.Len(t, filteredCBS, 3)
 	assert.Equal(t, filteredCBS[0].Name, "v192")
 	assert.Equal(t, filteredCBS[1].Name, "v191")
 	assert.Equal(t, filteredCBS[2].Name, "v180")
 
-	f, err = makeVersionFilter("==1.9.3")
+	f, err = MakeVersionFilter("==1.9.3")
 	assert.NoError(t, err)
 
-	filteredCBS, err = f.filterCodebases(cbs)
-	assert.NoError(t, err)
+	filteredCBS = f.FilterCodebases(cbs)
 	assert.Len(t, filteredCBS, 1)
 	assert.Equal(t, filteredCBS[0].Name, "v193")
 
-	f, err = makeVersionFilter("")
+	f, err = MakeVersionFilter("")
 	assert.NoError(t, err)
 
-	filteredCBS, err = f.filterCodebases(cbs)
-	assert.NoError(t, err)
+	filteredCBS = f.FilterCodebases(cbs)
 	assert.Len(t, filteredCBS, 4)
 
 }

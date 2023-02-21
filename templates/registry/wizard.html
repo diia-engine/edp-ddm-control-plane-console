@@ -116,6 +116,9 @@
                 <div class="wizard-tab" v-show="wizard.activeTab == 'supplierAuthentication'">
                     {{template "supplier-auth" .}}
                 </div>
+                <div class="wizard-tab" v-show="wizard.activeTab == 'recipientAuthentication'">
+                    {{template "recipient-auth" .}}
+                </div>
                 <div class="wizard-tab" v-show="wizard.activeTab == 'backupSchedule'">
                     {{template "backup-schedule" .}}
                 </div>

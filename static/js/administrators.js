@@ -191,6 +191,16 @@ let app = Vue.createApp({
                         urlValidationFailed: false,
                         heightIsNotNumber: false,
                     },
+                    recipientAuthentication: {
+                        title: 'Автентифікація отримувачів послуг',
+                        validated: true,
+                        beginValidation:false,
+                        validator: this.wizardEmptyValidation,
+                        visible: true,
+                        data: {
+                            edrCheckEnabled: true
+                        }
+                    },
                     backupSchedule: {
                         title: 'Резервне копіювання', validated: false, beginValidation:false, visible: true,
                         validator: this.wizardBackupScheduleValidation, enabled: false,
@@ -281,6 +291,8 @@ let app = Vue.createApp({
                     this.wizard.tabs.supplierAuthentication.data.clientId = this.registryValues.keycloak.identityProviders.idGovUa.clientId;
                     this.wizard.tabs.supplierAuthentication.data.secret = '*****';
                 }
+
+                this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = this.registryValues.keycloak.authFlows.citizenAuthFlow.edrCheck
             } catch (e) {
                 console.log(e);
             }

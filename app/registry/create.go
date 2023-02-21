@@ -59,6 +59,7 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareRegistryResources,
 		a.prepareSupplierAuthConfig,
 		a.prepareBackupSchedule,
+		a.prepareEDRCheck,
 	}
 }
 

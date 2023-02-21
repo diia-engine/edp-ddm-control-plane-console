@@ -56,6 +56,7 @@ type registry struct {
 	BackupScheduleEnabled string   `form:"backup-schedule-enabled"`
 	CronSchedule          string   `form:"cron-schedule"`
 	CronScheduleDays      string   `form:"cron-schedule-days"`
+	EDRCheckEnabled       string   `form:"edr-check-enabled"`
 }
 
 func (r *registry) KeysRequired() bool {

@@ -51,10 +51,15 @@ type KeycloakIdentityProvidersIDGovUA struct {
 
 type KeycloakAuthFlows struct {
 	OfficerAuthFlow KeycloakAuthFlowsOfficerAuthFlow `yaml:"officerAuthFlow" json:"officerAuthFlow"`
+	CitizenAuthFlow KeycloakAuthFlowsCitizenAuthFlow `yaml:"citizenAuthFlow" json:"citizenAuthFlow"`
 }
 
 type KeycloakAuthFlowsOfficerAuthFlow struct {
 	WidgetHeight int `yaml:"widgetHeight" json:"widgetHeight"`
+}
+
+type KeycloakAuthFlowsCitizenAuthFlow struct {
+	EDRCheck bool `yaml:"edrCheck" json:"edrCheck"`
 }
 
 type KeycloakRealms struct {
