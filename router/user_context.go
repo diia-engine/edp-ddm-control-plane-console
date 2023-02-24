@@ -20,6 +20,7 @@ const (
 )
 
 var ErrTokenNotFound = errors.New("token not found")
+var ErrWrongTokenFormat = errors.New("wrong token format")
 
 func ExtractToken(ctx *gin.Context) (*oauth2.Token, error) {
 	session := sessions.Default(ctx)
@@ -30,7 +31,7 @@ func ExtractToken(ctx *gin.Context) (*oauth2.Token, error) {
 
 	tokenData, ok := token.(*oauth2.Token)
 	if !ok {
-		return nil, ErrTokenNotFound
+		return nil, ErrWrongTokenFormat
 	}
 
 	return tokenData, nil

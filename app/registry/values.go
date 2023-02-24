@@ -64,10 +64,10 @@ type NotificationsEmail struct {
 }
 
 type ExternalSystem struct {
-	URL      string            `yaml:"url" json:"url"`
+	URL      string            `yaml:"url,omitempty" json:"url"`
 	Type     string            `yaml:"type" json:"type"`
 	Protocol string            `yaml:"protocol" json:"protocol"`
-	Auth     map[string]string `yaml:"auth" json:"auth"`
+	Auth     map[string]string `yaml:"auth,omitempty" json:"auth"`
 }
 
 func (e ExternalSystem) StrAuth() string {

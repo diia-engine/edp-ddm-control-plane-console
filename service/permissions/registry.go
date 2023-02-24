@@ -186,7 +186,9 @@ func (r *Registry) LoadUserRegistries(ctx *gin.Context) error {
 		return fmt.Errorf("unable to load codebases: %w", err)
 	}
 
-	k8sService, err := r.k8sService.ServiceForContext(ctx)
+	userCtx := router.ContextWithUserAccessToken(ctx)
+
+	k8sService, err := r.k8sService.ServiceForContext(userCtx)
 	if err != nil {
 		return fmt.Errorf("unable to get k8s service for context: %w", err)
 	}
