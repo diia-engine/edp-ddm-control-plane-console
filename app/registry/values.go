@@ -9,8 +9,22 @@ type Values struct {
 	Trembita        Trembita                  `yaml:"trembita" json:"trembita"`
 	SignWidget      SignWidget                `yaml:"signWidget" json:"signWidget"`
 	Keycloak        Keycloak                  `yaml:"keycloak" json:"keycloak"`
+	Portals         Portals                   `yaml:"portals" json:"portals"`
+	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
+}
 
-	OriginalYaml map[string]interface{} `yaml:"-" json:"-"`
+type Portals struct {
+	Citizen Portal `yaml:"citizen" json:"citizen"`
+	Officer Portal `yaml:"officer" json:"officer"`
+}
+
+type Portal struct {
+	CustomDNS CustomDNS `yaml:"customDns" json:"customDns"`
+}
+
+type CustomDNS struct {
+	Enabled bool   `yaml:"enabled" json:"enabled"`
+	Host    string `yaml:"host" json:"host"`
 }
 
 type RegistryBackup struct {
