@@ -186,8 +186,7 @@ func (in *CodebaseBranch) StrStatus() string {
 }
 
 func (in *CodebaseBranch) CreateGerritLink(baseURL string) string {
-	return fmt.Sprintf("%v/gitweb?p=%s.git;a=shortlog;h=refs/heads/%s", baseURL, in.Spec.CodebaseName,
-		in.Spec.BranchName)
+	return fmt.Sprintf("%s/%s", baseURL, "dashboard/self")
 }
 
 func (in *CodebaseBranch) CreateJenkinsLink(baseURL string) string {
