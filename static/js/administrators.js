@@ -217,6 +217,31 @@ let app = Vue.createApp({
                     confirmation: {title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
+            clusterSettings: {
+                activeTab: 'administrators',
+                tabs: [
+                    {
+                        key: 'administrators',
+                        title: 'Адміністратори'
+                    },
+                    {
+                        key: 'backup',
+                        title: 'Резервне копіювання'
+                    },
+                    {
+                        key: 'allowedCIDR',
+                        title: 'Дозволені CIDR'
+                    },
+                    {
+                        key: 'dataAboutKey',
+                        title: 'Дані про ключ'
+                    },
+                    {
+                        key: 'keycloakDNS',
+                        title: 'Keycloak DNS'
+                    },
+                ]
+            }
         }
     },
     methods: {
@@ -495,6 +520,10 @@ let app = Vue.createApp({
 
                 wizard.activeTab = tabName;
             });
+        },
+        selectClusterSettingsTab(tabName, e) {
+            e.preventDefault();
+            this.clusterSettings.activeTab = tabName;
         },
         wizardTabChanged(tabName) {
             this.wizard.tabs[tabName].changed = true;
