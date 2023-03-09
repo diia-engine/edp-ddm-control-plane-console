@@ -28,6 +28,8 @@ type TrembitaClientRegistryForm struct {
 	TrembitaServiceMemberClass    string `form:"trembita-service-member-class" binding:"required"`
 	TrembitaServiceMemberCode     string `form:"trembita-service-member-code" binding:"required"`
 	TrembitaServiceSubsystemCode  string `form:"trembita-service-subsystem-code" binding:"required"`
+	TrembitaServiceServiceCode    string `form:"trembita-service-service-code"`
+	TrembitaServiceServiceVersion string `form:"trembita-service-service-version"`
 	TrembitaServiceAuthType       string `form:"trembita-service-auth-type" binding:"required"`
 	TrembitaServiceAuthSecret     string `form:"trembita-service-auth-secret"`
 }
@@ -44,10 +46,12 @@ func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
 			XRoadInstance: tf.TrembitaClientXRoadInstance,
 		},
 		Service: TrembitaRegistryService{
-			MemberCode:    tf.TrembitaServiceMemberCode,
-			MemberClass:   tf.TrembitaServiceMemberClass,
-			XRoadInstance: tf.TrembitaServiceXRoadInstance,
-			SubsystemCode: tf.TrembitaServiceSubsystemCode,
+			MemberCode:     tf.TrembitaServiceMemberCode,
+			MemberClass:    tf.TrembitaServiceMemberClass,
+			XRoadInstance:  tf.TrembitaServiceXRoadInstance,
+			SubsystemCode:  tf.TrembitaServiceSubsystemCode,
+			ServiceCode:    tf.TrembitaServiceServiceCode,
+			ServiceVersion: tf.TrembitaServiceServiceVersion,
 		},
 		Auth: map[string]string{
 			"type": tf.TrembitaServiceAuthType,
@@ -115,12 +119,121 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 	values.OriginalYaml[trembitaValuesKey] = trembitaDict
 
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto},
-		MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
+		[]string{}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
 		MRLabel{Key: MRLabelTrembitaRegsitryName, Value: tf.TrembitaClientRegitryName}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
 	return router.MakeRedirectResponse(http.StatusFound,
 		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
+}
+
+func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Response, retErr error) {
+	registryName := ctx.Param("name")
+
+	_, err := a.Codebase.Get(registryName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find registry")
+	}
+
+	var tf TrembitaClientRegistryForm
+	if err := ctx.ShouldBind(&tf); err != nil {
+		return nil, errors.Wrap(err, "unable to parse form")
+	}
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get values")
+	}
+
+	_, ok := values.Trembita.Registries[tf.TrembitaClientRegitryName]
+
+	if ok {
+		return nil, errors.Wrap(err, "trembita client already exists")
+	}
+
+	trembitaRegistry := tf.ToNestedStruct()
+	trembitaRegistry.Type = externalSystemDeletableType
+	trembitaRegistry.Protocol = tf.TrembitaClientProtocol
+
+	if tf.TrembitaServiceAuthType == authTypeAuthToken && tf.TrembitaServiceAuthSecret != "" {
+		vaultPath := fmt.Sprintf("%s/trembita-registries", a.vaultRegistryPath(registryName))
+		prefixedPath := fmt.Sprintf("vault:%s", vaultPath)
+
+		if tf.TrembitaServiceAuthSecret != prefixedPath {
+			if err := CreateVaultSecrets(a.Vault, map[string]map[string]interface{}{
+				vaultPath: {
+					fmt.Sprintf("trembita.registries.%s.auth.secret.token", tf.TrembitaClientRegitryName): tf.TrembitaServiceAuthSecret,
+				},
+			}, true); err != nil {
+				return nil, errors.Wrap(err, "unable to create auth token secret")
+			}
+		}
+		trembitaRegistry.Auth["secret"] = prefixedPath
+	}
+	values.Trembita.Registries[tf.TrembitaClientRegitryName] = trembitaRegistry
+	values.OriginalYaml[trembitaValuesKey] = values.Trembita
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
+		[]string{}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
+		MRLabel{Key: MRLabelTrembitaRegsitryName, Value: tf.TrembitaClientRegitryName}); err != nil {
+		return nil, errors.Wrap(err, "unable to create merge request")
+	}
+	return router.MakeRedirectResponse(http.StatusFound,
+		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
+}
+
+func (a *App) deleteTrembitaClient(ctx *gin.Context) (rsp router.Response, retErr error) {
+	registryName := ctx.Param("name")
+
+	_, err := a.Codebase.Get(registryName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find registry")
+	}
+
+	trembitaClientName := ctx.Query("trembita-client")
+
+	values, _, err := GetValuesFromGit(ctx,registryName, MasterBranch, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get values")
+	}
+
+	trembita, ok := values.Trembita.Registries[trembitaClientName]
+	if !ok {
+		return nil, errors.New("trembita client does not exists")
+	}
+
+	if trembita.Type == "platform" {
+		return nil, errors.New("trembita client is unavailable to delete")
+	}
+
+	delete(values.Trembita.Registries, trembitaClientName)
+	values.OriginalYaml[trembitaValuesKey] = values.Trembita
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
+		return nil, errors.Wrap(err, "unable to create merge request")
+	}
+
+	return router.MakeRedirectResponse(http.StatusFound,
+		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
+}
+
+func (a *App) checkTrembitaClientExists(ctx *gin.Context) (rsp router.Response, retErr error) {
+	registryName := ctx.Param("name")
+
+	_, err := a.Codebase.Get(registryName)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to find registry")
+	}
+
+	trembitaClientName := ctx.Query("trembita-client")
+
+	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get values")
+	}
+
+	_, ok := values.Trembita.Registries[trembitaClientName]
+	if ok {
+		return router.MakeStatusResponse(http.StatusOK), nil
+	}
+
+	return router.MakeStatusResponse(http.StatusNotFound), nil
 }

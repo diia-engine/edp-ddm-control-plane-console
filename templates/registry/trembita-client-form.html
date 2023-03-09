@@ -1,16 +1,20 @@
 {{ define "trembita-client-form" }}
     <div id="trembita-client-popup" class="popup-window admin-window visible scrollable-popup" v-cloak v-if="trembitaClient.formShow">
         <div class="popup-header">
-            <p>Налаштувати взаємодію з реєстром через Трембіту</p>
+            <p v-if="!trembitaClient.registryCreation">Налаштувати взаємодію з реєстром через Трембіту</p>
+            <p v-if="trembitaClient.registryCreation">Додати взаємодію з реєстром через Трембіту</p>
             <a href="#" @click="hideTrembitaClientForm" class="popup-close hide-popup">
                 <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
             </a>
         </div>
-        <div class="view-registry-warning">
+        <div v-if="!trembitaClient.registryCreation" class="view-registry-warning">
             Налаштування взаємодії доступне для версій реєстру 1.9.3 і вище.
         </div>
+        <div v-if="trembitaClient.registryCreation" class="view-registry-warning">
+            Додавання взаємодії доступне для версій реєстру 1.9.4 і вище.
+        </div>
         <form @submit="setTrembitaClientForm" id="trembita-client-form" method="post"
-              action="/admin/registry/trembita-client/{{.registry.Name}}">
+              :action="trembitaClientFormAction()">
             <div class="popup-body">
                 <div class="popup-body-header">Налаштування ШБО Трембіти</div>
 
@@ -88,10 +92,19 @@
 
                 <div class="popup-body-header">Налаштування сервісу для інтеграції</div>
 
-                <div class="rc-form-group">
+                <div class="rc-form-group"
+                     :class="{'error': (trembitaClient.registryName == '' || trembitaClient.registryNameExists) && trembitaClient.startValidation}">
                     <label>Службова назва реєстру</label>
-                    <input aria-label="" type="text" readonly name="trembita-client-regitry-name"
+                    <input aria-label="" type="text" name="trembita-client-regitry-name"
+                           :readonly="!trembitaClient.registryCreation"
                            v-model="trembitaClient.registryName" />
+                    <p v-if="trembitaClient.registryCreation">Назва не може бути змінена після додавання інтеграції!</p>
+                    <span v-if="trembitaClient.registryName == '' && trembitaClient.startValidation">
+                        Обов’язкове поле
+                    </span>
+                    <span v-if="trembitaClient.registryNameExists">
+                        Зовнішня система з таким ім'ям вже існує
+                    </span>
                 </div>
 
                 <div class="rc-form-group">
@@ -141,17 +154,34 @@
                     </span>
                 </div>
 
+                <div v-if="!isSystemRegistry()" class="rc-form-group">
+                    <label>Service Code</label>
+                    <input aria-label="" type="text" name="trembita-service-service-code"
+                           v-model="trembitaClient.data.service.serviceCode" />
+                    <p>Необов'язковий параметр</p>
+                </div>
+
+                <div v-if="!isSystemRegistry()" class="rc-form-group" >
+                    <label>Service Version</label>
+                    <input aria-label="" type="text" name="trembita-service-service-version"
+                           v-model="trembitaClient.data.service.serviceVersion" />
+                    <p>Необов'язковий параметр</p>
+                </div>
+
                 <div class="rc-form-group">
                     <label>Вкажіть тип автентифікації</label>
                     <select aria-label="" name="trembita-service-auth-type"
                             v-model="trembitaClient.data.auth.type"
                             @change="changeTrembitaClientAuthType">
                         <option
-                                v-if="trembitaClient.registryName == 'idp-exchange-service-registry' || trembitaClient.registryName == 'dracs-registry'">
+                                v-if="trembitaClient.registryName == 'idp-exchange-service-registry' ||
+                                 trembitaClient.registryName == 'dracs-registry' ||
+                                  trembitaClient.registryCreation || trembitaClient.data.type == 'registry'">
                                     NO_AUTH
 
                         </option>
-                        <option v-if="trembitaClient.registryName == 'edr-registry'">AUTH_TOKEN</option>
+                        <option v-if="trembitaClient.registryName == 'edr-registry' || trembitaClient.registryCreation
+                            || trembitaClient.data.type == 'registry'">AUTH_TOKEN</option>
                     </select>
                 </div>
 
@@ -169,8 +199,29 @@
             </div>
             <div class="popup-footer active">
                 <a href="#" id="admin-cancel" class="hide-popup" @click="hideTrembitaClientForm">відмінити</a>
-                <button value="submit" class="submit-green" name="admin-apply" type="submit">Підтвердити</button>
+                <button value="submit" class="submit-green" name="admin-apply" type="submit">
+                    <span v-if="!trembitaClient.registryCreation">Підтвердити</span>
+                    <span v-if="trembitaClient.registryCreation">Додати</span>
+                </button>
+
+
             </div>
         </form>
+    </div>
+
+    <div class="popup-window admin-window visible" v-cloak v-if="trembitaClient.deleteFormShow">
+        <div class="popup-header">
+            <p>Видалити "[[ trembitaClient.registryName ]]"?</p>
+            <a href="#" @click="hideDeleteForm" class="popup-close hide-popup">
+                <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
+            </a>
+        </div>
+        <div class="popup-body">
+            <p>Видалити усі налаштування інтеграціїї з реєстром?</p>
+        </div>
+        <div class="popup-footer active">
+            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteForm">Відмінити</a>
+            <a class="href-red" :href="deleteTrembitaClientLink()">Видалити</a>
+        </div>
     </div>
 {{end}}

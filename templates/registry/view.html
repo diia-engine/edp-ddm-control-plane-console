@@ -170,15 +170,25 @@
                             <td>{{$al.Protocol}}</td>
                             <td>{{$al.StrAuth}}</td>
                             <td>
-                                <a href="#" @click="showTrembitaClientForm('{{ $index }}', $event)">
-                                    <img alt="edit" src="/static/img/action-edit.png" />
-                                </a>
+                                <div class="trembita-actions">
+                                    <a href="#" @click="showTrembitaClientForm('{{ $index }}', $event)">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <a {{if eq "platform" $al.Type}}title="Система недоступна для видалення"{{end}} href="#" @click="showDeleteTrembitaClientForm('{{ $index }}', '{{$al.Type}}', $event)">
+                                    <i class="fa-solid fa-trash registry-trash {{if eq "platform" $al.Type}}inactive{{end}} "></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     {{end}}
                     </tbody>
                 </table>
-    
+                <div class="link-grant-access">
+                    <a class="" href="#" @click="showTrembitaClientForm('', $event)">
+                        <img alt="Додати реєстр" src="/static/img/plus.png" />
+                        <span>Додати реєстр</span>
+                    </a>
+                </div>
                 {{template "trembita-client-form" .}}
             </div>
         </div>
