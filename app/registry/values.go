@@ -163,8 +163,10 @@ type TrembitaRegistryClient struct {
 }
 
 type TrembitaRegistryService struct {
-	XRoadInstance string `yaml:"x-road-instance" json:"xRoadInstance"`
-	MemberClass   string `yaml:"member-class" json:"memberClass"`
-	MemberCode    string `yaml:"member-code" json:"memberCode"`
-	SubsystemCode string `yaml:"subsystem-code" json:"subsystemCode"`
+	XRoadInstance  string `yaml:"x-road-instance" json:"xRoadInstance"`
+	MemberClass    string `yaml:"member-class" json:"memberClass"`
+	MemberCode     string `yaml:"member-code" json:"memberCode"`
+	SubsystemCode  string `yaml:"subsystem-code" json:"subsystemCode"`
+	ServiceCode    string `yaml:"service-code" json:"serviceCode"`
+	ServiceVersion string `yaml:"service-version" json:"serviceVersion"`
 }
