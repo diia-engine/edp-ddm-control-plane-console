@@ -34,6 +34,7 @@ const (
 	erStatusDisabled           = "disabled"
 	mrTargetExternalReg        = "external-reg"
 	mrTargetEditRegistry       = "edit-registry"
+	mrTargetEditTrembita       = "trembita-registry-update"
 	mrSubTargetCreation        = "creation"
 	mrSubTargetDisable         = "disable"
 	mrSubTargetEnable          = "enable"
