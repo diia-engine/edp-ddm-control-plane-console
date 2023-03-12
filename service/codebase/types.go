@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-version"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -259,6 +261,7 @@ type Codebase struct {
 	Spec     CodebaseSpec     `json:"spec,omitempty"`
 	Status   CodebaseStatus   `json:"status,omitempty"`
 	Branches []CodebaseBranch `json:"-"`
+	Version  *version.Version `json:"-"`
 }
 
 func (in *Codebase) Admins() string {

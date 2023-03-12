@@ -64,6 +64,7 @@ type Settings struct {
 	GitHost                               string `envconfig:"GERRIT_GIT_HOSTNAME" default:"gerrit"`
 	GitPort                               string `envconfig:"GERRIT_GIT_PORT" default:"31000"`
 	Mock                                  string `envconfig:"MOCK"`
+	RegistryVersionFilter                 string `envconfig:"REGISTRY_VERSION_FILTER"`
 }
 
 type Services struct {

@@ -10,6 +10,7 @@ import (
 	"ddm-admin-console/service/keycloak"
 	"ddm-admin-console/service/permissions"
 	"ddm-admin-console/service/vault"
+	"fmt"
 	"strings"
 
 	"github.com/patrickmn/go-cache"
@@ -35,6 +36,7 @@ type Config struct {
 	TempFolder                      string
 	RegistryDNSManualPath           string
 	DDMManualEDPComponent           string
+	RegistryVersionFilter           string
 }
 
 type Services struct {
@@ -55,6 +57,7 @@ type App struct {
 	router         router.Interface
 	codebaseLabels map[string]string
 	admins         *Admins
+	versionFilter  *versionFilter
 }
 
 func Make(router router.Interface, services Services, cnf Config) (*App, error) {
@@ -82,6 +85,12 @@ func Make(router router.Interface, services Services, cnf Config) (*App, error) 
 	if err := app.registerCustomValidators(); err != nil {
 		return nil, errors.Wrap(err, "unable to register validators")
 	}
+
+	vf, err := makeVersionFilter(cnf.RegistryVersionFilter)
+	if err != nil {
+		return nil, fmt.Errorf("unable to init version filter, %w", err)
+	}
+	app.versionFilter = vf
 
 	return app, nil
 }
