@@ -9,13 +9,13 @@ import (
 	"github.com/hashicorp/go-version"
 )
 
-type versionFilter struct {
+type VersionFilter struct {
 	compareFunc func(o *version.Version) bool
 }
 
-func makeVersionFilter(pattern string) (*versionFilter, error) {
+func MakeVersionFilter(pattern string) (*VersionFilter, error) {
 	if pattern == "" {
-		return &versionFilter{}, nil
+		return &VersionFilter{}, nil
 	}
 
 	regPattern := regexp.MustCompile(`(<=|>=|==|>|<)(.+)`)
@@ -34,7 +34,7 @@ func makeVersionFilter(pattern string) (*versionFilter, error) {
 		return nil, errors.New("wrong compare pattern")
 	}
 
-	return &versionFilter{
+	return &VersionFilter{
 		compareFunc: compareFunc,
 	}, nil
 }
@@ -49,9 +49,21 @@ func compareFunctions(v *version.Version) map[string]func(o *version.Version) bo
 	}
 }
 
-func (vf *versionFilter) filterCodebases(in []codebase.Codebase) ([]codebase.Codebase, error) {
+func (vf *VersionFilter) CodebaseIsVersion(cb *codebase.Codebase) bool {
 	if vf.compareFunc == nil {
-		return in, nil
+		return true
+	}
+
+	if cb.Version == nil {
+		return false
+	}
+
+	return vf.compareFunc(cb.Version)
+}
+
+func (vf *VersionFilter) FilterCodebases(in []codebase.Codebase) []codebase.Codebase {
+	if vf.compareFunc == nil {
+		return in
 	}
 
 	res := make([]codebase.Codebase, 0, len(in))
@@ -66,5 +78,5 @@ func (vf *versionFilter) filterCodebases(in []codebase.Codebase) ([]codebase.Cod
 		}
 	}
 
-	return res, nil
+	return res
 }

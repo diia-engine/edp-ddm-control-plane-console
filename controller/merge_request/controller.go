@@ -42,6 +42,7 @@ type Controller struct {
 	appCache        *cache.Cache
 	codebaseService codebaseSvc.ServiceInterface
 	jenkinsService  jenkins.ServiceInterface
+	versionFilter   *registry.VersionFilter
 }
 
 func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerrit gerritService.ServiceInterface,
@@ -56,6 +57,12 @@ func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerr
 		codebaseService: cbService,
 		jenkinsService:  jenkinsService,
 	}
+
+	vf, err := registry.MakeVersionFilter(cnf.RegistryVersionFilter)
+	if err != nil {
+		return fmt.Errorf("unable to init version filter, %w", err)
+	}
+	c.versionFilter = vf
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&gerritService.GerritMergeRequest{}, builder.WithPredicates(predicate.Funcs{
@@ -100,6 +107,24 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return
 	}
 
+	cb, err := c.codebaseService.Get(instance.Spec.ProjectName)
+	if err != nil {
+		resultErr = fmt.Errorf("unable to get project codebase, %w", err)
+		return
+	}
+
+	processRequest, err := c.processRegistryVersion(ctx, cb)
+	if err != nil {
+		resultErr = fmt.Errorf("unable to p, err: %w", err)
+		return
+	}
+
+	if !processRequest {
+		c.logger.Infow("reconciling merge request skipped, wrong registry version",
+			"Request.Namespace", request.Namespace, "Request.Name", request.Name)
+		return
+	}
+
 	if err := c.prepareMergeRequest(ctx, &instance); err != nil {
 		resultErr = fmt.Errorf("unable to prepare merge request, err: %w", err)
 		return
@@ -110,7 +135,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return
 	}
 
-	if err := c.triggerJobProvisioner(ctx, &instance); err != nil {
+	if err := c.triggerJobProvisioner(ctx, &instance, cb); err != nil {
 		resultErr = fmt.Errorf("unable to triggerJobProvisioner MR, err: %w", err)
 		return
 	}
@@ -128,7 +153,19 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 	return
 }
 
-func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
+func (c *Controller) processRegistryVersion(ctx context.Context, cb *codebaseSvc.Codebase) (bool, error) {
+	cbs := []codebaseSvc.Codebase{*cb}
+	if err := registry.LoadRegistryVersions(ctx, c.gerrit, cbs); err != nil {
+		return false, fmt.Errorf("unable to load registry version, %w", err)
+	}
+
+	cbs = c.versionFilter.FilterCodebases(cbs)
+
+	return len(cbs) > 0, nil
+}
+
+func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerritService.GerritMergeRequest,
+	cb *codebaseSvc.Codebase) error {
 	if instance.Status.Value != gerritService.StatusMerged {
 		return nil
 	}
@@ -152,11 +189,6 @@ func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerrit
 
 	if !backupSchedule {
 		return nil
-	}
-
-	cb, err := c.codebaseService.Get(instance.Spec.ProjectName)
-	if err != nil {
-		return fmt.Errorf("unable to get project codebase, %w", err)
 	}
 
 	if cb.Spec.JobProvisioning == nil {
@@ -307,7 +339,7 @@ func (c *Controller) autoApproveMergeRequest(ctx context.Context, instance *gerr
 // 9. create new change to source branch with new commit
 // 10. apply and submit change
 // 11. set merge request cr spec source branch to pass it to gerrit operator
-//TODO: move this logic to registry upgrade app, to remove MR duplication
+// TODO: move this logic to registry upgrade app, to remove MR duplication
 func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritService.GerritMergeRequest) error {
 	if instance.Labels[registry.MRLabelAction] != registry.MRLabelActionBranchMerge ||
 		instance.Spec.SourceBranch != "" || instance.Status.ChangeID != "" {

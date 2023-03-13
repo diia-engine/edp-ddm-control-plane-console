@@ -5,7 +5,6 @@ import (
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	"ddm-admin-console/service/gerrit"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -28,16 +27,11 @@ func (a *App) listRegistry(ctx *gin.Context) (response router.Response, retErr e
 		return nil, errors.Wrap(err, "unable to get codebases")
 	}
 
-	if err := a.loadRegistryVersions(userCtx, cbs); err != nil {
+	if err := LoadRegistryVersions(userCtx, a.Gerrit, cbs); err != nil {
 		return nil, errors.Wrap(err, "unable to load registry versions")
 	}
 
-	filteredByVersion, err := a.versionFilter.filterCodebases(cbs)
-	if err != nil {
-		return nil, fmt.Errorf("unable to filter codebases by version, %w", err)
-	}
-
-	registries, err := a.Services.Perms.FilterCodebases(ctx, filteredByVersion, k8sService)
+	registries, err := a.Services.Perms.FilterCodebases(ctx, a.versionFilter.FilterCodebases(cbs), k8sService)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check codebase permissions")
 	}
@@ -50,8 +44,8 @@ func (a *App) listRegistry(ctx *gin.Context) (response router.Response, retErr e
 	}), nil
 }
 
-func (a *App) loadRegistryVersions(ctx context.Context, cbs []codebase.Codebase) error {
-	mrs, err := a.Services.Gerrit.GetMergeRequests(ctx)
+func LoadRegistryVersions(ctx context.Context, gerritService gerrit.ServiceInterface, cbs []codebase.Codebase) error {
+	mrs, err := gerritService.GetMergeRequests(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get merge requests")
 	}

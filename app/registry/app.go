@@ -57,7 +57,7 @@ type App struct {
 	router         router.Interface
 	codebaseLabels map[string]string
 	admins         *Admins
-	versionFilter  *versionFilter
+	versionFilter  *VersionFilter
 }
 
 func Make(router router.Interface, services Services, cnf Config) (*App, error) {
@@ -86,7 +86,7 @@ func Make(router router.Interface, services Services, cnf Config) (*App, error) 
 		return nil, errors.Wrap(err, "unable to register validators")
 	}
 
-	vf, err := makeVersionFilter(cnf.RegistryVersionFilter)
+	vf, err := MakeVersionFilter(cnf.RegistryVersionFilter)
 	if err != nil {
 		return nil, fmt.Errorf("unable to init version filter, %w", err)
 	}
