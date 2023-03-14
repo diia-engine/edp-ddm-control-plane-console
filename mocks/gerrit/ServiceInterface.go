@@ -72,6 +72,27 @@ func (_m *ServiceInterface) CreateProject(ctx context.Context, name string) erro
 	return r0
 }
 
+// GetBranchContent provides a mock function with given fields: projectName, branch, fileLocation
+func (_m *ServiceInterface) GetBranchContent(projectName string, branch string, fileLocation string) (string, error) {
+	ret := _m.Called(projectName, branch, fileLocation)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
+		r0 = rf(projectName, branch, fileLocation)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
+		r1 = rf(projectName, branch, fileLocation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetChangeDetails provides a mock function with given fields: changeID
 func (_m *ServiceInterface) GetChangeDetails(changeID string) (*go_gerrit.ChangeInfo, error) {
 	ret := _m.Called(changeID)

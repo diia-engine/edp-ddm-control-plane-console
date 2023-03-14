@@ -1,14 +1,11 @@
 package cluster
 
 import (
-	"context"
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -24,8 +21,6 @@ func (a *App) updateCIDRView(ctx *gin.Context) (router.Response, error) {
 }
 
 func (a *App) updateCIDR(ctx *gin.Context) error {
-	userCtx := router.ContextWithUserAccessToken(ctx)
-
 	cidrValue := ctx.PostForm("admin-cidr")
 
 	var cidr []string
@@ -63,28 +58,8 @@ func (a *App) updateCIDR(ctx *gin.Context) error {
 	globalDict["whiteListIP"] = whiteListDict
 	valuesDict["global"] = globalDict
 
-	valuesValue, err := yaml.Marshal(valuesDict)
-	if err != nil {
-		return errors.Wrap(err, "unable to encode new values")
-	}
-
-	if err := a.createCIDRMergeRequest(userCtx, ctx, string(valuesValue)); err != nil {
+	if err := a.createValuesMergeRequestCtx(ctx, MRTypeClusterCIDR, "update cluster CIDR config", valuesDict); err != nil {
 		return errors.Wrap(err, "unable to create cidr merge request")
-	}
-
-	return nil
-}
-
-func (a *App) createCIDRMergeRequest(userCtx context.Context, ctx *gin.Context, values string) error {
-	if err := a.createValuesMergeRequest(userCtx, &valuesMrConfig{
-		name:          fmt.Sprintf("cidr-mr-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
-		values:        values,
-		targetLabel:   MRTypeClusterCIDR,
-		commitMessage: fmt.Sprintf("update cluster CIDR config"),
-		authorName:    ctx.GetString(router.UserNameSessionKey),
-		authorEmail:   ctx.GetString(router.UserEmailSessionKey),
-	}); err != nil {
-		return errors.Wrap(err, "unable to create MR")
 	}
 
 	return nil

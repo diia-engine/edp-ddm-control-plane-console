@@ -1,3 +1,5 @@
+const hostnameRegex = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
+
 let app = Vue.createApp({
     mounted() {
         if (this.$refs.hasOwnProperty('smtpServerTypeSelected')) {
@@ -230,11 +232,158 @@ let app = Vue.createApp({
                         key: 'keycloakDNS',
                         title: 'Keycloak DNS'
                     },
-                ]
-            }
+                ],
+                keycloak: {
+                    editHostname: '',
+                    editCertPath: '',
+                    submitInput: '',
+                    hostname: '',
+                    formShow: false,
+                    hostnameError: '',
+                    fileSelected: false,
+                    pemError: '',
+                },
+            },
         }
     },
     methods: {
+        editClusterKeycloakDNSHost(hostname, certificatePath, e) {
+            e.preventDefault();
+            this.clusterSettings.keycloak.editHostname = hostname;
+            this.clusterSettings.keycloak.editCertificatePath = certificatePath;
+            this.clusterSettings.keycloak.hostname = hostname;
+
+            this.backdropShow = true;
+            this.clusterSettings.keycloak.formShow = true;
+            this.clusterSettings.keycloak.fileSelected = true;
+        },
+        clusterKeycloakDNSCustomHosts() {
+            if (this.registryValues === null) {
+                return [];
+            }
+
+            return this.registryValues.keycloak.customHosts;
+        },
+        submitKeycloakDNSForm(e){
+            this.clusterSettings.keycloak.submitInput = JSON.stringify(this.registryValues.keycloak.customHosts);
+        },
+        clusterKeycloakDNSCertSelected(e) {
+            e.preventDefault();
+            this.clusterSettings.keycloak.fileSelected = true;
+            this.clusterSettings.keycloak.pemError = '';
+        },
+        resetClusterKeycloakDNSForm(e) {
+            e.preventDefault();
+            this.clusterSettings.keycloak.fileSelected = false;
+            this.clusterSettings.keycloak.pemError = '';
+        },
+        showClusterKeycloakDNSForm(e) {
+            e.preventDefault();
+            this.backdropShow = true;
+            this.clusterSettings.keycloak.formShow = true;
+            this.clusterSettings.keycloak.fileSelected = false;
+            this.clusterSettings.keycloak.hostname = '';
+        },
+        hideClusterKeycloakDNSForm(e) {
+            e.preventDefault();
+            this.backdropShow = false;
+            this.clusterSettings.keycloak.formShow = false;
+        },
+        deleteClusterKeycloakDNS(hostname, e) {
+            e.preventDefault();
+
+            this.registryValues.keycloak.customHosts = this.registryValues.keycloak.customHosts.filter(
+                i => i.host !== hostname);
+        },
+        addClusterKeycloakDNS(e) {
+            e.preventDefault();
+            this.clusterSettings.keycloak.hostnameError = '';
+            this.clusterSettings.keycloak.pemError = '';
+
+            if (this.clusterSettings.keycloak.hostname === '') {
+                this.clusterSettings.keycloak.hostnameError = 'Поле обов’язкове для заповнення';
+                return;
+            }
+
+            if (!hostnameRegex.test(this.clusterSettings.keycloak.hostname)) {
+                this.clusterSettings.keycloak.hostnameError = 'Перевірте формат поля';
+                return;
+            }
+
+            for (let i=0;i<this.registryValues.keycloak.customHosts.length;i++) {
+                if (this.registryValues.keycloak.customHosts[i].host === this.clusterSettings.keycloak.hostname &&
+                    this.clusterSettings.keycloak.hostname !== this.clusterSettings.keycloak.editHostname) {
+                    this.clusterSettings.keycloak.hostnameError = 'Така назва вже використовується';
+                    return;
+                }
+            }
+
+            if (this.clusterSettings.keycloak.fileSelected === false) {
+                this.clusterSettings.keycloak.pemError = 'Поле обов’язкове для заповнення';
+                return;
+            }
+
+            if (this.$refs.clusterKeycloakDNS.files.length > 0) {
+                let formData = new FormData();
+                formData.append("file", this.$refs.clusterKeycloakDNS.files[0]);
+                formData.append("hostname", this.clusterSettings.keycloak.hostname);
+                let $this = this;
+                axios.post('/admin/cluster/upload-pem-dns', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }).then(function (rsp) {
+                    if ($this.clusterSettings.keycloak.editHostname === '') {
+                        $this.registryValues.keycloak.customHosts.push({
+                            host: $this.clusterSettings.keycloak.hostname,
+                            certificatePath: rsp.data,
+                        });
+                    } else {
+                        for (let i=0;i<$this.registryValues.keycloak.customHosts.length;i++) {
+                            if ($this.registryValues.keycloak.customHosts[i].host === $this.clusterSettings.keycloak.editHostname) {
+                                $this.registryValues.keycloak.customHosts[i].host = $this.clusterSettings.keycloak.hostname;
+                                $this.registryValues.keycloak.customHosts[i].certificatePath = rsp.data;
+                            }
+                        }
+                    }
+
+                    $this.backdropShow = false;
+                    $this.clusterSettings.keycloak.formShow = false;
+                    $this.clusterSettings.keycloak.editHostname = '';
+                }).catch(function (error) {
+                    $this.clusterSettings.keycloak.pemError = $this.localePEMError(error.response.data);
+                });
+            } else {
+                for (let i=0;i<this.registryValues.keycloak.customHosts.length;i++) {
+                    if (this.registryValues.keycloak.customHosts[i].host === this.clusterSettings.keycloak.editHostname) {
+                        this.registryValues.keycloak.customHosts[i].host = this.clusterSettings.keycloak.hostname;
+                    }
+                }
+
+                this.backdropShow = false;
+                this.clusterSettings.keycloak.formShow = false;
+                this.clusterSettings.keycloak.editHostname = '';
+            }
+        },
+        localePEMError(message) {
+            const messages = {
+                "found in PEM file": "Перевірте формат файла",
+                "certificate has expired or is not yet valid": "Сертифікат застарілий",
+                "certificate is valid for": "Сертифікат не відповідає доменному імені",
+            }
+
+            if (messages.hasOwnProperty(message)) {
+                return messages[message];
+            }
+
+            for (let m in messages) {
+                if (message.indexOf(m) !== -1) {
+                    return messages[m];
+                }
+            }
+
+            return message;
+        },
         wizardCronExpressionChange(e) {
             let bs = this.wizard.tabs.backupSchedule;
             if (bs.data.cronSchedule === '') {
@@ -316,6 +465,10 @@ let app = Vue.createApp({
                 this.wizard.tabs.backupSchedule.data.days = this.registryValues.global.registryBackup.expiresInDays;
             } catch (e) {
                 console.log(e);
+            }
+
+            if (this.registryValues.keycloak.customHosts === null) {
+                this.registryValues.keycloak.customHosts = [];
             }
         },
         removeResourcesCatFromList(name)  {

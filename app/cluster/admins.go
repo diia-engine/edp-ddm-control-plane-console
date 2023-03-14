@@ -1,22 +1,19 @@
 package cluster
 
 import (
-	"context"
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v3"
 )
 
 const (
 	MRTypeClusterAdmins         = "cluster-admins"
 	MRTypeClusterCIDR           = "cluster-cidr"
+	MRTypeClusterKeycloakDNS    = "cluster-keycloak-dns"
 	MRTypeClusterUpdate         = "cluster-update"
 	MRTypeClusterBackupSchedule = "cluster-backup-schedule"
 	ValuesAdminsKey             = "administrators"
@@ -40,8 +37,6 @@ func (a *App) updateAdminsView(ctx *gin.Context) (router.Response, error) {
 }
 
 func (a *App) updateAdmins(ctx *gin.Context) error {
-	userCtx := router.ContextWithUserAccessToken(ctx)
-
 	adminsValue := ctx.PostForm("admins")
 
 	var admins []Admin
@@ -53,35 +48,16 @@ func (a *App) updateAdmins(ctx *gin.Context) error {
 		return errors.Wrap(err, "unable to create admins secrets")
 	}
 
-	_, valuesDict, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, registry.MasterBranch, a.Gerrit)
+	values, err := registry.GetValuesFromGit(a.Config.CodebaseName, registry.MasterBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to decode values yaml")
 	}
 
-	valuesDict[ValuesAdminsKey] = admins
+	values.OriginalYaml[ValuesAdminsKey] = admins
 
-	valuesValue, err := yaml.Marshal(valuesDict)
-	if err != nil {
-		return errors.Wrap(err, "unable to encode new values")
-	}
-
-	if err := a.createAdminsMergeRequest(userCtx, ctx, string(valuesValue)); err != nil {
+	if err := a.createValuesMergeRequestCtx(ctx, MRTypeClusterAdmins, "update cluster admins",
+		values.OriginalYaml); err != nil {
 		return errors.Wrap(err, "unable to create admins merge request")
-	}
-
-	return nil
-}
-
-func (a *App) createAdminsMergeRequest(userCtx context.Context, ctx *gin.Context, values string) error {
-	if err := a.createValuesMergeRequest(userCtx, &valuesMrConfig{
-		name:          fmt.Sprintf("adm-mr-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
-		values:        values,
-		targetLabel:   MRTypeClusterAdmins,
-		commitMessage: fmt.Sprintf("update cluster admins"),
-		authorName:    ctx.GetString(router.UserNameSessionKey),
-		authorEmail:   ctx.GetString(router.UserEmailSessionKey),
-	}); err != nil {
-		return errors.Wrap(err, "unable to create MR")
 	}
 
 	return nil
@@ -98,7 +74,7 @@ func (a *App) setAdminsVaultPassword(admins []Admin) error {
 		secretData := map[string]interface{}{
 			a.Config.VaultClusterAdminsPasswordKey: admin.TmpPassword,
 		}
-
+		//TODO: user registry.CreateVaultSecrets
 		if _, err := a.Services.Vault.Write(
 			vaultPath, map[string]interface{}{
 				"data": secretData,
@@ -113,13 +89,8 @@ func (a *App) setAdminsVaultPassword(admins []Admin) error {
 	return nil
 }
 
-func (a *App) getAdminsJSON(ctx context.Context) (string, error) {
-	_, valuesDict, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, registry.MasterBranch, a.Gerrit)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to decode values")
-	}
-
-	adminsInterface, ok := valuesDict[ValuesAdminsKey]
+func (a *App) getAdminsJSON(values *registry.Values) (string, error) {
+	adminsInterface, ok := values.OriginalYaml[ValuesAdminsKey]
 	if !ok {
 		return "[]", nil
 	}

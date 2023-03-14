@@ -16,11 +16,12 @@ type ServiceInterface interface {
 	CreateProject(ctx context.Context, name string) error
 	GetFileContents(ctx context.Context, projectName, branch, filePath string) (string, error)
 	CreateMergeRequestWithContents(ctx context.Context, mr *MergeRequest, contents map[string]string) error
-	GoGerritClient() *goGerrit.Client
+	GoGerritClient() *goGerrit.Client //TODO: remove
 	GetMergeRequestByChangeID(ctx context.Context, changeID string) (*GerritMergeRequest, error)
 	UpdateMergeRequestStatus(ctx context.Context, mr *GerritMergeRequest) error
 	ApproveAndSubmitChange(changeID, username, email string) error
 	GetMergeListCommits(ctx context.Context, changeID, revision string) ([]Commit, error)
 	GetChangeDetails(changeID string) (*goGerrit.ChangeInfo, error)
 	GetProjectInfo(projectName string) (*goGerrit.ProjectInfo, error)
+	GetBranchContent(projectName, branch, fileLocation string) (string, error)
 }

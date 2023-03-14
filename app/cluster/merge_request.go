@@ -3,9 +3,14 @@ package cluster
 import (
 	"context"
 	"ddm-admin-console/app/registry"
+	"ddm-admin-console/router"
 	"ddm-admin-console/service/gerrit"
 	"fmt"
 	"sort"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	"gopkg.in/yaml.v3"
 
 	"github.com/pkg/errors"
 )
@@ -42,6 +47,10 @@ func (e ExtendedMergeRequests) StatusValue() string {
 		return "in progress"
 	}
 
+	if e.Status.Value == "" {
+		return "-"
+	}
+
 	return e.Status.Value
 }
 
@@ -52,6 +61,10 @@ func (e ExtendedMergeRequests) Action() string {
 
 	if e.Labels[registry.MRLabelTarget] == MRTypeClusterCIDR {
 		return "Обмеження доступу"
+	}
+
+	if e.Labels[registry.MRLabelTarget] == MRTypeClusterKeycloakDNS {
+		return "Редагування DNS Keycloak"
 	}
 
 	sourceBranch := e.Spec.SourceBranch
@@ -80,6 +93,26 @@ func (a *App) ClusterGetMergeRequests(userCtx context.Context) ([]ExtendedMergeR
 	}
 
 	return emrs, nil
+}
+
+func (a *App) createValuesMergeRequestCtx(ctx *gin.Context, target, commitMessage string, values map[string]interface{}) error {
+	valuesValue, err := yaml.Marshal(values)
+	if err != nil {
+		return errors.Wrap(err, "unable to encode new values")
+	}
+
+	if err := a.createValuesMergeRequest(router.ContextWithUserAccessToken(ctx), &valuesMrConfig{
+		name:          fmt.Sprintf("mr-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
+		values:        string(valuesValue),
+		targetLabel:   target,
+		commitMessage: commitMessage,
+		authorName:    ctx.GetString(router.UserNameSessionKey),
+		authorEmail:   ctx.GetString(router.UserEmailSessionKey),
+	}); err != nil {
+		return errors.Wrap(err, "unable to create MR")
+	}
+
+	return nil
 }
 
 func (a *App) createValuesMergeRequest(ctx context.Context, cnf *valuesMrConfig) error {

@@ -92,7 +92,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		"action":               "edit",
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
@@ -352,7 +352,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		cb.Annotations = make(map[string]string)
 	}
 
-	values, _, err := GetValuesFromGit(ctx, r.Name, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(r.Name, MasterBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}

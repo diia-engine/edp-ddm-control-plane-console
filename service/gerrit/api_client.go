@@ -56,6 +56,15 @@ func checkErr(rsp *resty.Response, err error) error {
 	return nil
 }
 
+func (s *Service) GetBranchContent(projectName, branch, fileLocation string) (string, error) {
+	content, _, err := s.GoGerritClient().Projects.GetBranchContent(projectName, branch, fileLocation)
+	if err != nil {
+		return "", fmt.Errorf("unable to get branch content: %w", err)
+	}
+
+	return content, nil
+}
+
 func (s *Service) GetFileContents(ctx context.Context, projectName, branch, filePath string) (string, error) {
 	filePath = url.PathEscape(filePath)
 	path := fmt.Sprintf("projects/%s/branches/%s/files/%s/content", projectName, branch, filePath)

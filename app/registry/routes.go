@@ -11,6 +11,7 @@ func (a *App) createRoutes() {
 	a.router.POST("/admin/registry/overview", a.deleteRegistry)
 
 	a.router.POST("/admin/registry/check-pem", a.validatePEMFile)
+
 	a.router.GET("/admin/registry/check/:name", a.registryNameAvailable)
 	a.router.GET("/admin/registry/view/:name", a.viewRegistry)
 	a.router.POST("/admin/registry/update/:name", a.registryUpdate)
