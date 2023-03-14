@@ -47,6 +47,10 @@ func (_m *ServiceInterface) GetUsers(ctx context.Context) ([]keycloak.KeycloakRe
 	ret := _m.Called(ctx)
 
 	var r0 []keycloak.KeycloakRealmUser
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]keycloak.KeycloakRealmUser, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []keycloak.KeycloakRealmUser); ok {
 		r0 = rf(ctx)
 	} else {
@@ -55,7 +59,6 @@ func (_m *ServiceInterface) GetUsers(ctx context.Context) ([]keycloak.KeycloakRe
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -70,6 +73,10 @@ func (_m *ServiceInterface) GetUsersByRealm(ctx context.Context, realmName strin
 	ret := _m.Called(ctx, realmName)
 
 	var r0 []keycloak.KeycloakRealmUser
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]keycloak.KeycloakRealmUser, error)); ok {
+		return rf(ctx, realmName)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []keycloak.KeycloakRealmUser); ok {
 		r0 = rf(ctx, realmName)
 	} else {
@@ -78,7 +85,6 @@ func (_m *ServiceInterface) GetUsersByRealm(ctx context.Context, realmName strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, realmName)
 	} else {

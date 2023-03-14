@@ -2,6 +2,7 @@ package edpcomponent
 
 import (
 	"context"
+	"sort"
 
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,6 +18,18 @@ type Service struct {
 	scheme    *runtime.Scheme
 	namespace string
 }
+
+const (
+	RegistryOperationalZone    = "registry-operational-zone"
+	RegistryAdministrationZone = "registry-administration-zone"
+	PlatformOperationalZone    = "platform-operational-zone"
+	PlatformAdministrationZone = "platform-administration-zone"
+	CPCDisplayName             = "control-plane-console/display-name"
+	CPCDescription             = "control-plane-console/description"
+	CPCDisplayVisible          = "control-plane-console/display-visible"
+	CPCDisplayOrder            = "control-plane-console/display-order"
+	CPCOperationalZone         = "control-plane-console/operational-zone"
+)
 
 func Make(s *runtime.Scheme, k8sConfig *rest.Config, namespace string) (*Service, error) {
 	builder := pkgScheme.Builder{GroupVersion: schema.GroupVersion{Group: "v1.edp.epam.com", Version: "v1alpha1"}}
@@ -40,13 +53,42 @@ func Make(s *runtime.Scheme, k8sConfig *rest.Config, namespace string) (*Service
 	}, nil
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]EDPComponent, error) {
+func (s *Service) PrepareComponentItem(component EDPComponent) EDPComponentItem {
+	return EDPComponentItem{
+		Type:        component.Spec.Type,
+		Url:         component.Spec.Url,
+		Icon:        component.Spec.Icon,
+		Title:       component.ObjectMeta.Annotations[CPCDisplayName],
+		Description: component.ObjectMeta.Annotations[CPCDescription],
+		Visible:     component.ObjectMeta.Annotations[CPCDisplayVisible],
+	}
+}
+
+func (s *Service) SortComponents(components []EDPComponent) []EDPComponent {
+	sort.Slice(components, func(i, j int) bool {
+		return components[i].ObjectMeta.Annotations[CPCDisplayOrder] < components[j].ObjectMeta.Annotations[CPCDisplayOrder]
+	})
+	return components
+}
+
+func (s *Service) GetAll(ctx context.Context, onlyVisible bool) ([]EDPComponent, error) {
 	var lst EDPComponentList
 	if err := s.k8sClient.List(ctx, &lst, &client.ListOptions{Namespace: s.namespace}); err != nil {
 		return nil, errors.Wrap(err, "unable to list edp component")
 	}
 
-	return lst.Items, nil
+	if !onlyVisible {
+		return lst.Items, nil
+	}
+
+	items := make([]EDPComponent, 0, len(lst.Items))
+	for _, v := range lst.Items {
+		if v.Spec.Visible {
+			items = append(items, v)
+		}
+	}
+
+	return items, nil
 }
 
 func (s *Service) GetAllNamespace(ctx context.Context, ns string, onlyVisible bool) ([]EDPComponent, error) {
@@ -67,6 +109,43 @@ func (s *Service) GetAllNamespace(ctx context.Context, ns string, onlyVisible bo
 	}
 
 	return items, nil
+}
+
+func (s *Service) GetAllCategory(ctx context.Context, ns string) (map[string][]EDPComponentItem, error) {
+	categories := make(map[string][]EDPComponentItem)
+	platformComponents, err := s.GetAll(ctx, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to list platform edp component")
+	}
+
+	registryComponents, err := s.GetAllNamespace(ctx, ns, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to list edp component")
+	}
+
+	for _, val := range s.SortComponents(registryComponents) {
+		var objectMetaAnnotations = val.ObjectMeta.Annotations
+		if objectMetaAnnotations[CPCOperationalZone] == RegistryOperationalZone {
+			categories[RegistryOperationalZone] = append(categories[RegistryOperationalZone], s.PrepareComponentItem(val))
+		}
+
+		if objectMetaAnnotations[CPCOperationalZone] == RegistryAdministrationZone {
+			categories[RegistryAdministrationZone] = append(categories[RegistryAdministrationZone], s.PrepareComponentItem(val))
+		}
+	}
+
+	for _, val := range s.SortComponents(platformComponents) {
+		var objectMetaAnnotations = val.ObjectMeta.Annotations
+		if objectMetaAnnotations[CPCOperationalZone] == PlatformOperationalZone {
+			categories[PlatformOperationalZone] = append(categories[PlatformOperationalZone], s.PrepareComponentItem(val))
+		}
+
+		if objectMetaAnnotations[CPCOperationalZone] == PlatformAdministrationZone {
+			categories[PlatformAdministrationZone] = append(categories[PlatformAdministrationZone], s.PrepareComponentItem(val))
+		}
+	}
+
+	return categories, nil
 }
 
 func (s *Service) Get(ctx context.Context, name string) (*EDPComponent, error) {

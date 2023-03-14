@@ -19,6 +19,10 @@ func (_m *ServiceInterface) GetMe(ctx context.Context) (*openshift.User, error) 
 	ret := _m.Called(ctx)
 
 	var r0 *openshift.User
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*openshift.User, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) *openshift.User); ok {
 		r0 = rf(ctx)
 	} else {
@@ -27,7 +31,6 @@ func (_m *ServiceInterface) GetMe(ctx context.Context) (*openshift.User, error) 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {

@@ -101,6 +101,10 @@ func (_m *ServiceInterface) GetChangeDetails(changeID string) (*go_gerrit.Change
 	ret := _m.Called(changeID)
 
 	var r0 *go_gerrit.ChangeInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (*go_gerrit.ChangeInfo, error)); ok {
+		return rf(changeID)
+	}
 	if rf, ok := ret.Get(0).(func(string) *go_gerrit.ChangeInfo); ok {
 		r0 = rf(changeID)
 	} else {
@@ -109,7 +113,6 @@ func (_m *ServiceInterface) GetChangeDetails(changeID string) (*go_gerrit.Change
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(changeID)
 	} else {
@@ -124,13 +127,16 @@ func (_m *ServiceInterface) GetFileContents(ctx context.Context, projectName str
 	ret := _m.Called(ctx, projectName, branch, filePath)
 
 	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (string, error)); ok {
+		return rf(ctx, projectName, branch, filePath)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) string); ok {
 		r0 = rf(ctx, projectName, branch, filePath)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, projectName, branch, filePath)
 	} else {
@@ -145,6 +151,10 @@ func (_m *ServiceInterface) GetMergeListCommits(ctx context.Context, changeID st
 	ret := _m.Called(ctx, changeID, revision)
 
 	var r0 []gerrit.Commit
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]gerrit.Commit, error)); ok {
+		return rf(ctx, changeID, revision)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) []gerrit.Commit); ok {
 		r0 = rf(ctx, changeID, revision)
 	} else {
@@ -153,7 +163,6 @@ func (_m *ServiceInterface) GetMergeListCommits(ctx context.Context, changeID st
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, changeID, revision)
 	} else {
@@ -168,6 +177,10 @@ func (_m *ServiceInterface) GetMergeRequest(ctx context.Context, name string) (*
 	ret := _m.Called(ctx, name)
 
 	var r0 *gerrit.GerritMergeRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*gerrit.GerritMergeRequest, error)); ok {
+		return rf(ctx, name)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *gerrit.GerritMergeRequest); ok {
 		r0 = rf(ctx, name)
 	} else {
@@ -176,7 +189,6 @@ func (_m *ServiceInterface) GetMergeRequest(ctx context.Context, name string) (*
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, name)
 	} else {
@@ -191,6 +203,10 @@ func (_m *ServiceInterface) GetMergeRequestByChangeID(ctx context.Context, chang
 	ret := _m.Called(ctx, changeID)
 
 	var r0 *gerrit.GerritMergeRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*gerrit.GerritMergeRequest, error)); ok {
+		return rf(ctx, changeID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *gerrit.GerritMergeRequest); ok {
 		r0 = rf(ctx, changeID)
 	} else {
@@ -199,7 +215,6 @@ func (_m *ServiceInterface) GetMergeRequestByChangeID(ctx context.Context, chang
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, changeID)
 	} else {
@@ -214,6 +229,10 @@ func (_m *ServiceInterface) GetMergeRequestByProject(ctx context.Context, projec
 	ret := _m.Called(ctx, projectName)
 
 	var r0 []gerrit.GerritMergeRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gerrit.GerritMergeRequest, error)); ok {
+		return rf(ctx, projectName)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []gerrit.GerritMergeRequest); ok {
 		r0 = rf(ctx, projectName)
 	} else {
@@ -222,7 +241,6 @@ func (_m *ServiceInterface) GetMergeRequestByProject(ctx context.Context, projec
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, projectName)
 	} else {
@@ -237,6 +255,10 @@ func (_m *ServiceInterface) GetMergeRequests(ctx context.Context) ([]gerrit.Gerr
 	ret := _m.Called(ctx)
 
 	var r0 []gerrit.GerritMergeRequest
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]gerrit.GerritMergeRequest, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []gerrit.GerritMergeRequest); ok {
 		r0 = rf(ctx)
 	} else {
@@ -245,7 +267,6 @@ func (_m *ServiceInterface) GetMergeRequests(ctx context.Context) ([]gerrit.Gerr
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {
@@ -260,6 +281,10 @@ func (_m *ServiceInterface) GetProject(ctx context.Context, name string) (*gerri
 	ret := _m.Called(ctx, name)
 
 	var r0 *gerrit.GerritProject
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*gerrit.GerritProject, error)); ok {
+		return rf(ctx, name)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *gerrit.GerritProject); ok {
 		r0 = rf(ctx, name)
 	} else {
@@ -268,7 +293,6 @@ func (_m *ServiceInterface) GetProject(ctx context.Context, name string) (*gerri
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, name)
 	} else {
@@ -283,6 +307,10 @@ func (_m *ServiceInterface) GetProjectInfo(projectName string) (*go_gerrit.Proje
 	ret := _m.Called(projectName)
 
 	var r0 *go_gerrit.ProjectInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(string) (*go_gerrit.ProjectInfo, error)); ok {
+		return rf(projectName)
+	}
 	if rf, ok := ret.Get(0).(func(string) *go_gerrit.ProjectInfo); ok {
 		r0 = rf(projectName)
 	} else {
@@ -291,7 +319,6 @@ func (_m *ServiceInterface) GetProjectInfo(projectName string) (*go_gerrit.Proje
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(string) error); ok {
 		r1 = rf(projectName)
 	} else {
@@ -306,6 +333,10 @@ func (_m *ServiceInterface) GetProjects(ctx context.Context) ([]gerrit.GerritPro
 	ret := _m.Called(ctx)
 
 	var r0 []gerrit.GerritProject
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]gerrit.GerritProject, error)); ok {
+		return rf(ctx)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context) []gerrit.GerritProject); ok {
 		r0 = rf(ctx)
 	} else {
@@ -314,7 +345,6 @@ func (_m *ServiceInterface) GetProjects(ctx context.Context) ([]gerrit.GerritPro
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
 		r1 = rf(ctx)
 	} else {

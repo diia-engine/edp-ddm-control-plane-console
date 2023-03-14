@@ -31,403 +31,506 @@
             </div>
         {{end}}
     </div>
-    <div class="registry-description">Інформація про реєстр.</div>
-
-    <div class="rg-info-block">
-        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'general'}"
-        @click="accordion = 'general'">
-            <span>Загальна інформація</span>
-            <i class="fa-solid"
-               :class="{ 'fa-caret-up': accordion == 'general', 'fa-caret-down': accordion != 'general' }">
-            </i>
+    <div class="tabs">
+        <div
+            class="tab" 
+            @click="selectTab('info')" 
+            :class="{ active: isActiveTab('info') }"
+        >
+                Інформація про реєстр
         </div>
-        <div class="rg-info-block-body" v-show="accordion == 'general'" >
-            <div class="rg-info-line-horizontal">
-                <span>Назва</span>
-                <span>{{ .registry.Name }}</span>
+        <div 
+            class="tab"
+            @click="selectTab('links')" 
+            :class="{ active: isActiveTab('links') }"
+         >
+            Швидкі посилання
+        </div>
+    </div>
+    <div class="box" v-show="isActiveTab('info')">
+        <div class="rg-info-block">
+            <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'general'}"
+            @click="accordion = 'general'">
+                <span>Загальна інформація</span>
+                <i class="fa-solid"
+                   :class="{ 'fa-caret-up': accordion == 'general', 'fa-caret-down': accordion != 'general' }">
+                </i>
             </div>
-            {{if .registry.Description}}
-            <div class="rg-info-line-horizontal">
-                <span>Опис</span>
-                <span>{{ .registry.Description }}</span>
-            </div>
-            {{end}}
-            {{if .admins }}
+            <div class="rg-info-block-body" v-show="accordion == 'general'" >
                 <div class="rg-info-line-horizontal">
-                    <span>Адміністратори</span>
+                    <span>Назва</span>
+                    <span>{{ .registry.Name }}</span>
+                </div>
+                {{if .registry.Description}}
+                <div class="rg-info-line-horizontal">
+                    <span>Опис</span>
+                    <span>{{ .registry.Description }}</span>
+                </div>
+                {{end}}
+                {{if .admins }}
+                    <div class="rg-info-line-horizontal">
+                        <span>Адміністратори</span>
+                        <span class="cidr-values">
+                            {{range $index, $adm := .admins}}
+                                <div class="view-cidr">{{ $adm.Email }}</div>
+                            {{end}}
+                        </span>
+                    </div>
+                {{end}}
+                <div class="rg-info-line-horizontal">
+                    <span>Час створення</span>
+                    <span>{{ .registry.FormattedCreatedAtTimezone $.timezone }}</span>
+                </div>
+                {{if .citizenPortalHost}}
+                <div class="rg-info-line-horizontal">
+                    <span>DNS ім’я для портала громадянина</span>
+                    <span>{{ .citizenPortalHost }}</span>
+                </div>
+                {{end}}
+                {{if .officerPortalHost}}
+                    <div class="rg-info-line-horizontal">
+                        <span>DNS ім’я для портала чиновника</span>
+                        <span>{{ .officerPortalHost }}</span>
+                    </div>
+                {{end}}
+                {{if .smtpType}}
+                <div class="rg-info-line-horizontal">
+                    <span>Поштовий сервер</span>
+                    <span>
+                    {{if eq .smtpType "external"}}
+                        Зовнішній поштовий сервер
+                    {{else}}
+                        Платформенний поштовий сервер
+                    {{end}}
+                    </span>
+    
+                </div>
+                {{end}}
+    
+                {{if .officerCIDR}}
+                <div class="rg-info-line-horizontal">
+                    <span>CIDR для портала чиновника</span>
                     <span class="cidr-values">
-                        {{range $index, $adm := .admins}}
-                            <div class="view-cidr">{{ $adm.Email }}</div>
+                        {{range .officerCIDR}}
+                            <div class="view-cidr">{{ . }}</div>
                         {{end}}
                     </span>
                 </div>
-            {{end}}
-            <div class="rg-info-line-horizontal">
-                <span>Час створення</span>
-                <span>{{ .registry.FormattedCreatedAtTimezone $.timezone }}</span>
-            </div>
-            {{if .citizenPortalHost}}
-            <div class="rg-info-line-horizontal">
-                <span>DNS ім’я для портала громадянина</span>
-                <span>{{ .citizenPortalHost }}</span>
-            </div>
-            {{end}}
-            {{if .officerPortalHost}}
-                <div class="rg-info-line-horizontal">
-                    <span>DNS ім’я для портала чиновника</span>
-                    <span>{{ .officerPortalHost }}</span>
-                </div>
-            {{end}}
-            {{if .smtpType}}
-            <div class="rg-info-line-horizontal">
-                <span>Поштовий сервер</span>
-                <span>
-                {{if eq .smtpType "external"}}
-                    Зовнішній поштовий сервер
-                {{else}}
-                    Платформенний поштовий сервер
                 {{end}}
-                </span>
-
+                {{if .citizenCIDR}}
+                <div class="rg-info-line-horizontal">
+                    <span>CIDR для портала громадянина</span>
+                    <span class="cidr-values">
+                        {{range .citizenCIDR}}
+                            <div class="view-cidr">{{ . }}</div>
+                        {{end}}
+                    </span>
+                </div>
+                {{end}}
+                {{if .adminCIDR}}
+                <div class="rg-info-line-horizontal">
+                    <span>CIDR для адміністративних компонент</span>
+                    <span class="cidr-values">
+                        {{range .adminCIDR}}
+                            <div class="view-cidr">{{ . }}</div>
+                        {{end}}
+                    </span>
+                </div>
+                {{end}}
+    
             </div>
-            {{end}}
-
-            {{if .officerCIDR}}
-            <div class="rg-info-line-horizontal">
-                <span>CIDR для портала чиновника</span>
-                <span class="cidr-values">
-                    {{range .officerCIDR}}
-                        <div class="view-cidr">{{ . }}</div>
-                    {{end}}
-                </span>
-            </div>
-            {{end}}
-            {{if .citizenCIDR}}
-            <div class="rg-info-line-horizontal">
-                <span>CIDR для портала громадянина</span>
-                <span class="cidr-values">
-                    {{range .citizenCIDR}}
-                        <div class="view-cidr">{{ . }}</div>
-                    {{end}}
-                </span>
-            </div>
-            {{end}}
-            {{if .adminCIDR}}
-            <div class="rg-info-line-horizontal">
-                <span>CIDR для адміністративних компонент</span>
-                <span class="cidr-values">
-                    {{range .adminCIDR}}
-                        <div class="view-cidr">{{ . }}</div>
-                    {{end}}
-                </span>
-            </div>
-            {{end}}
-
         </div>
-    </div>
-    <div class="rg-info-block">
-        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'trembita-client'}"
-             @click="accordion = 'trembita-client'">
-            <span>налаштування взаємодії з реєстрами через Трембіту</span>
-            <i class="fa-solid"
-               :class="{ 'fa-caret-up': accordion == 'trembita-client', 'fa-caret-down': accordion != 'trembita-client' }"></i>
+        <div class="rg-info-block">
+            <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'trembita-client'}"
+                 @click="accordion = 'trembita-client'">
+                <span>налаштування взаємодії з реєстрами через Трембіту</span>
+                <i class="fa-solid"
+                   :class="{ 'fa-caret-up': accordion == 'trembita-client', 'fa-caret-down': accordion != 'trembita-client' }"></i>
+            </div>
+            <div class="rg-info-block-body" v-show="accordion == 'trembita-client'">
+                <table class="rg-info-table rg-info-table-config">
+                    <thead>
+                    <tr>
+                        <th>Статус</th>
+                        <th>Назва</th>
+                        <th>Рівень</th>
+                        <th>Протокол інтеграції</th>
+                        <th>Тип автентифікації</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $index, $al := .values.Trembita.Registries}}
+                        <tr>
+                            <td>
+                                <i class="fa-solid fa-{{$al.FaStatus}}"></i>
+                            </td>
+                            <td>{{ $index }}</td>
+                            <td>{{ i18n $al.StrType}}</td>
+                            <td>{{$al.Protocol}}</td>
+                            <td>{{$al.StrAuth}}</td>
+                            <td>
+                                <a href="#" @click="showTrembitaClientForm('{{ $index }}', $event)">
+                                    <img alt="edit" src="/static/img/action-edit.png" />
+                                </a>
+                            </td>
+                        </tr>
+                    {{end}}
+                    </tbody>
+                </table>
+    
+                {{template "trembita-client-form" .}}
+            </div>
         </div>
-        <div class="rg-info-block-body" v-show="accordion == 'trembita-client'">
-            <table class="rg-info-table rg-info-table-config">
-                <thead>
-                <tr>
-                    <th>Статус</th>
-                    <th>Назва</th>
-                    <th>Рівень</th>
-                    <th>Протокол інтеграції</th>
-                    <th>Тип автентифікації</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                {{range $index, $al := .values.Trembita.Registries}}
+        <div class="rg-info-block">
+            <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'external-systems'}"
+                 @click="accordion = 'external-systems'">
+                <span>налаштування взаємодії з іншими системами</span>
+                <i class="fa-solid"
+                   :class="{ 'fa-caret-up': accordion == 'external-systems', 'fa-caret-down': accordion != 'external-systems' }"></i>
+            </div>
+            <div class="rg-info-block-body" v-show="accordion == 'external-systems'">
+                <table class="rg-info-table rg-info-table-config">
+                    <thead>
+                    <tr>
+                        <th>Статус</th>
+                        <th>Назва</th>
+                        <th>Рівень</th>
+                        <th>Протокол інтеграції</th>
+                        <th>Тип автентифікації</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $index, $al := .values.ExternalSystems}}
+                        <tr>
+                            <td>
+                                <i class="fa-solid fa-{{$al.FaStatus}}"></i>
+                            </td>
+                            <td>{{ $index }}</td>
+                            <td>{{ i18n $al.StrType}}</td>
+                            <td>{{$al.Protocol}}</td>
+                            <td>{{$al.StrAuth}}</td>
+                            <td>
+                                <div class="trembita-actions">
+                                    <a href="#" @click="showExternalSystemForm('{{ $index }}', $event)">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <a {{if eq "platform" $al.Type}}title="Система недоступна для видалення"{{end}} href="#" @click="showDeleteExternalSystemForm('{{ $index }}', '{{$al.Type}}', $event)">
+                                        <i class="fa-solid fa-trash registry-trash {{if eq "platform" $al.Type}}inactive{{end}} "></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {{end}}
+                    </tbody>
+                </table>
+                <div class="link-grant-access">
+                    <a class="" href="#" @click="showExternalSystemForm('', $event)">
+                        <img alt="Додати зовнішню систему" src="/static/img/plus.png" />
+                        <span>Додати зовнішню систему</span>
+                    </a>
+                </div>
+            </div>
+    
+            {{template "registry-external-system" .}}
+        </div>
+        <div class="rg-info-block">
+            <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'external-access'}"
+                 @click="accordion = 'external-access'">
+                <span>Доступ для реєстрів платформи та зовнішніх систем</span>
+                <i class="fa-solid"
+                   :class="{ 'fa-caret-up': accordion == 'external-access', 'fa-caret-down': accordion != 'external-access' }"></i>
+            </div>
+            <div class="rg-info-block-body" v-show="accordion == 'external-access'">
+                {{if .externalRegs}}
+                <table class="rg-info-table rg-info-table-config">
+                    <thead>
+                    <tr>
+                        <th>Статус</th>
+                        <th>Назва</th>
+                        <th>Тип системи</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {{range $index, $er := .externalRegs}}
+                        <tr>
+                            <td>
+                                <img alt="{{ i18n $er.Status}}" src="{{ $.BasePath }}/static/img/{{$er.Status}}.png"
+                                title="{{ i18n $er.Status}}"/>
+                            </td>
+                            <td class="ereg-name">
+                                {{ $er.Name }}
+                            </td>
+                            <td>
+                                {{if $er.External}}
+                                Зовнішня система
+                                {{else}}
+                                Реєстр платформи
+                                {{end}}
+                            </td>
+                            <td>
+                                <div class="rg-external-system-actions {{if eq "status-inactive" $er.Status}}inactive{{end}}" >
+                                    {{if $er.External}}
+                                        <a @click="{{if eq "status-active" $er.Status}}showExternalKey('{{$er.Name}}', '{{$er.KeyValue}}', $event){{else}}disabledLink{{end}}" href="#">
+                                            <img title="Перевірити пароль" alt="key" src="{{ $.BasePath }}/static/img/key-{{$er.Status}}.png" />
+                                        </a>
+                                    {{end}}
+    
+                                    <a status="{{$er.Inactive}}" @click="{{if $er.Inactive}}disabledLink{{else}}disableExternalReg('{{$er.Name}}', '{{$er.TypeStr}}', $event){{end}}" href="#">
+                                        <img
+                                                title="{{if eq "status-disabled" $er.Status}}Розблокувати доступ{{else}}Заблокувати доступ{{end}}"
+                                                alt="key" src="{{ $.BasePath }}/static/img/lock-{{$er.Status}}.png" />
+                                    </a>
+                                    <a @click="{{if $er.Inactive}}disabledLink{{else}}removeExternalReg('{{$er.Name}}', '{{$er.TypeStr}}', $event){{end}}" href="#">
+                                        <img title="Скасувати доступ" alt="key" src="{{ $.BasePath }}/static/img/disable-{{$er.Status}}.png" />
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <div class="rg-info-block-no-content">
+                    Немає реєстрів або систем, що мають доступ до цього реєстра.
+                </div>
+                {{end}}
+                <div class="link-grant-access">
+                    <a class="" href="#" @click="showExternalReg">
+                        <img alt="Надати доступ" src="{{ .BasePath }}/static/img/plus.png" />
+                        <span>Надати доступ</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    
+        <form id="disable-form" method="POST" action="{{ .BasePath }}/admin/registry/external-reg-disable/{{.registry.Name}}">
+            <input type="hidden" id="disable-form-value" :value="systemToDisable" name="reg-name" />
+            <input type="hidden" id="disable-form-type" :value="systemToDisableType" name="external-system-type" />
+        </form>
+    
+        {{if .branches }}
+        <div class="rg-info-block">
+            <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'configuration'}"
+                 @click="accordion = 'configuration'">
+                <span>Конфігурація</span>
+                <i class="fa-solid"
+                   :class="{ 'fa-caret-up': accordion == 'configuration', 'fa-caret-down': accordion != 'configuration' }"></i>
+            </div>
+            <div class="rg-info-block-body" v-show="accordion == 'configuration'">
+                <table class="rg-info-table rg-info-table-config">
+                    <thead>
+                    <tr>
+                        <th>Статус</th>
+                        <th>Конфігурація</th>
+                        <th>VCS</th>
+                        <th>CI</th>
+                        <th>Версія</th>
+                        <th>Номер збірки</th>
+                        <th>Остання вдала збірка</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $index, $br := .branches}}
                     <tr>
                         <td>
-                            <i class="fa-solid fa-{{$al.FaStatus}}"></i>
+                            <img title="{{ i18n $br.LocaleStatus }}"
+                                    alt="{{ i18n $br.LocaleStatus }}"
+                                    src="{{ $.BasePath }}/static/img/status-{{$br.Status.Value}}.png" />
                         </td>
-                        <td>{{ $index }}</td>
-                        <td>{{ i18n $al.StrType}}</td>
-                        <td>{{$al.Protocol}}</td>
-                        <td>{{$al.StrAuth}}</td>
                         <td>
-                            <a href="#" @click="showTrembitaClientForm('{{ $index }}', $event)">
-                                <img alt="edit" src="/static/img/action-edit.png" />
+                            {{$br.Name}}
+                        </td>
+                        <td>
+                            <a href="{{ $br.CreateGerritLink $.gerritURL }}" target="_blank">
+                                <img alt="vcs" src="{{ $.BasePath }}/static/img/action-link.png" />
                             </a>
                         </td>
-                    </tr>
-                {{end}}
-                </tbody>
-            </table>
-
-            {{template "trembita-client-form" .}}
-        </div>
-    </div>
-    <div class="rg-info-block">
-        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'external-systems'}"
-             @click="accordion = 'external-systems'">
-            <span>налаштування взаємодії з іншими системами</span>
-            <i class="fa-solid"
-               :class="{ 'fa-caret-up': accordion == 'external-systems', 'fa-caret-down': accordion != 'external-systems' }"></i>
-        </div>
-        <div class="rg-info-block-body" v-show="accordion == 'external-systems'">
-            <table class="rg-info-table rg-info-table-config">
-                <thead>
-                <tr>
-                    <th>Статус</th>
-                    <th>Назва</th>
-                    <th>Рівень</th>
-                    <th>Протокол інтеграції</th>
-                    <th>Тип автентифікації</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                {{range $index, $al := .values.ExternalSystems}}
-                    <tr>
                         <td>
-                            <i class="fa-solid fa-{{$al.FaStatus}}"></i>
+                            <a href="{{ $br.CreateJenkinsLink $.jenkinsURL }}" target="_blank">
+                                <img alt="ci" src="{{ $.BasePath }}/static/img/action-link.png" />
+                            </a>
                         </td>
-                        <td>{{ $index }}</td>
-                        <td>{{ i18n $al.StrType}}</td>
-                        <td>{{$al.Protocol}}</td>
-                        <td>{{$al.StrAuth}}</td>
-                        <td>
-                            <div class="trembita-actions">
-                                <a href="#" @click="showExternalSystemForm('{{ $index }}', $event)">
-                                    <i class="fa-solid fa-pen"></i>
-                                </a>
-                                <a {{if eq "platform" $al.Type}}title="Система недоступна для видалення"{{end}} href="#" @click="showDeleteExternalSystemForm('{{ $index }}', '{{$al.Type}}', $event)">
-                                    <i class="fa-solid fa-trash registry-trash {{if eq "platform" $al.Type}}inactive{{end}} "></i>
-                                </a>
-                            </div>
-                        </td>
+                        <td>{{$br.Spec.Version}}</td>
+                        <td>{{$br.Status.Build}}</td>
+                        <td>{{if $br.Status.LastSuccessfulBuild}}{{$br.Status.LastSuccessfulBuild}}{{else}}-{{end}}</td>
                     </tr>
-                {{end}}
-                </tbody>
-            </table>
-            <div class="link-grant-access">
-                <a class="" href="#" @click="showExternalSystemForm('', $event)">
-                    <img alt="Додати зовнішню систему" src="/static/img/plus.png" />
-                    <span>Додати зовнішню систему</span>
-                </a>
+                    {{end}}
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        {{template "registry-external-system" .}}
-    </div>
-    <div class="rg-info-block">
-        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'external-access'}"
-             @click="accordion = 'external-access'">
-            <span>Доступ для реєстрів платформи та зовнішніх систем</span>
-            <i class="fa-solid"
-               :class="{ 'fa-caret-up': accordion == 'external-access', 'fa-caret-down': accordion != 'external-access' }"></i>
-        </div>
-        <div class="rg-info-block-body" v-show="accordion == 'external-access'">
-            {{if .externalRegs}}
-            <table class="rg-info-table rg-info-table-config">
-                <thead>
-                <tr>
-                    <th>Статус</th>
-                    <th>Назва</th>
-                    <th>Тип системи</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                    {{range $index, $er := .externalRegs}}
+        {{end}}
+        <div class="rg-info-block">
+            <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'merge-requests'}"
+                 @click="accordion = 'merge-requests'">
+                <span>Запити на оновлення</span>
+                <i class="fa-solid"
+                   :class="{ 'fa-caret-up': accordion == 'merge-requests', 'fa-caret-down': accordion != 'merge-requests' }">
+                </i>
+            </div>
+            <div class="rg-info-block-body mr-block-table" v-show="accordion == 'merge-requests'">
+                {{ if .mergeRequests}}
+                <table class="rg-info-table rg-info-table-config" id="mr-table">
+                    <thead>
                     <tr>
-                        <td>
-                            <img alt="{{ i18n $er.Status}}" src="{{ $.BasePath }}/static/img/{{$er.Status}}.png"
-                            title="{{ i18n $er.Status}}"/>
-                        </td>
-                        <td class="ereg-name">
-                            {{ $er.Name }}
-                        </td>
-                        <td>
-                            {{if $er.External}}
-                            Зовнішня система
-                            {{else}}
-                            Реєстр платформи
-                            {{end}}
-                        </td>
-                        <td>
-                            <div class="rg-external-system-actions {{if eq "status-inactive" $er.Status}}inactive{{end}}" >
-                                {{if $er.External}}
-                                    <a @click="{{if eq "status-active" $er.Status}}showExternalKey('{{$er.Name}}', '{{$er.KeyValue}}', $event){{else}}disabledLink{{end}}" href="#">
-                                        <img title="Перевірити пароль" alt="key" src="{{ $.BasePath }}/static/img/key-{{$er.Status}}.png" />
+                        <th>Дата</th>
+                        <th>Запит</th>
+                        <th>Операція</th>
+                        <th>Статус</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $index, $al := .mergeRequests}}
+                        <tr>
+                            <td>{{$al.FormattedCreatedAt}}</td>
+                            <td>{{$al.RequestName}}</td>
+                            <td>{{ i18n $al.Action}}</td>
+                            <td class="mr-status">{{ i18n $al.StatusValue }}</td>
+                            <td class="mr-actions">
+                                {{if $al.Status.ChangeURL}}
+                                    <a title="Переглянути"
+                                       @click="showMrView('/admin/change/{{ $al.Status.ChangeID }}', $event)"
+                                       href="/admin/change/{{ $al.Status.ChangeID }}">
+                                        <i class="fa-solid fa-eye fa-lg"></i>
+                                    </a>
+    
+                                    <a href="{{$al.Status.ChangeURL}}" target="_blank">
+                                        <img style="vertical-align: sub;" title="Переглянути в Gerrit" alt="vcs"
+                                             src="{{ $.BasePath }}/static/img/action-link.png" />
                                     </a>
                                 {{end}}
-
-                                <a status="{{$er.Inactive}}" @click="{{if $er.Inactive}}disabledLink{{else}}disableExternalReg('{{$er.Name}}', '{{$er.TypeStr}}', $event){{end}}" href="#">
-                                    <img
-                                            title="{{if eq "status-disabled" $er.Status}}Розблокувати доступ{{else}}Заблокувати доступ{{end}}"
-                                            alt="key" src="{{ $.BasePath }}/static/img/lock-{{$er.Status}}.png" />
-                                </a>
-                                <a @click="{{if $er.Inactive}}disabledLink{{else}}removeExternalReg('{{$er.Name}}', '{{$er.TypeStr}}', $event){{end}}" href="#">
-                                    <img title="Скасувати доступ" alt="key" src="{{ $.BasePath }}/static/img/disable-{{$er.Status}}.png" />
-                                </a>
+                            </td>
+                        </tr>
+                    {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                    <div class="rg-info-block-no-content">
+                        Запитів немає
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    <div class="box" v-show="isActiveTab('links')">
+        {{ if .regisrtyAdministrationComponents}}
+        <div class="rg-info-block">
+            <div class="rg-info-block-header">
+                <span>Адміністративна зона реєстру</span>
+            </div>
+            <div class="rg-info-block-body mr-block-table">
+                <div class="dashboard-panel registry-dashboard-panel">
+                        {{range $index, $ec := .regisrtyAdministrationComponents}}
+                            <div class="list-item">
+                                <img src="data:image/svg+xml;base64,{{$ec.Icon}}" alt="{{$ec.Type}} logo" class="item-image" />
+                                <div class="item-content">
+                                    <a 
+                                        target="_blank" 
+                                        href="{{$ec.Url}}"
+                                    >
+                                        {{$ec.Title}} 
+                                        <img src="{{$.BasePath}}/static/img/action-link.png" alt="{{$ec.Type}} link">
+                                    </a>
+                                    <div class="description">{{$ec.Description}}</div>
+                                </div>
                             </div>
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-            {{else}}
-            <div class="rg-info-block-no-content">
-                Немає реєстрів або систем, що мають доступ до цього реєстра.
-            </div>
-            {{end}}
-            <div class="link-grant-access">
-                <a class="" href="#" @click="showExternalReg">
-                    <img alt="Надати доступ" src="{{ .BasePath }}/static/img/plus.png" />
-                    <span>Надати доступ</span>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <form id="disable-form" method="POST" action="{{ .BasePath }}/admin/registry/external-reg-disable/{{.registry.Name}}">
-        <input type="hidden" id="disable-form-value" :value="systemToDisable" name="reg-name" />
-        <input type="hidden" id="disable-form-type" :value="systemToDisableType" name="external-system-type" />
-    </form>
-
-    {{if .branches }}
-    <div class="rg-info-block">
-        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'configuration'}"
-             @click="accordion = 'configuration'">
-            <span>Конфігурація</span>
-            <i class="fa-solid"
-               :class="{ 'fa-caret-up': accordion == 'configuration', 'fa-caret-down': accordion != 'configuration' }"></i>
-        </div>
-        <div class="rg-info-block-body" v-show="accordion == 'configuration'">
-            <table class="rg-info-table rg-info-table-config">
-                <thead>
-                <tr>
-                    <th>Статус</th>
-                    <th>Конфігурація</th>
-                    <th>VCS</th>
-                    <th>CI</th>
-                    <th>Версія</th>
-                    <th>Номер збірки</th>
-                    <th>Остання вдала збірка</th>
-                </tr>
-                </thead>
-                <tbody>
-                {{range $index, $br := .branches}}
-                <tr>
-                    <td>
-                        <img title="{{ i18n $br.LocaleStatus }}"
-                                alt="{{ i18n $br.LocaleStatus }}"
-                                src="{{ $.BasePath }}/static/img/status-{{$br.Status.Value}}.png" />
-                    </td>
-                    <td>
-                        {{$br.Name}}
-                    </td>
-                    <td>
-                        <a href="{{ $br.CreateGerritLink $.gerritURL }}" target="_blank">
-                            <img alt="vcs" src="{{ $.BasePath }}/static/img/action-link.png" />
-                        </a>
-                    </td>
-                    <td>
-                        <a href="{{ $br.CreateJenkinsLink $.jenkinsURL }}" target="_blank">
-                            <img alt="ci" src="{{ $.BasePath }}/static/img/action-link.png" />
-                        </a>
-                    </td>
-                    <td>{{$br.Spec.Version}}</td>
-                    <td>{{$br.Status.Build}}</td>
-                    <td>{{if $br.Status.LastSuccessfulBuild}}{{$br.Status.LastSuccessfulBuild}}{{else}}-{{end}}</td>
-                </tr>
-                {{end}}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {{end}}
-    <div class="rg-info-block">
-        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'merge-requests'}"
-             @click="accordion = 'merge-requests'">
-            <span>Запити на оновлення</span>
-            <i class="fa-solid"
-               :class="{ 'fa-caret-up': accordion == 'merge-requests', 'fa-caret-down': accordion != 'merge-requests' }">
-            </i>
-        </div>
-        <div class="rg-info-block-body mr-block-table" v-show="accordion == 'merge-requests'">
-            {{ if .mergeRequests}}
-            <table class="rg-info-table rg-info-table-config" id="mr-table">
-                <thead>
-                <tr>
-                    <th>Дата</th>
-                    <th>Запит</th>
-                    <th>Операція</th>
-                    <th>Статус</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                {{range $index, $al := .mergeRequests}}
-                    <tr>
-                        <td>{{$al.FormattedCreatedAt}}</td>
-                        <td>{{$al.RequestName}}</td>
-                        <td>{{ i18n $al.Action}}</td>
-                        <td class="mr-status">{{ i18n $al.StatusValue }}</td>
-                        <td class="mr-actions">
-                            {{if $al.Status.ChangeURL}}
-                                <a title="Переглянути"
-                                   @click="showMrView('/admin/change/{{ $al.Status.ChangeID }}', $event)"
-                                   href="/admin/change/{{ $al.Status.ChangeID }}">
-                                    <i class="fa-solid fa-eye fa-lg"></i>
-                                </a>
-
-                                <a href="{{$al.Status.ChangeURL}}" target="_blank">
-                                    <img style="vertical-align: sub;" title="Переглянути в Gerrit" alt="vcs"
-                                         src="{{ $.BasePath }}/static/img/action-link.png" />
-                                </a>
-                            {{end}}
-                        </td>
-                    </tr>
-                {{end}}
-                </tbody>
-            </table>
-            {{else}}
-                <div class="rg-info-block-no-content">
-                    Запитів немає
+                        {{end}}
                 </div>
-            {{end}}
-        </div>
-    </div>
-
-    {{ if .edpComponents}}
-    <div class="rg-info-block">
-        <div class="rg-info-block-header" :class="{'border-bottom': accordion != 'edp-components'}"
-             @click="accordion = 'edp-components'">
-            <span>Компоненти реєстру</span>
-            <i class="fa-solid"
-               :class="{ 'fa-caret-up': accordion == 'edp-components', 'fa-caret-down': accordion != 'edp-components' }">
-            </i>
-        </div>
-        <div class="rg-info-block-body mr-block-table" v-show="accordion == 'edp-components'">
-            <div class="dashboard-panel registry-dashboard-panel">
-                <ul>
-                    {{range $index, $ec := .edpComponents}}
-                    <li>
-                        <img src="data:image/svg+xml;base64,{{$ec.Spec.Icon}}" alt="{{$ec.Spec.Type}} logo" />
-                        <div class="dashboard-item-content">
-                            <a target="_blank" href="{{$ec.Spec.Url}}">{{$ec.Spec.Type}} <img src="{{$.BasePath}}/static/img/action-link.png"
-                                                                              alt="{{$ec.Spec.Type}} link"></a>
-                        </div>
-                    </li>
-                    {{end}}
-                </ul>
             </div>
         </div>
-    </div>
-    {{end}}
+        {{end}}
 
+        {{ if .registryOperationalComponents}}
+        <div class="rg-info-block">
+            <div class="rg-info-block-header">
+                <span>Операційна зона реєстру</span>
+            </div>
+            <div class="rg-info-block-body mr-block-table">
+                <div class="dashboard-panel registry-dashboard-panel">
+                    {{range $index, $ec := .registryOperationalComponents}}
+                        <div class="list-item">
+                            <img src="data:image/svg+xml;base64,{{$ec.Icon}}" alt="{{$ec.Type}} logo" class="item-image" />
+                            <div class="item-content">
+                                <a 
+                                    target="_blank" 
+                                    href="{{$ec.Url}}"
+                                    class="{{if eq $ec.Visible "false"}}disabled{{end}}"
+                                >
+                                    {{$ec.Title}} 
+
+                                    {{ if eq $ec.Visible "false"}}
+                                        <span>(вимкнено)</span>
+                                    {{else}}
+                                        <img src="{{$.BasePath}}/static/img/action-link.png" alt="{{$ec.Type}} link">
+                                    {{end}}
+                                </a>
+                                <div class="description">{{$ec.Description}}</div>
+                            </div>
+                        </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+        {{end}}
+
+        {{ if .platformAdministrationComponents}}
+        <div class="rg-info-block">
+            <div class="rg-info-block-header">
+                <span>Адміністративна зона платформи</span>
+            </div>
+            <div class="rg-info-block-body mr-block-table">
+                <div class="dashboard-panel registry-dashboard-panel">
+                    {{range $index, $ec := .platformAdministrationComponents}}
+                        <div class="list-item">
+                            <img src="data:image/svg+xml;base64,{{$ec.Icon}}" alt="{{$ec.Type}} logo" class="item-image" />
+                            <div class="item-content">
+                                <a 
+                                    target="_blank" 
+                                    href="{{$ec.Url}}"
+                                >
+                                    {{$ec.Title}} 
+                                    <img src="{{$.BasePath}}/static/img/action-link.png" alt="{{$ec.Type}} link">
+                                </a>
+                                <div class="description">{{$ec.Description}}</div>
+                            </div>
+                        </div>
+                    {{end}}
+                </div>
+            </div>
+        </div>
+        {{end}}
+
+        {{ if .platformOperationalComponents}}
+        <div class="rg-info-block">
+            <div class="rg-info-block-header">
+                <span>Операційна зона платформи</span>
+            </div>
+            <div class="rg-info-block-body mr-block-table">
+                <div class="dashboard-panel registry-dashboard-panel">
+                    {{range $index, $ec := .platformOperationalComponents}}
+                        <div class="list-item">
+                            <img src="data:image/svg+xml;base64,{{$ec.Icon}}" alt="{{$ec.Type}} logo" class="item-image" />
+                            <div class="item-content">
+                                <a 
+                                    target="_blank" 
+                                    href="{{$ec.Url}}"
+                                >
+                                    {{$ec.Title}} 
+                                    <img src="{{$.BasePath}}/static/img/action-link.png" alt="{{$ec.Type}} link">
+                                </a>
+                                <div class="description">{{$ec.Description}}</div>
+                            </div>
+                        </div>
+                    {{end}} 
+                </div>
+            </div>
+        </div>
+        {{end}}
+    </div>
 
     <div class="popup-backdrop visible" v-cloak v-if="backdropShow"></div>
 
