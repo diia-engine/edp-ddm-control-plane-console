@@ -15,6 +15,10 @@ func (e ExtendedMergeRequests) StatusValue() string {
 		return "in progress"
 	}
 
+	if e.Status.Value == "" {
+		return "-"
+	}
+
 	return e.Status.Value
 }
 

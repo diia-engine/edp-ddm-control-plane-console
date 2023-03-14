@@ -1,15 +1,14 @@
 package cluster
 
 import (
-	"context"
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/service/gerrit"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v3"
 
 	"ddm-admin-console/router"
 )
@@ -57,12 +56,17 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to list namespaced edp components")
 	}
 
-	adminsStr, err := a.displayAdmins(userCtx)
+	clusterValues, err := registry.GetValuesFromGit(a.ClusterRepo, registry.MasterBranch, a.Gerrit)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get cluster values, %w", err)
+	}
+
+	adminsStr, err := a.displayAdmins(clusterValues)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get admins")
 	}
 
-	cidr, err := a.displayCIDR(userCtx)
+	cidr, err := a.displayCIDR(clusterValues)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get cidr")
 	}
@@ -111,8 +115,8 @@ func (a *App) getClusterVersion(gerritProjectBranches []string, mrs []ExtendedMe
 	return registryVersion.String()
 }
 
-func (a *App) displayAdmins(ctx context.Context) (string, error) {
-	js, err := a.getAdminsJSON(ctx)
+func (a *App) displayAdmins(values *registry.Values) (string, error) {
+	js, err := a.getAdminsJSON(values)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get admins json")
 	}
@@ -130,42 +134,37 @@ func (a *App) displayAdmins(ctx context.Context) (string, error) {
 	return strings.Join(adminsStr, ", "), nil
 }
 
-func (a *App) displayCIDR(ctx context.Context) ([]string, error) {
-	values, err := a.Gerrit.GetFileContents(ctx, a.Config.CodebaseName, "master", registry.ValuesLocation)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get admin values yaml")
-	}
-
+func (a *App) displayCIDR(values *registry.Values) ([]string, error) {
 	//TODO: refactor
-	var valuesDict map[string]interface{}
-	if err := yaml.Unmarshal([]byte(values), &valuesDict); err != nil {
-		return nil, errors.Wrap(err, "unable to decode values")
-	}
-
-	global, ok := valuesDict["global"]
+	global, ok := values.OriginalYaml["global"]
 	if !ok {
-		return nil, nil
+		return []string{}, nil
 	}
 
 	globalDict, ok := global.(map[string]interface{})
 	if !ok {
-		return nil, nil
+		return []string{}, nil
 	}
 
 	whiteListIP, ok := globalDict["whiteListIP"]
 	if !ok {
-		return nil, nil
+		return []string{}, nil
 	}
 
 	whiteListIPDict, ok := whiteListIP.(map[string]interface{})
 	if !ok {
-		return nil, nil
+		return []string{}, nil
 	}
 
 	cidr, ok := whiteListIPDict["adminRoutes"]
 	if !ok {
-		return nil, nil
+		return []string{}, nil
 	}
 
-	return strings.Split(cidr.(string), " "), nil
+	cidrStr := cidr.(string)
+	if cidrStr == "" {
+		return []string{}, nil
+	}
+
+	return strings.Split(cidrStr, " "), nil
 }

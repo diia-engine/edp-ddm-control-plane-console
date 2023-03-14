@@ -1,9 +1,11 @@
 package cluster
 
 import (
+	"context"
 	"ddm-admin-console/router"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -150,7 +152,22 @@ func OnlyIntegerValidator(fl validator.FieldLevel) bool {
 	return true
 }
 
-func (a *App) loadBackupScheduleConfig(values *Values, rspParams gin.H) error {
+func (a *App) loadKeycloakDefaultHostname(ctx context.Context, values *Values, rspParams gin.H) error {
+	comp, err := a.EDPComponent.Get(ctx, "main-keycloak")
+	if err != nil {
+		return fmt.Errorf("unable to get edp component, %w", err)
+	}
+
+	urlData, err := url.Parse(comp.Spec.Url)
+	if err != nil {
+		return fmt.Errorf("unabe to parse url, %w", err)
+	}
+
+	rspParams["keycloakHostname"] = urlData.Host
+	return nil
+}
+
+func (a *App) loadBackupScheduleConfig(_ context.Context, values *Values, rspParams gin.H) error {
 	rspParams["backupSchedule"] = values.Velero.Backup.ToForm()
 
 	return nil

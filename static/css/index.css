@@ -12599,6 +12599,16 @@ p.error {
     font-size: 12px;
 }
 
+.keycloak-dns-manual a {
+    color: #000000;
+}
+
+.keycloak-dns-manual {
+    background: #FFFBE6;
+    padding: 8px 16px;
+    font-size: 12px;
+}
+
 .href-red {
     background: #D35D47;
     border-radius: 4px;
@@ -12623,13 +12633,6 @@ p.error {
     font-size: 12px;
 }
 
-.wizard-warning {
-    background: #FFFBE6;
-    padding: 16px 24px;
-    margin-bottom: 32px;
-    font-size: 12px;
-}
-
 .red-star {
     color: red;
 }
@@ -12640,6 +12643,10 @@ p.error {
 
 .cron-next-dates {
     padding-left: 25px;
+}
+
+.cluster-keycloak {
+
 }
 
 .cluster-keycloak p {
@@ -12737,6 +12744,7 @@ p.error {
     color: #D35D47;
     margin-left: 20px;
 }
+
 .tabs {
     display: flex;
     margin-top: 32px;
@@ -12805,4 +12813,3 @@ p.error {
     font-size: 16px;
     line-height: 24px;
 }
-

@@ -73,7 +73,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -139,7 +139,7 @@ func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Respons
 	if err := ctx.ShouldBind(&tf); err != nil {
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -190,7 +190,7 @@ func (a *App) deleteTrembitaClient(ctx *gin.Context) (rsp router.Response, retEr
 
 	trembitaClientName := ctx.Query("trembita-client")
 
-	values, _, err := GetValuesFromGit(ctx,registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -224,7 +224,7 @@ func (a *App) checkTrembitaClientExists(ctx *gin.Context) (rsp router.Response, 
 
 	trembitaClientName := ctx.Query("trembita-client")
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}

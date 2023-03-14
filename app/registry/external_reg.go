@@ -105,18 +105,17 @@ func (a *App) addExternalReg(ctx *gin.Context) (router.Response, error) {
 		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
 }
 
-func GetValuesFromGit(ctx context.Context, projectName, branch string, gerritService gerrit.ServiceInterface) (*Values, map[string]interface{}, error) {
-	content, _, err := gerritService.GoGerritClient().Projects.GetBranchContent(projectName, branch,
-		url.PathEscape(ValuesLocation))
+func GetValuesFromGit(projectName, branch string, gerritService gerrit.ServiceInterface) (*Values, error) {
+	content, err := gerritService.GetBranchContent(projectName, branch, url.PathEscape(ValuesLocation))
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get values yaml")
+		return nil, errors.Wrap(err, "unable to get values yaml")
 	}
 
 	valuesBytes := []byte(content)
 
 	var valuesDict map[string]interface{}
 	if err := yaml.Unmarshal(valuesBytes, &valuesDict); err != nil {
-		return nil, nil, errors.Wrap(err, "unable to decode values yaml")
+		return nil, errors.Wrap(err, "unable to decode values yaml")
 	}
 	if valuesDict == nil {
 		valuesDict = make(map[string]interface{})
@@ -124,11 +123,11 @@ func GetValuesFromGit(ctx context.Context, projectName, branch string, gerritSer
 
 	var vals Values
 	if err := yaml.Unmarshal(valuesBytes, &vals); err != nil {
-		return nil, nil, errors.Wrap(err, "unable to decode values yaml")
+		return nil, errors.Wrap(err, "unable to decode values yaml")
 	}
 	vals.OriginalYaml = valuesDict
 
-	return &vals, valuesDict, nil
+	return &vals, nil
 }
 
 func decodeExternalRegsFromValues(valuesDict map[string]interface{}) ([]ExternalRegistration, error) {
@@ -146,12 +145,12 @@ func decodeExternalRegsFromValues(valuesDict map[string]interface{}) ([]External
 }
 
 func (a *App) prepareRegistryValues(ctx context.Context, registryName string, er *ExternalRegistration) (string, error) {
-	_, valuesDict, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get values from git")
 	}
 
-	eRegs, err := decodeExternalRegsFromValues(valuesDict)
+	eRegs, err := decodeExternalRegsFromValues(values.OriginalYaml)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to decode external regs")
 	}
@@ -167,9 +166,9 @@ func (a *App) prepareRegistryValues(ctx context.Context, registryName string, er
 		Enabled:  er.Enabled,
 		External: er.External,
 	})
-	valuesDict[erValuesIndex] = eRegs
+	values.OriginalYaml[erValuesIndex] = eRegs
 
-	newValues, err := yaml.Marshal(valuesDict)
+	newValues, err := yaml.Marshal(values.OriginalYaml)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to encode new values yaml")
 	}
@@ -222,12 +221,12 @@ func (a *App) disableExternalReg(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.New("reg-name is required")
 	}
 
-	_, values, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	vals, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
 
-	eRegs, err := decodeExternalRegsFromValues(values)
+	eRegs, err := decodeExternalRegsFromValues(vals.OriginalYaml)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode external regs")
 	}
@@ -247,8 +246,8 @@ func (a *App) disableExternalReg(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.New("reg-name not found")
 	}
 
-	values[erValuesIndex] = eRegs
-	newValues, err := yaml.Marshal(values)
+	vals.OriginalYaml[erValuesIndex] = eRegs
+	newValues, err := yaml.Marshal(vals.OriginalYaml)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to encode new values yaml")
 	}
@@ -272,12 +271,12 @@ func (a *App) removeExternalReg(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.New("reg-name is required")
 	}
 
-	_, values, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	vals, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
 
-	eRegs, err := decodeExternalRegsFromValues(values)
+	eRegs, err := decodeExternalRegsFromValues(vals.OriginalYaml)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to decode external regs")
 	}
@@ -293,8 +292,8 @@ func (a *App) removeExternalReg(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.New("reg-name not found")
 	}
 
-	values[erValuesIndex] = eRegs
-	newValues, err := yaml.Marshal(values)
+	vals.OriginalYaml[erValuesIndex] = eRegs
+	newValues, err := yaml.Marshal(vals.OriginalYaml)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to encode new values yaml")
 	}
