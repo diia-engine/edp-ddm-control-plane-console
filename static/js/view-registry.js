@@ -62,9 +62,16 @@ let app = Vue.createApp({
             },
             externalSystem: {},
             trembitaClient: {},
+            activeTab: 'info',
         }
     }, // mrIframe
     methods: {
+        selectTab(tabName) {
+            this.activeTab = tabName;
+        },
+        isActiveTab(tabName) {
+            return this.activeTab === tabName;
+        },
         isURL(u){
             return /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/.test(u);
         },

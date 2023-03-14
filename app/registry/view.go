@@ -4,6 +4,7 @@ import (
 	"context"
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
+	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"encoding/json"
 	"fmt"
@@ -328,14 +329,17 @@ func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, registryName
 		return errors.Wrap(err, "unable to get gerrit edp component")
 	}
 
-	namespacedEDPComponents, err := a.Services.EDPComponent.GetAllNamespace(userCtx, registryName, true)
+	categories, err := a.Services.EDPComponent.GetAllCategory(userCtx, registryName)
 	if err != nil {
 		return errors.Wrap(err, "unable to list namespaced edp components")
 	}
 
 	viewParams["jenkinsURL"] = jenkinsComponent.Spec.Url
 	viewParams["gerritURL"] = gerritComponent.Spec.Url
-	viewParams["edpComponents"] = namespacedEDPComponents
+	viewParams["registryOperationalComponents"] = categories[edpcomponent.RegistryOperationalZone]
+	viewParams["regisrtyAdministrationComponents"] = categories[edpcomponent.RegistryAdministrationZone]
+	viewParams["platformOperationalComponents"] = categories[edpcomponent.PlatformOperationalZone]
+	viewParams["platformAdministrationComponents"] = categories[edpcomponent.PlatformAdministrationZone]
 
 	return nil
 }

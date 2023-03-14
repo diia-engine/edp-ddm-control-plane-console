@@ -12,7 +12,7 @@ func (a *App) main(_ *gin.Context) (response router.Response, retErr error) {
 }
 
 func (a *App) dashboard(ctx *gin.Context) (response router.Response, retErr error) {
-	components, err := a.edpComponentService.GetAll(ctx)
+	components, err := a.edpComponentService.GetAll(ctx, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get edp components")
 	}
