@@ -433,6 +433,11 @@ let app = Vue.createApp({
             this.externalSystemType = "external-system";
         },
         showExternalReg(e) {
+            if (this.openMergeRequests.has) {
+                this.showOpenMRForm();
+                return;
+            }
+
             if (hasNewMergeRequests()) {
                 this.showMrError(e);
                 return;
