@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -329,7 +331,7 @@ func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, regist
 func (a *App) loadBranchesStatuses(ctx context.Context, branches []codebase.CodebaseBranch) error {
 	for i, b := range branches {
 		branchName := strings.ToUpper(b.Spec.BranchName)
-		status, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/%s/job/%s-Build-%s", b.Spec.CodebaseName,
+		status, build, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/%s/job/%s-Build-%s", b.Spec.CodebaseName,
 			branchName, branchName, b.Spec.CodebaseName))
 		if err != nil {
 			if strings.Contains(err.Error(), "404") {
@@ -338,8 +340,10 @@ func (a *App) loadBranchesStatuses(ctx context.Context, branches []codebase.Code
 
 			return errors.Wrap(err, "unable to get branch build status")
 		}
+		buildString := strconv.FormatInt(build, 10)
 
 		branches[i].Status.Value = status
+		branches[i].Status.Build = &buildString
 	}
 
 	return nil

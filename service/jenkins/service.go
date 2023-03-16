@@ -80,22 +80,22 @@ func (s *Service) initJenkinsAPIClient(ctx context.Context, k8s k8s.ServiceInter
 	return nil
 }
 
-func (s *Service) GetJobStatus(ctx context.Context, jobName string) (string, error) {
+func (s *Service) GetJobStatus(ctx context.Context, jobName string) (string, int64, error) {
 	j, err := s.goJenkins.GetJob(ctx, jobName)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to get job")
+		return "", 0, errors.Wrap(err, "unable to get job")
 	}
 
 	lastBuild, err := j.GetLastBuild(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to get last build")
+		return "", 0, errors.Wrap(err, "unable to get last build")
 	}
 
 	if _, err := lastBuild.Poll(ctx); err != nil {
-		return "", errors.Wrap(err, "unable to poll last build")
+		return "", 0, errors.Wrap(err, "unable to poll last build")
 	}
 
-	return lastBuild.GetResult(), nil
+	return lastBuild.GetResult(), lastBuild.GetBuildNumber(), nil
 }
 
 func (s *Service) CreateJobBuildRunRaw(ctx context.Context, jb *JenkinsJobBuildRun) error {
