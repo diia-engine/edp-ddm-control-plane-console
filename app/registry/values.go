@@ -38,6 +38,7 @@ type Keycloak struct {
 	AuthFlows         KeycloakAuthFlows                `yaml:"authFlows" json:"authFlows"`
 	CitizenAuthFlow   KeycloakAuthFlowsCitizenAuthFlow `yaml:"citizenAuthFlow" json:"citizenAuthFlow"`
 	IdentityProviders KeycloakIdentityProviders        `yaml:"identityProviders" json:"identityProviders"`
+	CustomHost        string                           `yaml:"customHost" json:"customHost"`
 }
 
 type KeycloakIdentityProviders struct {

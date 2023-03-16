@@ -31,7 +31,7 @@ import (
 
 func InitServices(cnf *config.Settings) *config.Services {
 	edpComponent := mockEdpComponent.ServiceInterface{}
-	edpComponent.On("GetAll", mock.Anything).Return([]edpcomponent.EDPComponent{}, nil)
+	edpComponent.On("GetAll", mock.Anything, mock.Anything).Return([]edpcomponent.EDPComponent{}, nil)
 	edpComponent.On("Get", mock.Anything, mock.Anything).Return(&edpcomponent.EDPComponent{
 		Spec: edpcomponent.EDPComponentSpec{Url: "https://example.com/foo/bar"},
 	}, nil)
@@ -133,6 +133,9 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 		Administrators: []registry.Admin{
 			{Email: "foo@bar.com"},
 		},
+		Keycloak: registry.Keycloak{
+			CustomHost: "foo.bar.com",
+		},
 	}
 	bts, err := yaml.Marshal(mockRegistryValues)
 	if err != nil {
@@ -141,6 +144,7 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 
 	grService.On("GetBranchContent", cnf.ClusterCodebaseName, "master",
 		url.PathEscape(registry.ValuesLocation)).Return(string(bts), nil)
+	grService.On("GetBranchContent", "mock", "master", url.PathEscape(registry.ValuesLocation)).Return(string(bts), nil)
 	grService.On("GetMergeRequestByProject", mock.Anything, cnf.ClusterCodebaseName).Return([]gerrit.GerritMergeRequest{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr"},
