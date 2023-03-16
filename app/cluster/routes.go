@@ -12,4 +12,5 @@ func (a *App) createRoutes() {
 	a.router.POST("/admin/cluster/backup-schedule", a.backupSchedule)
 	a.router.POST("/admin/cluster/upload-pem-dns", a.uploadPEMDNS)
 	a.router.POST("/admin/cluster/add-keycloak-dns", a.keycloakDNS)
+	a.router.GET("/admin/cluster/check-keycloak-hostname/:hostname", a.checkKeycloakHostnameUsed)
 }

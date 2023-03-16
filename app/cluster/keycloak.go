@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
+	"ddm-admin-console/service/codebase"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -67,6 +68,28 @@ func (a *App) uploadPEMDNS(ctx *gin.Context) (rsp router.Response, retErr error)
 	}
 
 	return router.MakeJSONResponse(http.StatusOK, vaultPath), nil
+}
+
+func (a *App) checkKeycloakHostnameUsed(ctx *gin.Context) (router.Response, error) {
+	hostname := ctx.Param("hostname")
+
+	cbs, err := a.Codebase.GetAllByType(codebase.RegistryCodebaseType)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get codebases, %w", err)
+	}
+
+	for _, cb := range cbs {
+		vals, err := registry.GetValuesFromGit(cb.Name, registry.MasterBranch, a.Gerrit)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get values for registry, %w", err)
+		}
+
+		if vals.Keycloak.CustomHost == hostname {
+			return router.MakeStatusResponse(http.StatusUnprocessableEntity), nil
+		}
+	}
+
+	return router.MakeStatusResponse(http.StatusOK), nil
 }
 
 func (a *App) keycloakDNS(ctx *gin.Context) (router.Response, error) {

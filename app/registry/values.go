@@ -34,6 +34,7 @@ type RegistryBackup struct {
 }
 
 type Keycloak struct {
+	CustomHost        string                    `yaml:"customHost" json:"customHost"`
 	Realms            KeycloakRealms            `yaml:"realms" json:"realms"`
 	AuthFlows         KeycloakAuthFlows         `yaml:"authFlows" json:"authFlows"`
 	IdentityProviders KeycloakIdentityProviders `yaml:"identityProviders" json:"identityProviders"`

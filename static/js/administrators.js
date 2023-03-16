@@ -234,6 +234,7 @@ let app = Vue.createApp({
                     },
                 ],
                 keycloak: {
+                    deleteHostname: '',
                     editHostname: '',
                     editCertPath: '',
                     submitInput: '',
@@ -242,6 +243,7 @@ let app = Vue.createApp({
                     hostnameError: '',
                     fileSelected: false,
                     pemError: '',
+                    existHostname: '',
                 },
             },
         }
@@ -284,16 +286,42 @@ let app = Vue.createApp({
             this.clusterSettings.keycloak.fileSelected = false;
             this.clusterSettings.keycloak.hostname = '';
         },
+        hideClusterCheckKeycloakDNS(e) {
+            e.preventDefault();
+            this.backdropShow = false;
+            this.clusterSettings.keycloak.existHostname = '';
+        },
         hideClusterKeycloakDNSForm(e) {
             e.preventDefault();
             this.backdropShow = false;
             this.clusterSettings.keycloak.formShow = false;
+        },
+        hideCheckClusterDeleteKeycloakDNS(e) {
+            e.preventDefault();
+            this.clusterSettings.keycloak.deleteHostname = '';
+            this.backdropShow = false;
+        },
+        checkClusterDeleteKeycloakDNS(hostname, e){
+            e.preventDefault();
+
+
+            this.backdropShow = true;
+            $this = this;
+            axios.get(`/admin/cluster/check-keycloak-hostname/${hostname}`)
+                .then(function (response) {
+                    $this.clusterSettings.keycloak.deleteHostname = hostname;
+                })
+                .catch(function (error) {
+                    $this.clusterSettings.keycloak.existHostname = hostname;
+                });
         },
         deleteClusterKeycloakDNS(hostname, e) {
             e.preventDefault();
 
             this.registryValues.keycloak.customHosts = this.registryValues.keycloak.customHosts.filter(
                 i => i.host !== hostname);
+            this.clusterSettings.keycloak.deleteHostname = '';
+            this.backdropShow = false;
         },
         addClusterKeycloakDNS(e) {
             e.preventDefault();
