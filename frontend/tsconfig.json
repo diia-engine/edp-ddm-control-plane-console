@@ -1,6 +1,7 @@
 {
   "extends": "@vue/tsconfig/tsconfig.web.json",
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  "exclude": ["src/views/registry/RegistryEditView.vue", "src/components/RegistryWizard.vue"],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {

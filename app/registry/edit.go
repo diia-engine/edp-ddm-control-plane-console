@@ -103,6 +103,14 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		return nil, errors.Wrap(err, "unable to load dns config")
 	}
 
+	templateArgs, templateErr := json.Marshal(responseParams)
+
+	if templateErr != nil {
+		return nil, errors.Wrap(templateErr, "unable to encode template arguments")
+	}
+
+	responseParams["templateArgs"] = string(templateArgs)
+
 	return router.MakeHTMLResponse(200, "registry/edit.html", responseParams), nil
 }
 
