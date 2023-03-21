@@ -63,6 +63,7 @@ type Settings struct {
 	GitKeySecretName                      string `envconfig:"GERRIT_GIT_KEY_SECRET_NAME" default:"gerrit-project-creator"`
 	GitHost                               string `envconfig:"GERRIT_GIT_HOSTNAME" default:"gerrit"`
 	GitPort                               string `envconfig:"GERRIT_GIT_PORT" default:"31000"`
+	KeycloakDefaultHostname               string `envconfig:"KEYCLOAK_DEFAULT_HOSTNAME"`
 	Mock                                  string `envconfig:"MOCK"`
 }
 

@@ -45,6 +45,7 @@ type Config struct {
 	VaultKVEngineName             string
 	HardwareINITemplatePath       string
 	TempFolder                    string
+	KeycloakDefaultHostname       string
 }
 
 type App struct {

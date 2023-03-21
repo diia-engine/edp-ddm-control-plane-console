@@ -35,6 +35,7 @@ type Config struct {
 	TempFolder                      string
 	RegistryDNSManualPath           string
 	DDMManualEDPComponent           string
+	KeycloakDefaultHostname         string
 }
 
 type Services struct {

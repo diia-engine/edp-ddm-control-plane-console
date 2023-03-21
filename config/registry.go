@@ -23,6 +23,7 @@ func (cnf *Settings) RegistryConfig() registry.Config {
 		TempFolder:                      cnf.TempFolder,
 		RegistryDNSManualPath:           cnf.RegistryDNSManualPath,
 		DDMManualEDPComponent:           cnf.DDMManualEDPComponent,
+		KeycloakDefaultHostname:         cnf.KeycloakDefaultHostname,
 	}
 }
 

@@ -56,6 +56,7 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareRegistryResources,
 		a.prepareSupplierAuthConfig,
 		a.prepareBackupSchedule,
+		a.prepareKeycloakCustomHostname,
 	}
 }
 
@@ -123,6 +124,16 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		return nil, errors.Wrap(err, "unable to format gerrit project branches")
 	}
 
+	keycloakHostname, err := LoadKeycloakDefaultHostname(ctx, a.KeycloakDefaultHostname, a.EDPComponent)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load keycloak default hostname, %w", err)
+	}
+
+	keycloakHostnames, err := a.loadKeycloakHostnames()
+	if err != nil {
+		return nil, fmt.Errorf("unable to load keycloak hostnames, %w", err)
+	}
+
 	return router.MakeHTMLResponse(200, "registry/create.html", gin.H{
 		"dnsManual":            dnsManual,
 		"page":                 "registry",
@@ -134,6 +145,8 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		"cidrConfig":           "{}",
 		"action":               "create",
 		"registryData":         "{}",
+		"keycloakHostname":     keycloakHostname,
+		"keycloakHostnames":    keycloakHostnames,
 	}), nil
 }
 

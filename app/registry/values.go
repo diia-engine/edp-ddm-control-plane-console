@@ -34,7 +34,7 @@ type RegistryBackup struct {
 }
 
 type Keycloak struct {
-	CustomHost        string                    `yaml:"customHost" json:"customHost"`
+	CustomHost        string                    `yaml:"customHost,omitempty" json:"customHost"`
 	Realms            KeycloakRealms            `yaml:"realms" json:"realms"`
 	AuthFlows         KeycloakAuthFlows         `yaml:"authFlows" json:"authFlows"`
 	IdentityProviders KeycloakIdentityProviders `yaml:"identityProviders" json:"identityProviders"`
@@ -170,4 +170,16 @@ type TrembitaRegistryService struct {
 	SubsystemCode  string `yaml:"subsystem-code,omitempty" json:"subsystemCode,omitempty"`
 	ServiceCode    string `yaml:"service-code,omitempty" json:"serviceCode,omitempty"`
 	ServiceVersion string `yaml:"service-version,omitempty" json:"serviceVersion,omitempty"`
+}
+
+type ClusterValues struct {
+	Keycloak ClusterKeycloak `yaml:"keycloak" json:"keycloak"`
+}
+
+type ClusterKeycloak struct {
+	CustomHosts []CustomHost `json:"customHosts" yaml:"customHosts"`
+}
+
+type CustomHost struct {
+	Host string `json:"host" yaml:"host"`
 }
