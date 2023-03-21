@@ -119,11 +119,10 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 	values.OriginalYaml[trembitaValuesKey] = trembitaDict
 
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
+		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
 		MRLabel{Key: MRLabelTrembitaRegsitryName, Value: tf.TrembitaClientRegitryName}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
-
 	return router.MakeRedirectResponse(http.StatusFound,
 		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
 }
@@ -173,7 +172,7 @@ func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Respons
 	values.Trembita.Registries[tf.TrembitaClientRegitryName] = trembitaRegistry
 	values.OriginalYaml[trembitaValuesKey] = values.Trembita
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
+		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
 		MRLabel{Key: MRLabelTrembitaRegsitryName, Value: tf.TrembitaClientRegitryName}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
@@ -207,7 +206,7 @@ func (a *App) deleteTrembitaClient(ctx *gin.Context) (rsp router.Response, retEr
 
 	delete(values.Trembita.Registries, trembitaClientName)
 	values.OriginalYaml[trembitaValuesKey] = values.Trembita
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 

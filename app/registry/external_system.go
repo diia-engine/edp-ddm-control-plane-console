@@ -131,7 +131,7 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 
 	values.OriginalYaml[externalSystemsKey] = values.ExternalSystems
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -202,7 +202,7 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "unable to set external system")
 	}
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -251,7 +251,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to set external system")
 	}
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
