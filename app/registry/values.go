@@ -3,14 +3,15 @@ package registry
 import "fmt"
 
 type Values struct {
-	Administrators  []Admin                   `yaml:"administrators" json:"administrators"`
-	ExternalSystems map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
-	Global          Global                    `yaml:"global" json:"global"`
-	Trembita        Trembita                  `yaml:"trembita" json:"trembita"`
-	SignWidget      SignWidget                `yaml:"signWidget" json:"signWidget"`
-	Keycloak        Keycloak                  `yaml:"keycloak" json:"keycloak"`
-	Portals         Portals                   `yaml:"portals" json:"portals"`
-	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
+	Administrators            []Admin                   `yaml:"administrators" json:"administrators"`
+	ExternalSystems           map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
+	ExternalSystemsSecretPath string                    `yaml:"externalSystemsSecretPath" json:"externalSystemsSecretPath"`
+	Global                    Global                    `yaml:"global" json:"global"`
+	Trembita                  Trembita                  `yaml:"trembita" json:"trembita"`
+	SignWidget                SignWidget                `yaml:"signWidget" json:"signWidget"`
+	Keycloak                  Keycloak                  `yaml:"keycloak" json:"keycloak"`
+	Portals                   Portals                   `yaml:"portals" json:"portals"`
+	OriginalYaml              map[string]interface{}    `yaml:"-" json:"-"`
 }
 
 type Portals struct {
@@ -116,6 +117,7 @@ type WhiteListIP struct {
 }
 
 type Trembita struct {
+	SecretPath string                      `yaml:"secretPath,omitempty" json:"secretPath,omitempty"`
 	Registries map[string]TrembitaRegistry `yaml:"registries" json:"registries"`
 }
 
