@@ -64,13 +64,40 @@ func InitServices(cnf *config.Settings) *config.Services {
 		Codebase:     initCodebaseService(cnf),
 		Vault:        initVault(),
 		K8S:          initK8SService(cnf),
-		Jenkins:      &mockJenkins.ServiceInterface{},
+		Jenkins:      initJenkinsService(),
 		Gerrit:       initMockGerrit(cnf),
-		EDPComponent: &edpComponent,
+		EDPComponent: initEDPComponent(),
 		Keycloak:     &mockKeycloak.ServiceInterface{},
 		OpenShift:    &openShift,
 		PermService:  &pms,
 	}
+
+	return &svc
+}
+
+func initEDPComponent() *mockEdpComponent.ServiceInterface {
+	edpComponent := mockEdpComponent.ServiceInterface{}
+	edpComponent.On("GetAll", mock.Anything, mock.Anything).Return([]edpcomponent.EDPComponent{}, nil)
+	edpComponent.On("Get", mock.Anything, mock.Anything).Return(&edpcomponent.EDPComponent{
+		Spec: edpcomponent.EDPComponentSpec{Url: "https://example.com/foo/bar"},
+	}, nil)
+	edpComponent.On("GetAllNamespace", mock.Anything, mock.Anything, true).Return([]edpcomponent.EDPComponent{
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "mock"},
+		},
+	}, nil)
+	edpComponent.On("GetAllCategory", mock.Anything, mock.Anything).Return(map[string][]edpcomponent.EDPComponentItem{
+		"foo": {
+			{},
+		},
+	}, nil)
+
+	return &edpComponent
+}
+
+func initJenkinsService() *mockJenkins.ServiceInterface {
+	svc := mockJenkins.ServiceInterface{}
+	svc.On("GetJobStatus", mock.Anything, mock.Anything).Return("SUCCESS", int64(11), nil)
 
 	return &svc
 }
@@ -104,6 +131,18 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 			ObjectMeta: metav1.ObjectMeta{Name: "master"},
 		},
 	}, nil)
+	cbService.On("CheckIsAllowedToUpdate", mock.Anything, mock.Anything).Return(true, nil)
+
+	mockDescription := "mock description"
+	cbService.On("Get", "mock").Return(&codebase.Codebase{
+		ObjectMeta: metav1.ObjectMeta{Name: "mock"},
+		Spec:       codebase.CodebaseSpec{Description: &mockDescription},
+	}, nil)
+	cbService.On("GetBranchesByCodebase", "mock").Return([]codebase.CodebaseBranch{
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "master"},
+		},
+	}, nil)
 
 	return &cbService
 }
@@ -128,6 +167,18 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 		},
 	}, nil)
 
+	mockClusterValuesFromRegistry := registry.ClusterValues{Keycloak: registry.ClusterKeycloak{CustomHosts: []registry.CustomHost{
+		{Host: "foo.bar.com"},
+		{Host: "zozo.com.ua"},
+	}}}
+	clusterValuesBts, err := yaml.Marshal(mockClusterValuesFromRegistry)
+	if err != nil {
+		panic(err)
+	}
+
+	grService.On("GetBranchContent", cnf.ClusterCodebaseName, "master",
+		url.PathEscape(registry.ValuesLocation)).Return(string(clusterValuesBts), nil)
+
 	mockRegistryValues := registry.Values{
 		Global: registry.Global{},
 		Administrators: []registry.Admin{
@@ -137,20 +188,27 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 			CustomHost: "foo.bar.com",
 		},
 	}
-	bts, err := yaml.Marshal(mockRegistryValues)
+	registryValuesBts, err := yaml.Marshal(mockRegistryValues)
 	if err != nil {
 		panic(err)
 	}
 
-	grService.On("GetBranchContent", cnf.ClusterCodebaseName, "master",
-		url.PathEscape(registry.ValuesLocation)).Return(string(bts), nil)
-	grService.On("GetBranchContent", "mock", "master", url.PathEscape(registry.ValuesLocation)).Return(string(bts), nil)
+	grService.On("GetBranchContent", "mock", "master", url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
 	grService.On("GetMergeRequestByProject", mock.Anything, cnf.ClusterCodebaseName).Return([]gerrit.GerritMergeRequest{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr"},
 		},
 	}, nil)
+	grService.On("GetMergeRequestByProject", mock.Anything, "mock").Return([]gerrit.GerritMergeRequest{
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr"},
+		},
+	}, nil)
 	grService.On("GetProject", mock.Anything, cnf.ClusterCodebaseName).Return(&gerrit.GerritProject{
+		ObjectMeta: metav1.ObjectMeta{Name: "mock-project"},
+	}, nil)
+
+	grService.On("GetProject", mock.Anything, "mock").Return(&gerrit.GerritProject{
 		ObjectMeta: metav1.ObjectMeta{Name: "mock-project"},
 	}, nil)
 
@@ -166,7 +224,7 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 			},
 		}},
 	}
-	bts, err = yaml.Marshal(mockClusterValues)
+	bts, err := yaml.Marshal(mockClusterValues)
 	if err != nil {
 		panic(err)
 	}

@@ -12481,6 +12481,21 @@ p.error {
     margin-top: 8px;
 }
 
+.dns-inputs label {
+    text-transform: uppercase;
+}
+
+.text-input-label {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-transform: none;
+}
+
+.label-ssl {
+    margin-top: 24px;
+}
+
 .toggle-switch {
     display: flex;
     flex-direction: row;
@@ -12812,4 +12827,11 @@ p.error {
     font-weight: 300;
     font-size: 16px;
     line-height: 24px;
+}
+
+.rc-form-group select {
+    background: #FFFFFF;
+    border: 1px solid #CED0DB;
+    height: 40px;
+    padding: 8px;
 }

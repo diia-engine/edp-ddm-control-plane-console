@@ -24,5 +24,6 @@ func (cnf *Settings) ClusterConfig() cluster.Config {
 		VaultKVEngineName:             cnf.VaultKVEngineName,
 		HardwareINITemplatePath:       cnf.RegistryHardwareKeyINITemplatePath,
 		TempFolder:                    cnf.TempFolder,
+		KeycloakDefaultHostname:       cnf.KeycloakDefaultHostname,
 	}
 }

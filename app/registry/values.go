@@ -176,3 +176,15 @@ type TrembitaRegistryService struct {
 	ServiceCode    string `yaml:"service-code,omitempty" json:"serviceCode,omitempty"`
 	ServiceVersion string `yaml:"service-version,omitempty" json:"serviceVersion,omitempty"`
 }
+
+type ClusterValues struct {
+	Keycloak ClusterKeycloak `yaml:"keycloak" json:"keycloak"`
+}
+
+type ClusterKeycloak struct {
+	CustomHosts []CustomHost `json:"customHosts" yaml:"customHosts"`
+}
+
+type CustomHost struct {
+	Host string `json:"host" yaml:"host"`
+}

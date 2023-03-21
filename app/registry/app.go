@@ -37,6 +37,7 @@ type Config struct {
 	RegistryDNSManualPath           string
 	DDMManualEDPComponent           string
 	RegistryVersionFilter           string
+	KeycloakDefaultHostname         string
 }
 
 type Services struct {
