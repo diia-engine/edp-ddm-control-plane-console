@@ -8,6 +8,7 @@
     {{template "open-mr-form" .}}
     {{end}}
     <input type="hidden" value="{{ .registry.Name }}" ref="registryName" />
+    <input type="hidden" value="{{ .externalRegAvailableRegistriesJSON }}" ref="externalRegistries" />
     <div class="registry-header">
         <a href="{{ .BasePath }}/admin/registry/overview" class="registry-add">
             <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
@@ -637,10 +638,10 @@
                 </div>
                 <div v-if="internalRegistryReg" class="er-system-opts">
                     <label for="in-registry">Оберіть реєстр</label>
-                    <select name="reg-name" id="in-registry">
-                        {{range $index, $ar := .externalRegAvailableRegistries}}
-                            <option>{{$ar.Name}}</option>
-                        {{end}}
+                    <select name="reg-name" id="in-registry" v-model="registrySelected">
+                        <option v-for="(reg, index) in externalRegAvailableRegistriesNames" :key="index">
+                            [[ reg ]]
+                        </option>
                     </select>
                     <span>Якщо реєстру не має в переліку – його потрібно створити заздалегідь.</span>
                 </div>

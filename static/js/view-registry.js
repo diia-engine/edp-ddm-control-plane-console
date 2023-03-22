@@ -31,6 +31,14 @@ let app = Vue.createApp({
             this.openMergeRequests.has = true;
         }
 
+        if (this.$refs.hasOwnProperty('externalRegistries')) {
+            this.externalRegAvailableRegistriesNames = 
+                JSON.parse(this.$refs.externalRegistries?.value || '[]')?.map(reg => reg?.metadata?.name) || [];
+            if (this.externalRegAvailableRegistriesNames.length) {
+                this.registrySelected = this.externalRegAvailableRegistriesNames[0]
+            }
+        }
+
         this.externalSystem = this.externalSystemDefaults();
         this.trembitaClient = this.trembitaClientDefaults();
     },
@@ -79,6 +87,8 @@ let app = Vue.createApp({
             return {
                 registryName: '',
                 registryNameExists: false,
+                externalRegAvailableRegistriesNames: [],
+                registrySelected: false,
                 formShow: false,
                 deleteFormShow: false,
                 registryCreation: false,
@@ -589,7 +599,25 @@ let app = Vue.createApp({
         },
         addExternalReg(e) {
             let names = $(".ereg-name");
+
+            if (this.internalRegistryReg) {
+                const selected = this.registrySelected;
+
+                for (let i=0;i<names.length;i++) {
+                    if ($(names[i]).html().trim() === selected) {
+                        this.accessGrantError = `Доступ з таким ім'ям "${selected}" вже існує. Для вирішення конфлікту імен перестворіть доступ до зовнішньої системи з іншим ім'ям, а потім надайте доступ реєстру платформи: "${selected}`;
+                        e.preventDefault();
+                    }
+                }
+            }
+
             let inputName = $("#ex-system").val().trim();
+
+            if (this.externalRegAvailableRegistriesNames.includes(inputName)) {
+                this.accessGrantError = `Доступ з таким ім'ям системи/або платформи "${inputName}" вже існує, оберіть інше ім'я`;
+                e.preventDefault();
+            }
+
             for (let i=0;i<names.length;i++) {
                 if ($(names[i]).html().trim() === inputName) {
                     this.accessGrantError = `Доступ з таким ім'ям системи/або платформи "${inputName}" вже існує, оберіть інше ім'я`;
