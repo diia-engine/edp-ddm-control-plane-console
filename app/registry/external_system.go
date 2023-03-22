@@ -4,8 +4,6 @@ import (
 	"ddm-admin-console/router"
 	"fmt"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -31,7 +29,7 @@ type RegistryExternalSystemForm struct {
 }
 
 func externalSystemsSecretPath(vaultRegistryPath string) string {
-	return fmt.Sprintf("%s/external-systems-%s", vaultRegistryPath, time.Now().Format("20060201T150405Z"))
+	return fmt.Sprintf("%s/external-systems", vaultRegistryPath)
 }
 
 func externalSystemSecretPrefixedPath(originalPath string) string {
@@ -87,7 +85,7 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 
 	values.OriginalYaml[externalSystemsKey] = values.ExternalSystems
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -154,11 +152,11 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 	valuesExternalSystemsDict[f.RegistryName] = extenalSystem
 	values.OriginalYaml[externalSystemsKey] = valuesExternalSystemsDict
 
-	if err := a.setExternalSystemRegistrySecrets(&f, registryName, values); err != nil {
+	if err := a.setExternalSystemRegistrySecrets(&f, registryName); err != nil {
 		return nil, errors.Wrap(err, "unable to set external system")
 	}
-	extenalSystem.Auth["secret"] = values.ExternalSystemsSecretPath
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
+
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -203,12 +201,11 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 	valuesExternalSystemsDict[f.RegistryName] = editExtenalSystem
 	values.OriginalYaml[externalSystemsKey] = valuesExternalSystemsDict
 
-	if err := a.setExternalSystemRegistrySecrets(&f, registryName, values); err != nil {
+	if err := a.setExternalSystemRegistrySecrets(&f, registryName); err != nil {
 		return nil, errors.Wrap(err, "unable to set external system")
 	}
-	editExtenalSystem.Auth["secret"] = values.ExternalSystemsSecretPath
-	values.OriginalYaml["externalSystemsSecretPath"] = values.ExternalSystemsSecretPath
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
+
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -216,7 +213,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
 }
 
-func (a *App) setExternalSystemRegistrySecrets(f *RegistryExternalSystemForm, registryName string, values *Values) error {
+func (a *App) setExternalSystemRegistrySecrets(f *RegistryExternalSystemForm, registryName string) error {
 	secretPath := externalSystemsSecretPath(a.vaultRegistryPath(registryName))
 	secretData := make(map[string]interface{})
 	prefixedPath := externalSystemSecretPrefixedPath(secretPath)
@@ -246,33 +243,11 @@ func (a *App) setExternalSystemRegistrySecrets(f *RegistryExternalSystemForm, re
 	if !createSecrets {
 		return nil
 	}
-	prefixedSecret := values.ExternalSystemsSecretPath
 
-	sec, err := a.Vault.Read(ModifyVaultPath(strings.TrimPrefix(prefixedSecret, "vault:")))
-	if err != nil {
-		return errors.Wrap(err, "unable to read secret")
-	}
-	if sec == nil {
-		if err := CreateVaultSecrets(a.Vault, map[string]map[string]interface{}{
-			secretPath: secretData,
-		}, true); err != nil {
-			return errors.Wrap(err, "unable to create auth token secret")
-		}
-		values.ExternalSystemsSecretPath = prefixedPath
-	} else if f.AuthSecret != prefixedSecret {
-		if currentSecretData, ok := sec.Data["data"]; ok {
-			if currentSecretData, ok := currentSecretData.(map[string]interface{}); ok {
-				for key, value := range secretData {
-					currentSecretData[key] = value
-				}
-			}
-		}
-		if _, err := a.Vault.Write(ModifyVaultPath(secretPath), map[string]interface{}{
-			"data": sec.Data["data"],
-		}); err != nil {
-			return errors.Wrap(err, "unable to create auth token secret")
-		}
-		values.ExternalSystemsSecretPath = prefixedPath
+	if err := CreateVaultSecrets(a.Vault, map[string]map[string]interface{}{
+		secretPath: secretData,
+	}, true); err != nil {
+		return errors.Wrap(err, "unable to create auth token secret")
 	}
 
 	return nil
