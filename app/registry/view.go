@@ -190,7 +190,13 @@ func (a *App) loadCodebasesForExternalRegistrations(registryName string, eRegs [
 			availableRegs = append(availableRegs, cb)
 		}
 	}
-	viewParams["externalRegAvailableRegistries"] = availableRegs
+
+	availableRegsJson, err := json.Marshal(availableRegs)
+	if err != nil {
+		return errors.Wrap(err, "unable to encode values")
+	}
+
+	viewParams["externalRegAvailableRegistriesJSON"] = string(availableRegsJson)
 
 	return nil
 }
