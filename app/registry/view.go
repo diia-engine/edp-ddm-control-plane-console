@@ -47,7 +47,14 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 		}
 	}
 
-	return router.MakeHTMLResponse(200, "registry/view.html", viewParams), nil
+	templateArgs, err := json.Marshal(viewParams)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode template arguments")
+	}
+
+	return router.MakeHTMLResponse(200, "registry/view.html", gin.H{
+		"templateArgs": string(templateArgs),
+	}), nil
 }
 
 func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registryName string, values *Values, viewParams gin.H) error {
@@ -130,11 +137,11 @@ func (a *App) viewRegistryExternalRegistration(userCtx context.Context, registry
 	for _, mr := range mrs {
 		if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value == gerrit.StatusNew {
 			eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
-				External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, status: erStatusInactive})
+				External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusInactive})
 			mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
 		} else if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value != gerrit.StatusMerged && mr.Status.Value != gerrit.StatusAbandoned {
 			eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
-				External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, status: erStatusFailed})
+				External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusFailed})
 			mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
 		}
 	}
@@ -171,7 +178,7 @@ func (a *App) loadKeysForExternalRegs(ctx context.Context, registryName string, 
 			s, err := a.Services.K8S.GetSecretFromNamespace(ctx, fmt.Sprintf("keycloak-client-%s-secret", er.Name),
 				registryName)
 			if k8sErrors.IsNotFound(err) {
-				eRegs[i].status = erStatusInactive
+				eRegs[i].StatusRegistration = erStatusInactive
 				continue
 			} else if err != nil {
 				return errors.Wrap(err, "unable to get er system key")
@@ -345,6 +352,7 @@ func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, regist
 
 	viewParams["registry"] = registry
 	viewParams["branches"] = branches
+	viewParams["created"] = registry.FormattedCreatedAtTimezone(a.Config.Timezone)
 
 	return nil
 }
