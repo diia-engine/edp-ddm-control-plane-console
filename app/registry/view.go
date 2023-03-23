@@ -58,7 +58,35 @@ func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registr
 		a.viewCIDRConfig,
 		a.viewAdministratorsConfig,
 		a.viewRegistryHasUpdates,
+		a.viewUpdateTrembitaRegistries,
 	}
+}
+
+func (a *App) viewUpdateTrembitaRegistries(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+	mrs, ok := viewParams["mergeRequests"]
+	if !ok {
+		return nil
+	}
+
+	trembitaMrs := make(map[string]ExtendedMergeRequests)
+
+	extendedMRs := mrs.([]ExtendedMergeRequests)
+	for _, mr := range extendedMRs {
+		name, ok := mr.Labels[MRLabelTrembitaRegsitryName]
+		if ok {
+			trembitaMrs[name] = mr
+		}
+	}
+
+	for i, r := range values.Trembita.Registries {
+		_, ok := trembitaMrs[i]
+		if ok {
+			r.UserID = "fake"
+			values.Trembita.Registries[i] = r
+		}
+	}
+
+	return nil
 }
 
 func (a *App) viewRegistryHasUpdates(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
