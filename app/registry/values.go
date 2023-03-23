@@ -34,9 +34,10 @@ type RegistryBackup struct {
 }
 
 type Keycloak struct {
-	Realms            KeycloakRealms            `yaml:"realms" json:"realms"`
-	AuthFlows         KeycloakAuthFlows         `yaml:"authFlows" json:"authFlows"`
-	IdentityProviders KeycloakIdentityProviders `yaml:"identityProviders" json:"identityProviders"`
+	Realms            KeycloakRealms                   `yaml:"realms" json:"realms"`
+	AuthFlows         KeycloakAuthFlows                `yaml:"authFlows" json:"authFlows"`
+	CitizenAuthFlow   KeycloakAuthFlowsCitizenAuthFlow `yaml:"citizenAuthFlow" json:"citizenAuthFlow"`
+	IdentityProviders KeycloakIdentityProviders        `yaml:"identityProviders" json:"identityProviders"`
 }
 
 type KeycloakIdentityProviders struct {
@@ -51,7 +52,6 @@ type KeycloakIdentityProvidersIDGovUA struct {
 
 type KeycloakAuthFlows struct {
 	OfficerAuthFlow KeycloakAuthFlowsOfficerAuthFlow `yaml:"officerAuthFlow" json:"officerAuthFlow"`
-	CitizenAuthFlow KeycloakAuthFlowsCitizenAuthFlow `yaml:"citizenAuthFlow" json:"citizenAuthFlow"`
 }
 
 type KeycloakAuthFlowsOfficerAuthFlow struct {

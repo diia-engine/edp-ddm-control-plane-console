@@ -8,7 +8,7 @@ const (
 
 func (a *App) prepareEDRCheck(ctx *gin.Context, r *registry, values *Values,
 	secrets map[string]map[string]interface{}, mrActions *[]string) error {
-	values.Keycloak.AuthFlows.CitizenAuthFlow.EDRCheck = r.EDRCheckEnabled != ""
+	values.Keycloak.CitizenAuthFlow.EDRCheck = r.EDRCheckEnabled != ""
 	values.OriginalYaml[keycloakIndex] = values.Keycloak
 	return nil
 }

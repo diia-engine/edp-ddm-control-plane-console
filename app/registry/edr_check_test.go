@@ -21,7 +21,7 @@ func TestPrepareEDRCheckTrue(t *testing.T) {
 	result := app.prepareEDRCheck(&ctx, &r, &values, secrets, &mrActions)
 
 	assert.Nil(t, result)
-	assert.Equal(t, values.Keycloak.AuthFlows.CitizenAuthFlow.EDRCheck, true)
+	assert.Equal(t, values.Keycloak.CitizenAuthFlow.EDRCheck, true)
 	assert.Equal(t, values.OriginalYaml[keycloakIndex], values.Keycloak)
 }
 
@@ -40,6 +40,6 @@ func TestPrepareEDRCheckFalse(t *testing.T) {
 	result := app.prepareEDRCheck(&ctx, &r, &values, secrets, &mrActions)
 
 	assert.Nil(t, result)
-	assert.Equal(t, values.Keycloak.AuthFlows.CitizenAuthFlow.EDRCheck, false)
+	assert.Equal(t, values.Keycloak.CitizenAuthFlow.EDRCheck, false)
 	assert.Equal(t, values.OriginalYaml[keycloakIndex], values.Keycloak)
 }

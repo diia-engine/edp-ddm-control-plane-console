@@ -292,7 +292,7 @@ let app = Vue.createApp({
                     this.wizard.tabs.supplierAuthentication.data.secret = '*****';
                 }
 
-                this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = this.registryValues.keycloak.authFlows.citizenAuthFlow.edrCheck
+                this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = this.registryValues.keycloak.citizenAuthFlow.edrCheck
             } catch (e) {
                 console.log(e);
             }
