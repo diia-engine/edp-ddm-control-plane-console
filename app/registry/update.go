@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"ddm-admin-console/service/codebase"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -43,11 +44,18 @@ func (a *App) registryUpdateView(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}
 
-	return router.MakeHTMLResponse(200, "registry/update.html", gin.H{
+	templateArgs, err := json.Marshal(gin.H{
 		"updateBranches": branches,
-		"hasUpdate":      hasUpdate,
 		"registry":       reg,
-		"page":           "registry",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode template arguments")
+	}
+
+	return router.MakeHTMLResponse(200, "registry/update.html", gin.H{
+		"page":         "registry",
+		"hasUpdate":    hasUpdate,
+		"templateArgs": string(templateArgs),
 	}), nil
 }
 
