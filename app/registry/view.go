@@ -4,11 +4,14 @@ import (
 	"context"
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
+	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
+
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -20,7 +23,7 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 
 	registryName := ctx.Param("name")
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Services.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Services.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
@@ -329,7 +332,7 @@ func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, regist
 func (a *App) loadBranchesStatuses(ctx context.Context, branches []codebase.CodebaseBranch) error {
 	for i, b := range branches {
 		branchName := strings.ToUpper(b.Spec.BranchName)
-		status, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/%s/job/%s-Build-%s", b.Spec.CodebaseName,
+		status, build, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/%s/job/%s-Build-%s", b.Spec.CodebaseName,
 			branchName, branchName, b.Spec.CodebaseName))
 		if err != nil {
 			if strings.Contains(err.Error(), "404") {
@@ -338,8 +341,10 @@ func (a *App) loadBranchesStatuses(ctx context.Context, branches []codebase.Code
 
 			return errors.Wrap(err, "unable to get branch build status")
 		}
+		buildString := strconv.FormatInt(build, 10)
 
 		branches[i].Status.Value = status
+		branches[i].Status.Build = &buildString
 	}
 
 	return nil
@@ -356,14 +361,17 @@ func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, registryName
 		return errors.Wrap(err, "unable to get gerrit edp component")
 	}
 
-	namespacedEDPComponents, err := a.Services.EDPComponent.GetAllNamespace(userCtx, registryName, true)
+	categories, err := a.Services.EDPComponent.GetAllCategory(userCtx, registryName)
 	if err != nil {
 		return errors.Wrap(err, "unable to list namespaced edp components")
 	}
 
 	viewParams["jenkinsURL"] = jenkinsComponent.Spec.Url
 	viewParams["gerritURL"] = gerritComponent.Spec.Url
-	viewParams["edpComponents"] = namespacedEDPComponents
+	viewParams["registryOperationalComponents"] = categories[edpcomponent.RegistryOperationalZone]
+	viewParams["regisrtyAdministrationComponents"] = categories[edpcomponent.RegistryAdministrationZone]
+	viewParams["platformOperationalComponents"] = categories[edpcomponent.PlatformOperationalZone]
+	viewParams["platformAdministrationComponents"] = categories[edpcomponent.PlatformAdministrationZone]
 
 	return nil
 }

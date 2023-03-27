@@ -24,6 +24,7 @@ func (cnf *Settings) RegistryConfig() registry.Config {
 		RegistryDNSManualPath:           cnf.RegistryDNSManualPath,
 		DDMManualEDPComponent:           cnf.DDMManualEDPComponent,
 		RegistryVersionFilter:           cnf.RegistryVersionFilter,
+		KeycloakDefaultHostname:         cnf.KeycloakDefaultHostname,
 	}
 }
 

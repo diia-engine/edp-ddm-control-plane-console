@@ -34,6 +34,7 @@ type RegistryBackup struct {
 }
 
 type Keycloak struct {
+	CustomHost        string                    `yaml:"customHost,omitempty" json:"customHost"`
 	Realms            KeycloakRealms                   `yaml:"realms" json:"realms"`
 	AuthFlows         KeycloakAuthFlows                `yaml:"authFlows" json:"authFlows"`
 	CitizenAuthFlow   KeycloakAuthFlowsCitizenAuthFlow `yaml:"citizenAuthFlow" json:"citizenAuthFlow"`
@@ -124,14 +125,14 @@ type Trembita struct {
 }
 
 type TrembitaRegistry struct {
-	UserID          string                  `yaml:"user-id" json:"userId"`
-	Type            string                  `yaml:"type" json:"type"`
-	ProtocolVersion string                  `yaml:"protocol-version" json:"protocolVersion"`
-	URL             string                  `yaml:"url" json:"url"`
-	Protocol        string                  `yaml:"protocol" json:"protocol"`
-	Client          TrembitaRegistryClient  `yaml:"client" json:"client"`
-	Service         TrembitaRegistryService `yaml:"service" json:"service"`
-	Auth            map[string]string       `yaml:"auth" json:"auth"`
+	UserID          string                  `yaml:"user-id,omitempty" json:"userId,omitempty"`
+	Type            string                  `yaml:"type,omitempty" json:"type,omitempty"`
+	ProtocolVersion string                  `yaml:"protocol-version,omitempty" json:"protocolVersion,omitempty"`
+	URL             string                  `yaml:"url,omitempty" json:"url,omitempty"`
+	Protocol        string                  `yaml:"protocol,omitempty" json:"protocol,omitempty"`
+	Client          TrembitaRegistryClient  `yaml:"client,omitempty" json:"client,omitempty"`
+	Service         TrembitaRegistryService `yaml:"service,omitempty" json:"service,omitempty"`
+	Auth            map[string]string       `yaml:"auth,omitempty" json:"auth,omitempty"`
 }
 
 func (t TrembitaRegistry) StrType() string {
@@ -161,15 +162,29 @@ func (t TrembitaRegistry) FaStatus() string {
 }
 
 type TrembitaRegistryClient struct {
-	XRoadInstance string `yaml:"x-road-instance" json:"xRoadInstance"`
-	MemberClass   string `yaml:"member-class" json:"memberClass"`
-	MemberCode    string `yaml:"member-code" json:"memberCode"`
-	SubsystemCode string `yaml:"subsystem-code" json:"subsystemCode"`
+	XRoadInstance string `yaml:"x-road-instance,omitempty" json:"xRoadInstance,omitempty"`
+	MemberClass   string `yaml:"member-class,omitempty" json:"memberClass,omitempty"`
+	MemberCode    string `yaml:"member-code,omitempty" json:"memberCode,omitempty"`
+	SubsystemCode string `yaml:"subsystem-code,omitempty" json:"subsystemCode,omitempty"`
 }
 
 type TrembitaRegistryService struct {
-	XRoadInstance string `yaml:"x-road-instance" json:"xRoadInstance"`
-	MemberClass   string `yaml:"member-class" json:"memberClass"`
-	MemberCode    string `yaml:"member-code" json:"memberCode"`
-	SubsystemCode string `yaml:"subsystem-code" json:"subsystemCode"`
+	XRoadInstance  string `yaml:"x-road-instance,omitempty" json:"xRoadInstance,omitempty"`
+	MemberClass    string `yaml:"member-class,omitempty" json:"memberClass,omitempty"`
+	MemberCode     string `yaml:"member-code,omitempty" json:"memberCode,omitempty"`
+	SubsystemCode  string `yaml:"subsystem-code,omitempty" json:"subsystemCode,omitempty"`
+	ServiceCode    string `yaml:"service-code,omitempty" json:"serviceCode,omitempty"`
+	ServiceVersion string `yaml:"service-version,omitempty" json:"serviceVersion,omitempty"`
+}
+
+type ClusterValues struct {
+	Keycloak ClusterKeycloak `yaml:"keycloak" json:"keycloak"`
+}
+
+type ClusterKeycloak struct {
+	CustomHosts []CustomHost `json:"customHosts" yaml:"customHosts"`
+}
+
+type CustomHost struct {
+	Host string `json:"host" yaml:"host"`
 }

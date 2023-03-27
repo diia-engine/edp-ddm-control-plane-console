@@ -10710,7 +10710,7 @@ button.delete .icon-trashcan {
 }
 
 .edp-form .card-header.static {
-    background-image: none; !important;
+    background-image: none !important;
 }
 
 .edp-form .card-header.collapsed {
@@ -11703,6 +11703,7 @@ div#kubernetes-component {
     margin: 16px;
     color: #FFFFFF;
     font-size: 18px;
+    line-height: 24px;
     font-family: "Oswald", sans-serif;
     text-transform: uppercase;
 }
@@ -12480,6 +12481,21 @@ p.error {
     margin-top: 8px;
 }
 
+.dns-inputs label {
+    text-transform: uppercase;
+}
+
+.text-input-label {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-transform: none;
+}
+
+.label-ssl {
+    margin-top: 24px;
+}
+
 .toggle-switch {
     display: flex;
     flex-direction: row;
@@ -12598,6 +12614,16 @@ p.error {
     font-size: 12px;
 }
 
+.keycloak-dns-manual a {
+    color: #000000;
+}
+
+.keycloak-dns-manual {
+    background: #FFFBE6;
+    padding: 8px 16px;
+    font-size: 12px;
+}
+
 .href-red {
     background: #D35D47;
     border-radius: 4px;
@@ -12622,13 +12648,6 @@ p.error {
     font-size: 12px;
 }
 
-.wizard-warning {
-    background: #FFFBE6;
-    padding: 16px 24px;
-    margin-bottom: 32px;
-    font-size: 12px;
-}
-
 .red-star {
     color: red;
 }
@@ -12639,4 +12658,175 @@ p.error {
 
 .cron-next-dates {
     padding-left: 25px;
+}
+
+.cluster-keycloak p {
+    font-size: 16px;
+}
+
+.cluster-default-kc-dns-label {
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 12px;
+    margin-top: 24px;
+    font-weight: 400;
+    font-family: "Oswald", "MuseoSans", sans-serif;
+}
+
+.cluster-default-kc-dns-value {
+    text-transform: uppercase;
+    font-size: 18px;
+    font-weight: 400;
+    font-family: "Oswald", "MuseoSans", sans-serif;
+}
+
+.add-kc-dns-block {
+    border-bottom: 1px solid #CCCCCC;
+    padding: 20px 0;
+    display: flex;
+    align-items: baseline;
+    margin: 0 0 16px 0;
+}
+
+.add-kc-dns-block span {
+    font-family: "Oswald", "MuseoSans", sans-serif;
+    font-weight: 400;
+    font-size: 18px;
+    text-transform: uppercase;
+    margin-left: 8px;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.rc-form-upload-block {
+    display: flex;
+    align-items: baseline;
+    cursor: pointer;
+}
+
+
+.rc-form-upload-block span {
+    font-family: "Oswald", "MuseoSans", sans-serif;
+    font-weight: 400;
+    font-size: 18px;
+    text-transform: uppercase;
+    margin-left: 8px;
+    color: rgba(0, 0, 0, 0.5);
+    display: block;
+}
+
+.rc-form-upload-block i {
+    color: #008ACE;
+}
+
+.cluster-kc-dns-uploaded {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.cluster-kc-dns-uploaded div {
+    display: flex;
+    align-items: baseline;
+}
+
+.cluster-kc-dns-uploaded div > .fa-check {
+    color: #6DA300;
+}
+
+.cluster-kc-dns-uploaded span {
+    display: block;
+    font-size: 16px;
+    color: #000000;
+    margin-left: 11px;
+}
+
+.cluster-kc-dns-uploaded a > .fa-trash {
+    color: #D35D47;
+}
+
+.cluster-default-kc-dns-value {
+    border-bottom: 1px solid #CCCCCC;
+    padding-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.cluster-default-kc-dns-value a > .fa-trash {
+    color: #D35D47;
+    margin-left: 20px;
+}
+.tabs {
+    display: flex;
+    margin-top: 32px;
+    margin-bottom: 24px;
+}
+
+.tabs .tab {
+    font-family: 'Oswald';
+    color: #008ACE;
+    font-size: 18px;
+    line-height: 24px;
+    text-transform: uppercase;
+    padding: 8px 16px 8px 16px;
+    height: 40px;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.tabs .active {
+    border-bottom: 2px solid #008ACE;
+}
+
+.list-item {
+    padding: 16px 8px;
+    display: flex;
+    border-bottom: 2px solid #E1E3EB;
+}
+
+.list-item:last-child {
+    border-bottom: none
+}
+
+.list-item .item-image {
+    width: 56px;
+    height: 56px;
+}
+
+.list-item a {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 700;
+    color: #008ACE;
+    margin-bottom: 8px;
+}
+
+.list-item a.disabled {
+    pointer-events: none;
+    color:#000000;
+}
+
+.list-item a.disabled span {
+    opacity: 0.5;
+    font-weight: 300;
+}
+
+.list-item .item-content {
+    margin-left: 32px;
+}
+
+.list-item .item-content img {
+    margin-left: 11px;
+}
+
+.list-item .item-content .description {
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.rc-form-group select {
+    background: #FFFFFF;
+    border: 1px solid #CED0DB;
+    height: 40px;
+    padding: 8px;
 }

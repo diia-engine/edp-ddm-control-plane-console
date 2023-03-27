@@ -1,6 +1,8 @@
 package cluster
 
 import (
+	"context"
+	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
 	"fmt"
 	"net/http"
@@ -150,7 +152,17 @@ func OnlyIntegerValidator(fl validator.FieldLevel) bool {
 	return true
 }
 
-func (a *App) loadBackupScheduleConfig(values *Values, rspParams gin.H) error {
+func (a *App) loadKeycloakDefaultHostname(ctx context.Context, values *Values, rspParams gin.H) error {
+	hostname, err := registry.LoadKeycloakDefaultHostname(ctx, a.KeycloakDefaultHostname, a.EDPComponent)
+	if err != nil {
+		return fmt.Errorf("unable to load keycloak hostname, %w", err)
+	}
+
+	rspParams["keycloakHostname"] = hostname
+	return nil
+}
+
+func (a *App) loadBackupScheduleConfig(_ context.Context, values *Values, rspParams gin.H) error {
 	rspParams["backupSchedule"] = values.Velero.Backup.ToForm()
 
 	return nil

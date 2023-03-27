@@ -75,6 +75,7 @@ func main() {
 	r.SetFuncMap(template.FuncMap{"i18n": i18n})
 	r.LoadHTMLGlob("templates/**/*")
 	r.Static("/static", "./static")
+	r.Static("/assets", "./frontend/dist/assets")
 	store := cookie.NewStore([]byte(cnf.SessionSecret))
 	r.Use(sessions.Sessions("cookie-session", store))
 

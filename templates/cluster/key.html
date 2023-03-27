@@ -1,5 +1,5 @@
 {{ define "cluster-key-block" }}
-    <form @submit="clusterKeyFormSubmit" class="registry-create-form" enctype="multipart/form-data" method="post"
+    <form @submit="clusterKeyFormSubmit" class="registry-create-form wizard-form" enctype="multipart/form-data" method="post"
           action="/admin/cluster/key">
         {{template "key-form" .}}
 

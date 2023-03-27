@@ -62,16 +62,26 @@ let app = Vue.createApp({
             },
             externalSystem: {},
             trembitaClient: {},
+            activeTab: 'info',
         }
     }, // mrIframe
     methods: {
+        selectTab(tabName) {
+            this.activeTab = tabName;
+        },
+        isActiveTab(tabName) {
+            return this.activeTab === tabName;
+        },
         isURL(u){
             return /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/.test(u);
         },
         trembitaClientDefaults() {
             return {
                 registryName: '',
+                registryNameExists: false,
                 formShow: false,
+                deleteFormShow: false,
+                registryCreation: false,
                 startValidation: false,
                 tokenInputType: 'text',
                 urlValidationFailed: false,
@@ -91,9 +101,12 @@ let app = Vue.createApp({
                         memberClass: '',
                         memberCode: '',
                         subsystemCode: '',
+                        serviceCode: '',
+                        serviceVersion: '',
                     },
                     auth: {
                         type: 'NO_AUTH',
+                        secret: '',
                     },
                 },
             };
@@ -125,10 +138,30 @@ let app = Vue.createApp({
                 },
             };
         },
-        hideDeleteExternalSystemForm() {
+        hideDeleteForm() {
             this.backdropShow = false;
             this.externalSystem.deleteFormShow = false;
+            this.trembitaClient.deleteFormShow = false;
             $("body").css("overflow", "scroll");
+        },
+        isSystemRegistry() {
+            return this.trembitaClient.registryName === 'idp-exchange-service-registry' ||
+                this.trembitaClient.registryName === 'dracs-registry' ||
+                this.trembitaClient.registryName === 'edr-registry';
+        },
+        showDeleteTrembitaClientForm(registry, _type, e) {
+            e.preventDefault();
+            if (_type === 'platform') {
+                return;
+            }
+
+            this.trembitaClient.registryName = registry;
+            this.backdropShow = true;
+            this.trembitaClient.deleteFormShow = true;
+            $("body").css("overflow", "hidden");
+        },
+        deleteTrembitaClientLink() {
+            return `/admin/registry/trembita-client-delete/${this.registryName}?trembita-client=${this.trembitaClient.registryName}`
         },
         deleteExternalSystemLink() {
             return `/admin/registry/external-system-delete/${this.registryName}?external-system=${this.externalSystem.registryName}`
@@ -221,7 +254,14 @@ let app = Vue.createApp({
                     });
             }
         },
+        trembitaClientFormAction() {
+            if(this.trembitaClient.registryCreation) {
+                return `/admin/registry/trembita-client-create/${this.registryName}`
+            }
+            return `/admin/registry/trembita-client/${this.registryName}`
+        },
         setTrembitaClientForm(e) {
+            this.trembitaClient.registryNameExists = false;
             this.trembitaClient.startValidation = true;
             this.trembitaClient.urlValidationFailed = false;
 
@@ -249,7 +289,7 @@ let app = Vue.createApp({
 
             for (let i in this.trembitaClient.data.service) {
                 if (typeof(this.trembitaClient.data.service[i]) == "string" &&
-                    this.trembitaClient.data.service[i] === "") {
+                    this.trembitaClient.data.service[i] === "" && i !== "serviceCode" && i !== "serviceVersion") {
                     e.preventDefault();
                     return;
                 }
@@ -258,6 +298,20 @@ let app = Vue.createApp({
             if (this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
                 this.trembitaClient.data.auth['secret'] === '') {
                 e.preventDefault();
+            }
+
+            if(this.trembitaClient.registryCreation) {
+                e.preventDefault();
+                let $this = this;
+
+                axios.get(`/admin/registry/trembita-client-check/${this.registryName}`,
+                    {params: {"trembita-client": this.trembitaClient.registryName}})
+                    .then(function (response) {
+                        $this.trembitaClient.registryNameExists = true;
+                    })
+                    .catch(function (error) {
+                        $("#trembita-client-form").submit();
+                    });
             }
         },
         changeExternalSystemAuthType() {
@@ -342,6 +396,10 @@ let app = Vue.createApp({
 
             this.trembitaClient = this.trembitaClientDefaults();
 
+            if(registry === '') {
+                this.trembitaClient.registryCreation = true;
+            }
+
             this.trembitaClient.registryName = registry;
             this.backdropShow = true;
             this.trembitaClient.formShow = true;
@@ -350,11 +408,12 @@ let app = Vue.createApp({
             if (this.trembitaClient.data.auth.hasOwnProperty('secret')) {
                 this.trembitaClient.tokenInputType = 'password';
             }
-
-            if (registry === 'idp-exchange-service-registry' || registry === 'dracs-registry') {
-                this.trembitaClient.data.auth.type = 'NO_AUTH';
-            } else {
-                this.trembitaClient.data.auth.type = 'AUTH_TOKEN';
+            if (!this.trembitaClient.data.auth.type || (this.trembitaClient.data.type && this.trembitaClient.data.type !== 'registry')) {
+                if (registry === 'idp-exchange-service-registry' || registry === 'dracs-registry') {
+                    this.trembitaClient.data.auth.type = 'NO_AUTH';
+                } else {
+                    this.trembitaClient.data.auth.type = 'AUTH_TOKEN';
+                }
             }
 
             $("body").css("overflow", "hidden");
@@ -426,6 +485,11 @@ let app = Vue.createApp({
             this.externalSystemType = "external-system";
         },
         showExternalReg(e) {
+            if (this.openMergeRequests.has) {
+                this.showOpenMRForm();
+                return;
+            }
+
             if (hasNewMergeRequests()) {
                 this.showMrError(e);
                 return;

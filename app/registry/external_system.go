@@ -67,7 +67,7 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 
 	exSystemName := ctx.Query("external-system")
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -85,8 +85,7 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 
 	values.OriginalYaml[externalSystemsKey] = values.ExternalSystems
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -104,7 +103,7 @@ func (a *App) checkExternalSystemExists(ctx *gin.Context) (rsp router.Response, 
 
 	exSystemName := ctx.Query("external-system")
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -130,7 +129,7 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -157,8 +156,7 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "unable to set external system")
 	}
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -180,7 +178,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
@@ -207,8 +205,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to set external system")
 	}
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 

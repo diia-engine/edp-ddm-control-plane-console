@@ -1,16 +1,13 @@
 package registry
 
 import (
-	"bytes"
 	"context"
-	"crypto/x509"
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	"ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/k8s"
 	"ddm-admin-console/service/vault"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -59,6 +56,7 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareRegistryResources,
 		a.prepareSupplierAuthConfig,
 		a.prepareBackupSchedule,
+		a.prepareKeycloakCustomHostname,
 		a.prepareEDRCheck,
 	}
 }
@@ -74,7 +72,7 @@ func (a *App) validatePEMFile(ctx *gin.Context) (rsp router.Response, retErr err
 		return nil, errors.Wrap(err, "unable to read file data")
 	}
 
-	if _, _, _, err := decodePEM(data); err != nil {
+	if _, err := DecodePEM(data); err != nil {
 		return router.MakeStatusResponse(http.StatusUnprocessableEntity), nil
 	}
 
@@ -127,6 +125,16 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		return nil, errors.Wrap(err, "unable to format gerrit project branches")
 	}
 
+	keycloakHostname, err := LoadKeycloakDefaultHostname(ctx, a.KeycloakDefaultHostname, a.EDPComponent)
+	if err != nil {
+		return nil, fmt.Errorf("unable to load keycloak default hostname, %w", err)
+	}
+
+	keycloakHostnames, err := a.loadKeycloakHostnames()
+	if err != nil {
+		return nil, fmt.Errorf("unable to load keycloak hostnames, %w", err)
+	}
+
 	return router.MakeHTMLResponse(200, "registry/create.html", gin.H{
 		"dnsManual":            dnsManual,
 		"page":                 "registry",
@@ -138,6 +146,8 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		"cidrConfig":           "{}",
 		"action":               "create",
 		"registryData":         "{}",
+		"keycloakHostname":     keycloakHostname,
+		"keycloakHostnames":    keycloakHostnames,
 	}), nil
 }
 
@@ -303,8 +313,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unknown error")
 	}
 
-	values, _, err := GetValuesFromGit(ctx, r.RegistryGitTemplate, r.RegistryGitBranch, a.Gerrit)
-	//values, err := a.GetValuesFromBranch(r.RegistryGitTemplate, r.RegistryGitBranch)
+	values, err := GetValuesFromGit(r.RegistryGitTemplate, r.RegistryGitBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to load values from template")
 	}
@@ -564,7 +573,7 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 			return errors.Wrap(err, "unable to read officer ssl data")
 		}
 
-		caCert, cert, key, err := decodePEM(certData)
+		pemInfo, err := DecodePEM(certData)
 		if err != nil {
 			return validator.ValidationErrors([]validator.FieldError{
 				router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
@@ -577,9 +586,9 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 			secretData[secretPath] = make(map[string]interface{})
 		}
 
-		secretData[secretPath][VaultKeyCACert] = caCert
-		secretData[secretPath][VaultKeyCert] = cert
-		secretData[secretPath][VaultKeyPK] = key
+		secretData[secretPath][VaultKeyCACert] = pemInfo.CACert
+		secretData[secretPath][VaultKeyCert] = pemInfo.Cert
+		secretData[secretPath][VaultKeyPK] = pemInfo.PrivateKey
 	}
 
 	if r.DNSNameCitizenEnabled == "" {
@@ -601,7 +610,7 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 			return errors.Wrap(err, "unable to read citizen ssl data")
 		}
 
-		caCert, cert, key, err := decodePEM(certData)
+		pemInfo, err := DecodePEM(certData)
 		if err != nil {
 			return validator.ValidationErrors([]validator.FieldError{
 				router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
@@ -614,9 +623,9 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 			secretData[secretPath] = make(map[string]interface{})
 		}
 
-		secretData[secretPath][VaultKeyCACert] = caCert
-		secretData[secretPath][VaultKeyCert] = cert
-		secretData[secretPath][VaultKeyPK] = key
+		secretData[secretPath][VaultKeyCACert] = pemInfo.CACert
+		secretData[secretPath][VaultKeyCert] = pemInfo.Cert
+		secretData[secretPath][VaultKeyPK] = pemInfo.PrivateKey
 	}
 
 	if len(citizenDict) > 0 {
@@ -630,58 +639,6 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 	values["portals"] = portalsDict
 
 	return nil
-}
-
-func decodePEM(buf []byte) (caCert string, cert string, privateKey string, retErr error) {
-	var (
-		block   *pem.Block
-		caBlock bytes.Buffer
-	)
-
-	for {
-		var tmp bytes.Buffer
-
-		block, buf = pem.Decode(buf)
-		if block == nil {
-			break
-		}
-		if block.Type == "CERTIFICATE" {
-			x509Cert, err := x509.ParseCertificate(block.Bytes)
-			if err != nil {
-				retErr = err
-				return
-			}
-
-			if x509Cert.IsCA {
-				if retErr = pem.Encode(&caBlock, block); retErr != nil {
-					return
-				}
-			} else {
-				if retErr = pem.Encode(&tmp, block); retErr != nil {
-					return
-				}
-				cert = tmp.String()
-			}
-		} else {
-			if retErr = pem.Encode(&tmp, block); retErr != nil {
-				return
-			}
-
-			privateKey = tmp.String()
-		}
-	}
-
-	caCert = caBlock.String()
-
-	if privateKey == "" {
-		retErr = errors.New("no key found in PEM file")
-	} else if caCert == "" {
-		retErr = errors.New("no CA certs found in PEM file")
-	} else if cert == "" {
-		retErr = errors.New("no cert found in PEM file")
-	}
-
-	return
 }
 
 func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Values,

@@ -23,6 +23,7 @@
                     <input aria-label="" name="external-system-registry-name" type="text"
                            v-model="externalSystem.registryName"
                            :readonly = "!externalSystem.registryNameEditable" />
+                    <p v-if="externalSystem.registryNameEditable">Назва не може бути змінена після додавання інтеграції!</p>
                     <span v-if="externalSystem.registryName == '' && externalSystem.startValidation">
                         Обов’язкове поле
                     </span>
@@ -149,7 +150,7 @@
     <div class="popup-window admin-window visible" v-cloak v-if="externalSystem.deleteFormShow">
         <div class="popup-header">
             <p>Видалити "[[ externalSystem.registryName ]]"?</p>
-            <a href="#" @click="hideDeleteExternalSystemForm" class="popup-close hide-popup">
+            <a href="#" @click="hideDeleteForm" class="popup-close hide-popup">
                 <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
             </a>
         </div>
@@ -157,7 +158,7 @@
             <p>Видалити усі налаштування інтеграції з системою?</p>
         </div>
         <div class="popup-footer active">
-            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteExternalSystemForm">Відмінити</a>
+            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteForm">Відмінити</a>
             <a class="href-red" :href="deleteExternalSystemLink()">Видалити</a>
         </div>
     </div>

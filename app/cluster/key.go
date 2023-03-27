@@ -115,7 +115,7 @@ func (a *App) updateKey(ctx *gin.Context) error {
 		return err
 	}
 
-	values, _, err := registry.GetValuesFromGit(ctx, a.Config.CodebaseName, registry.MasterBranch, a.Gerrit)
+	values, err := registry.GetValuesFromGit(a.Config.CodebaseName, registry.MasterBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}

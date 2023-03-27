@@ -13,8 +13,7 @@ import (
 )
 
 func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{}, error) {
-	content, _, err := a.Gerrit.GoGerritClient().Projects.GetBranchContent(project, branch,
-		url.PathEscape(ValuesLocation))
+	content, err := a.Gerrit.GetBranchContent(project, branch, url.PathEscape(ValuesLocation))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get project content")
 	}

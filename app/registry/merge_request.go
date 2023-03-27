@@ -15,6 +15,10 @@ func (e ExtendedMergeRequests) StatusValue() string {
 		return "in progress"
 	}
 
+	if e.Status.Value == "" {
+		return "-"
+	}
+
 	return e.Status.Value
 }
 
@@ -27,7 +31,7 @@ func (e ExtendedMergeRequests) RequestName() string {
 		return "Оновлення версії реєстру"
 	}
 
-	if e.Labels[MRLabelTarget] == mrTargetEditRegistry {
+	if (e.Labels[MRLabelTarget] == mrTargetEditRegistry) || (e.Labels[MRLabelTarget] == mrTargetEditTrembita) {
 		return "Редагування реєстру"
 	}
 

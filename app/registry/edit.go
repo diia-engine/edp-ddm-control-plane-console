@@ -3,7 +3,10 @@ package registry
 import (
 	"context"
 	"crypto/sha1"
+	"ddm-admin-console/router"
+	"ddm-admin-console/service/codebase"
 	"ddm-admin-console/service/gerrit"
+	"ddm-admin-console/service/k8s"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,15 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
-
-	"ddm-admin-console/router"
-	"ddm-admin-console/service/codebase"
-	"ddm-admin-console/service/k8s"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -92,12 +90,12 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		"action":               "edit",
 	}
 
-	values, _, err := GetValuesFromGit(ctx, registryName, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values from git")
 	}
 
-	if err := a.loadValuesEditConfig(values, responseParams, &model); err != nil {
+	if err := a.loadValuesEditConfig(ctx, values, responseParams, &model); err != nil {
 		return nil, errors.Wrap(err, "unable to load edit values from config")
 	}
 
@@ -108,7 +106,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 	return router.MakeHTMLResponse(200, "registry/edit.html", responseParams), nil
 }
 
-func (a *App) loadValuesEditConfig(values *Values, rspParams gin.H, r *registry) error {
+func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParams gin.H, r *registry) error {
 	if err := a.loadSMTPConfig(values.OriginalYaml, rspParams); err != nil {
 		return errors.Wrap(err, "unable to load smtp config")
 	}
@@ -130,6 +128,19 @@ func (a *App) loadValuesEditConfig(values *Values, rspParams gin.H, r *registry)
 	if err := a.loadIDGovUAClientID(values); err != nil {
 		return fmt.Errorf("unable to load secret: %w", err)
 	}
+
+	keycloakHostname, err := LoadKeycloakDefaultHostname(ctx, a.KeycloakDefaultHostname, a.EDPComponent)
+	if err != nil {
+		return fmt.Errorf("unable to load keycloak default hostname, %w", err)
+	}
+	rspParams["keycloakHostname"] = keycloakHostname
+
+	keycloakHostnames, err := a.loadKeycloakHostnames()
+	if err != nil {
+		return fmt.Errorf("unable to load keycloak hostnames, %w", err)
+	}
+	rspParams["keycloakHostnames"] = keycloakHostnames
+	rspParams["keycloakCustomHost"] = values.Keycloak.CustomHost
 
 	rspParams["model"] = r
 
@@ -352,7 +363,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		cb.Annotations = make(map[string]string)
 	}
 
-	values, _, err := GetValuesFromGit(ctx, r.Name, MasterBranch, a.Gerrit)
+	values, err := GetValuesFromGit(r.Name, MasterBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values from git")
 	}
