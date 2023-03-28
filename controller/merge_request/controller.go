@@ -113,7 +113,7 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		return
 	}
 
-	processRequest, err := c.processRegistryVersion(ctx, cb)
+	processRequest, err := codebase.ProcessRegistryVersion(ctx, c.versionFilter, cb, c.gerrit)
 	if err != nil {
 		resultErr = fmt.Errorf("unable to p, err: %w", err)
 		return
@@ -151,17 +151,6 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		"Request.Name", request.Name)
 
 	return
-}
-
-func (c *Controller) processRegistryVersion(ctx context.Context, cb *codebaseSvc.Codebase) (bool, error) {
-	cbs := []codebaseSvc.Codebase{*cb}
-	if err := registry.LoadRegistryVersions(ctx, c.gerrit, cbs); err != nil {
-		return false, fmt.Errorf("unable to load registry version, %w", err)
-	}
-
-	cbs = c.versionFilter.FilterCodebases(cbs)
-
-	return len(cbs) > 0, nil
 }
 
 func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerritService.GerritMergeRequest,
