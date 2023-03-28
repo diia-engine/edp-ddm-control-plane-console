@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"ddm-admin-console/app/registry"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -15,7 +16,7 @@ import (
 )
 
 type updateRequest struct {
-	Branch string `form:"branch" binding:"required"`
+	Branch string `form:"branch" binding:"required" json:"branch"`
 }
 
 func (a *App) clusterUpdate(ctx *gin.Context) (router.Response, error) {
@@ -26,8 +27,20 @@ func (a *App) clusterUpdate(ctx *gin.Context) (router.Response, error) {
 			return nil, errors.Wrap(err, "unable to parse registry form")
 		}
 
+		templateArgs, err := json.Marshal(gin.H{
+			"errorsMap": validationErrors,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to encode template arguments")
+		}
+
 		return router.MakeHTMLResponse(200, "cluster/edit.html",
-			gin.H{"page": "cluster", "errorsMap": validationErrors, "backupConf": BackupConfig{}}), nil
+			gin.H{
+				"page":         "cluster",
+				"errorsMap":    validationErrors,
+				"backupConf":   BackupConfig{},
+				"templateArgs": string(templateArgs),
+			}), nil
 	}
 
 	prj, err := a.Services.Gerrit.GetProject(ctx, a.Config.CodebaseName)
