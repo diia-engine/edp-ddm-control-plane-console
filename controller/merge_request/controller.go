@@ -531,36 +531,14 @@ func MergeValuesFiles(src, dst string) error {
 		return fmt.Errorf("unable to close dst, err: %w", err)
 	}
 
-	//merge global
-	dstGlobal, ok := dstData["global"]
-	if !ok {
-		dstGlobal = make(map[string]interface{})
-	}
-	dstGlobalDict := dstGlobal.(map[string]interface{})
-
-	srcGlobal, ok := srcData["global"]
-	if !ok {
-		srcGlobal = make(map[string]interface{})
-	}
-	srcGlobalDict := srcGlobal.(map[string]interface{})
-
-	for k, v := range srcGlobalDict {
-		dstGlobalDict[k] = v
-	}
-
-	//merge else
-	for k, v := range srcData {
-		dstData[k] = v
-	}
-	//rewrite global
-	dstData["global"] = dstGlobalDict
+	out := mergeMaps(dstData, srcData)
 
 	dstFp, err = os.Create(dst)
 	if err != nil {
 		return fmt.Errorf("unable to recreate dst, err: %w", err)
 	}
 
-	if err := yaml.NewEncoder(dstFp).Encode(dstData); err != nil {
+	if err := yaml.NewEncoder(dstFp).Encode(out); err != nil {
 		return fmt.Errorf("unable to encode dst data, err: %w", err)
 	}
 
@@ -569,6 +547,25 @@ func MergeValuesFiles(src, dst string) error {
 	}
 
 	return nil
+}
+
+func mergeMaps(a, b map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(a))
+	for k, v := range a {
+		out[k] = v
+	}
+	for k, v := range b {
+		if v, ok := v.(map[string]interface{}); ok {
+			if bv, ok := out[k]; ok {
+				if bv, ok := bv.(map[string]interface{}); ok {
+					out[k] = mergeMaps(bv, v)
+					continue
+				}
+			}
+		}
+		out[k] = v
+	}
+	return out
 }
 
 func CopyFolder(src, dst string) error {
