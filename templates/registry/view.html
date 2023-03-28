@@ -401,7 +401,11 @@
                             <td>{{ i18n $al.Action}}</td>
                             <td class="mr-status">{{ i18n $al.StatusValue }}</td>
                             <td class="mr-actions">
-                                {{if $al.Status.ChangeURL}}
+                                {{if not $.mrAvailable}}
+                                <i title="Реєстр в процесі оновлення" class="fa-solid fa-lock"></i>
+                                {{end}}
+
+                                {{if and $al.Status.ChangeURL $.mrAvailable }}
                                     <a title="Переглянути"
                                        @click="showMrView('/admin/change/{{ $al.Status.ChangeID }}', $event)"
                                        href="/admin/change/{{ $al.Status.ChangeID }}">

@@ -97,7 +97,11 @@ func initEDPComponent() *mockEdpComponent.ServiceInterface {
 
 func initJenkinsService() *mockJenkins.ServiceInterface {
 	svc := mockJenkins.ServiceInterface{}
-	svc.On("GetJobStatus", mock.Anything, mock.Anything).Return("SUCCESS", int64(11), nil)
+	svc.On("GetJobStatus", mock.Anything, "mock/view/MOCK-BRANCH/job/MOCK-BRANCH-Build-mock").
+		Return("SUCCESS", int64(11), nil)
+
+	svc.On("GetJobStatus", mock.Anything, "mock/view/MASTER/job/MASTER-Build-mock").
+		Return("FAILURE", int64(11), nil)
 
 	return &svc
 }
@@ -129,6 +133,10 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	cbService.On("GetBranchesByCodebase", cnf.ClusterCodebaseName).Return([]codebase.CodebaseBranch{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "master"},
+			Spec: codebase.CodebaseBranchSpec{
+				BranchName:   "mock-branch",
+				CodebaseName: "mock",
+			},
 		},
 	}, nil)
 	cbService.On("CheckIsAllowedToUpdate", mock.Anything, mock.Anything).Return(true, nil)
@@ -141,6 +149,10 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	cbService.On("GetBranchesByCodebase", "mock").Return([]codebase.CodebaseBranch{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "master"},
+			Spec: codebase.CodebaseBranchSpec{
+				BranchName:   "mock-branch",
+				CodebaseName: "mock",
+			},
 		},
 	}, nil)
 

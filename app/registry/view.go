@@ -6,6 +6,7 @@ import (
 	"ddm-admin-console/service/codebase"
 	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
+	"ddm-admin-console/service/jenkins"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -62,7 +63,20 @@ func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registr
 		a.viewAdministratorsConfig,
 		a.viewRegistryHasUpdates,
 		a.viewUpdateTrembitaRegistries,
+		a.viewGetMasterJobStatus,
 	}
+}
+
+func (a *App) viewGetMasterJobStatus(ctx context.Context, registryName string, _ *Values, viewParams gin.H) error {
+	status, _, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/MASTER/job/MASTER-Build-%s", registryName, registryName))
+	if err != nil {
+		return fmt.Errorf("unable to get job status, %w", err)
+	}
+
+	viewParams["mrAvailable"] = status == jenkins.StatusSuccess || status == jenkins.StatusNotBuild ||
+		status == jenkins.StatusAborted
+
+	return nil
 }
 
 func (a *App) viewUpdateTrembitaRegistries(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
