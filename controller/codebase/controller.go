@@ -38,25 +38,34 @@ const (
 )
 
 type Controller struct {
-	logger    controller.Logger
-	mgr       ctrl.Manager
-	k8sClient client.Client
-	cnf       *config.Settings
-	appCache  *cache.Cache
+	logger        controller.Logger
+	mgr           ctrl.Manager
+	k8sClient     client.Client
+	cnf           *config.Settings
+	appCache      *cache.Cache
+	versionFilter *registry.VersionFilter
+	gerrit        gerritService.ServiceInterface
 }
 
 type AdminSyncer interface {
 	SyncAdmins(ctx context.Context, registryName string, admins []registry.Admin) error
 }
 
-func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, _c *cache.Cache) error {
+func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, _c *cache.Cache, gerrit gerritService.ServiceInterface) error {
 	c := Controller{
 		mgr:       mgr,
 		logger:    logger,
 		k8sClient: mgr.GetClient(),
 		cnf:       cnf,
 		appCache:  _c,
+		gerrit:    gerrit,
 	}
+
+	vf, err := registry.MakeVersionFilter(cnf.RegistryVersionFilter)
+	if err != nil {
+		return fmt.Errorf("unable to init version filter, %w", err)
+	}
+	c.versionFilter = vf
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		For(&codebaseService.Codebase{}, builder.WithPredicates(predicate.Funcs{
@@ -66,6 +75,18 @@ func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, _c *
 	}
 
 	return nil
+}
+
+func ProcessRegistryVersion(ctx context.Context, versionFilter *registry.VersionFilter, cb *codebaseService.Codebase,
+	gr gerritService.ServiceInterface) (bool, error) {
+	cbs := []codebaseService.Codebase{*cb}
+	if err := registry.LoadRegistryVersions(ctx, gr, cbs); err != nil {
+		return false, fmt.Errorf("unable to load registry version, %w", err)
+	}
+
+	cbs = versionFilter.FilterCodebases(cbs)
+
+	return len(cbs) > 0, nil
 }
 
 func GerritSSHURL(cnf *config.Settings) string {
@@ -93,6 +114,18 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 
 		resultErr = errors.Wrap(err, "unable to get codebase from k8s")
+		return
+	}
+
+	processRequest, err := ProcessRegistryVersion(ctx, c.versionFilter, &instance, c.gerrit)
+	if err != nil {
+		resultErr = fmt.Errorf("unable to p, err: %w", err)
+		return
+	}
+
+	if !processRequest {
+		c.logger.Infow("reconciling codebase skipped, wrong registry version",
+			"Request.Namespace", request.Namespace, "Request.Name", request.Name)
 		return
 	}
 
