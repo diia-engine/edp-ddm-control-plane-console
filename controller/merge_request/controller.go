@@ -11,16 +11,17 @@ import (
 	"ddm-admin-console/service/git"
 	"ddm-admin-console/service/jenkins"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/patrickmn/go-cache"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -84,73 +85,110 @@ func isSpecUpdated(e event.UpdateEvent) bool {
 		(oo.GetDeletionTimestamp().IsZero() && !no.GetDeletionTimestamp().IsZero())
 }
 
-func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (result reconcile.Result,
-	resultErr error) {
-	defer func() {
-		if resultErr != nil {
-			c.logger.Errorw("reconciling merge request", "Request.Namespace", request.Namespace,
-				"Request.Name", request.Name, "error", fmt.Sprintf("%+v", resultErr))
-		}
-	}()
-
+func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	c.logger.Infow("reconciling merge request", "Request.Namespace", request.Namespace,
 		"Request.Name", request.Name)
 
-	var instance gerritService.GerritMergeRequest
-	if err := c.k8sClient.Get(ctx, request.NamespacedName, &instance); err != nil {
-		if k8sErrors.IsNotFound(err) {
-			c.logger.Infow("instance not found", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
-			return
+	if err := c.reconcile(ctx, request); err != nil {
+		c.logger.Errorw(err.Error(), "Request.Namespace", request.Namespace, "Request.Name", request.Name)
+
+		if codebase.IsErrPostpone(err) {
+			return reconcile.Result{RequeueAfter: errors.Unwrap(err).(codebase.ErrPostpone).D()}, nil
 		}
 
-		resultErr = fmt.Errorf("unable to get merge request from k8s, err: %w", err)
-		return
-	}
-
-	cb, err := c.codebaseService.Get(instance.Spec.ProjectName)
-	if err != nil {
-		resultErr = fmt.Errorf("unable to get project codebase, %w", err)
-		return
-	}
-
-	processRequest, err := codebase.ProcessRegistryVersion(ctx, c.versionFilter, cb, c.gerrit)
-	if err != nil {
-		resultErr = fmt.Errorf("unable to p, err: %w", err)
-		return
-	}
-
-	if !processRequest {
-		c.logger.Infow("reconciling merge request skipped, wrong registry version",
-			"Request.Namespace", request.Namespace, "Request.Name", request.Name)
-		return
-	}
-
-	if err := c.prepareMergeRequest(ctx, &instance); err != nil {
-		resultErr = fmt.Errorf("unable to prepare merge request, err: %w", err)
-		return
-	}
-
-	if err := c.autoApproveMergeRequest(ctx, &instance); err != nil {
-		resultErr = fmt.Errorf("unable to approve MR, err: %w", err)
-		return
-	}
-
-	if err := c.triggerJobProvisioner(ctx, &instance, cb); err != nil {
-		resultErr = fmt.Errorf("unable to triggerJobProvisioner MR, err: %w", err)
-		return
-	}
-
-	if err := c.addCachedFiles(ctx, &instance); err != nil {
-		c.logger.Errorw("unable to proceed cached files", "Request.Namespace", request.Namespace,
-			"Request.Name", request.Name, "error", fmt.Sprintf("%+v", err))
-		resultErr = errors.Wrap(err, "unable to prepare merge request")
-		return
+		return reconcile.Result{RequeueAfter: codebase.DefaultRetryTimeout}, nil
 	}
 
 	c.logger.Infow("reconciling merge request done", "Request.Namespace", request.Namespace,
 		"Request.Name", request.Name)
 
-	return
+	return reconcile.Result{}, nil
+}
+
+func (c *Controller) reconcile(ctx context.Context, request reconcile.Request) error {
+	var instance gerritService.GerritMergeRequest
+	if err := c.k8sClient.Get(ctx, request.NamespacedName, &instance); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			c.logger.Infow("instance not found", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
+			return nil
+		}
+
+		return fmt.Errorf("unable to get merge request from k8s, err: %w", err)
+	}
+
+	cb, err := c.codebaseService.Get(instance.Spec.ProjectName)
+	if err != nil {
+		return fmt.Errorf("unable to get project codebase, %w", err)
+	}
+
+	processRequest, err := codebase.ProcessRegistryVersion(ctx, c.versionFilter, cb, c.gerrit)
+	if err != nil {
+		return fmt.Errorf("unable to p, err: %w", err)
+	}
+
+	if !processRequest {
+		c.logger.Infow("reconciling merge request skipped, wrong registry version",
+			"Request.Namespace", instance.Namespace, "Request.Name", instance.Name)
+		return nil
+	}
+
+	if err := c.prepareMergeRequest(ctx, &instance); err != nil {
+		return fmt.Errorf("unable to prepare merge request, err: %w", err)
+	}
+
+	if err := c.autoApproveMergeRequest(ctx, &instance); err != nil {
+		return fmt.Errorf("unable to approve MR, err: %w", err)
+	}
+
+	if err := c.triggerJobProvisioner(ctx, &instance, cb); err != nil {
+		return fmt.Errorf("unable to triggerJobProvisioner MR, err: %w", err)
+	}
+
+	if err := c.addCachedFiles(ctx, &instance); err != nil {
+		return fmt.Errorf("unable to proceed cached files, %w", err)
+	}
+
+	if err := c.checkBuildJobStatus(ctx, cb); err != nil {
+		return fmt.Errorf("unable to check build status, %w", err)
+	}
+
+	return nil
+}
+
+func (c *Controller) checkBuildJobStatus(ctx context.Context, cb *codebaseSvc.Codebase) error {
+	branches, err := c.codebaseService.GetBranchesByCodebase(ctx, cb.Name)
+	if err != nil {
+		return fmt.Errorf("unable to get branches, %w", err)
+	}
+
+	for _, b := range branches {
+		branchName := strings.ToUpper(b.Spec.BranchName)
+		status, _, err := c.jenkinsService.GetJobStatus(ctx, fmt.Sprintf("%s/view/%s/job/%s-Build-%s", b.Spec.CodebaseName,
+			branchName, branchName, b.Spec.CodebaseName))
+		if err != nil {
+			return fmt.Errorf("unabel to load job status, %w", err)
+		}
+
+		if status != jenkins.StatusSuccess {
+			cb.Annotations[codebaseSvc.StatusAnnotation] = codebaseSvc.StatusAnnotationRunningJobs
+			if err := c.codebaseService.Update(ctx, cb); err != nil {
+				return fmt.Errorf("unable to update instance, %w", err)
+			}
+
+			return codebase.ErrPostpone(time.Second * 5)
+		}
+	}
+
+	if annotationStatus, ok := cb.Annotations[codebaseSvc.StatusAnnotation]; ok &&
+		annotationStatus == codebaseSvc.StatusAnnotationRunningJobs {
+		delete(cb.Annotations, codebaseSvc.StatusAnnotation)
+
+		if err := c.codebaseService.Update(ctx, cb); err != nil {
+			return fmt.Errorf("unable to update instance, %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerritService.GerritMergeRequest,
@@ -234,21 +272,21 @@ func (c *Controller) addCachedFiles(ctx context.Context, instance *gerritService
 
 	_, _, projectPath, err := prepareControllerFolders(c.cnf.TempFolder, instance.Spec.ProjectName)
 	if err != nil {
-		return errors.Wrap(err, "unable to prepare controller tmp folders")
+		return fmt.Errorf("unable to prepare controller tmp folders, %w", err)
 	}
 
 	gitService, err := c.initGitService(ctx, projectPath)
 	if err != nil {
-		return errors.Wrap(err, "unable to init git service")
+		return fmt.Errorf("unable to init git service, %w", err)
 	}
 
 	if err := gitService.Clone(fmt.Sprintf("%s/%s", codebase.GerritSSHURL(c.cnf), instance.Spec.ProjectName)); err != nil {
-		return errors.Wrap(err, "unable to clone repo")
+		return fmt.Errorf("unable to clone repo, %w", err)
 	}
 
 	detail, err := c.gerrit.GetChangeDetails(instance.Status.ChangeID)
 	if err != nil {
-		return errors.Wrap(err, "unable to get change details")
+		return fmt.Errorf("unable to get change details, %w", err)
 	}
 
 	var (
@@ -409,7 +447,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
 				targetBranch),
 			changeID)); err != nil {
-		return errors.Wrap(err, "unable to commit changes")
+		return fmt.Errorf("unable to commit changes, %w", err)
 	}
 
 	if err := gitService.Push("origin", fmt.Sprintf("refs/heads/%s:%s", sourceBranch, sourceBranch), "--force"); err != nil {

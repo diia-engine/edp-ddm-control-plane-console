@@ -1,7 +1,12 @@
 package codebase
 
 import (
+	"errors"
+	"fmt"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"gopkg.in/yaml.v3"
 )
@@ -33,4 +38,16 @@ global:
 	notifications, ok := globalDict["notifications"]
 	t.Log(ok)
 	t.Log(notifications)
+}
+
+func TestErrPostpone_Error(t *testing.T) {
+	err := ErrPostpone(time.Second * 5)
+	assert.True(t, IsErrPostpone(err))
+
+	err2 := fmt.Errorf("unable to do something, %w", err)
+	assert.True(t, IsErrPostpone(err2))
+
+	pp, ok := errors.Unwrap(err2).(ErrPostpone)
+	assert.True(t, ok)
+	assert.Equal(t, pp.D(), time.Second*5)
 }

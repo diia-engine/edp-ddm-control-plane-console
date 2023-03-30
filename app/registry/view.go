@@ -326,7 +326,7 @@ func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, regist
 		return errors.Wrapf(err, "unable to get registry by name: %s", registryName)
 	}
 
-	branches, err := cbService.GetBranchesByCodebase(registry.Name)
+	branches, err := cbService.GetBranchesByCodebase(userCtx, registry.Name)
 	if err != nil {
 		return errors.Wrap(err, "unable to get registry branches")
 	}

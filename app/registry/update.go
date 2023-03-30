@@ -98,7 +98,7 @@ func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
 	if a.EnableBranchProvisioners {
 		prov := branchProvisioner(ur.Branch)
 		cb.Spec.JobProvisioning = &prov
-		if err := a.Services.Codebase.Update(cb); err != nil {
+		if err := a.Services.Codebase.Update(ctx, cb); err != nil {
 			return nil, errors.Wrap(err, "unable to update codebase provisioner")
 		}
 

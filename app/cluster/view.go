@@ -35,7 +35,7 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get cluster codebase")
 	}
 
-	branches, err := cbService.GetBranchesByCodebase(cb.Name)
+	branches, err := cbService.GetBranchesByCodebase(ctx, cb.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get registry branches")
 	}

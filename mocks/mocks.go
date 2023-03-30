@@ -58,6 +58,15 @@ func InitServices(cnf *config.Settings) *config.Services {
 			CanUpdate: true,
 			CanDelete: true,
 		},
+		{
+			Codebase: &codebase.Codebase{
+				ObjectMeta: metav1.ObjectMeta{Name: "mock-branch-inactive", Annotations: map[string]string{
+					codebase.StatusAnnotation: codebase.StatusAnnotationInactiveBranches,
+				}},
+			},
+			CanUpdate: true,
+			CanDelete: true,
+		},
 	}, nil)
 
 	svc := config.Services{
@@ -119,6 +128,11 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	cbService.On("GetAllByType", mock.Anything).Return([]codebase.Codebase{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "mock"},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "mock-branch-inactive", Annotations: map[string]string{
+				codebase.StatusAnnotation: codebase.StatusAnnotationInactiveBranches,
+			}},
 		},
 	}, nil)
 	cbService.On("CheckPermissions", mock.Anything, mock.Anything).Return([]codebase.WithPermissions{}, nil)

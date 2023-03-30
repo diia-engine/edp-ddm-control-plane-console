@@ -250,7 +250,7 @@ func initControllers(sch *runtime.Scheme, namespace string, logger *zap.Logger, 
 
 	l := logger.Sugar()
 
-	if err := codebaseController.Make(mgr, l, cnf, services.Cache, services.Gerrit); err != nil {
+	if err := codebaseController.Make(mgr, l, cnf, services.Cache, services.Gerrit, services.Codebase); err != nil {
 		return fmt.Errorf("unable to init codebase controller, %w", err)
 	}
 

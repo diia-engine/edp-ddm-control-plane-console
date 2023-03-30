@@ -413,7 +413,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		}
 	}
 
-	if err := cbService.Update(cb); err != nil {
+	if err := cbService.Update(ctx, cb); err != nil {
 		return errors.Wrap(err, "unable to update codebase")
 	}
 

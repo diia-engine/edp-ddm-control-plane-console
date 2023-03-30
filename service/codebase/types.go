@@ -15,14 +15,18 @@ import (
 // CodebaseSpec defines the desired state of Codebase
 // +k8s:openapi-gen=true
 const (
-	Create              Strategy       = "create"
-	Clone               Strategy       = "clone"
-	Default             VersioningType = "default"
-	ViewTimeFormat                     = "02.01.2006 15:04"
-	DataTableTimeFormat                = "2006-01-02 15:04:05"
-	statusActive                       = "active"
-	AdminsAnnotation                   = "registry-parameters/administrators"
-	RepoNotReady                       = "NOT_READY"
+	Create                           Strategy       = "create"
+	Clone                            Strategy       = "clone"
+	Default                          VersioningType = "default"
+	ViewTimeFormat                                  = "02.01.2006 15:04"
+	DataTableTimeFormat                             = "2006-01-02 15:04:05"
+	BranchStatusActive                              = "active"
+	AdminsAnnotation                                = "registry-parameters/administrators"
+	RepoNotReady                                    = "NOT_READY"
+	StatusAnnotation                                = "console-status"
+	StatusAnnotationInactiveBranches                = "inactive-branches"
+	StatusAnnotationRunningJobs                     = "running-jobs"
+	StatusInactive                                  = "inactive"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -135,12 +139,12 @@ type CodebaseSpec struct {
 
 func (in *Codebase) CanBeDeleted() bool {
 	for _, cb := range in.Branches {
-		if cb.Status.Value != statusActive {
+		if cb.Status.Value != BranchStatusActive {
 			return false
 		}
 	}
 
-	return in.Status.Available && in.Status.Value == statusActive
+	return in.Status.Available && in.Status.Value == BranchStatusActive
 }
 
 func (in *Codebase) ForegroundDeletion() bool {
@@ -161,6 +165,11 @@ func (in *Codebase) StrStatus() string {
 	status := in.Status.Value
 	if status == "" {
 		status = "active"
+	}
+
+	if statusAnnotation, ok := in.Annotations[StatusAnnotation]; ok &&
+		(statusAnnotation == StatusAnnotationInactiveBranches || statusAnnotation == StatusAnnotationRunningJobs) {
+		status = StatusInactive
 	}
 
 	return status
