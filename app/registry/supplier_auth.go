@@ -17,6 +17,8 @@ const (
 func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *Values,
 	secrets map[string]map[string]interface{}, mrActions *[]string) error {
 
+	values.Keycloak.Realms.OfficerPortal.SelfRegistration = r.SelfRegistration == "on"
+
 	if r.SupAuthBrowserFlow == "" {
 		return nil
 	}

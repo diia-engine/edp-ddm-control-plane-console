@@ -54,6 +54,7 @@ type registry struct {
 	SupAuthClientID        string   `form:"sup-auth-client-id"`
 	SupAuthClientSecret    string   `form:"sup-auth-client-secret"`
 	BackupScheduleEnabled  string   `form:"backup-schedule-enabled"`
+	SelfRegistration       string   `form:"self-registration-enabled"`
 	CronSchedule           string   `form:"cron-schedule"`
 	CronScheduleDays       string   `form:"cron-schedule-days"`
 	EDRCheckEnabled        string   `form:"edr-check-enabled"`
