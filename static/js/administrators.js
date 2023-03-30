@@ -244,6 +244,7 @@ let app = Vue.createApp({
                     },
                 ],
                 keycloak: {
+                    editDisabled: false,
                     deleteHostname: '',
                     editHostname: '',
                     editCertPath: '',
@@ -268,6 +269,13 @@ let app = Vue.createApp({
             this.backdropShow = true;
             this.clusterSettings.keycloak.formShow = true;
             this.clusterSettings.keycloak.fileSelected = true;
+            this.clusterSettings.keycloak.editDisabled = true;
+
+            let $this = this;
+            axios.get(`/admin/cluster/check-keycloak-hostname/${hostname}`)
+                .then(function (response) {
+                    $this.clusterSettings.keycloak.editDisabled = false;
+                });
         },
         clusterKeycloakDNSCustomHosts() {
             if (this.registryValues === null) {
@@ -292,6 +300,8 @@ let app = Vue.createApp({
         showClusterKeycloakDNSForm(e) {
             e.preventDefault();
             this.backdropShow = true;
+            this.clusterSettings.keycloak.editDisabled = false;
+            this.clusterSettings.keycloak.editHostname = '';
             this.clusterSettings.keycloak.formShow = true;
             this.clusterSettings.keycloak.fileSelected = false;
             this.clusterSettings.keycloak.hostname = '';
@@ -314,9 +324,8 @@ let app = Vue.createApp({
         checkClusterDeleteKeycloakDNS(hostname, e){
             e.preventDefault();
 
-
             this.backdropShow = true;
-            $this = this;
+            let $this = this;
             axios.get(`/admin/cluster/check-keycloak-hostname/${hostname}`)
                 .then(function (response) {
                     $this.clusterSettings.keycloak.deleteHostname = hostname;

@@ -13,14 +13,6 @@
         <div class="cluster-default-kc-dns-label">DNS за замовчуванням</div>
         <div class="cluster-default-kc-dns-value">{{ .keycloakHostname }}</div>
 
-        <div v-for="h in clusterSettings.keycloak.hostnamesToAdd">
-            <div class="cluster-default-kc-dns-label">Додатковий DNS</div>
-            <div class="cluster-default-kc-dns-value">
-                <span>[[ h.hostname ]]</span>
-                <a href="#"><i class="fa-solid fa-trash"></i></a>
-            </div>
-        </div>
-
         <div v-for="h in clusterKeycloakDNSCustomHosts()">
             <div class="cluster-default-kc-dns-label">Додатковий DNS</div>
             <div class="cluster-default-kc-dns-value">
@@ -82,7 +74,8 @@
 
     <div class="popup-window admin-window visible" v-cloak v-if="clusterSettings.keycloak.formShow">
         <div class="popup-header">
-            <p>Додати DNS</p>
+            <p v-if="clusterSettings.keycloak.editHostname == ''">Додати DNS</p>
+            <p v-if="clusterSettings.keycloak.editHostname != ''">Редагувати DNS</p>
             <a href="#" @click="hideClusterKeycloakDNSForm" class="popup-close hide-popup">
                 <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
             </a>
@@ -90,14 +83,15 @@
         <form @submit="addClusterKeycloakDNS" id="cluster-keycloak-dns-form" method="post" action="">
             <div class="popup-body">
                 <div class="rc-form-group" :class="{'error':  clusterSettings.keycloak.hostnameError != ''}">
-                    <label for="cluster-keycloak-dns-value">Доменне імʼя для keycloak</label>
+                    <label for="cluster-keycloak-dns-value">Доменне імʼя для Keycloak</label>
                     <input id="cluster-keycloak-dns-value" maxlength="63" type="text" v-model="clusterSettings.keycloak.hostname"
-                           :class="{'error':  clusterSettings.keycloak.hostnameError != ''}" />
+                           :class="{'error':  clusterSettings.keycloak.hostnameError != ''}"
+                           :disabled="clusterSettings.keycloak.editDisabled" />
                     <p>Назва не може перевищувати довжину у 63 символи. Допустимі символи “a-z”, “.”, “-”, “_”</p>
                     <span v-if="clusterSettings.keycloak.hostnameError != ''">[[ clusterSettings.keycloak.hostnameError ]]</span>
                 </div>
                 <div class="rc-form-group" :class="{'error':  clusterSettings.keycloak.pemError != ''}">
-                    <label>SSL-сертифікат для keycloak (розширення .pem)</label>
+                    <label>SSL-сертифікат для Keycloak (розширення .pem)</label>
                     <label v-show="!clusterSettings.keycloak.fileSelected" for="cluster-keycloak-dns-upload" class="rc-form-upload-block">
                             <i class="fa-solid fa-plus"></i>
                             <span>Завантажити SSL-сертифікат</span>
