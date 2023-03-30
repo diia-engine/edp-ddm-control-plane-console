@@ -192,6 +192,7 @@ let app = Vue.createApp({
                         },
                         urlValidationFailed: false,
                         heightIsNotNumber: false,
+                        selfRegistrationEnabled: false,
                     },
                     recipientAuthentication: {
                         title: 'Автентифікація отримувачів послуг',
@@ -488,6 +489,8 @@ let app = Vue.createApp({
         },
         loadRegistryValues() {
             try {
+                this.wizard.tabs.supplierAuthentication.selfRegistrationEnabled = this.registryValues.keycloak.realms.officerPortal.selfRegistration || false;
+
                 if (this.registryValues.keycloak.realms.officerPortal.browserFlow !== '') {
                     this.wizard.tabs.supplierAuthentication.data.authType = this.registryValues.keycloak.realms.officerPortal.browserFlow;
                 }

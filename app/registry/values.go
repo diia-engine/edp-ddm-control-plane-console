@@ -68,7 +68,8 @@ type KeycloakRealms struct {
 }
 
 type KeycloakRealmsOfficerPortal struct {
-	BrowserFlow string `yaml:"browserFlow" json:"browserFlow"`
+	BrowserFlow      string `yaml:"browserFlow" json:"browserFlow"`
+	SelfRegistration bool   `yaml:"selfRegistration" json:"selfRegistration"`
 }
 
 type SignWidget struct {
