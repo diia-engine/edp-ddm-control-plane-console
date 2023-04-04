@@ -57,6 +57,52 @@ func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) Exter
 	return es
 }
 
+func (a *App) getBasicUsername(ctx *gin.Context) (rsp router.Response, retErr error) {
+	registryName := ctx.Param("name")
+
+	systemRegsitryName := ctx.Query("registry-name")
+	if systemRegsitryName == "" {
+		return nil, errors.New("bad request")
+	}
+
+	cbService, err := a.Services.Codebase.ServiceForContext(router.ContextWithUserAccessToken(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("unable to init service for user context, %w", err)
+	}
+
+	_, err = cbService.Get(registryName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find registry, %w", err)
+	}
+
+	s, err := a.Vault.Read(ModifyVaultPath(externalSystemsSecretPath(a.vaultRegistryPath(registryName))))
+	if err != nil {
+		return nil, fmt.Errorf("unable to load id-gov-ua secret, err: %w", err)
+	}
+
+	data, ok := s.Data["data"]
+	if !ok {
+		return nil, errors.New("no data")
+	}
+
+	dataDict, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("wrong data")
+	}
+
+	d, ok := dataDict[fmt.Sprintf("external-systems.%s.auth.secret.username", systemRegsitryName)]
+	if !ok {
+		return nil, errors.New("no basic data")
+	}
+
+	str, ok := d.(string)
+	if !ok {
+		return nil, errors.New("wrong basic data")
+	}
+
+	return router.MakeJSONResponse(200, str), nil
+}
+
 func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retErr error) {
 	registryName := ctx.Param("name")
 

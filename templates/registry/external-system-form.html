@@ -117,7 +117,8 @@
                         <input aria-label="" name="external-system-auth-username"
                                @focus="externalSystemSecretFocus('username')"
                                v-model="externalSystem.data.auth.username"
-                               :type="externalSystem.secretInputTypes.username" />
+                               :type="externalSystem.secretInputTypes.username"
+                                :placeholder="externalSystem.usernamePlaceholder" />
                         <span v-if="externalSystem.data.auth.username == '' && externalSystem.startValidation">
                         Обов’язкове поле
                     </span>
