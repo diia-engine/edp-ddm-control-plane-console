@@ -125,6 +125,7 @@ let app = Vue.createApp({
                     username: 'text',
                 },
                 tokenInputType: 'text',
+                usernamePlaceholder: '',
                 data: {
                     url: '',
                     protocol: "REST",
@@ -376,12 +377,24 @@ let app = Vue.createApp({
                 this.externalSystem.secretInputTypes.secret = 'password';
             }
 
-            if (this.externalSystem.data.auth.hasOwnProperty('username')) {
+            if (this.externalSystem.data.auth.hasOwnProperty('username') && this.externalSystem.data.auth.username !== '') {
                 this.externalSystem.secretInputTypes.username = 'password';
             }
 
             if (registry === 'diia') {
                 this.externalSystem.data.auth.type = 'AUTH_TOKEN+BEARER'
+            }
+
+            if (this.externalSystem.data.auth.hasOwnProperty('type') && this.externalSystem.data.auth.type === 'BASIC') {
+                this.externalSystem.usernamePlaceholder = 'Завантаження...'
+                let $this = this;
+                axios.get(`/admin/registry/get-basic-username/${this.registryName}`,
+                    {params: {"registry-name": this.externalSystem.registryName}})
+                    .then(function (response) {
+                        $this.externalSystem.data.auth.username = response.data;
+                        $this.externalSystem.usernamePlaceholder = '';
+                    });
+
             }
 
             $("body").css("overflow", "hidden");
