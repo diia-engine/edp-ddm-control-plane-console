@@ -1,53 +1,9 @@
 {{ define "cluster/edit.html" }}
     {{template "header" .}}
-    <div class="registry registry-create" id="registry-form">
-        <input type="hidden" ref="registryValues" value="{{ .values }}" />
-        <div class="registry-header">
-            <a href="{{ .BasePath }}/admin/cluster/management" class="registry-add">
-                <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
-                <span>НАЗАД</span>
-            </a>
-        </div>
-        <h1>Налаштування платформи</h1>
-        <div class="reg-wizard">
-            <div class="wizard-contents">
-                <ul>
-                    <template v-for="tab in clusterSettings.tabs">
-                        <li :class="{ active: clusterSettings.activeTab == tab.key }">
-                            <a @click="selectClusterSettingsTab(tab.key, $event)" href="#">[[ tab.title ]]</a>
-                        </li>
-                    </template>
-                    {{if .hasUpdate}}
-                        <li :class="{ active: clusterSettings.activeTab == 'platformUpdate' }">
-                            <a @click="selectClusterSettingsTab('platformUpdate', $event)" href="#">Оновлення платформи</a>
-                        </li>
-                    {{end}}
-                </ul>
-            </div>
-            <div class="wizard-body">
-                <div class="wizard-tab" v-show="clusterSettings.activeTab == 'administrators'">
-                    {{template "administrators-block" .}}
-                </div>
-                <div class="wizard-tab" v-show="clusterSettings.activeTab == 'backup'">
-                    {{template "backup-block" .}}
-                </div>
-                <div class="wizard-tab" v-show="clusterSettings.activeTab == 'allowedCIDR'">
-                    {{template "cluster-cidr-block" .}}
-                </div>
-                <div class="wizard-tab" v-show="clusterSettings.activeTab == 'dataAboutKey'">
-                    {{template "cluster-key-block" .}}
-                </div>
-                <div class="wizard-tab" v-show="clusterSettings.activeTab == 'keycloakDNS'">
-                    {{template "cluster-keycloak-block" .}}
-                </div>
-                <div class="wizard-tab" v-show="clusterSettings.activeTab == 'platformUpdate'">
-                    {{template "platform-update-block" .}}
-                </div>
-            </div>
-        </div>
-        {{template "admin-block" .}}
-        {{template "cidr-form" .}}
-    </div>
+
+    <div id="template-args" style="display: none;" data-args="{{ .templateArgs }}"></div>
+    <div id="app"></div>
+    
     {{template  "scripts" .}}
     <script src="{{ .BasePath }}/static/js/mustache.js"></script>
     <script type="text/javascript" src="{{ .BasePath }}/static/js/axios.min.js"></script>

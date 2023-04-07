@@ -95,8 +95,12 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 			return nil, errors.Wrap(err, "unable to parse registry form")
 		}
 
-		return router.MakeHTMLResponse(200, "cluster/edit.html",
-			gin.H{"page": "cluster", "errorsMap": validationErrors, "backupSchedule": bs}), nil
+		errorsMap := make(map[string][]interface{})
+		for _, v := range validationErrors {
+			errorsMap[v.Field()] = append(errorsMap[v.Field()], v.Tag())
+		}
+
+		return router.MakeJSONResponse(http.StatusUnprocessableEntity, gin.H{"errors": errorsMap}), nil
 	}
 
 	values, err := a.getValuesDict(ctx)
@@ -131,7 +135,7 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
-	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
+	return router.MakeJSONResponse(http.StatusOK, gin.H{"errors": nil}), nil
 }
 
 func CronExpressionValidator(fl validator.FieldLevel) bool {

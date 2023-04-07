@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { inject } from 'vue';
-interface PlatformUpdateTemplateVariables {
+import { getErrorMessage } from '@/utils/errors';
+import { toRefs } from 'vue';
+
+interface PlatformUpdateProps {
     updateBranches: any;
     errorsMap: any;
 }
-const variables = inject('TEMPLATE_VARIABLES') as PlatformUpdateTemplateVariables;
-const updateBranches = variables?.updateBranches;
-const errorsMap = variables?.errorsMap;
+
+const props = defineProps<PlatformUpdateProps>();
+const { updateBranches, errorsMap } = toRefs(props);
+
 </script>
 <script lang="ts">
 export default {
@@ -19,21 +22,13 @@ export default {
         submit() {
             this.disabled = true;
         },
-        getErrorMessage(error: string) {
-            switch (error) {
-                case 'required':
-                    return "Не може бути порожнім";
-                default:
-                    return "";
-            }
-        }
     }
 };
 </script>
 
 <template>
     <h2>Оновлення платформи</h2>
-    <form class="registry-create-form" method="post" action="/admin/cluster/upgrade" @submit="submit">
+    <form method="post" action="/admin/cluster/upgrade" @submit="submit" class="registry-create-form">
         <div class="rc-form-group" :class="{ error: errorsMap?.branch }">
             <label for="branch">Оновити платформу</label>
             <select id="branch" name="branch" required>

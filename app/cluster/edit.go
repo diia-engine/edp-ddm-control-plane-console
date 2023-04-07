@@ -79,20 +79,12 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		return nil, fmt.Errorf("unable to encode values to json, %w", err)
 	}
 
-	templateArgs, err := json.Marshal(gin.H{
-		"updateBranches": branches,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to encode template arguments")
-	}
-
 	rspParams := gin.H{
 		"page":                 "cluster",
 		"updateBranches":       branches,
 		"hasUpdate":            hasUpdate,
 		"hwINITemplateContent": hwINITemplateContent,
 		"values":               string(valuesJs),
-		"templateArgs":         string(templateArgs),
 	}
 
 	for _, f := range a.editDataLoaders() {
@@ -101,7 +93,14 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		}
 	}
 
-	return router.MakeHTMLResponse(200, "cluster/edit.html", rspParams), nil
+	templateArgs, err := json.Marshal(rspParams)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode template arguments")
+	}
+
+	return router.MakeHTMLResponse(200, "cluster/edit.html", gin.H{
+		"templateArgs": string(templateArgs),
+	}), nil
 }
 
 func (a *App) editDataLoaders() []func(context.Context, *Values, gin.H) error {
