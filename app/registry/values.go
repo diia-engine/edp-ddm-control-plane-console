@@ -2,6 +2,10 @@ package registry
 
 import "fmt"
 
+const (
+	DeploymentModeDevelopment = "development"
+)
+
 type Values struct {
 	Administrators  []Admin                   `yaml:"administrators" json:"administrators"`
 	ExternalSystems map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
@@ -34,7 +38,7 @@ type RegistryBackup struct {
 }
 
 type Keycloak struct {
-	CustomHost        string                    `yaml:"customHost,omitempty" json:"customHost"`
+	CustomHost        string                           `yaml:"customHost,omitempty" json:"customHost"`
 	Realms            KeycloakRealms                   `yaml:"realms" json:"realms"`
 	AuthFlows         KeycloakAuthFlows                `yaml:"authFlows" json:"authFlows"`
 	CitizenAuthFlow   KeycloakAuthFlowsCitizenAuthFlow `yaml:"citizenAuthFlow" json:"citizenAuthFlow"`
@@ -89,6 +93,7 @@ type ExternalSystem struct {
 	Type     string            `yaml:"type" json:"type"`
 	Protocol string            `yaml:"protocol" json:"protocol"`
 	Auth     map[string]string `yaml:"auth,omitempty" json:"auth"`
+	Mock     bool              `yaml:"mock" json:"mock"`
 }
 
 func (e ExternalSystem) StrAuth() string {
@@ -113,6 +118,7 @@ type Global struct {
 	WhiteListIP    WhiteListIP    `json:"whiteListIP" yaml:"whiteListIP"`
 	Notifications  Notifications  `json:"notifications" yaml:"notifications"`
 	RegistryBackup RegistryBackup `yaml:"registryBackup" json:"registryBackup"`
+	DeploymentMode string         `yaml:"deploymentMode" json:"deploymentMode"`
 }
 
 type WhiteListIP struct {
@@ -134,6 +140,7 @@ type TrembitaRegistry struct {
 	Client          TrembitaRegistryClient  `yaml:"client,omitempty" json:"client,omitempty"`
 	Service         TrembitaRegistryService `yaml:"service,omitempty" json:"service,omitempty"`
 	Auth            map[string]string       `yaml:"auth,omitempty" json:"auth,omitempty"`
+	Mock            bool                    `yaml:"mock" json:"mock"`
 }
 
 func (t TrembitaRegistry) StrType() string {

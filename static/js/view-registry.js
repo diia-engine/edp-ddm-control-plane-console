@@ -74,6 +74,9 @@ let app = Vue.createApp({
         }
     }, // mrIframe
     methods: {
+        mockAvailable(){
+            return this.values?.global?.deploymentMode === "development";
+        },
         selectTab(tabName) {
             this.activeTab = tabName;
         },
@@ -96,6 +99,7 @@ let app = Vue.createApp({
                 tokenInputType: 'text',
                 urlValidationFailed: false,
                 data: {
+                    mock: false,
                     protocolVersion: '',
                     url: '',
                     userId: '',
@@ -137,6 +141,7 @@ let app = Vue.createApp({
                 tokenInputType: 'text',
                 usernamePlaceholder: '',
                 data: {
+                    mock: false,
                     url: '',
                     protocol: "REST",
                     auth: {
@@ -220,13 +225,13 @@ let app = Vue.createApp({
             this.externalSystem.startValidation = true;
             this.externalSystem.urlValidationFailed = false;
 
-            if (this.externalSystem.data.url !== '' && !this.isURL(this.externalSystem.data.url)) {
+            if (this.externalSystem.data.url.hasOwnProperty('url') && this.externalSystem.data.url !== '' && !this.isURL(this.externalSystem.data.url)) {
                 e.preventDefault();
                 this.externalSystem.urlValidationFailed = true;
                 return;
             }
 
-            if (this.externalSystem.data.url === "") {
+            if (this.externalSystem.data.url.hasOwnProperty('url') && this.externalSystem.data.url === "") {
                 e.preventDefault();
                 return;
             }
@@ -271,12 +276,21 @@ let app = Vue.createApp({
             }
             return `/admin/registry/trembita-client/${this.registryName}`
         },
+        mockChanged(dataIndex) {
+            let data = this[dataIndex];
+            if (data.mock) {
+                delete data['url'];
+            } else {
+                data['url'] = '';
+            }
+        },
         setTrembitaClientForm(e) {
             this.trembitaClient.registryNameExists = false;
             this.trembitaClient.startValidation = true;
             this.trembitaClient.urlValidationFailed = false;
 
-            if (this.trembitaClient.data.url !== '' && !this.isURL(this.trembitaClient.data.url)) {
+            if (this.trembitaClient.data.hasOwnProperty('url') && this.trembitaClient.data.url !== ''
+                && !this.isURL(this.trembitaClient.data.url)) {
                this.trembitaClient.urlValidationFailed = true;
                 e.preventDefault();
                 return;

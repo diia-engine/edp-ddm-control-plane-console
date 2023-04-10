@@ -19,7 +19,7 @@ const (
 
 type RegistryExternalSystemForm struct {
 	RegistryName        string `form:"external-system-registry-name" binding:"required"`
-	URL                 string `form:"external-system-url" binding:"required"`
+	URL                 string `form:"external-system-url"`
 	Protocol            string `form:"external-system-protocol" binding:"required"`
 	AuthType            string `form:"external-system-auth-type" binding:"required"`
 	AuthURL             string `form:"external-system-auth-url"`
@@ -36,7 +36,7 @@ func externalSystemSecretPrefixedPath(originalPath string) string {
 	return fmt.Sprintf("vault:%s", originalPath)
 }
 
-func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) ExternalSystem {
+func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath, wiremockAddr string) ExternalSystem {
 	es := ExternalSystem{
 		URL:      f.URL,
 		Protocol: f.Protocol,
@@ -52,6 +52,11 @@ func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath string) Exter
 	if f.AuthType == authTypeAuthTokenBearer {
 		es.Auth["auth-url"] = f.AuthURL
 		es.Auth["access-token-json-path"] = f.AccessTokenJSONPath
+	}
+
+	if es.URL == "" {
+		es.Mock = true
+		es.URL = wiremockAddr
 	}
 
 	return es
@@ -185,7 +190,7 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "external system already exists")
 	}
 
-	extenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName))
+	extenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName), a.WiremockAddr)
 	extenalSystem.Protocol = externalSystemDefaultProtocol
 	extenalSystem.Type = externalSystemDeletableType
 
@@ -234,7 +239,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to get external system")
 	}
 
-	editExtenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName))
+	editExtenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName), a.WiremockAddr)
 	editExtenalSystem.Type = valuesExternalSystem.Type
 	editExtenalSystem.Protocol = valuesExternalSystem.Protocol
 

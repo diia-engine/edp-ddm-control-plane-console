@@ -32,7 +32,16 @@
                     </span>
                 </div>
 
-                <div class="rc-form-group"
+                <div v-if="mockAvailable()" class="rc-form-group">
+                    <label class="form-checkbox-container">
+                        Використати мок зовнішньої інтеграції (для версій реєстру 1.9.4 і вище)
+                        <input @change="mockChanged('externalSystem')"
+                               v-model="externalSystem.data.mock" type="checkbox" checked="checked">
+                        <span class="form-checkbox-checkmark"></span>
+                    </label>
+                </div>
+
+                <div v-if="!externalSystem.data.mock" class="rc-form-group"
                      :class="{'error': (externalSystem.data.url == '' || externalSystem.urlValidationFailed) && externalSystem.startValidation}">
                     <label>Адреса зовнішньої системи</label>
                     <input aria-label="" type="text" name="external-system-url" v-model="externalSystem.data.url" />

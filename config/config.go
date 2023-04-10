@@ -66,6 +66,7 @@ type Settings struct {
 	KeycloakDefaultHostname               string `envconfig:"KEYCLOAK_DEFAULT_HOSTNAME"`
 	Mock                                  string `envconfig:"MOCK"`
 	RegistryVersionFilter                 string `envconfig:"REGISTRY_VERSION_FILTER"`
+	WiremockAddr                          string `envconfig:"WIREMOCK_ADDR" default:"http://wiremock:9021/"`
 }
 
 type Services struct {

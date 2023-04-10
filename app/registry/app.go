@@ -38,6 +38,7 @@ type Config struct {
 	DDMManualEDPComponent           string
 	RegistryVersionFilter           string
 	KeycloakDefaultHostname         string
+	WiremockAddr                    string
 }
 
 type Services struct {

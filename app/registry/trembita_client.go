@@ -16,7 +16,7 @@ const (
 
 type TrembitaClientRegistryForm struct {
 	TrembitaClientProtocolVersion string `form:"trembita-client-protocol-version" binding:"required"`
-	TrembitaClientURL             string `form:"trembita-client-url" binding:"required"`
+	TrembitaClientURL             string `form:"trembita-client-url"`
 	TrembitaClientUserID          string `form:"trembita-client-user-id" binding:"required"`
 	TrembitaClientXRoadInstance   string `form:"trembita-client-x-road-instance" binding:"required"`
 	TrembitaClientMemberClass     string `form:"trembita-client-member-class" binding:"required"`
@@ -34,7 +34,7 @@ type TrembitaClientRegistryForm struct {
 	TrembitaServiceAuthSecret     string `form:"trembita-service-auth-secret"`
 }
 
-func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
+func (tf TrembitaClientRegistryForm) ToNestedStruct(wiremockAddr string) TrembitaRegistry {
 	tr := TrembitaRegistry{
 		URL:             tf.TrembitaClientURL,
 		UserID:          tf.TrembitaClientUserID,
@@ -56,6 +56,11 @@ func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
 		Auth: map[string]string{
 			"type": tf.TrembitaServiceAuthType,
 		},
+	}
+
+	if tr.URL == "" {
+		tr.Mock = true
+		tr.URL = wiremockAddr
 	}
 
 	return tr
@@ -83,7 +88,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.New("wrong registry name")
 	}
 
-	trembitaRegistry := tf.ToNestedStruct()
+	trembitaRegistry := tf.ToNestedStruct(a.Config.WiremockAddr)
 	trembitaRegistry.Type = trembitaRegistryFromValues.Type
 	trembitaRegistry.Protocol = trembitaRegistryFromValues.Protocol
 
@@ -150,7 +155,7 @@ func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "trembita client already exists")
 	}
 
-	trembitaRegistry := tf.ToNestedStruct()
+	trembitaRegistry := tf.ToNestedStruct(a.Config.WiremockAddr)
 	trembitaRegistry.Type = externalSystemDeletableType
 	trembitaRegistry.Protocol = tf.TrembitaClientProtocol
 

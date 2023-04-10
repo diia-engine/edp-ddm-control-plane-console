@@ -144,7 +144,7 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 		ObjectMeta: metav1.ObjectMeta{Name: cnf.ClusterCodebaseName},
 		Spec:       codebase.CodebaseSpec{Description: &clusterDescription},
 	}, nil)
-	cbService.On("GetBranchesByCodebase", cnf.ClusterCodebaseName).Return([]codebase.CodebaseBranch{
+	cbService.On("GetBranchesByCodebase", mock.Anything, cnf.ClusterCodebaseName).Return([]codebase.CodebaseBranch{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "master"},
 			Spec: codebase.CodebaseBranchSpec{
@@ -160,7 +160,7 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 		ObjectMeta: metav1.ObjectMeta{Name: "mock"},
 		Spec:       codebase.CodebaseSpec{Description: &mockDescription},
 	}, nil)
-	cbService.On("GetBranchesByCodebase", "mock").Return([]codebase.CodebaseBranch{
+	cbService.On("GetBranchesByCodebase", mock.Anything, "mock").Return([]codebase.CodebaseBranch{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "master"},
 			Spec: codebase.CodebaseBranchSpec{
@@ -206,12 +206,23 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 		url.PathEscape(registry.ValuesLocation)).Return(string(clusterValuesBts), nil)
 
 	mockRegistryValues := registry.Values{
-		Global: registry.Global{},
+		Global: registry.Global{
+			DeploymentMode: registry.DeploymentModeDevelopment,
+		},
 		Administrators: []registry.Admin{
 			{Email: "foo@bar.com"},
 		},
 		Keycloak: registry.Keycloak{
 			CustomHost: "foo.bar.com",
+		},
+		Trembita: registry.Trembita{
+			Registries: map[string]registry.TrembitaRegistry{
+				"test": {
+					Mock: true,
+					URL:  "http://wiremock/",
+					Type: "registry",
+				},
+			},
 		},
 	}
 	registryValuesBts, err := yaml.Marshal(mockRegistryValues)
