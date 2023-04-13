@@ -661,6 +661,11 @@ export default {
             this.externalSystem.startValidation = true;
             this.externalSystem.urlValidationFailed = false;
 
+            if (!this.externalSystem.registryName) {
+                e.preventDefault();
+                return;
+            }
+
             // eslint-disable-next-line no-prototype-builtins
             if (this.externalSystem.data.url.hasOwnProperty('url') && this.externalSystem.data.url !== '' && !this.isURL(this.externalSystem.data.url)) {
                 e.preventDefault();
