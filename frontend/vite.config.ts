@@ -7,6 +7,7 @@ import vue from '@vitejs/plugin-vue';
 export default defineConfig({
   plugins: [vue()],
   build: {
+    sourcemap: true,
     rollupOptions: {
       output: {
         entryFileNames: `assets/[name].js`,

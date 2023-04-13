@@ -1,4 +1,3 @@
-// @ts-nocheck
 <script setup lang="ts">
   import { inject } from 'vue';
   interface DashboardTemplateVariables {
@@ -29,7 +28,10 @@ export default {
         'clusterKeycloakDNSCertSelected',
         'resetClusterKeycloakDNSForm',
         'showClusterKeycloakDNSForm',
+        'hideClusterCheckKeycloakDNS',
         'hideClusterKeycloakDNSForm',
+        'hideCheckClusterDeleteKeycloakDNS',
+        'checkClusterDeleteKeycloakDNS',
         'deleteClusterKeycloakDNS',
         'addClusterKeycloakDNS',
         'localePEMError',
@@ -328,7 +330,7 @@ export default {
                     existHostname: '',
                 },
             },
-        };
+        } as any;
     },
     methods: {
         getChildrenRefs() {
@@ -345,7 +347,7 @@ export default {
                 ...(wizardRefs.backupScheduleTab?.$refs || {}),
             };
         },
-        editClusterKeycloakDNSHost(hostname, certificatePath, e) {
+        editClusterKeycloakDNSHost(hostname: string, certificatePath: string, e: any) {
             e.preventDefault();
             this.clusterSettings.keycloak.editHostname = hostname;
             this.clusterSettings.keycloak.editCertificatePath = certificatePath;
@@ -367,20 +369,20 @@ export default {
             }
             return this.registryValues.keycloak.customHosts;
         },
-        submitKeycloakDNSForm(e) {
+        submitKeycloakDNSForm(e: any) {
             this.clusterSettings.keycloak.submitInput = JSON.stringify(this.registryValues.keycloak.customHosts);
         },
-        clusterKeycloakDNSCertSelected(e) {
+        clusterKeycloakDNSCertSelected(e: any) {
             e.preventDefault();
             this.clusterSettings.keycloak.fileSelected = true;
             this.clusterSettings.keycloak.pemError = "";
         },
-        resetClusterKeycloakDNSForm(e) {
+        resetClusterKeycloakDNSForm(e: any) {
             e.preventDefault();
             this.clusterSettings.keycloak.fileSelected = false;
             this.clusterSettings.keycloak.pemError = "";
         },
-        showClusterKeycloakDNSForm(e) {
+        showClusterKeycloakDNSForm(e: any) {
             e.preventDefault();
             this.backdropShow = true;
             this.clusterSettings.keycloak.editDisabled = false;
@@ -389,22 +391,22 @@ export default {
             this.clusterSettings.keycloak.fileSelected = false;
             this.clusterSettings.keycloak.hostname = "";
         },
-        hideClusterCheckKeycloakDNS(e) {
+        hideClusterCheckKeycloakDNS(e: any) {
           e.preventDefault();
           this.backdropShow = false;
           this.clusterSettings.keycloak.existHostname = '';
         },
-        hideClusterKeycloakDNSForm(e) {
+        hideClusterKeycloakDNSForm(e: any) {
             e.preventDefault();
             this.backdropShow = false;
             this.clusterSettings.keycloak.formShow = false;
         },
-        hideCheckClusterDeleteKeycloakDNS(e) {
+        hideCheckClusterDeleteKeycloakDNS(e: any) {
           e.preventDefault();
           this.clusterSettings.keycloak.deleteHostname = '';
           this.backdropShow = false;
         },
-        checkClusterDeleteKeycloakDNS(hostname, e){
+        checkClusterDeleteKeycloakDNS(hostname: string, e: any){
           e.preventDefault();
 
           this.backdropShow = true;
@@ -417,13 +419,13 @@ export default {
                 $this.clusterSettings.keycloak.existHostname = hostname;
               });
         },
-        deleteClusterKeycloakDNS(hostname, e) {
+        deleteClusterKeycloakDNS(hostname: string, e: any) {
             e.preventDefault();
-            this.registryValues.keycloak.customHosts = this.registryValues.keycloak.customHosts.filter(i => i.host !== hostname);
+            this.registryValues.keycloak.customHosts = this.registryValues.keycloak.customHosts.filter((i: any) => i.host !== hostname);
             this.clusterSettings.keycloak.deleteHostname = '';
             this.backdropShow = false;
         },
-        addClusterKeycloakDNS(e) {
+        addClusterKeycloakDNS(e: any) {
             const childRefs = this.getChildrenRefs();
             e.preventDefault();
             this.clusterSettings.keycloak.hostnameError = "";
@@ -489,12 +491,12 @@ export default {
                 this.clusterSettings.keycloak.editHostname = "";
             }
         },
-        localePEMError(message) {
+        localePEMError(message: string) {
             const messages = {
                 "found in PEM file": "Перевірте формат файла",
                 "certificate has expired or is not yet valid": "Сертифікат застарілий",
                 "certificate is valid for": "Сертифікат не відповідає доменному імені",
-            };
+            } as Record<string, unknown>;
             if (messages.hasOwnProperty(message)) {
                 return messages[message];
             }
@@ -505,7 +507,7 @@ export default {
             }
             return message;
         },
-        wizardCronExpressionChange(e) {
+        wizardCronExpressionChange(e: any) {
             let bs = this.wizard.tabs.backupSchedule;
             if (bs.data.cronSchedule === "") {
                 bs.nextLaunches = false;
@@ -524,7 +526,7 @@ export default {
                 bs.nextLaunches = true;
                 bs.wrongCronFormat = false;
             }
-            catch (e) {
+            catch (e: any) {
                 bs.nextLaunches = false;
                 bs.wrongCronFormat = true;
             }
@@ -576,7 +578,7 @@ export default {
                 }
 
                 this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = this.registryValues.keycloak.citizenAuthFlow.edrCheck;
-            } catch (e) {
+            } catch (e: any) {
                 console.log(e);
             }
             try {
@@ -584,20 +586,20 @@ export default {
                 this.wizard.tabs.backupSchedule.data.cronSchedule = this.registryValues.global.registryBackup.schedule;
                 this.wizard.tabs.backupSchedule.data.days = this.registryValues.global.registryBackup.expiresInDays;
             }
-            catch (e) {
+            catch (e: any) {
                 console.log(e);
             }
             if (this.registryValues.keycloak.customHosts === null) {
                 this.registryValues.keycloak.customHosts = [];
             }
         },
-        removeResourcesCatFromList(name) {
+        removeResourcesCatFromList(name: string) {
             let searchIdx = this.registryResources.cats.indexOf(name);
             if (searchIdx !== -1) {
                 this.registryResources.cats.splice(searchIdx, 1);
             }
         },
-        decodeResourcesEnvVars(inEnvVars) {
+        decodeResourcesEnvVars(inEnvVars: Record<string, unknown>) {
             let envVars = [];
             for (let j in inEnvVars) {
                 envVars.push({
@@ -607,7 +609,7 @@ export default {
             }
             return envVars;
         },
-        preloadRegistryResources(data) {
+        preloadRegistryResources(data: any) {
             //TODO: move to constant
             this.registryResources.cats = [
                 "kong",
@@ -634,7 +636,7 @@ export default {
                 });
             }
         },
-        mergeResource(data) {
+        mergeResource(data: Record<string, unknown>) {
             let emptyResource = {
                 istio: {
                     sidecar: {
@@ -668,10 +670,10 @@ export default {
             this.mergeDeep(emptyResource, data);
             return emptyResource;
         },
-        isObject(item) {
+        isObject(item: unknown) {
             return (item && typeof item === "object" && !Array.isArray(item));
         },
-        mergeDeep(target, ...sources) {
+        mergeDeep(target: any, ...sources: any[]) {
             if (!sources.length)
                 return target;
             const source = sources.shift();
@@ -692,13 +694,13 @@ export default {
             }
             return this.mergeDeep(target, ...sources);
         },
-        wizardBackupScheduleChange(e) {
+        wizardBackupScheduleChange(e: any) {
             console.log(e);
         },
-        wizardDNSEditVisibleChange(name, event) {
+        wizardDNSEditVisibleChange(name: string, event: any) {
             console.log(name, event);
         },
-        wizardEditSubmit(event) {
+        wizardEditSubmit(event: any) {
             const childRefs = this.getChildrenRefs();
             let tab = this.wizard.tabs[this.wizard.activeTab];
             let $this = this;
@@ -746,7 +748,7 @@ export default {
                 }
             }
         },
-        selectWizardTab(tabName, e) {
+        selectWizardTab(tabName: string, e: any) {
             e.preventDefault();
             let tab = this.wizard.tabs[this.wizard.activeTab];
             let wizard = this.wizard;
@@ -764,19 +766,19 @@ export default {
                 wizard.activeTab = tabName;
             });
         },
-        selectClusterSettingsTab(tabName, e) {
+        selectClusterSettingsTab(tabName: string, e: any) {
             e.preventDefault();
             this.clusterSettings.activeTab = tabName;
         },
-        wizardTabChanged(tabName) {
+        wizardTabChanged(tabName: string) {
             this.wizard.tabs[tabName].changed = true;
         },
-        wizardEmptyValidation(tab) {
+        wizardEmptyValidation(tab: string) {
             return new Promise < void  > ((resolve) => {
                 resolve();
             });
         },
-        wizardGeneralValidation(tab) {
+        wizardGeneralValidation(tab: any) {
             return new Promise < void  > ((resolve) => {
                 tab.requiredError = false;
                 tab.formatError = false;
@@ -809,7 +811,7 @@ export default {
                 });
             });
         },
-        wizardBackupScheduleValidation(tab) {
+        wizardBackupScheduleValidation(tab: any) {
             return new Promise < void  > ((resolve) => {
                 let bs = this.wizard.tabs.backupSchedule;
                 bs.data.cronSchedule = bs.data.cronSchedule.trim();
@@ -825,7 +827,7 @@ export default {
                     try {
                         parseCronExpression(bs.data.cronSchedule);
                     }
-                    catch (e) {
+                    catch (e: any) {
                         bs.nextLaunches = false;
                         bs.wrongCronFormat = true;
                     }
@@ -842,7 +844,7 @@ export default {
                 resolve();
             });
         },
-        wizardSupAuthValidation(tab) {
+        wizardSupAuthValidation(tab: any) {
             return new Promise < void  > ((resolve) => {
                 tab.beginValidation = true;
                 tab.validated = false;
@@ -871,7 +873,7 @@ export default {
                 resolve();
             });
         },
-        wizardDNSValidation(tab) {
+        wizardDNSValidation(tab: any) {
             const childRefs = this.getChildrenRefs();
             return new Promise < void  > ((resolve) => {
                 tab.beginValidation = true;
@@ -914,7 +916,7 @@ export default {
                 resolve();
             });
         },
-        wizardCheckPEMFiles(filesToCheck, resolve, tab) {
+        wizardCheckPEMFiles(filesToCheck: Array<any>, resolve: () => void, tab: any) {
             if (filesToCheck.length === 0) {
                 tab.validated = true;
                 tab.beginValidation = false;
@@ -923,7 +925,7 @@ export default {
             }
             let f = filesToCheck.pop();
             let formData = new FormData();
-            formData.append("file", f.file);
+            formData.append("file", f?.file || '');
             let $this = this;
             axios.post("/admin/registry/check-pem", formData, {
                 headers: {
@@ -935,7 +937,7 @@ export default {
                 $this.wizard.tabs.dns.typeError[f.name] = true;
             });
         },
-        wizardResourcesValidation(tab) {
+        wizardResourcesValidation(tab: any) {
             return new Promise < void  > ((resolve) => {
                 tab.beginValidation = true;
                 tab.validated = false;
@@ -950,7 +952,7 @@ export default {
                 resolve();
             });
         },
-        checkObjectFieldsEmpty(o) {
+        checkObjectFieldsEmpty(o: Record<string, unknown>) {
             for (let i in o) {
                 let t = typeof o[i];
                 if (t === "string" && o[i] === "") {
@@ -964,7 +966,7 @@ export default {
             }
             return true;
         },
-        wizardAdministratorsValidation(tab) {
+        wizardAdministratorsValidation(tab: any) {
             let admins = this.admins;
             return new Promise < void  > ((resolve) => {
                 tab.requiredError = false;
@@ -977,7 +979,7 @@ export default {
                 resolve();
             });
         },
-        wizardTemplateValidation(tab) {
+        wizardTemplateValidation(tab: any) {
             return new Promise < void  > ((resolve) => {
                 tab.validated = false;
                 tab.templateRequiredError = false;
@@ -1007,7 +1009,7 @@ export default {
                 });
             });
         },
-        wizardMailValidation(tab) {
+        wizardMailValidation(tab: any) {
             return new Promise < void  > ((resolve) => {
                 tab.validated = false;
                 if (this.smtpServerType === "platform-mail-server") {
@@ -1026,13 +1028,13 @@ export default {
                 resolve();
             });
         },
-        clusterKeyFormSubmit(e) {
+        clusterKeyFormSubmit(e: any) {
             if (!this.keyFormValidation(this.wizard.tabs.key, function () {
             })) {
                 e.preventDefault();
             }
         },
-        keyFormValidation(tab, resolve) {
+        keyFormValidation(tab: any, resolve: () => void) {
             const childRefs = this.getChildrenRefs();
             if (this.wizard.registryAction === "edit" && !this.wizard.tabs.key.changed) {
                 resolve();
@@ -1085,14 +1087,14 @@ export default {
             resolve();
             return true;
         },
-        wizardKeyValidation(tab) {
+        wizardKeyValidation(tab: any) {
             return new Promise < void  > ((resolve) => {
                 this.keyFormValidation(tab, resolve);
             });
         },
         renderINITemplate() {
-            let iniTemplate = document.getElementById("ini-template").innerHTML;
-            this.wizard.tabs.key.hardwareData.iniConfig = Mustache.render(iniTemplate, {
+            let iniTemplate = document.getElementById("ini-template")?.innerHTML;
+            this.wizard.tabs.key.hardwareData.iniConfig = Mustache.render(iniTemplate || '', {
                 "CA_NAME": this.wizard.tabs.key.hardwareData.remoteCaName,
                 "CA_HOST": this.wizard.tabs.key.hardwareData.remoteCaHost,
                 "CA_PORT": this.wizard.tabs.key.hardwareData.remoteCaPort,
@@ -1101,11 +1103,11 @@ export default {
                 "KEY_ADDRESS_MASK": this.wizard.tabs.key.hardwareData.remoteKeyMask,
             }).trim();
         },
-        wizardKeyHardwareDataChanged(e) {
+        wizardKeyHardwareDataChanged(e: any) {
             this.renderINITemplate();
             this.wizard.tabs.key.changed = true;
         },
-        wizardRemoveAllowedKey(item) {
+        wizardRemoveAllowedKey(item: unknown) {
             let searchIdx = this.wizard.tabs.key.allowedKeys.indexOf(item);
             if (searchIdx !== -1) {
                 this.wizard.tabs.key.allowedKeys.splice(searchIdx, 1);
@@ -1114,7 +1116,7 @@ export default {
         wizardAddAllowedKey() {
             this.wizard.tabs.key.allowedKeys.push({ issuer: "", serial: "", removable: true });
         },
-        addResourceCat(e) {
+        addResourceCat(e: any) {
             e.preventDefault(e);
             if (this.registryResources.cat === "") {
                 return;
@@ -1154,24 +1156,24 @@ export default {
             });
             this.registryResources.cats.splice(this.registryResources.cats.indexOf(this.registryResources.cat), 1);
         },
-        addEnvVar(envVars, event) {
+        addEnvVar(envVars: Array<Record<string, unknown>>, event: any) {
             event.preventDefault();
             envVars.push({ name: "", value: "" });
         },
-        removeEnvVar(envVars, env) {
+        removeEnvVar(envVars: Array<Record<string, unknown>>, env: Record<string, unknown>) {
             envVars.splice(envVars.indexOf(env), 1);
         },
-        removeResourceCat(cat, event) {
+        removeResourceCat(cat: { name: string }, event: any) {
             event.preventDefault();
             this.registryResources.cats.push(cat.name);
             this.registryResources.addedCats.splice(this.registryResources.addedCats.indexOf(cat), 1);
         },
         encodeRegistryResources() {
-            let prepare = {};
-            this.registryResources.addedCats.forEach(function (el) {
+            let prepare = {} as Record<string, unknown>;
+            this.registryResources.addedCats.forEach(function (el: any) {
                 let cloneEL = JSON.parse(JSON.stringify(el));
-                let envVars = {};
-                cloneEL.config.container.envVars.forEach(function (el) {
+                let envVars = {} as Record<string, unknown>;
+                cloneEL.config.container.envVars.forEach(function (el: any) {
                     envVars[el.name] = el.value;
                 });
                 cloneEL.config.container.envVars = envVars;
@@ -1183,12 +1185,12 @@ export default {
             this.cleanEmptyProperties(prepare);
             this.registryResources.encoded = JSON.stringify(prepare);
         },
-        cleanEmptyProperties(obj) {
+        cleanEmptyProperties(obj: Record<string, unknown>) {
             if (this.isObject(obj)) {
                 for (const key in obj) {
                     if (this.isObject(obj[key])) {
                         this.cleanEmptyProperties(obj[key]);
-                        if (Object.keys(obj[key]).length === 0) {
+                        if (Object.keys(obj[key] as Record<string, unknown>).length === 0) {
                             delete obj[key];
                         }
                     }
@@ -1198,7 +1200,7 @@ export default {
                 }
             }
         },
-        registryFormSubmit(e) {
+        registryFormSubmit(e: any) {
             if (this.registryFormSubmitted && e) {
                 e.preventDefault();
                 return;
@@ -1222,7 +1224,7 @@ export default {
                 }
             }
         },
-        loadAdmins(admins) {
+        loadAdmins(admins: string) {
             if (!this.adminsLoaded) {
                 if (admins && admins !== "") {
                     this.admins = JSON.parse(admins);
@@ -1239,7 +1241,7 @@ export default {
             this.adminPopupShow = true;
             $("body").css("overflow", "hidden");
         },
-        showCIDRForm(cidr, value) {
+        showCIDRForm(cidr: unknown, value: unknown) {
             this.cidrPopupShow = true;
             $("body").css("overflow", "hidden");
             this.editCIDR = "";
@@ -1251,7 +1253,7 @@ export default {
             this.cidrPopupShow = false;
             $("body").css("overflow", "scroll");
         },
-        createCIDR(e) {
+        createCIDR(e: any) {
             e.preventDefault();
             let cidrVal = String(this.editCIDR).toLowerCase();
             if (cidrVal !== "0.0.0.0/0" && !cidrVal.
@@ -1264,7 +1266,7 @@ export default {
             this.hideCIDRForm();
             this.cidrChanged = true;
         },
-        deleteCIDR(c, cidr, value, e) {
+        deleteCIDR(c: any, cidr: any, value: string, e: any) {
             e.preventDefault();
             for (let v in cidr) {
                 if (cidr[v] === c) {
@@ -1279,7 +1281,7 @@ export default {
             this.adminPopupShow = false;
             $("body").css("overflow", "scroll");
         },
-        deleteAdmin(e) {
+        deleteAdmin(e: any) {
             e.preventDefault();
             let email = e.currentTarget.getAttribute("email");
             for (let v in this.admins) {
@@ -1291,7 +1293,7 @@ export default {
             this.adminsValue = JSON.stringify(this.admins);
             this.adminsChanged = true;
         },
-        createAdmin(e) {
+        createAdmin(e: any) {
             this.requiredError = false;
             this.emailFormatError = false;
             e.preventDefault();
