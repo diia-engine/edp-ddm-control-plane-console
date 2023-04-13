@@ -53,14 +53,12 @@ const created = variables?.created;
 const gerritURL = variables?.gerritURL;
 const jenkinsURL = variables?.jenkinsURL;
 const mrAvailable = variables?.mrAvailable;
-
-
 </script>
 
 <script lang="ts">
 import $ from 'jquery';
 import axios from 'axios';
-import moment from 'moment';
+import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getMergeRequestAction, getMergeRequestName, getMergeRequestStatus } from '@/utils';
 
 export default {
     data() {
@@ -533,9 +531,6 @@ export default {
             }
             return '-';
         },
-        getImageUrl(name: string) {
-            return new URL(`../../assets/img/${name.toLocaleLowerCase()}.png`, import.meta.url).href;
-        },
         getStatus(status: any) {
             switch (`status-${status}`) {
                 case "status-active":
@@ -561,12 +556,6 @@ export default {
         },
         inactive(status: string) {
             return status === "inactive" || status === "failed";
-        },
-        getGerritURL(url: string) {
-            return `${url}dashboard/self`;
-        },
-        getJenkinsURL(url: string, codebaseName: string, branchName: string) {
-            return `${url}job${codebaseName}/view/${branchName.toLocaleUpperCase()}`;
         },
         hideTrembitaClientForm(e: any) {
             e.preventDefault();
@@ -747,76 +736,6 @@ export default {
         },
         changeExternalSystemAuthType() {
             this.externalSystem.startValidation = false;
-        },
-        getDate(date: string) {
-            return moment(date).utc().format('DD.MM.YYYY H:mm');
-        },
-        getRequestName(mergeRequest: any) {
-            const { metadata } = mergeRequest;
-            const target = metadata.labels["console/target"];
-            if (target === "external-reg") {
-                return metadata.annotations["ext-reg/name"];
-            }
-
-            if (target == "registry-version-update") {
-                return "Оновлення версії реєстру";
-            }
-
-            if (target == "edit-registry" || target == "trembita-registry-update") {
-                return "Редагування реєстру";
-            }
-
-            return mergeRequest.Name;
-        },
-        getAction(mergeRequest: any) {
-            const { metadata } = mergeRequest;
-            const target = metadata.labels["console/target"];
-            if (target == "external-reg") {
-                const res = metadata.labels["console/sub-target"];
-                if (res) {
-                    switch (`mre-action-${res}`) {
-                        case "mre-action-disable":
-                            return "Заблокування";
-                        case "mre-action-enable":
-                            return "Розблокування";
-                        case "mre-action-creation":
-                            return "Створення";
-                        case "mre-action-deletion":
-                            return "Скасування";
-                    }
-                }
-            }
-
-            if (target == "registry-version-update") {
-                let sourceBranch = mergeRequest.spec.sourceBranch;
-                if (sourceBranch === "") {
-                    sourceBranch = metadata.labels["console/source-branch"];
-                }
-
-                return `Оновлення реєстру до ${sourceBranch}`;
-            }
-
-            return "-";
-        },
-        getMRStatus(mergeRequest: any) {
-            const { metadata } = mergeRequest;
-            if ((metadata.labels["console/action"] == "branch-merge" && mergeRequest.spec.sourceBranch == "") || mergeRequest.status.value == "" ||
-                (mergeRequest.status.value == "sourceBranch or changesConfigMap must be specified" && mergeRequest.spec.sourceBranch != "")) {
-                return "У процесі виконання";
-            }
-
-            if (mergeRequest.status.value === "") {
-                return "-";
-            }
-
-            switch (mergeRequest.status.value) {
-                case "NEW":
-                    return "Новий";
-                case "ABANDONED":
-                    return "Відхилено";
-                case "MERGED":
-                    return "Підтверджено";
-            }
         },
         mockAvailable() {
             return (this.valuesData as any)?.global?.deploymentMode === "development";
@@ -1686,10 +1605,10 @@ export default {
                         </thead>
                         <tbody>
                             <tr v-for="($al, $index) in mergeRequests" :key="$index">
-                                <td>{{ getDate($al.metadata.creationTimestamp) }}</td>
-                                <td>{{ getRequestName($al) }}</td>
-                                <td>{{ getAction($al) }}</td>
-                                <td class="mr-status">{{ getMRStatus($al) }}</td>
+                                <td>{{ getFormattedDate($al.metadata.creationTimestamp) }}</td>
+                                <td>{{ getMergeRequestName($al) }}</td>
+                                <td>{{ getMergeRequestAction($al) }}</td>
+                                <td class="mr-status">{{ getMergeRequestStatus($al) }}</td>
                                 <td class="mr-actions">
                                     <i v-if="!mrAvailable" title="Реєстр в процесі оновлення" class="fa-solid fa-lock"></i>
 

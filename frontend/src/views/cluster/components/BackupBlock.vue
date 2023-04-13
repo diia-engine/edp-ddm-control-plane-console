@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getErrorMessage } from '@/utils/errors';
+import { getErrorMessage } from '@/utils';
 import axios from 'axios';
 import { toRefs } from 'vue';
 

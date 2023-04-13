@@ -35,7 +35,6 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 	}
 
 	viewParams := gin.H{
-		"page":       "registry",
 		"timezone":   a.Config.Timezone,
 		"values":     values,
 		"valuesJson": string(valuesJson),
@@ -53,6 +52,7 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 	}
 
 	return router.MakeHTMLResponse(200, "registry/view.html", gin.H{
+		"page":         "registry",
 		"templateArgs": string(templateArgs),
 	}), nil
 }

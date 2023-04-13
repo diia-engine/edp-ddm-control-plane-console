@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import DashboardView from '../views/DashboardView.vue';
-import RegistryEditView from '../views/registry/RegistryEditView.vue';
-import UpdateRegistry from '../views/registry/UpdateView.vue';
-import RegistryView from '../views/registry/RegistryView.vue';
-import EditCluster from '../views/cluster/EditView.vue';
+import RegistryEditView from '@/views/registry/RegistryEditView.vue';
+import DashboardView from '@/views/DashboardView.vue';
+import UpdateRegistry from '@/views/registry/UpdateView.vue';
+import RegistryView from '@/views/registry/RegistryView.vue';
+import EditCluster from '@/views/cluster/EditView.vue';
+import ManagementView from '@/views/cluster/ManagementView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,6 +23,11 @@ const router = createRouter({
       path: '/admin/registry/view/:registryName',
       name: 'registry',
       component: RegistryView
+    },
+    {
+      path: '/admin/cluster/management',
+      name: 'ManagementView',
+      component: ManagementView
     },
     {
       path: '/admin/cluster/edit',

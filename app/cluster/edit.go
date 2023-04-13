@@ -80,7 +80,6 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 	}
 
 	rspParams := gin.H{
-		"page":                 "cluster",
 		"updateBranches":       branches,
 		"hasUpdate":            hasUpdate,
 		"hwINITemplateContent": hwINITemplateContent,
@@ -99,6 +98,7 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 	}
 
 	return router.MakeHTMLResponse(200, "cluster/edit.html", gin.H{
+		"page":         "cluster",
 		"templateArgs": string(templateArgs),
 	}), nil
 }
