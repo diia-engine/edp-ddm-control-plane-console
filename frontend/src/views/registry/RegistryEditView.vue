@@ -17,6 +17,8 @@ import $ from 'jquery';
 import Mustache from 'mustache';
 import { parseCronExpression } from 'cron-schedule';
 import RegistryWizard from '../../components/RegistryWizard/RegistryWizard.vue';
+import AdministratorModal from '../../components/AdministratorModal.vue';
+import CidrModal from '../../components/CidrModal.vue';
 
 const hostnameRegex = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$/;
 
@@ -1342,7 +1344,7 @@ export default {
                 this.wizard.tabs.template.projectBranches[this.wizard.tabs.template.registryTemplate];
         },
     },
-    components: { RegistryWizard }
+    components: { RegistryWizard, AdministratorModal, CidrModal }
 };
 </script>
 
