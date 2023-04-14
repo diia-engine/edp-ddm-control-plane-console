@@ -1,15 +1,3 @@
-<script setup lang="ts">
-  import { inject } from 'vue';
-  interface DashboardTemplateVariables {
-    registry: {
-      metadata: {
-        name: string;
-      },
-    }
-  }
-  const templateVariables = inject('TEMPLATE_VARIABLES') as DashboardTemplateVariables;
-</script>
-
 <script lang="ts">
 /* eslint-disable no-prototype-builtins */
 import axios from 'axios';
@@ -18,11 +6,11 @@ import Mustache from 'mustache';
 import { parseCronExpression } from 'cron-schedule';
 import RegistryWizard from '../../components/RegistryWizard/RegistryWizard.vue';
 import AdministratorModal from '../../components/AdministratorModal.vue';
-import CidrModal from '../../components/CidrModal.vue';
+import {defineComponent} from 'vue';
 
 const hostnameRegex = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$/;
 
-export default {
+export default defineComponent({
     expose: [
         'editClusterKeycloakDNSHost',
         'clusterKeycloakDNSCustomHosts',
@@ -83,15 +71,12 @@ export default {
         'prepareDNSConfig',
         'loadAdmins',
         'showAdminForm',
-        'showCIDRForm',
-        'hideCIDRForm',
-        'createCIDR',
-        'deleteCIDR',
         'hideAdminForm',
         'deleteAdmin',
         'createAdmin',
         'changeTemplateProject',
     ],
+    inject: { templateVariables : { from: 'TEMPLATE_VARIABLES' } },
     mounted() {
         const childRefs = this.getChildrenRefs();
         if (childRefs.hasOwnProperty("smtpServerTypeSelected")) {
@@ -113,21 +98,7 @@ export default {
                 this.smtpServerType = "platform-mail-server";
             }
         }
-        if (childRefs.hasOwnProperty("cidrEditConfig") && childRefs.cidrEditConfig.value !== "") {
-            let cidrConfig = JSON.parse(childRefs.cidrEditConfig.value);
-            if (cidrConfig.hasOwnProperty("citizen")) {
-                this.citizenCIDR = cidrConfig.citizen;
-                this.citizenCIDRValue.value = JSON.stringify(this.citizenCIDR);
-            }
-            if (cidrConfig.hasOwnProperty("officer")) {
-                this.officerCIDR = cidrConfig.officer;
-                this.officerCIDRValue.value = JSON.stringify(this.officerCIDR);
-            }
-            if (cidrConfig.hasOwnProperty("admin")) {
-                this.adminCIDR = cidrConfig.admin;
-                this.adminCIDRValue.value = JSON.stringify(this.adminCIDR);
-            }
-        }
+
         if (childRefs.hasOwnProperty("resourcesEditConfig") && childRefs.resourcesEditConfig.value !== "") {
             let resourcesConfig = JSON.parse(childRefs.resourcesEditConfig.value);
             this.preloadRegistryResources(resourcesConfig);
@@ -146,8 +117,9 @@ export default {
                 this.cidrChanged = false;
             }
         }
-        if (childRefs.hasOwnProperty("registryValues")) {
-            this.registryValues = JSON.parse(childRefs.registryValues.value);
+
+        if (this.templateVariables.registryValues) {
+            this.registryValues = this.templateVariables.registryValues;
             this.loadRegistryValues();
             this.dnsPreloadDataFromValues();
             this.wizardCronExpressionChange();
@@ -160,22 +132,10 @@ export default {
         return {
             registryValues: null,
             registryFormSubmitted: false,
-            cidrChanged: true,
-            officerCIDRValue: { value: "" },
-            officerCIDR: [],
-            citizenCIDRValue: { value: "" },
-            citizenCIDR: [],
-            adminCIDRValue: { value: "" },
-            adminCIDR: [],
             adminsValue: "",
             adminsChanged: true,
-            currentCIDR: [],
-            currentCIDRValue: "",
-            cidrFormatError: false,
             adminPopupShow: false,
-            cidrPopupShow: false,
             admins: [],
-            editCIDR: "",
             editAdmin: {
                 firstName: "",
                 lastName: "",
@@ -1210,9 +1170,6 @@ export default {
             this.encodeRegistryResources();
             this.prepareDNSConfig();
             this.mailServerOpts = JSON.stringify(this.externalSMTPOpts);
-            this.citizenCIDRValue.value = JSON.stringify(this.citizenCIDR);
-            this.officerCIDRValue.value = JSON.stringify(this.officerCIDR);
-            this.adminCIDRValue.value = JSON.stringify(this.adminCIDR);
             this.registryFormSubmitted = true;
         },
         prepareDNSConfig() {
@@ -1242,42 +1199,6 @@ export default {
             this.requiredError = false;
             this.adminPopupShow = true;
             $("body").css("overflow", "hidden");
-        },
-        showCIDRForm(cidr: unknown, value: unknown) {
-            this.cidrPopupShow = true;
-            $("body").css("overflow", "hidden");
-            this.editCIDR = "";
-            this.currentCIDR = cidr;
-            this.currentCIDRValue = value;
-            this.cidrFormatError = false;
-        },
-        hideCIDRForm() {
-            this.cidrPopupShow = false;
-            $("body").css("overflow", "scroll");
-        },
-        createCIDR(e: any) {
-            e.preventDefault();
-            let cidrVal = String(this.editCIDR).toLowerCase();
-            if (cidrVal !== "0.0.0.0/0" && !cidrVal.
-                match(/^([01]?\d\d?|2[0-4]\d|25[0-5])(?:\.(?:[01]?\d\d?|2[0-4]\d|25[0-5])){3}(?:\/[0-2]\d|\/3[0-2])?$/)) {
-                this.cidrFormatError = true;
-                return;
-            }
-            this.currentCIDR.push(this.editCIDR);
-            this.currentCIDRValue.value = JSON.stringify(this.currentCIDR);
-            this.hideCIDRForm();
-            this.cidrChanged = true;
-        },
-        deleteCIDR(c: any, cidr: any, value: string, e: any) {
-            e.preventDefault();
-            for (let v in cidr) {
-                if (cidr[v] === c) {
-                    cidr.splice(v, 1);
-                    break;
-                }
-            }
-            value = JSON.stringify(cidr);
-            this.cidrChanged = true;
         },
         hideAdminForm() {
             this.adminPopupShow = false;
@@ -1344,8 +1265,8 @@ export default {
                 this.wizard.tabs.template.projectBranches[this.wizard.tabs.template.registryTemplate];
         },
     },
-    components: { RegistryWizard, AdministratorModal, CidrModal }
-};
+    components: { RegistryWizard, AdministratorModal}
+});
 </script>
 
 <template>
@@ -1369,14 +1290,6 @@ export default {
           :adminExistsError="adminExistsError"
           @create-admin="createAdmin"
           @hide-admin-form="hideAdminForm"
-        />
-
-        <cidr-modal
-          v-model="editCIDR"
-          :cidrPopupShow="cidrPopupShow"
-          :cidrFormatError="cidrFormatError"
-          @create-cidr="createCIDR"
-          @hide-cidr-form="hideCIDRForm"
         />
     </div>
 </template>

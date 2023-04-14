@@ -42,7 +42,7 @@ export default {
             <div class="advanced-admins">
                 <div v-cloak v-for="c in adminCIDR" :key="c" class="child-admin">
                     {{ c }}
-                    <a @click.stop.prevent="deleteCIDR(c, adminCIDR, adminCIDRValue)" :cidr="c" href="#">
+                    <a @click.stop.prevent="deleteCIDR(c, adminCIDR, adminCIDRValue)" href="#">
                         <img src="@/assets/img/action-delete.png" />
                     </a>
                 </div>

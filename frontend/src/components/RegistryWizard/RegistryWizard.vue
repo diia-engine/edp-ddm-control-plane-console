@@ -51,7 +51,6 @@ export default {
                 enctype="multipart/form-data" action="" ref="registryWizardForm">
                 <input type="hidden" ref="wizardAction" name="action" :value="templateVariables.action" />
                 <input type="hidden" ref="registryData" :value="templateVariables.registryData" />
-                <input v-if="pageRoot.$data.registryValues"  type="hidden" ref="registryValues" :value="templateVariables.registryValues" />
 
                 <div v-if="pageRoot.$data.error" class="rc-global-error">{{templateVariables.error}}</div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'general'">

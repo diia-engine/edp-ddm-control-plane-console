@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -104,7 +103,6 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 	}
 
 	templateArgs, templateErr := json.Marshal(responseParams)
-
 	if templateErr != nil {
 		return nil, errors.Wrap(templateErr, "unable to encode template arguments")
 	}
@@ -117,10 +115,6 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParams gin.H, r *registry) error {
 	if err := a.loadSMTPConfig(values.OriginalYaml, rspParams); err != nil {
 		return errors.Wrap(err, "unable to load smtp config")
-	}
-
-	if err := a.loadCIDRConfig(values, rspParams); err != nil {
-		return errors.Wrap(err, "unable to load cidr config")
 	}
 
 	//TODO: refactor to values struct
@@ -157,12 +151,7 @@ func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParam
 		return errors.Wrap(err, "unable to encode registry data")
 	}
 	rspParams["registryData"] = string(registryData)
-
-	valuesJson, err := json.Marshal(values)
-	if err != nil {
-		return errors.Wrap(err, "unable to encode registry values")
-	}
-	rspParams["registryValues"] = string(valuesJson)
+	rspParams["registryValues"] = values
 
 	return nil
 }
@@ -257,29 +246,6 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 
 	r.Admins = string(adminsJs)
 
-	return nil
-}
-
-func (a *App) loadCIDRConfig(values *Values, rspParams gin.H) error {
-	//TODO: remove this and pass whole values yaml to edit view
-	whiteListIPDict := make(map[string][]string)
-
-	if values.Global.WhiteListIP.AdminRoutes != "" {
-		whiteListIPDict["admin"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
-	}
-	if values.Global.WhiteListIP.CitizenPortal != "" {
-		whiteListIPDict["citizen"] = strings.Split(values.Global.WhiteListIP.CitizenPortal, " ")
-	}
-	if values.Global.WhiteListIP.OfficerPortal != "" {
-		whiteListIPDict["officer"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
-	}
-
-	cidrConfig, err := json.Marshal(whiteListIPDict)
-	if err != nil {
-		return errors.Wrap(err, "unable to encode cidr to JSON")
-	}
-
-	rspParams["cidrConfig"] = string(cidrConfig)
 	return nil
 }
 

@@ -30,17 +30,6 @@ import (
 )
 
 func InitServices(cnf *config.Settings) *config.Services {
-	edpComponent := mockEdpComponent.ServiceInterface{}
-	edpComponent.On("GetAll", mock.Anything, mock.Anything).Return([]edpcomponent.EDPComponent{}, nil)
-	edpComponent.On("Get", mock.Anything, mock.Anything).Return(&edpcomponent.EDPComponent{
-		Spec: edpcomponent.EDPComponentSpec{Url: "https://example.com/foo/bar"},
-	}, nil)
-	edpComponent.On("GetAllNamespace", mock.Anything, mock.Anything, true).Return([]edpcomponent.EDPComponent{
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "mock"},
-		},
-	}, nil)
-
 	openShift := mockOpenshift.ServiceInterface{}
 	openShift.On("GetMe", mock.Anything).Return(&openshift.User{
 		Metadata: openshift.Metadata{
@@ -93,6 +82,7 @@ func initEDPComponent() *mockEdpComponent.ServiceInterface {
 	edpComponent.On("GetAllNamespace", mock.Anything, mock.Anything, true).Return([]edpcomponent.EDPComponent{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "mock"},
+			Spec:       edpcomponent.EDPComponentSpec{Url: "http://google.com"},
 		},
 	}, nil)
 	edpComponent.On("GetAllCategory", mock.Anything, mock.Anything).Return(map[string][]edpcomponent.EDPComponentItem{
@@ -208,6 +198,11 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 	mockRegistryValues := registry.Values{
 		Global: registry.Global{
 			DeploymentMode: registry.DeploymentModeDevelopment,
+			WhiteListIP: registry.WhiteListIP{
+				CitizenPortal: "192.168.1.1 18.1.1.0/32",
+				AdminRoutes:   "10.0.0.1 8.8.8.8",
+				OfficerPortal: "10.5.1.2/32 2.5.2.1",
+			},
 		},
 		Administrators: []registry.Admin{
 			{Email: "foo@bar.com"},
@@ -233,12 +228,12 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 	grService.On("GetBranchContent", "mock", "master", url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
 	grService.On("GetMergeRequestByProject", mock.Anything, cnf.ClusterCodebaseName).Return([]gerrit.GerritMergeRequest{
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr"},
+			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr", Labels: map[string]string{}},
 		},
 	}, nil)
 	grService.On("GetMergeRequestByProject", mock.Anything, "mock").Return([]gerrit.GerritMergeRequest{
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr"},
+			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr", Labels: map[string]string{}},
 		},
 	}, nil)
 	grService.On("GetProject", mock.Anything, cnf.ClusterCodebaseName).Return(&gerrit.GerritProject{

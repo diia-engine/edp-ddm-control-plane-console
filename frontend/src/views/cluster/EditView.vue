@@ -34,7 +34,7 @@ import CidrBlock from './components/CidrBlock.vue';
 import ClusterKeyBlock from './components/ClusterKeyBlock.vue';
 import ClusterKeycloakBlock from './components/ClusterKeycloakBlock.vue';
 import AdministratorModal from '@/components/AdministratorModal.vue';
-import CidrModal from '@/components/CidrModal.vue';
+import CidrModal from './components/ClusterCidrModal.vue';
 
 // eslint-disable-next-line no-useless-escape
 const hostnameRegex = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;

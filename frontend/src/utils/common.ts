@@ -20,9 +20,10 @@ export const getImageUrl = (name: string): string => {
 };
 
 export const getGerritURL = (url: string): string => {
-    return `${url}dashboard/self`;
+    //TODO: need to be link to specific repo
+    return `${url}/dashboard/self`;
 };
 
 export const getJenkinsURL = (url: string, codebaseName: string, branchName: string): string => {
-    return `${url}job${codebaseName}/view/${branchName.toLocaleUpperCase()}`;
+    return `${url}/job/${codebaseName}/view/${branchName.toLocaleUpperCase()}`;
 };

@@ -143,7 +143,6 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		"model":                registry{KeyDeviceType: KeyDeviceTypeFile},
 		"hwINITemplateContent": hwINITemplateContent,
 		"smtpConfig":           "{}",
-		"cidrConfig":           "{}",
 		"action":               "create",
 		"registryData":         "{}",
 		"keycloakHostname":     keycloakHostname,

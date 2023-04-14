@@ -884,19 +884,19 @@ export default {
                     <div class="rg-info-line-horizontal" v-if="officerCIDR">
                         <span>CIDR для портала чиновника</span>
                         <span class="cidr-values">
-                            <div class="view-cidr" v-for="(_, index) in officerCIDR" :key="index">.</div>
+                            <div class="view-cidr" v-for="cidr in officerCIDR" :key="cidr">{{ cidr }}</div>
                         </span>
                     </div>
                     <div class="rg-info-line-horizontal" v-if="citizenCIDR">
                         <span>CIDR для портала громадянина</span>
                         <span class="cidr-values">
-                            <div class="view-cidr" v-for="(_, index) in citizenCIDR" :key="index">.</div>
+                            <div class="view-cidr" v-for="cidr in citizenCIDR" :key="cidr">{{ cidr }}</div>
                         </span>
                     </div>
                     <div class="rg-info-line-horizontal" v-if="adminCIDR">
                         <span>CIDR для адміністративних компонент</span>
                         <span class="cidr-values">
-                            <div class="view-cidr" v-for="(_, index) in adminCIDR" :key="index">.</div>
+                            <div class="view-cidr" v-for="cidr in adminCIDR" :key="cidr">{{ cidr }}</div>
                         </span>
                     </div>
                 </div>
