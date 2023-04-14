@@ -135,19 +135,28 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		return nil, fmt.Errorf("unable to load keycloak hostnames, %w", err)
 	}
 
-	return router.MakeHTMLResponse(200, "registry/create.html", gin.H{
-		"dnsManual":            dnsManual,
-		"page":                 "registry",
-		"gerritProjects":       prjs,
-		"gerritBranches":       gerritBranches,
-		"model":                registry{KeyDeviceType: KeyDeviceTypeFile},
-		"hwINITemplateContent": hwINITemplateContent,
-		"smtpConfig":           "{}",
-		"action":               "create",
-		"registryData":         "{}",
-		"keycloakHostname":     keycloakHostname,
-		"keycloakHostnames":    keycloakHostnames,
-	}), nil
+    responseParams := gin.H{
+        "dnsManual":            dnsManual,
+        "page":                 "registry",
+        "gerritProjects":       prjs,
+        "gerritBranches":       gerritBranches,
+        "model":                registry{KeyDeviceType: KeyDeviceTypeFile},
+        "hwINITemplateContent": hwINITemplateContent,
+        "smtpConfig":           "{}",
+        "action":               "create",
+        "registryData":         "{}",
+        "keycloakHostname":     keycloakHostname,
+        "keycloakHostnames":    keycloakHostnames,
+    }
+
+    templateArgs, templateErr := json.Marshal(responseParams)
+    if templateErr != nil {
+        return nil, errors.Wrap(templateErr, "unable to encode template arguments")
+    }
+
+    responseParams["templateArgs"] = string(templateArgs)
+
+	return router.MakeHTMLResponse(200, "registry/create.html", responseParams), nil
 }
 
 func (a *App) getDNSManualURL(ctx context.Context) (string, error) {

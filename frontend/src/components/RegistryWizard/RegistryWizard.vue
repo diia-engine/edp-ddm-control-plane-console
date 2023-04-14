@@ -111,8 +111,8 @@ export default defineComponent({
                         <select name="registry-git-template" id="registry-git-template"
                                 v-model="pageRoot.$data.wizard.tabs.template.registryTemplate" @change="pageRoot.changeTemplateProject">
                             <option></option>
-                            <option v-for="project in templateVariables.gerritProjects" :selected="project.Spec.Name === templateVariables.model.RegistryGitTemplate" v-bind:key="project.Spec.Name">
-                                {{project.Spec.Name}}
+                            <option v-for="project in templateVariables.gerritProjects" :selected="project.spec.name === templateVariables.model.RegistryGitTemplate" v-bind:key="project.spec.name">
+                                {{project.spec.name}}
                             </option>
                         </select>
                         <span v-if="pageRoot.$data.wizard.tabs.template.templateRequiredError">Обов’язкове поле</span>

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import RegistryEditView from '@/views/registry/RegistryEditView.vue';
+import RegistryCreateView from '@/views/registry/RegistryCreateView.vue';
 import DashboardView from '@/views/DashboardView.vue';
 import UpdateRegistry from '@/views/registry/UpdateView.vue';
 import RegistryView from '@/views/registry/RegistryView.vue';
@@ -38,6 +39,11 @@ const router = createRouter({
       path: '/admin/registry/edit/:name',
       name: 'registry-edit',
       component: RegistryEditView
+    },
+    {
+      path: '/admin/registry/create',
+      name: 'registry-create',
+      component: RegistryCreateView
     },
   ]
 });
