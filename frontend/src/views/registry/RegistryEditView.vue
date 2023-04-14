@@ -1,30 +1,17 @@
 <script lang="ts">
 /* eslint-disable no-prototype-builtins */
+import { defineComponent } from 'vue';
 import axios from 'axios';
 import $ from 'jquery';
 import Mustache from 'mustache';
 import { parseCronExpression } from 'cron-schedule';
 import RegistryWizard from '../../components/RegistryWizard/RegistryWizard.vue';
 import AdministratorModal from '../../components/AdministratorModal.vue';
-import {defineComponent} from 'vue';
 
 const hostnameRegex = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$/;
 
 export default defineComponent({
     expose: [
-        'editClusterKeycloakDNSHost',
-        'clusterKeycloakDNSCustomHosts',
-        'submitKeycloakDNSForm',
-        'clusterKeycloakDNSCertSelected',
-        'resetClusterKeycloakDNSForm',
-        'showClusterKeycloakDNSForm',
-        'hideClusterCheckKeycloakDNS',
-        'hideClusterKeycloakDNSForm',
-        'hideCheckClusterDeleteKeycloakDNS',
-        'checkClusterDeleteKeycloakDNS',
-        'deleteClusterKeycloakDNS',
-        'addClusterKeycloakDNS',
-        'localePEMError',
         'wizardCronExpressionChange',
         'wizardSupAuthFlowChange',
         'loadRegistryValues',
@@ -41,7 +28,6 @@ export default defineComponent({
         'dnsPreloadDataFromValues',
         'wizardPrev',
         'selectWizardTab',
-        'selectClusterSettingsTab',
         'wizardTabChanged',
         'wizardEmptyValidation',
         'wizardGeneralValidation',
@@ -54,7 +40,6 @@ export default defineComponent({
         'wizardAdministratorsValidation',
         'wizardTemplateValidation',
         'wizardMailValidation',
-        'clusterKeyFormSubmit',
         'keyFormValidation',
         'wizardKeyValidation',
         'renderINITemplate',
@@ -254,44 +239,6 @@ export default defineComponent({
                     confirmation: { title: "Підтвердження", validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
-            clusterSettings: {
-                activeTab: "administrators",
-                tabs: [
-                    {
-                        key: "administrators",
-                        title: "Адміністратори"
-                    },
-                    {
-                        key: "backup",
-                        title: "Резервне копіювання"
-                    },
-                    {
-                        key: "allowedCIDR",
-                        title: "Дозволені CIDR"
-                    },
-                    {
-                        key: "dataAboutKey",
-                        title: "Дані про ключ"
-                    },
-                    {
-                        key: "keycloakDNS",
-                        title: "Keycloak DNS"
-                    },
-                ],
-                keycloak: {
-                    editDisabled: false,
-                    deleteHostname: '',
-                    editHostname: "",
-                    editCertPath: "",
-                    submitInput: "",
-                    hostname: "",
-                    formShow: false,
-                    hostnameError: "",
-                    fileSelected: false,
-                    pemError: "",
-                    existHostname: '',
-                },
-            },
         } as any;
     },
     methods: {
@@ -308,166 +255,6 @@ export default defineComponent({
                 ...(wizardRefs.recipientAuthTab?.$refs || {}),
                 ...(wizardRefs.backupScheduleTab?.$refs || {}),
             };
-        },
-        editClusterKeycloakDNSHost(hostname: string, certificatePath: string, e: any) {
-            e.preventDefault();
-            this.clusterSettings.keycloak.editHostname = hostname;
-            this.clusterSettings.keycloak.editCertificatePath = certificatePath;
-            this.clusterSettings.keycloak.hostname = hostname;
-            this.backdropShow = true;
-            this.clusterSettings.keycloak.formShow = true;
-            this.clusterSettings.keycloak.fileSelected = true;
-            this.clusterSettings.keycloak.editDisabled = true;
-
-            let $this = this;
-            axios.get(`/admin/cluster/check-keycloak-hostname/${hostname}`)
-                .then(function (response) {
-                  $this.clusterSettings.keycloak.editDisabled = false;
-                });
-        },
-        clusterKeycloakDNSCustomHosts() {
-            if (this.registryValues === null) {
-                return [];
-            }
-            return this.registryValues.keycloak.customHosts;
-        },
-        submitKeycloakDNSForm(e: any) {
-            this.clusterSettings.keycloak.submitInput = JSON.stringify(this.registryValues.keycloak.customHosts);
-        },
-        clusterKeycloakDNSCertSelected(e: any) {
-            e.preventDefault();
-            this.clusterSettings.keycloak.fileSelected = true;
-            this.clusterSettings.keycloak.pemError = "";
-        },
-        resetClusterKeycloakDNSForm(e: any) {
-            e.preventDefault();
-            this.clusterSettings.keycloak.fileSelected = false;
-            this.clusterSettings.keycloak.pemError = "";
-        },
-        showClusterKeycloakDNSForm(e: any) {
-            e.preventDefault();
-            this.backdropShow = true;
-            this.clusterSettings.keycloak.editDisabled = false;
-            this.clusterSettings.keycloak.editHostname = '';
-            this.clusterSettings.keycloak.formShow = true;
-            this.clusterSettings.keycloak.fileSelected = false;
-            this.clusterSettings.keycloak.hostname = "";
-        },
-        hideClusterCheckKeycloakDNS(e: any) {
-          e.preventDefault();
-          this.backdropShow = false;
-          this.clusterSettings.keycloak.existHostname = '';
-        },
-        hideClusterKeycloakDNSForm(e: any) {
-            e.preventDefault();
-            this.backdropShow = false;
-            this.clusterSettings.keycloak.formShow = false;
-        },
-        hideCheckClusterDeleteKeycloakDNS(e: any) {
-          e.preventDefault();
-          this.clusterSettings.keycloak.deleteHostname = '';
-          this.backdropShow = false;
-        },
-        checkClusterDeleteKeycloakDNS(hostname: string, e: any){
-          e.preventDefault();
-
-          this.backdropShow = true;
-          let $this = this;
-          axios.get(`/admin/cluster/check-keycloak-hostname/${hostname}`)
-              .then(function (response) {
-                $this.clusterSettings.keycloak.deleteHostname = hostname;
-              })
-              .catch(function (error) {
-                $this.clusterSettings.keycloak.existHostname = hostname;
-              });
-        },
-        deleteClusterKeycloakDNS(hostname: string, e: any) {
-            e.preventDefault();
-            this.registryValues.keycloak.customHosts = this.registryValues.keycloak.customHosts.filter((i: any) => i.host !== hostname);
-            this.clusterSettings.keycloak.deleteHostname = '';
-            this.backdropShow = false;
-        },
-        addClusterKeycloakDNS(e: any) {
-            const childRefs = this.getChildrenRefs();
-            e.preventDefault();
-            this.clusterSettings.keycloak.hostnameError = "";
-            this.clusterSettings.keycloak.pemError = "";
-            if (this.clusterSettings.keycloak.hostname === "") {
-                this.clusterSettings.keycloak.hostnameError = "Поле обов’язкове для заповнення";
-                return;
-            }
-            if (!hostnameRegex.test(this.clusterSettings.keycloak.hostname)) {
-                this.clusterSettings.keycloak.hostnameError = "Перевірте формат поля";
-                return;
-            }
-            for (let i = 0; i < this.registryValues.keycloak.customHosts.length; i++) {
-                if (this.registryValues.keycloak.customHosts[i].host === this.clusterSettings.keycloak.hostname &&
-                    this.clusterSettings.keycloak.hostname !== this.clusterSettings.keycloak.editHostname) {
-                    this.clusterSettings.keycloak.hostnameError = "Така назва вже використовується";
-                    return;
-                }
-            }
-            if (this.clusterSettings.keycloak.fileSelected === false) {
-                this.clusterSettings.keycloak.pemError = "Поле обов’язкове для заповнення";
-                return;
-            }
-            if (childRefs.clusterKeycloakDNS.files.length > 0) {
-                let formData = new FormData();
-                formData.append("file", childRefs.clusterKeycloakDNS.files[0]);
-                formData.append("hostname", this.clusterSettings.keycloak.hostname);
-                let $this = this;
-                axios.post("/admin/cluster/upload-pem-dns", formData, {
-                    headers: {
-                        "Content-Type": "multipart/form-data"
-                    }
-                }).then(function (rsp) {
-                    if ($this.clusterSettings.keycloak.editHostname === "") {
-                        $this.registryValues.keycloak.customHosts.push({
-                            host: $this.clusterSettings.keycloak.hostname,
-                            certificatePath: rsp.data,
-                        });
-                    }
-                    else {
-                        for (let i = 0; i < $this.registryValues.keycloak.customHosts.length; i++) {
-                            if ($this.registryValues.keycloak.customHosts[i].host === $this.clusterSettings.keycloak.editHostname) {
-                                $this.registryValues.keycloak.customHosts[i].host = $this.clusterSettings.keycloak.hostname;
-                                $this.registryValues.keycloak.customHosts[i].certificatePath = rsp.data;
-                            }
-                        }
-                    }
-                    $this.backdropShow = false;
-                    $this.clusterSettings.keycloak.formShow = false;
-                    $this.clusterSettings.keycloak.editHostname = "";
-                }).catch(function (error) {
-                    $this.clusterSettings.keycloak.pemError = $this.localePEMError(error.response.data);
-                });
-            }
-            else {
-                for (let i = 0; i < this.registryValues.keycloak.customHosts.length; i++) {
-                    if (this.registryValues.keycloak.customHosts[i].host === this.clusterSettings.keycloak.editHostname) {
-                        this.registryValues.keycloak.customHosts[i].host = this.clusterSettings.keycloak.hostname;
-                    }
-                }
-                this.backdropShow = false;
-                this.clusterSettings.keycloak.formShow = false;
-                this.clusterSettings.keycloak.editHostname = "";
-            }
-        },
-        localePEMError(message: string) {
-            const messages = {
-                "found in PEM file": "Перевірте формат файла",
-                "certificate has expired or is not yet valid": "Сертифікат застарілий",
-                "certificate is valid for": "Сертифікат не відповідає доменному імені",
-            } as Record<string, unknown>;
-            if (messages.hasOwnProperty(message)) {
-                return messages[message];
-            }
-            for (let m in messages) {
-                if (message.indexOf(m) !== -1) {
-                    return messages[m];
-                }
-            }
-            return message;
         },
         wizardCronExpressionChange(e: any) {
             let bs = this.wizard.tabs.backupSchedule;
@@ -728,10 +515,6 @@ export default defineComponent({
                 wizard.activeTab = tabName;
             });
         },
-        selectClusterSettingsTab(tabName: string, e: any) {
-            e.preventDefault();
-            this.clusterSettings.activeTab = tabName;
-        },
         wizardTabChanged(tabName: string) {
             this.wizard.tabs[tabName].changed = true;
         },
@@ -990,12 +773,6 @@ export default defineComponent({
                 resolve();
             });
         },
-        clusterKeyFormSubmit(e: any) {
-            if (!this.keyFormValidation(this.wizard.tabs.key, function () {
-            })) {
-                e.preventDefault();
-            }
-        },
         keyFormValidation(tab: any, resolve: () => void) {
             const childRefs = this.getChildrenRefs();
             if (this.wizard.registryAction === "edit" && !this.wizard.tabs.key.changed) {
@@ -1216,10 +993,9 @@ export default defineComponent({
             this.adminsValue = JSON.stringify(this.admins);
             this.adminsChanged = true;
         },
-        createAdmin(e: any) {
+        createAdmin() {
             this.requiredError = false;
             this.emailFormatError = false;
-            e.preventDefault();
             for (let v in this.editAdmin) {
                 if (this.editAdmin[v] === "") {
                     this.requiredError = true;

@@ -1,34 +1,37 @@
 <script setup lang="ts">
   import { inject } from 'vue';
-  import RegistryBackupSchedule from './steps/RegistryBackupSchedule.vue';
-  import RegistryCidr from './steps/RegistryCidr.vue';
-  import RegistryDns from './steps/RegistryDns.vue';
-  import RegistryResources from './steps/RegistryResources.vue';
-  import RegistrySmtp from './steps/RegistrySmtp.vue';
-  import RegistrySupplierAuth from './steps/RegistrySupplierAuth.vue';
-  import RegistryRecipientAuth from './steps/RegistryRecipientAuth.vue';
-  import KeyForm from '../KeyForm.vue';
   const templateVariables = inject('TEMPLATE_VARIABLES') as any;
 </script>
 
 <script lang="ts">
-export default {
+import { defineComponent } from 'vue';
+
+import RegistryBackupSchedule from './steps/RegistryBackupSchedule.vue';
+import RegistryCidr from './steps/RegistryCidr.vue';
+import RegistryDns from './steps/RegistryDns.vue';
+import RegistryResources from './steps/RegistryResources.vue';
+import RegistrySmtp from './steps/RegistrySmtp.vue';
+import RegistrySupplierAuth from './steps/RegistrySupplierAuth.vue';
+import RegistryRecipientAuth from './steps/RegistryRecipientAuth.vue';
+import KeyForm from '../KeyForm.vue';
+
+export default defineComponent({
     data() {
         return {
             pageRoot: this.$parent as any,
         };
     },
     components: {
-    RegistrySmtp,
-    RegistryResources,
-    RegistryDns,
-    RegistryCidr,
-    RegistrySupplierAuth,
-    RegistryBackupSchedule,
-    RegistryRecipientAuth,
-    KeyForm,
-}
-};
+      RegistrySmtp,
+      RegistryResources,
+      RegistryDns,
+      RegistryCidr,
+      RegistrySupplierAuth,
+      RegistryBackupSchedule,
+      RegistryRecipientAuth,
+      KeyForm,
+    },
+});
 </script>
 
 <template>
