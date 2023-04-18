@@ -55,7 +55,7 @@ type Settings struct {
 	VaultOfficerSSLPath                   string `encvonfig:"V_SSL_CITIZEN_PATH" default:"custom-dns-names/{registry}/officer-portal/{host}"`
 	VaultKeycloakSSLPath                  string `encvonfig:"V_SSL_KEYCLOAK_PATH" default:"custom-dns-names/{registry}/officer-portal/{host}"`
 	TempFolder                            string `envconfig:"TEMP_FOLDER" default:"/tmp"`
-	RegistryDNSManualPath                 string `envconfig:"REGISTRY_DNS_MANUAL_PATH" default:"platform/1.6/tech/infrastructure/custom-dns.html"`
+	RegistryDNSManualPath                 string `envconfig:"REGISTRY_DNS_MANUAL_PATH" default:"platform/1.9.4/arch/architecture/platform/administrative/control-plane/keycloak-custom-url.html#_keycloak_dns""`
 	DDMManualEDPComponent                 string `envconfig:"DDM_MANUAL_EDP_COMPONENT" default:"ddm-architecture"`
 	OAuthUseExternalTokenURL              bool   `envconfig:"OAUTH_USE_EXTERNAL_TOKEN_URL"`
 	OAuthInternalTokenHost                string `envconfig:"OAUTH_INTERNAL_TOKEN_HOST" default:"oauth-openshift.openshift-authentication.svc"`
