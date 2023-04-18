@@ -25,5 +25,7 @@ func (cnf *Settings) ClusterConfig() cluster.Config {
 		HardwareINITemplatePath:       cnf.RegistryHardwareKeyINITemplatePath,
 		TempFolder:                    cnf.TempFolder,
 		KeycloakDefaultHostname:       cnf.KeycloakDefaultHostname,
+		DDMManualEDPComponent:         cnf.DDMManualEDPComponent,
+		RegistryDNSManualPath:         cnf.RegistryDNSManualPath,
 	}
 }

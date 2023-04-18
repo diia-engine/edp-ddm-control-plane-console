@@ -46,6 +46,8 @@ type Config struct {
 	HardwareINITemplatePath       string
 	TempFolder                    string
 	KeycloakDefaultHostname       string
+	DDMManualEDPComponent         string
+	RegistryDNSManualPath         string
 }
 
 type App struct {

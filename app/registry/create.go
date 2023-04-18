@@ -4,6 +4,7 @@ import (
 	"context"
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
+	edpComponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/k8s"
 	"ddm-admin-console/service/vault"
@@ -151,24 +152,28 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 	}), nil
 }
 
-func (a *App) getDNSManualURL(ctx context.Context) (string, error) {
-	com, err := a.EDPComponent.Get(ctx, a.Config.DDMManualEDPComponent)
+func GetManualURL(ctx context.Context, edpComponentService edpComponent.ServiceInterface, ddmManualComponent, manualPath string) (string, error) {
+	com, err := edpComponentService.Get(ctx, ddmManualComponent)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
 			return "", nil
 		}
 
-		return "", errors.Wrap(err, "unable to get edp component")
+		return "", fmt.Errorf("unable to get edp component, %w", err)
 	}
 
 	u, err := url.Parse(com.Spec.Url)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to parse url")
+		return "", fmt.Errorf("unable to parse url, %w", err)
 	}
 
-	u.Path = path.Join(u.Path, a.Config.RegistryDNSManualPath)
+	u.Path = path.Join(u.Path, manualPath)
 
 	return u.String(), nil
+}
+
+func (a *App) getDNSManualURL(ctx context.Context) (string, error) {
+	return GetManualURL(ctx, a.EDPComponent, a.Config.DDMManualEDPComponent, a.Config.RegistryDNSManualPath)
 }
 
 func headsCount(refs []string) int {
