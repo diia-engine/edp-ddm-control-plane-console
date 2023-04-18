@@ -59,6 +59,7 @@ type registry struct {
 	CronScheduleDays       string   `form:"cron-schedule-days"`
 	KeycloakCustomHostname string   `form:"keycloak-custom-hostname"`
 	EDRCheckEnabled        string   `form:"edr-check-enabled"`
+	TrembitaIPList         string   `form:"trembita-ip-list"`
 }
 
 func (r *registry) KeysRequired() bool {

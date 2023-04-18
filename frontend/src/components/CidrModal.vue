@@ -5,18 +5,14 @@ import {defineComponent} from 'vue';
 export default defineComponent({
     props: {
       cidrPopupShow: Boolean,
-      currentCIDR: Array,
-      currentCIDRValue: Object,
-      cidrChanged: Boolean,
+      title: String,
+      subTitle: String,
     },
-    emits: ['update:cidrPopupShow', 'update:currentCIDR', 'update:currentCIDRValue', 'update:cidrChanged'],
     data() {
         return {
             disabled: false,
             editCIDR: '',
             cidrFormatError: false,
-            dataCurrentCIDR: this.currentCIDR,
-            dataCurrentCIDRValue: this.currentCIDRValue,
         };
     },
     methods: {
@@ -29,17 +25,8 @@ export default defineComponent({
               return;
             }
 
-
-            this.dataCurrentCIDR?.push(this.editCIDR);
-            this.$emit('update:currentCIDR', this.dataCurrentCIDR);
-
-            if (this.dataCurrentCIDRValue) {
-              this.dataCurrentCIDRValue.value = JSON.stringify(this.dataCurrentCIDR);
-              this.$emit('update:currentCIDRValue', this.dataCurrentCIDRValue);
-            }
-
+            this.$emit('cidrAdded', this.editCIDR);
             this.hideCIDRForm();
-            this.$emit('update:cidrChanged', true);
         },
         hideCIDRForm() {
             this.$emit('update:cidrPopupShow', false);
@@ -48,6 +35,7 @@ export default defineComponent({
     },
     watch: {
         cidrPopupShow() {
+            this.cidrFormatError = false;
             this.disabled = false;
             this.editCIDR = '';
         }
@@ -58,8 +46,9 @@ export default defineComponent({
 <template>
     <div class="popup-backdrop visible" v-cloak v-if="cidrPopupShow"></div>
     <div class="popup-window admin-window visible" v-cloak v-if="cidrPopupShow">
+
         <div class="popup-header">
-            <p>Додати CIDR</p>
+            <p>{{ title }}</p>
             <a href="#" @click.stop.prevent="hideCIDRForm" class="popup-close hide-popup">
                 <img alt="close popup window" src="@/assets/img/close.png" />
             </a>
@@ -68,14 +57,14 @@ export default defineComponent({
             <div class="popup-body">
                 <p class="popup-error" v-cloak v-if="cidrFormatError">Перевірте формат IP-адреси</p>
                 <div class="rc-form-group">
-                    <label for="cidr-value">IP-адреси та маски</label>
+                    <label for="cidr-value">{{ subTitle }}</label>
                     <input id="cidr-value" type="text" v-model="editCIDR" />
                     <p>Допустимі символи "0-9", "/", ".". Приклад: 172.16.0.0/12.</p>
                 </div>
             </div>
             <div class="popup-footer active">
                 <a href="#" id="cidr-cancel" class="hide-popup" @click="hideCIDRForm">відмінити</a>
-                <button value="submit" name="cidr-apply" type="submit"
+                <button class="submit-green" value="submit" name="cidr-apply" type="submit"
                     :disabled="disabled && !cidrFormatError">Підтвердити</button>
             </div>
         </form>

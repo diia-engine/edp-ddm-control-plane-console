@@ -13,6 +13,7 @@ import RegistryResources from './steps/RegistryResources.vue';
 import RegistrySmtp from './steps/RegistrySmtp.vue';
 import RegistrySupplierAuth from './steps/RegistrySupplierAuth.vue';
 import RegistryRecipientAuth from './steps/RegistryRecipientAuth.vue';
+import RegistryTrembita from './steps/RegistryTrembita.vue';
 import KeyForm from '../KeyForm.vue';
 
 export default defineComponent({
@@ -159,6 +160,9 @@ export default defineComponent({
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'backupSchedule'">
                   <RegistryBackupSchedule ref="backupScheduleTab" />
                 </div>
+              <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'trembita'">
+                <RegistryTrembita />
+              </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'confirmation'">
                     <h2>Підтвердження</h2>
                     <p>Усе готово для створення реєстру. Ви можете перевірити внесені дані або натисніть "Створити реєстр".</p>

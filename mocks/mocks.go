@@ -211,6 +211,8 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 			CustomHost: "foo.bar.com",
 		},
 		Trembita: registry.Trembita{
+			IPList: []string{"8.8.8.8", "9.9.9.9", "10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4", "10.0.0.5",
+				"10.0.0.6", "10.0.0.7"},
 			Registries: map[string]registry.TrembitaRegistry{
 				"test": {
 					Mock: true,

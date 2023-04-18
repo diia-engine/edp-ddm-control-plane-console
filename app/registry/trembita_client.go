@@ -2,6 +2,7 @@ package registry
 
 import (
 	"ddm-admin-console/router"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -241,4 +242,19 @@ func (a *App) checkTrembitaClientExists(ctx *gin.Context) (rsp router.Response, 
 	}
 
 	return router.MakeStatusResponse(http.StatusNotFound), nil
+}
+
+func (a *App) prepareTrembitaIPList(ctx *gin.Context, r *registry, values *Values,
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	if r.TrembitaIPList != "" {
+		var ipList []string
+		if err := json.Unmarshal([]byte(r.TrembitaIPList), &ipList); err != nil {
+			return fmt.Errorf("unable to decode trembita ip list %w", err)
+		}
+
+		values.Trembita.IPList = ipList
+		values.OriginalYaml[trembitaValuesKey] = values.Trembita
+	}
+
+	return nil
 }

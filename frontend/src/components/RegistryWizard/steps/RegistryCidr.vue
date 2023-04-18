@@ -36,7 +36,7 @@ export default defineComponent({
       citizenCIDR: [],
       adminCIDRValue: { value: '' },
       adminCIDR: [],
-      currentCIDR: [],
+      currentCIDR: [] as Array<string>,
       currentCIDRValue: {},
       cidrPopupShow: false,
     };
@@ -47,6 +47,11 @@ export default defineComponent({
       $("body").css("overflow", "hidden");
       this.currentCIDR = cidr;
       this.currentCIDRValue = value;
+    },
+    onCidrAdded(cidr: string) {
+      this.currentCIDR.push(cidr);
+      this.currentCIDRValue = {value: JSON.stringify(this.currentCIDR)};
+      this.cidrChanged = true;
     },
     deleteCIDR(c: any, cidr: any, value: any) {
       for (let v in cidr) {
@@ -112,8 +117,8 @@ export default defineComponent({
 
   <cidr-modal
       v-model:cidr-popup-show="cidrPopupShow"
-      v-model:currentCIDR="currentCIDR"
-      v-model:currentCIDRValue="currentCIDRValue"
-      v-model:cidr-changed="cidrChanged"
+      title="Додати CIDR"
+      sub-title="IP-адреси та маски"
+     @cidrAdded="onCidrAdded"
   />
 </template>

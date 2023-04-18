@@ -231,6 +231,11 @@ export default defineComponent({
             },
             nextDates: [],
           },
+          trembita: {
+            title: "ШБО Трембіта",
+            visible: true,
+            validator: this.wizardEmptyValidation,
+          },
           confirmation: { title: "Підтвердження", validated: true, visible: true, validator: this.wizardEmptyValidation, }
         },
       },

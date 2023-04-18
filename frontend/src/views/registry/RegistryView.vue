@@ -1615,9 +1615,9 @@ export default {
                                 <td>{{ getMergeRequestAction($al) }}</td>
                                 <td class="mr-status">{{ getMergeRequestStatus($al) }}</td>
                                 <td class="mr-actions">
-                                    <i v-if="!mrAvailable" title="Реєстр в процесі оновлення" class="fa-solid fa-lock"></i>
+                                    <i v-if="!mrAvailable && $al.status.value === 'NEW'" title="Реєстр в процесі оновлення" class="fa-solid fa-lock"></i>
 
-                                    <span v-if="$al.status.changeUrl && mrAvailable">
+                                    <span v-if="$al.status.changeUrl && (mrAvailable || $al.status.value !== 'NEW')">
                                         <a title="Переглянути"
                                             @click="showMrView(`/admin/change/${$al.status.changeId}`, $event)"
                                             :href="`/admin/change/${$al.status.changeId}`">
