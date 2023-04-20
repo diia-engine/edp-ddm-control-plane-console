@@ -176,8 +176,14 @@ func GetManualURL(ctx context.Context, edpComponentService edpComponent.ServiceI
 		return "", fmt.Errorf("unable to parse url, %w", err)
 	}
 
-	u.Path = path.Join(u.Path, manualPath)
+	if strings.Contains(manualPath, "#") {
+		parts := strings.Split(manualPath, "#")
+		manualPath = parts[0]
+		u.Path = path.Join(u.Path, manualPath)
+		return fmt.Sprintf("%s#%s", u.String(), parts[1]), nil
+	}
 
+	u.Path = path.Join(u.Path, manualPath)
 	return u.String(), nil
 }
 
