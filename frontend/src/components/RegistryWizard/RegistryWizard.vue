@@ -13,13 +13,19 @@ import RegistryResources from './steps/RegistryResources.vue';
 import RegistrySmtp from './steps/RegistrySmtp.vue';
 import RegistrySupplierAuth from './steps/RegistrySupplierAuth.vue';
 import RegistryRecipientAuth from './steps/RegistryRecipientAuth.vue';
+import RegistryTemplate from './steps/RegistryTemplate.vue';
 import RegistryTrembita from './steps/RegistryTrembita.vue';
 import KeyForm from '../KeyForm.vue';
 
 export default defineComponent({
+    props: {
+      formSubmitted: Boolean,
+    },
     data() {
         return {
             pageRoot: this.$parent as any,
+            templatePreloadedData: {},
+            parentFormSubmitted: false,
         };
     },
     components: {
@@ -31,6 +37,18 @@ export default defineComponent({
       RegistryBackupSchedule,
       RegistryRecipientAuth,
       KeyForm,
+      RegistryTemplate,
+      RegistryTrembita,
+    },
+    watch: {
+      formSubmitted() {
+        this.parentFormSubmitted = this.formSubmitted;
+      },
+    },
+    methods: {
+      onPreloadTemplateData(data: any) {
+        this.templatePreloadedData = data;
+      },
     },
 });
 </script>
@@ -103,29 +121,8 @@ export default defineComponent({
                     </div>
                 </div>
                 <div v-if="templateVariables.action === 'create'" class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'template'">
-                    <h2>Налаштування шаблону реєстру</h2>
-                    <input type="hidden" id="preload-registry-branches" ref="registryBranches"
-                        :value="templateVariables.gerritBranches" />
-                    <div class="rc-form-group"
-                        :class="{'error': pageRoot.$data.wizard.tabs.template.templateRequiredError}">
-                        <label for="registry-git-template">Шаблон реєстру</label>
-                        <select name="registry-git-template" id="registry-git-template"
-                                v-model="pageRoot.$data.wizard.tabs.template.registryTemplate" @change="pageRoot.changeTemplateProject">
-                            <option></option>
-                            <option v-for="project in templateVariables.gerritProjects" :selected="project.spec.name === templateVariables.model.RegistryGitTemplate" v-bind:key="project.spec.name">
-                                {{project.spec.name}}
-                            </option>
-                        </select>
-                        <span v-if="pageRoot.$data.wizard.tabs.template.templateRequiredError">Обов’язкове поле</span>
-                    </div>
-                    <div class="rc-form-group"
-                        :class="{'error': pageRoot.$data.wizard.tabs.template.branchRequiredError}">
-                        <label for="registry-git-branch">Гілка шаблону реєстру</label>
-                        <select name="registry-git-branch" id="registry-git-branch" v-model="pageRoot.$data.wizard.tabs.template.registryBranch">
-                            <option v-for="branch in pageRoot.$data.wizard.tabs.template.branches" v-bind:key="branch">{{ branch }}</option>
-                        </select>
-                        <span v-if="pageRoot.$data.wizard.tabs.template.branchRequiredError">Обов’язкове поле</span>
-                    </div>
+                    <RegistryTemplate ref="templateTab" @preload-template-data="onPreloadTemplateData"
+                                      :template-variables="templateVariables" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'mail'">
                     <RegistrySmtp ref="smtpTab" />
@@ -143,7 +140,8 @@ export default defineComponent({
                     />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'resources'">
-                    <RegistryResources ref="resourcesTab" />
+                    <RegistryResources ref="resourcesTab" :template-preloaded-data="templatePreloadedData"
+                    :form-submitted="parentFormSubmitted" :template-variables="templateVariables" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'dns'">
                     <RegistryDns ref="dnsTab" />

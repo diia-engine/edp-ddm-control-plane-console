@@ -4,6 +4,7 @@ import "fmt"
 
 const (
 	DeploymentModeDevelopment = "development"
+	GlobalValuesIndex         = "global"
 )
 
 type Values struct {
@@ -15,6 +16,20 @@ type Values struct {
 	Keycloak        Keycloak                  `yaml:"keycloak" json:"keycloak"`
 	Portals         Portals                   `yaml:"portals" json:"portals"`
 	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
+}
+
+type CrunchyPostgres struct {
+	CrunchyPostgresPostgresql CrunchyPostgresPostgresql `yaml:"postgresql" json:"postgresql"`
+	StorageSize               string                    `yaml:"storageSize" json:"storageSize"`
+	Backups                   interface{}               `yaml:"backups" json:"-"`
+}
+
+type CrunchyPostgresPostgresql struct {
+	CrunchyPostgresPostgresqlParameters CrunchyPostgresPostgresqlParameters `yaml:"parameters" json:"parameters"`
+}
+
+type CrunchyPostgresPostgresqlParameters struct {
+	MaxConnections int `yaml:"max_connections" json:"max_connections"`
 }
 
 type Portals struct {
@@ -115,10 +130,12 @@ func (e ExternalSystem) FaStatus() string {
 }
 
 type Global struct {
-	WhiteListIP    WhiteListIP    `json:"whiteListIP" yaml:"whiteListIP"`
-	Notifications  Notifications  `json:"notifications" yaml:"notifications"`
-	RegistryBackup RegistryBackup `yaml:"registryBackup" json:"registryBackup"`
-	DeploymentMode string         `yaml:"deploymentMode" json:"deploymentMode"`
+	WhiteListIP     WhiteListIP            `json:"whiteListIP" yaml:"whiteListIP"`
+	Notifications   Notifications          `json:"notifications" yaml:"notifications"`
+	RegistryBackup  RegistryBackup         `yaml:"registryBackup" json:"registryBackup"`
+	DeploymentMode  string                 `yaml:"deploymentMode" json:"deploymentMode"`
+	CrunchyPostgres CrunchyPostgres        `yaml:"crunchyPostgres" json:"crunchyPostgres"`
+	Registry        map[string]interface{} `yaml:"registry" json:"registry"`
 }
 
 type WhiteListIP struct {

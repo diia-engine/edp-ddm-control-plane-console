@@ -623,21 +623,19 @@ export default {
             this.clusterSettings.keycloak.fileSelected = true;
             this.clusterSettings.keycloak.editDisabled = true;
 
-            let $this = this;
             axios.get(`/admin/cluster/check-keycloak-hostname/${hostname}`)
-                .then(function () {
-                    $this.clusterSettings.keycloak.editDisabled = false;
+                .then(() => {
+                    this.clusterSettings.keycloak.editDisabled = false;
                 });
         },
         checkClusterDeleteKeycloakDNS(hostname: string) {
             this.backdropShow = true;
-            let $this = this;
             axios.get(`/admin/cluster/check-keycloak-hostname/${hostname}`)
-                .then(function () {
-                    $this.clusterSettings.keycloak.deleteHostname = hostname;
+                .then(() => {
+                    this.clusterSettings.keycloak.deleteHostname = hostname;
                 })
-                .catch(function () {
-                    $this.clusterSettings.keycloak.existHostname = hostname;
+                .catch(() => {
+                    this.clusterSettings.keycloak.existHostname = hostname;
                 });
         },
         showClusterKeycloakDNSForm() {
@@ -699,32 +697,31 @@ export default {
                 let formData = new FormData();
                 formData.append("file", ref.files[0]);
                 formData.append("hostname", this.clusterSettings.keycloak.hostname);
-                let $this = this;
                 axios.post('/admin/cluster/upload-pem-dns', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
                     }
-                }).then(function (rsp) {
-                    if ($this.clusterSettings.keycloak.editHostname === '') {
-                        ($this.registryValues as any).keycloak.customHosts.push({
-                            host: $this.clusterSettings.keycloak.hostname,
+                }).then((rsp) => {
+                    if (this.clusterSettings.keycloak.editHostname === '') {
+                        (this.registryValues as any).keycloak.customHosts.push({
+                            host: this.clusterSettings.keycloak.hostname,
                             certificatePath: rsp.data,
                         });
 
                     } else {
-                        for (let i = 0; i < ($this.registryValues as any).keycloak.customHosts.length; i++) {
-                            if (($this.registryValues as any).keycloak.customHosts[i].host === $this.clusterSettings.keycloak.editHostname) {
-                                ($this.registryValues as any).keycloak.customHosts[i].host = $this.clusterSettings.keycloak.hostname;
-                                ($this.registryValues as any).keycloak.customHosts[i].certificatePath = rsp.data;
+                        for (let i = 0; i < (this.registryValues as any).keycloak.customHosts.length; i++) {
+                            if ((this.registryValues as any).keycloak.customHosts[i].host === this.clusterSettings.keycloak.editHostname) {
+                                (this.registryValues as any).keycloak.customHosts[i].host = this.clusterSettings.keycloak.hostname;
+                                (this.registryValues as any).keycloak.customHosts[i].certificatePath = rsp.data;
                             }
                         }
                     }
 
-                    $this.backdropShow = false;
-                    $this.clusterSettings.keycloak.formShow = false;
-                    $this.clusterSettings.keycloak.editHostname = '';
-                }).catch(function (error) {
-                    $this.clusterSettings.keycloak.pemError = $this.localePEMError(error.response.data);
+                    this.backdropShow = false;
+                    this.clusterSettings.keycloak.formShow = false;
+                    this.clusterSettings.keycloak.editHostname = '';
+                }).catch((error) => {
+                    this.clusterSettings.keycloak.pemError = this.localePEMError(error.response.data);
                 });
             } else {
                 for (let i = 0; i < (this.registryValues as any).keycloak.customHosts.length; i++) {

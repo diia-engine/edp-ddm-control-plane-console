@@ -18,6 +18,7 @@ import (
 	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/openshift"
+	"errors"
 	"net/url"
 	"time"
 
@@ -160,6 +161,8 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 		},
 	}, nil)
 
+	cbService.On("Get", "mock2").Return(nil, errors.New("not found"))
+
 	return &cbService
 }
 
@@ -180,6 +183,13 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 			Status: gerrit.GerritProjectStatus{
 				Branches: []string{"mock-branch"},
 			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "registry-tenant-template-tpl1"},
+			Status: gerrit.GerritProjectStatus{
+				Branches: []string{"refs/heads/1.0"},
+			},
+			Spec: gerrit.GerritProjectSpec{Name: "registry-tenant-template-tpl1"},
 		},
 	}, nil)
 
@@ -202,6 +212,13 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 				CitizenPortal: "192.168.1.1 18.1.1.0/32",
 				AdminRoutes:   "10.0.0.1 8.8.8.8",
 				OfficerPortal: "10.5.1.2/32 2.5.2.1",
+			},
+			CrunchyPostgres: registry.CrunchyPostgres{
+				CrunchyPostgresPostgresql: registry.CrunchyPostgresPostgresql{
+					CrunchyPostgresPostgresqlParameters: registry.CrunchyPostgresPostgresqlParameters{
+						MaxConnections: 150},
+				},
+				StorageSize: "10Gi",
 			},
 		},
 		Administrators: []registry.Admin{
@@ -228,6 +245,8 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 	}
 
 	grService.On("GetBranchContent", "mock", "master", url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
+	grService.On("GetBranchContent", "registry-tenant-template-tpl1", "1.0",
+		url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
 	grService.On("GetMergeRequestByProject", mock.Anything, cnf.ClusterCodebaseName).Return([]gerrit.GerritMergeRequest{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr", Labels: map[string]string{}},

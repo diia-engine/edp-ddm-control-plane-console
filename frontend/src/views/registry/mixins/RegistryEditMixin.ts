@@ -30,7 +30,6 @@ export default defineComponent({
     'wizardSupAuthValidation',
     'wizardDNSValidation',
     'wizardCheckPEMFiles',
-    'wizardResourcesValidation',
     'checkObjectFieldsEmpty',
     'wizardAdministratorsValidation',
     'wizardTemplateValidation',
@@ -46,7 +45,6 @@ export default defineComponent({
     'removeEnvVar',
     'removeResourceCat',
     'encodeRegistryResources',
-    'cleanEmptyProperties',
     'registryFormSubmit',
     'prepareDNSConfig',
     'loadAdmins',
@@ -83,9 +81,7 @@ export default defineComponent({
       const resourcesConfig = JSON.parse(childRefs.resourcesEditConfig.value);
       this.preloadRegistryResources(resourcesConfig);
     }
-    if (childRefs.hasOwnProperty("registryBranches") && childRefs.registryBranches.value !== "") {
-      this.wizard.tabs.template.projectBranches = JSON.parse(childRefs.registryBranches.value);
-    }
+
     if (childRefs.hasOwnProperty("wizardAction")) {
       this.wizard.registryAction = childRefs.wizardAction.value;
       if (childRefs.wizardAction.value === "edit") {
@@ -135,22 +131,6 @@ export default defineComponent({
         address: "",
         password: ""
       },
-      registryResources: {
-        encoded: "",
-        cat: "",
-        cats: [
-          "kong",
-          "bpms",
-          "digitalSignatureOps",
-          "userTaskManagement",
-          "userProcessManagement",
-          "digitalDocumentService",
-          "restApi",
-          "kafkaApi",
-          "soapApi",
-        ],
-        addedCats: [],
-      },
       wizard: {
         registryAction: "create",
         activeTab: "general",
@@ -165,8 +145,13 @@ export default defineComponent({
             validator: this.wizardGeneralValidation,
             visible: true,
           },
-          administrators: { title: "Адміністратори", validated: false, requiredError: false, validator: this.wizardAdministratorsValidation, visible: true, },
-          template: { title: "Шаблон реєстру", validated: false, registryTemplate: "", registryBranch: "", branches: [], projectBranches: {}, templateRequiredError: false, branchRequiredError: false, validator: this.wizardTemplateValidation, visible: true, },
+          administrators: { title: "Адміністратори", validated: false, requiredError: false,
+            validator: this.wizardAdministratorsValidation, visible: true, },
+          template: {
+            title: "Шаблон реєстру",
+            validatorRef: 'templateTab',
+            visible: true
+          },
           mail: { title: "Поштовий сервер", validated: false, beginValidation: false, validator: this.wizardMailValidation, visible: true, },
           key: { title: "Дані про ключ", validated: false, deviceType: "file", beginValidation: false, hardwareData: {
               remoteType: "криптомод. ІІТ Гряда-301",
@@ -184,9 +169,11 @@ export default defineComponent({
               signKeyPWD: "",
             }, allowedKeys: [{ issuer: "", serial: "", removable: false }], caCertRequired: false, caJSONRequired: false, key6Required: false, validator: this.wizardKeyValidation, visible: true, changed: false,
           },
-          resources: { title: "Ресурси реєстру", validated: false, beginValidation: false, validator: /*this.wizardResourcesValidation*/ this.wizardEmptyValidation, visible: true, },
+          resources: {
+            title: "Ресурси реєстру", visible: true,
+          },
           dns: { title: "DNS", validated: false, data: { officer: "", citizen: "", }, beginValidation: false, formatError: { officer: false, citizen: false, }, requiredError: { officer: false, citizen: false, }, typeError: { officer: false, citizen: false, }, editVisible: { officer: false, citizen: false }, validator: this.wizardDNSValidation, visible: true, preloadValues: {} },
-          cidr: { title: "Обмеження доступу", validated: true, visible: true, validator: this.wizardEmptyValidation, },
+          cidr: { title: "Обмеження доступу", validated: true, visible: true, },
           supplierAuthentication: {
             title: "Автентифікація надавачів послуг",
             validated: false,
@@ -209,7 +196,6 @@ export default defineComponent({
             title: 'Автентифікація отримувачів послуг',
             validated: true,
             beginValidation:false,
-            validator: this.wizardEmptyValidation,
             visible: true,
             data: {
               edrCheckEnabled: true
@@ -234,9 +220,8 @@ export default defineComponent({
           trembita: {
             title: "ШБО Трембіта",
             visible: true,
-            validator: this.wizardEmptyValidation,
           },
-          confirmation: { title: "Підтвердження", validated: true, visible: true, validator: this.wizardEmptyValidation, }
+          confirmation: { title: "Підтвердження", validated: true, visible: true, }
         },
       },
     } as any;
@@ -342,120 +327,21 @@ export default defineComponent({
         this.registryValues.keycloak.customHosts = [];
       }
     },
-    removeResourcesCatFromList(name: string) {
-      const searchIdx = this.registryResources.cats.indexOf(name);
-      if (searchIdx !== -1) {
-        this.registryResources.cats.splice(searchIdx, 1);
-      }
-    },
-    decodeResourcesEnvVars(inEnvVars: Record<string, unknown>) {
-      const envVars = [];
-      for (const j in inEnvVars) {
-        envVars.push({
-          name: j,
-          value: inEnvVars[j],
-        });
-      }
-      return envVars;
-    },
-    preloadRegistryResources(data: any) {
-      //TODO: move to constant
-      this.registryResources.cats = [
-        "kong",
-        "bpms",
-        "digitalSignatureOps",
-        "userTaskManagement",
-        "userProcessManagement",
-        "digitalDocumentService",
-        "restApi",
-        "kafkaApi",
-        "soapApi",
-      ];
-      this.registryResources.addedCats = [];
-      for (const i in data) {
-        this.removeResourcesCatFromList(i);
-        if (data[i].hasOwnProperty("container") &&
-          this.isObject(data[i].container) && data[i].container.hasOwnProperty("envVars")) {
-          data[i].container.envVars = this.decodeResourcesEnvVars(data[i].container.envVars);
-        }
-        const mergedData = this.mergeResource(data[i]);
-        this.registryResources.addedCats.push({
-          name: i,
-          config: mergedData,
-        });
-      }
-    },
-    mergeResource(data: Record<string, unknown>) {
-      const emptyResource = {
-        istio: {
-          sidecar: {
-            enabled: false,
-            resources: {
-              requests: {
-                cpu: "",
-                memory: ""
-              },
-              limits: {
-                cpu: "",
-                memory: "",
-              },
-            },
-          },
-        },
-        container: {
-          resources: {
-            requests: {
-              cpu: "",
-              memory: ""
-            },
-            limits: {
-              cpu: "",
-              memory: "",
-            },
-          },
-          envVars: [{ name: "", value: "" }],
-        },
-      };
-      this.mergeDeep(emptyResource, data);
-      return emptyResource;
-    },
-    isObject(item: unknown) {
-      return (item && typeof item === "object" && !Array.isArray(item));
-    },
-    mergeDeep(target: any, ...sources: any[]) {
-      if (!sources.length)
-        return target;
-      const source = sources.shift();
-      if (this.isObject(target) && this.isObject(source)) {
-        for (const key in source) {
-          if (source[key] === null) {
-            continue;
-          }
-          if (this.isObject(source[key])) {
-            if (!target[key])
-              Object.assign(target, { [key]: {} });
-            this.mergeDeep(target[key], source[key]);
-          }
-          else {
-            Object.assign(target, { [key]: source[key] });
-          }
-        }
-      }
-      return this.mergeDeep(target, ...sources);
-    },
     wizardBackupScheduleChange(e: any) {
       console.log(e);
+      //TODO: remove
     },
     wizardDNSEditVisibleChange(name: string, event: any) {
       console.log(name, event);
+      //TODO: remove
     },
     wizardEditSubmit(event: any) {
       const childRefs = this.getChildrenRefs();
       const tab = this.wizard.tabs[this.wizard.activeTab];
-      const $this = this;
-      tab.validator(tab).then(function () {
-        $this.registryFormSubmit(event);
-        $this.$nextTick(() => {
+
+      this.callValidator(tab).then(() => {
+        this.registryFormSubmit(event);
+        this.$nextTick(() => {
           childRefs.registryWizardForm.submit();
         });
       });
@@ -466,7 +352,7 @@ export default defineComponent({
         if (tabKeys[i] === this.wizard.activeTab) {
           const tab = this.wizard.tabs[tabKeys[i]];
           const wizard = this.wizard;
-          tab.validator(tab).then(function () {
+          this.callValidator(tab).then(function () {
             wizard.activeTab = tabKeys[i + 1];
           });
           break;
@@ -490,18 +376,29 @@ export default defineComponent({
         if (tabKeys[i] === this.wizard.activeTab) {
           const tab = this.wizard.tabs[tabKeys[i]];
           const wizard = this.wizard;
-          tab.validator(tab).then(function () {
+          this.callValidator(tab).then(function () {
             wizard.activeTab = tabKeys[i - 1];
           });
           break;
         }
       }
     },
+    callValidator(tab: any) {
+      if ('validator' in tab) {
+        return tab.validator(tab);
+      }
+
+      if ('validatorRef' in tab) {
+        return this.$refs.wizard.$refs[tab.validatorRef].validator(tab);
+      }
+
+      return this.wizardEmptyValidation(tab);
+    },
     selectWizardTab(tabName: string, e: any) {
       e.preventDefault();
       const tab = this.wizard.tabs[this.wizard.activeTab];
       const wizard = this.wizard;
-      tab.validator(tab).then(function () {
+      this.callValidator(tab).then(function () {
         if (wizard.registryAction === "create") {
           for (const k in wizard.tabs) {
             if (!wizard.tabs[k].validated) {
@@ -671,45 +568,16 @@ export default defineComponent({
       const f = filesToCheck.pop();
       const formData = new FormData();
       formData.append("file", f?.file || '');
-      const $this = this;
+
       axios.post("/admin/registry/check-pem", formData, {
         headers: {
           "Content-Type": "multipart/form-data"
         }
-      }).then(function (rsp) {
-        $this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
-      }).catch(function (error) {
-        $this.wizard.tabs.dns.typeError[f.name] = true;
+      }).then((rsp) => {
+        this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
+      }).catch((error) => {
+        this.wizard.tabs.dns.typeError[f.name] = true;
       });
-    },
-    wizardResourcesValidation(tab: any) {
-      return new Promise < void  > ((resolve) => {
-        tab.beginValidation = true;
-        tab.validated = false;
-        for (let i = 0; i < this.registryResources.addedCats.length; i++) {
-          const cat = this.registryResources.addedCats[i];
-          if (!this.checkObjectFieldsEmpty(cat.config)) {
-            return;
-          }
-        }
-        tab.beginValidation = false;
-        tab.validated = true;
-        resolve();
-      });
-    },
-    checkObjectFieldsEmpty(o: Record<string, unknown>) {
-      for (const i in o) {
-        const t = typeof o[i];
-        if (t === "string" && o[i] === "") {
-          return false;
-        }
-        if (t === "object") {
-          if (!this.checkObjectFieldsEmpty(o[i])) {
-            return false;
-          }
-        }
-      }
-      return true;
     },
     wizardAdministratorsValidation(tab: any) {
       const admins = this.admins;
@@ -722,36 +590,6 @@ export default defineComponent({
         }
         tab.validated = true;
         resolve();
-      });
-    },
-    wizardTemplateValidation(tab: any) {
-      return new Promise < void  > ((resolve) => {
-        tab.validated = false;
-        tab.templateRequiredError = false;
-        tab.branchRequiredError = false;
-        if (tab.registryTemplate === "") {
-          tab.templateRequiredError = true;
-          return;
-        }
-        if (tab.registryBranch === "") {
-          tab.branchRequiredError = true;
-          return;
-        }
-        const $this = this;
-        axios.get(`/admin/registry/preload-resources`, { params: {
-            "template": tab.registryTemplate,
-            "branch": tab.registryBranch,
-          }
-        })
-          .then(function (response) {
-            $this.preloadRegistryResources(response.data);
-            tab.validated = true;
-            resolve();
-          })
-          .catch(function (error) {
-            tab.validated = true;
-            resolve();
-          });
       });
     },
     wizardMailValidation(tab: any) {
@@ -855,96 +693,11 @@ export default defineComponent({
     wizardAddAllowedKey() {
       this.wizard.tabs.key.allowedKeys.push({ issuer: "", serial: "", removable: true });
     },
-    addResourceCat(e: any) {
-      e.preventDefault(e);
-      if (this.registryResources.cat === "") {
-        return;
-      }
-      this.registryResources.addedCats.unshift({
-        name: this.registryResources.cat,
-        config: {
-          istio: {
-            sidecar: {
-              enabled: false,
-              resources: {
-                requests: {
-                  cpu: "",
-                  memory: ""
-                },
-                limits: {
-                  cpu: "",
-                  memory: "",
-                },
-              },
-            },
-          },
-          container: {
-            resources: {
-              requests: {
-                cpu: "",
-                memory: ""
-              },
-              limits: {
-                cpu: "",
-                memory: "",
-              },
-            },
-            envVars: [{ name: "", value: "" }],
-          },
-        }
-      });
-      this.registryResources.cats.splice(this.registryResources.cats.indexOf(this.registryResources.cat), 1);
-    },
-    addEnvVar(envVars: Array<Record<string, unknown>>, event: any) {
-      event.preventDefault();
-      envVars.push({ name: "", value: "" });
-    },
-    removeEnvVar(envVars: Array<Record<string, unknown>>, env: Record<string, unknown>) {
-      envVars.splice(envVars.indexOf(env), 1);
-    },
-    removeResourceCat(cat: { name: string }, event: any) {
-      event.preventDefault();
-      this.registryResources.cats.push(cat.name);
-      this.registryResources.addedCats.splice(this.registryResources.addedCats.indexOf(cat), 1);
-    },
-    encodeRegistryResources() {
-      const prepare = {} as Record<string, unknown>;
-      this.registryResources.addedCats.forEach(function (el: any) {
-        const cloneEL = JSON.parse(JSON.stringify(el));
-        const envVars = {} as Record<string, unknown>;
-        cloneEL.config.container.envVars.forEach(function (el: any) {
-          envVars[el.name] = el.value;
-        });
-        cloneEL.config.container.envVars = envVars;
-        prepare[cloneEL.name] = {
-          istio: cloneEL.config.istio,
-          container: cloneEL.config.container,
-        };
-      });
-      this.cleanEmptyProperties(prepare);
-      this.registryResources.encoded = JSON.stringify(prepare);
-    },
-    cleanEmptyProperties(obj: Record<string, unknown>) {
-      if (this.isObject(obj)) {
-        for (const key in obj) {
-          if (this.isObject(obj[key])) {
-            this.cleanEmptyProperties(obj[key]);
-            if (Object.keys(obj[key] as Record<string, unknown>).length === 0) {
-              delete obj[key];
-            }
-          }
-          else if (obj[key] === "") {
-            delete obj[key];
-          }
-        }
-      }
-    },
     registryFormSubmit(e: any) {
       if (this.registryFormSubmitted && e) {
         e.preventDefault();
         return;
       }
-      this.encodeRegistryResources();
       this.prepareDNSConfig();
       this.mailServerOpts = JSON.stringify(this.externalSMTPOpts);
       this.registryFormSubmitted = true;
@@ -1035,10 +788,6 @@ export default defineComponent({
       this.adminsChanged = true;
       this.wizard.tabs.administrators.validated = false;
       this.wizard.tabs.administrators.requiredError = false;
-    },
-    changeTemplateProject() {
-      this.wizard.tabs.template.branches =
-        this.wizard.tabs.template.projectBranches[this.wizard.tabs.template.registryTemplate];
     },
   },
 });

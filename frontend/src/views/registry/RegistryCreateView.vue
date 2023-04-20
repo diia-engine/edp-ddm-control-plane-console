@@ -22,7 +22,7 @@ export default defineComponent({
         <h1>Створити новий реєстр</h1>
         <div class="registry-description">Щоб створити реєстр, вкажіть його назву та додайте опис.</div>
 
-        <RegistryWizard ref="wizard"/>
+        <RegistryWizard ref="wizard" :form-submitted="registryFormSubmitted" />
 
         <AdministratorModal
           :adminPopupShow="adminPopupShow"

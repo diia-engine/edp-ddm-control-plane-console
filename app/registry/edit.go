@@ -192,7 +192,7 @@ func (a *App) loadIDGovUAClientID(values *Values) error {
 }
 
 func (a *App) loadRegistryResourcesConfig(values map[string]interface{}, r *registry) error {
-	global, ok := values["global"]
+	global, ok := values[GlobalValuesIndex]
 	if !ok {
 		return nil
 	}
@@ -250,7 +250,7 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 }
 
 func (a *App) loadSMTPConfig(values map[string]interface{}, rspParams gin.H) error {
-	global, ok := values["global"]
+	global, ok := values[GlobalValuesIndex]
 	if !ok {
 		rspParams["smtpConfig"] = "{}"
 		return nil

@@ -32,14 +32,14 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 		values.Global.RegistryBackup.Schedule = r.CronSchedule
 		values.Global.RegistryBackup.Enabled = true
 
-		globalRaw, ok := values.OriginalYaml["global"]
+		globalRaw, ok := values.OriginalYaml[GlobalValuesIndex]
 		if !ok {
 			globalRaw = make(map[string]interface{})
 		}
 
 		globalDict := globalRaw.(map[string]interface{})
 		globalDict[registryBackupIndex] = values.Global.RegistryBackup
-		values.OriginalYaml["global"] = globalDict
+		values.OriginalYaml[GlobalValuesIndex] = globalDict
 
 		*mrActions = append(*mrActions, MRActionBackupSchedule)
 	}

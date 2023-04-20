@@ -243,12 +243,12 @@ export default {
             // eslint-disable-next-line no-prototype-builtins
             if (this.externalSystem.data.auth.hasOwnProperty('type') && this.externalSystem.data.auth.type === 'BASIC') {
                 this.externalSystem.usernamePlaceholder = 'Завантаження...';
-                let $this = this;
+
                 axios.get(`/admin/registry/get-basic-username/${this.registryName}`,
                     { params: { "registry-name": this.externalSystem.registryName } })
-                    .then(function (response) {
-                        $this.externalSystem.data.auth.username = response.data;
-                        $this.externalSystem.usernamePlaceholder = '';
+                    .then((response) => {
+                        this.externalSystem.data.auth.username = response.data;
+                        this.externalSystem.usernamePlaceholder = '';
                     });
 
             }
@@ -610,12 +610,11 @@ export default {
 
             if (this.trembitaClient.registryCreation) {
                 e.preventDefault();
-                let $this = this;
 
                 axios.get(`/admin/registry/trembita-client-check/${this.registryName}`,
                     { params: { "trembita-client": this.trembitaClient.registryName } })
-                    .then(function () {
-                        $this.trembitaClient.registryNameExists = true;
+                    .then(() => {
+                        this.trembitaClient.registryNameExists = true;
                     })
                     .catch(function () {
                         $("#trembita-client-form").submit();
@@ -704,12 +703,11 @@ export default {
 
             if (this.externalSystem.registryNameEditable) {
                 e.preventDefault();
-                let $this = this;
 
                 axios.get(`/admin/registry/external-system-check/${this.registryName}`,
                     { params: { "external-system": this.externalSystem.registryName } })
-                    .then(function () {
-                        $this.externalSystem.registryNameExists = true;
+                    .then(() => {
+                        this.externalSystem.registryNameExists = true;
                     })
                     .catch(function () {
                         $("#external-system-form").submit();

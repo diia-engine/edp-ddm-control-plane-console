@@ -22,7 +22,7 @@ export default defineComponent({
         <h1>Редагувати реєстр "{{templateVariables.registry.metadata.name}}"</h1>
         <div class="registry-description">Можлива зміна опису реєстру. Змінити назву неможливо.</div>
 
-        <RegistryWizard ref="wizard"/>
+        <RegistryWizard ref="wizard" :form-submitted="registryFormSubmitted"/>
 
         <AdministratorModal
           :adminPopupShow="adminPopupShow"

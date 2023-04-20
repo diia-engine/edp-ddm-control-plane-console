@@ -472,7 +472,7 @@ func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
 		return nil
 	}
 
-	globalInterface, ok := values["global"]
+	globalInterface, ok := values[GlobalValuesIndex]
 	if !ok {
 		globalInterface = make(map[string]interface{})
 	}
@@ -497,7 +497,7 @@ func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
 	}
 
 	globalDict["whiteListIP"] = whiteListDict
-	values["global"] = globalDict
+	values[GlobalValuesIndex] = globalDict
 
 	return nil
 }
@@ -708,14 +708,14 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 		}
 	}
 
-	globalInterface, ok := values["global"]
+	globalInterface, ok := values[GlobalValuesIndex]
 	if !ok {
 		globalInterface = make(map[string]interface{})
 	}
 	globalDict := globalInterface.(map[string]interface{})
 
 	globalDict["notifications"] = notifications
-	values["global"] = globalDict
+	values[GlobalValuesIndex] = globalDict
 
 	return nil
 }

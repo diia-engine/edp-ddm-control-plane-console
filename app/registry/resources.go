@@ -3,8 +3,10 @@ package registry
 import (
 	"ddm-admin-console/router"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
@@ -26,32 +28,37 @@ func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{
 	return data, nil
 }
 
-func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, _values *Values,
+func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, values *Values,
 	_ map[string]map[string]interface{}, mrActions *[]string) error {
-	values := _values.OriginalYaml
-	//TODO: refactor to new values
 
 	if r.Resources != "" {
 		var resources map[string]interface{}
 		if err := json.Unmarshal([]byte(r.Resources), &resources); err != nil {
 			return errors.Wrap(err, "unable to decode resources")
 		}
+		values.Global.Registry = resources
+		values.OriginalYaml[GlobalValuesIndex] = values.Global
+	}
 
-		global, ok := values["global"]
-		if !ok {
-			global = make(map[string]interface{})
+	if r.CrunchyPostgresMaxConnections != "" {
+		maxCon, err := strconv.ParseInt(r.CrunchyPostgresMaxConnections, 10, 32)
+		if err != nil {
+			return fmt.Errorf("unable to parse max connectrions, %w", err)
 		}
 
-		globalDict := global.(map[string]interface{})
+		values.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections = int(maxCon)
+		values.OriginalYaml[GlobalValuesIndex] = values.Global
+	}
 
-		globalDict["registry"] = resources
-		values["global"] = globalDict
+	if r.CrunchyPostgresStorageSize != "" {
+		values.Global.CrunchyPostgres.StorageSize = r.CrunchyPostgresStorageSize
+		values.OriginalYaml[GlobalValuesIndex] = values.Global
 	}
 
 	return nil
 }
 
-func (a *App) preloadTemplateResources(ctx *gin.Context) (rsp router.Response, retErr error) {
+func (a *App) preloadTemplateValues(ctx *gin.Context) (rsp router.Response, retErr error) {
 	template, branch := ctx.Query("template"), ctx.Query("branch")
 	if template == "" || branch == "" {
 		return router.MakeStatusResponse(http.StatusUnprocessableEntity), nil
@@ -62,19 +69,5 @@ func (a *App) preloadTemplateResources(ctx *gin.Context) (rsp router.Response, r
 		return nil, errors.Wrap(err, "unable to get template content")
 	}
 
-	global, ok := data["global"]
-	if !ok {
-		return nil, errors.New("no global values in deploy templates")
-	}
-	globalDict, ok := global.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("wrong global dict format")
-	}
-
-	resources, ok := globalDict["registry"]
-	if !ok {
-		return router.MakeJSONResponse(200, []string{}), nil
-	}
-
-	return router.MakeJSONResponse(http.StatusOK, resources), nil
+	return router.MakeJSONResponse(http.StatusOK, data), nil
 }
