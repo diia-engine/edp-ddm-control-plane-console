@@ -66,6 +66,7 @@ let app = Vue.createApp({
             this.registryValues = JSON.parse(this.$refs.registryValues.value);
 
             this.loadRegistryValues();
+            this.loadClusterBackupSettings();
             this.dnsPreloadDataFromValues();
             this.wizardCronExpressionChange();
         }
@@ -243,6 +244,32 @@ let app = Vue.createApp({
                         title: 'Keycloak DNS'
                     },
                 ],
+                backup: {
+                    scheduleError: {
+                        nexus: false,
+                        controlPlane: false,
+                        userManagement: false,
+                        monitoring: false,
+                    },
+                    schedule: {
+                        nexus: '',
+                        controlPlane: '',
+                        userManagement: '',
+                        monitoring: '',
+                    },
+                    expiresError: {
+                        nexus: false,
+                        controlPlane: false,
+                        userManagement: false,
+                        monitoring: false,
+                    },
+                    expires: {
+                        nexus: 0,
+                        controlPlane: 0,
+                        userManagement: 0,
+                        monitoring: 0,
+                    },
+                },
                 keycloak: {
                     editDisabled: false,
                     deleteHostname: '',
@@ -260,6 +287,23 @@ let app = Vue.createApp({
         }
     },
     methods: {
+        clusterBackupValidate(event) {
+            for (const i in this.clusterSettings.backup.schedule) {
+                this.clusterSettings.backup.scheduleError[i] = false;
+                try {
+                    cronSchedule.parseCronExpression(this.clusterSettings.backup.schedule[i])
+                } catch (e) {
+                    event.preventDefault();
+                    this.clusterSettings.backup.scheduleError[i] = true;
+                }
+
+                this.clusterSettings.backup.expiresError[i] = false;
+                if (!/^\d+$/.test(this.clusterSettings.backup.expires[i]) || parseInt(this.clusterSettings.backup.expires[i]) <= 0) {
+                    this.clusterSettings.backup.expiresError[i] = true;
+                    event.preventDefault();
+                }
+            }
+        },
         editClusterKeycloakDNSHost(hostname, certificatePath, e) {
             e.preventDefault();
             this.clusterSettings.keycloak.editHostname = hostname;
@@ -484,6 +528,20 @@ let app = Vue.createApp({
                     this.wizard.tabs.supplierAuthentication.data.clientId = registryValues.keycloak.identityProviders.idGovUa.clientId;
                     this.wizard.tabs.supplierAuthentication.data.secret = '*****';
                 }
+            }
+        },
+        loadClusterBackupSettings() {
+            const velero = this.registryValues?.velero;
+            if (velero) {
+                this.clusterSettings.backup.schedule.nexus = velero.backup.nexus.schedule;
+                this.clusterSettings.backup.schedule.controlPlane = velero.backup.controlPlane.schedule;
+                this.clusterSettings.backup.schedule.userManagement = velero.backup.userManagement.schedule;
+                this.clusterSettings.backup.schedule.monitoring = velero.backup.monitoring.schedule;
+
+                this.clusterSettings.backup.expires.nexus = velero.backup.nexus.expiresInDays;
+                this.clusterSettings.backup.expires.controlPlane = velero.backup.controlPlane.expiresInDays;
+                this.clusterSettings.backup.expires.userManagement = velero.backup.userManagement.expiresInDays;
+                this.clusterSettings.backup.expires.monitoring = velero.backup.monitoring.expiresInDays;
             }
         },
         loadRegistryValues() {

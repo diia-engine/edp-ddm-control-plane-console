@@ -21,8 +21,8 @@ const (
 )
 
 type ScheduleItem struct {
-	Schedule      string `yaml:"schedule"`
-	ExpiresInDays int    `yaml:"expires_in_days"`
+	Schedule      string `yaml:"schedule" json:"schedule"`
+	ExpiresInDays int    `yaml:"expires_in_days" json:"expiresInDays"`
 }
 
 type BackupScheduleForm struct {
@@ -80,10 +80,10 @@ func (bsf BackupScheduleForm) ToNestedStruct() BackupSchedule {
 }
 
 type BackupSchedule struct {
-	Nexus          ScheduleItem `yaml:"controlPlaneNexus"`
-	ControlPlane   ScheduleItem `yaml:"controlPlane"`
-	UserManagement ScheduleItem `yaml:"userManagement"`
-	Monitoring     ScheduleItem `yaml:"monitoring"`
+	Nexus          ScheduleItem `yaml:"controlPlaneNexus" json:"nexus"`
+	ControlPlane   ScheduleItem `yaml:"controlPlane" json:"controlPlane"`
+	UserManagement ScheduleItem `yaml:"userManagement" json:"userManagement"`
+	Monitoring     ScheduleItem `yaml:"monitoring" json:"monitoring"`
 }
 
 func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
