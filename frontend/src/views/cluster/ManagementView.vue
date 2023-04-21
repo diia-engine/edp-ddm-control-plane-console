@@ -28,6 +28,7 @@ const gerritURL = variables?.gerritURL;
 <script lang="ts">
 import $ from 'jquery';
 import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getMergeRequestPlatformAction, getMergeRequestStatus, getStatus } from '@/utils';
+import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
 
 export default {
     data() {
@@ -55,6 +56,7 @@ export default {
             }
         },
     },
+    components: { MergeRequestsTable }
 };
 </script>
 
@@ -155,39 +157,7 @@ export default {
                 <img src="@/assets/img/action-toggle.png" alt="toggle block" />
             </div>
             <div class="rg-info-block-body mr-block-table">
-                <table class="rg-info-table rg-info-table-config" id="mr-table">
-                    <thead>
-                        <tr>
-                            <th>Дата</th>
-                            <th>Запит</th>
-                            <th>Операція</th>
-                            <th>Статус</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="$al in mergeRequests" :key="$al.metadata.name">
-                            <td>{{ getFormattedDate($al.metadata.creationTimestamp) }}</td>
-                            <td>{{ $al.metadata.name }}</td>
-                            <td>{{ getMergeRequestPlatformAction($al) }}</td>
-                            <td class="mr-status">{{ getMergeRequestStatus($al) }}</td>
-                            <td class="mr-actions">
-                                <template v-if="$al.status.changeUrl">
-                                    <a title="Переглянути"
-                                        @click.stop.prevent="showMrView(`/admin/change/${$al.status.changeId}`)"
-                                        :href="`/admin/change/${$al.status.changeId}`">
-                                        <i class="fa-solid fa-eye fa-lg"></i>
-                                    </a>
-
-                                    <a :href="$al.status.changeUrl" target="_blank">
-                                        <img style="vertical-align: sub;" title="Переглянути в Gerrit" alt="vcs"
-                                            src="@/assets/img/action-link.png" />
-                                    </a>
-                                </template>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <MergeRequestsTable :merge-requests="mergeRequests" :in-platform="true" @onViewClick="showMrView"></MergeRequestsTable>
             </div>
         </div>
         <div v-if="edpComponents.length" class="dashboard-panel registry-dashboard-panel">

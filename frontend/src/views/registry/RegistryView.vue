@@ -58,7 +58,8 @@ const mrAvailable = variables?.mrAvailable;
 <script lang="ts">
 import $ from 'jquery';
 import axios from 'axios';
-import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getMergeRequestAction, getMergeRequestName, getMergeRequestStatus } from '@/utils';
+import { getGerritURL, getImageUrl, getJenkinsURL } from '@/utils';
+import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
 
 export default {
     data() {
@@ -292,11 +293,10 @@ export default {
             this.backdropShow = false;
             this.accessGrantError = false;
         },
-        showMrView(src: string, e: any) {
+        showMrView(src: string) {
             this.mrView = true;
             this.backdropShow = true;
             $("body").css("overflow", "hidden");
-            e.preventDefault();
             window.scrollTo(0, 0);
             this.mrSrc = src;
         },
@@ -772,7 +772,8 @@ export default {
 
         this.externalSystem = this.externalSystemDefaults();
         this.trembitaClient = this.trembitaClientDefaults();
-    }
+    },
+    components: { MergeRequestsTable },
 };
 </script>
 
@@ -1595,42 +1596,9 @@ export default {
                     </i>
                 </div>
                 <div class="rg-info-block-body mr-block-table" v-show="accordion == 'merge-requests'">
-                    <table class="rg-info-table rg-info-table-config" id="mr-table"
-                        v-if="mergeRequests && mergeRequests.length">
-                        <thead>
-                            <tr>
-                                <th>Дата</th>
-                                <th>Запит</th>
-                                <th>Операція</th>
-                                <th>Статус</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="($al, $index) in mergeRequests" :key="$index">
-                                <td>{{ getFormattedDate($al.metadata.creationTimestamp) }}</td>
-                                <td>{{ getMergeRequestName($al) }}</td>
-                                <td>{{ getMergeRequestAction($al) }}</td>
-                                <td class="mr-status">{{ getMergeRequestStatus($al) }}</td>
-                                <td class="mr-actions">
-                                    <i v-if="!mrAvailable && $al.status.value === 'NEW'" title="Реєстр в процесі оновлення" class="fa-solid fa-lock"></i>
-
-                                    <span v-if="$al.status.changeUrl && (mrAvailable || $al.status.value !== 'NEW')">
-                                        <a title="Переглянути"
-                                            @click="showMrView(`/admin/change/${$al.status.changeId}`, $event)"
-                                            :href="`/admin/change/${$al.status.changeId}`">
-                                            <i class="fa-solid fa-eye fa-lg"></i>
-                                        </a>
-
-                                        <a :href="$al.status.changeUrl" target="_blank">
-                                            <img style="vertical-align: sub;" title="Переглянути в Gerrit" alt="vcs"
-                                                src="@/assets/img/action-link.png" />
-                                        </a>
-                                    </span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <template v-if="mergeRequests && mergeRequests.length">
+                        <MergeRequestsTable :merge-requests="mergeRequests" @onViewClick="showMrView" :mr-available="mrAvailable"></MergeRequestsTable>
+                    </template>
                     <div class="rg-info-block-no-content" v-else>
                         Запитів немає
                     </div>
