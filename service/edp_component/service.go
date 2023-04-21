@@ -53,7 +53,7 @@ func Make(s *runtime.Scheme, k8sConfig *rest.Config, namespace string) (*Service
 	}, nil
 }
 
-func (s *Service) PrepareComponentItem(component EDPComponent) EDPComponentItem {
+func PrepareComponentItem(component EDPComponent) EDPComponentItem {
 	return EDPComponentItem{
 		Type:        component.Spec.Type,
 		Url:         component.Spec.Url,
@@ -126,22 +126,22 @@ func (s *Service) GetAllCategory(ctx context.Context, ns string) (map[string][]E
 	for _, val := range s.SortComponents(registryComponents) {
 		var objectMetaAnnotations = val.ObjectMeta.Annotations
 		if objectMetaAnnotations[CPCOperationalZone] == RegistryOperationalZone {
-			categories[RegistryOperationalZone] = append(categories[RegistryOperationalZone], s.PrepareComponentItem(val))
+			categories[RegistryOperationalZone] = append(categories[RegistryOperationalZone], PrepareComponentItem(val))
 		}
 
 		if objectMetaAnnotations[CPCOperationalZone] == RegistryAdministrationZone {
-			categories[RegistryAdministrationZone] = append(categories[RegistryAdministrationZone], s.PrepareComponentItem(val))
+			categories[RegistryAdministrationZone] = append(categories[RegistryAdministrationZone], PrepareComponentItem(val))
 		}
 	}
 
 	for _, val := range s.SortComponents(platformComponents) {
 		var objectMetaAnnotations = val.ObjectMeta.Annotations
 		if objectMetaAnnotations[CPCOperationalZone] == PlatformOperationalZone {
-			categories[PlatformOperationalZone] = append(categories[PlatformOperationalZone], s.PrepareComponentItem(val))
+			categories[PlatformOperationalZone] = append(categories[PlatformOperationalZone], PrepareComponentItem(val))
 		}
 
 		if objectMetaAnnotations[CPCOperationalZone] == PlatformAdministrationZone {
-			categories[PlatformAdministrationZone] = append(categories[PlatformAdministrationZone], s.PrepareComponentItem(val))
+			categories[PlatformAdministrationZone] = append(categories[PlatformAdministrationZone], PrepareComponentItem(val))
 		}
 	}
 

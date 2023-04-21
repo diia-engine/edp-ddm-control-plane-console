@@ -368,10 +368,53 @@ func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, registryName
 
 	viewParams["jenkinsURL"] = jenkinsComponent.Spec.Url
 	viewParams["gerritURL"] = gerritComponent.Spec.Url
-	viewParams["registryOperationalComponents"] = categories[edpcomponent.RegistryOperationalZone]
-	viewParams["regisrtyAdministrationComponents"] = categories[edpcomponent.RegistryAdministrationZone]
+
 	viewParams["platformOperationalComponents"] = categories[edpcomponent.PlatformOperationalZone]
 	viewParams["platformAdministrationComponents"] = categories[edpcomponent.PlatformAdministrationZone]
+
+	_, ok := categories[edpcomponent.RegistryOperationalZone]
+	if ok {
+		viewParams["registryOperationalComponents"] = categories[edpcomponent.RegistryOperationalZone]
+		viewParams["regisrtyAdministrationComponents"] = categories[edpcomponent.RegistryAdministrationZone]
+	} else {
+		//TODO: remove this hotfix
+		if err := a.loadRegistryEDPCats(userCtx, registryName, viewParams); err != nil {
+			return fmt.Errorf("unable to load registry edp component")
+		}
+	}
+
+	return nil
+}
+
+func (a *App) loadRegistryEDPCats(ctx context.Context, registryName string, viewParams gin.H) error {
+	components, err := a.Services.EDPComponent.GetAllNamespace(ctx, registryName, true)
+	if err != nil {
+		return fmt.Errorf("unable to get edp components")
+	}
+
+	var (
+		registryOperationalComponents    []edpcomponent.EDPComponentItem
+		registryAdministrationComponents []edpcomponent.EDPComponentItem
+	)
+
+	comMap := map[string]*[]edpcomponent.EDPComponentItem{
+		"gerrit":                                 &registryAdministrationComponents,
+		"jenkins":                                &registryAdministrationComponents,
+		"business-process-administration-portal": &registryAdministrationComponents,
+		"citizen-portal":                         &registryOperationalComponents,
+		"officer-portal":                         &registryOperationalComponents,
+	}
+
+	for _, cmp := range components {
+		if list, ok := comMap[cmp.Name]; ok {
+			item := edpcomponent.PrepareComponentItem(cmp)
+			item.Title = cmp.Name
+			*list = append(*list, item)
+		}
+	}
+
+	viewParams["registryOperationalComponents"] = registryOperationalComponents
+	viewParams["regisrtyAdministrationComponents"] = registryAdministrationComponents
 
 	return nil
 }
