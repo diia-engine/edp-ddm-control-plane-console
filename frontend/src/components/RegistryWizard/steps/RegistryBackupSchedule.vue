@@ -1,317 +1,324 @@
-<script lang="ts">
-import { defineComponent, inject } from 'vue';
+<script setup lang="ts">
+import { onMounted, ref, toRefs } from 'vue';
+import * as yup from 'yup';
+import { useForm } from 'vee-validate';
 import { parseCronExpression } from 'cron-schedule';
+
+import { getFormattedDate } from '@/utils/date';
 import Typography from '@/components/common/Typography.vue';
 import TextField from '@/components/common/TextField.vue';
+// @ts-ignore
 import RegistryBackupSavePlaceModal from '@/components/RegistryBackupSavePlaceModal.vue';
 import RegistryBackupDeletePlaceModal from '@/components/RegistryBackupDeletePlaceModal.vue';
 
 interface RegistryEditTemplateVariables {
-  registryValues: any;
-  model: any;
+  templateVariables: {
+    registryValues: {
+      global: {
+        registryBackup: {
+          enabled: boolean;
+          schedule: string;
+          expiresInDays: string;
+          obc: {
+            cronExpression: string;
+            backupBucket: string;
+            endpoint: string;
+          }
+        }
+      }
+    },
+    model: {
+      OBCLogin: string;
+      OBCPassword: string;
+    }
+  }
 }
 
-export default defineComponent({
-  components: { RegistryBackupSavePlaceModal, RegistryBackupDeletePlaceModal, TextField, Typography },
-  data() {
-    return {
-      validated: false,
-      beginValidation: false,
-      validator: this.backupScheduleValidation,
-      errors: {
-        cronSchedule: "",
-        days: "",
-        registryBackupCronExpression: "",
+const parseCronExpressionRules = () => {
+  return yup.string()
+    .required()
+    .test({
+      message: 'parseCronExpression',
+      test: function (value) {
+        try {
+          parseCronExpression(value || "");
+          return true;
+        }
+        catch (e: any) {
+          return false;
+        }
       },
-      nextDates: [] as string[],
-      registryBackupNextDates: [] as string[],
-      backupPlacePopupShow: false,
-      backupDeletePlacePopupShow: false,
-      data: {
-        enabled: false,
-        cronSchedule: "",
-        days: "",
-        registryBackup: {
-          obc: {
-            cronExpression: "",
-            backupBucket: "",
-            endpoint: "",
-            login: "",
-            password: "",
-          },
-        },
-      }
-    };
-  },
-  mounted() {
-    try {
-      const templateVariables = inject('TEMPLATE_VARIABLES') as RegistryEditTemplateVariables;
+    });
+};
 
-      this.data.enabled = templateVariables.registryValues.global.registryBackup.enabled;
-      this.data.cronSchedule = templateVariables.registryValues.global.registryBackup.schedule;
-      this.data.days = templateVariables.registryValues.global.registryBackup.expiresInDays;
-      this.data.registryBackup.obc.cronExpression = templateVariables.registryValues.global.registryBackup.obc.cronExpression;
-      this.data.registryBackup.obc.backupBucket = templateVariables.registryValues.global.registryBackup.obc.backupBucket;
-      this.data.registryBackup.obc.endpoint = templateVariables.registryValues.global.registryBackup.obc.endpoint;
-      this.data.registryBackup.obc.login = templateVariables?.model.OBCLogin;
-      this.data.registryBackup.obc.password = templateVariables?.model.OBCPassword;
+const props = defineProps<RegistryEditTemplateVariables>();
+const { templateVariables } = toRefs(props);
+const { registryValues, model } = templateVariables.value;
+const beginValidation = ref(false);
+const nextDates = ref([] as string[]);
+const registryBackupNextDates = ref([] as string[]);
+const backupPlacePopupShow = ref(false);
+const backupDeletePlacePopupShow = ref(false);
+const enabled = ref(registryValues.global.registryBackup.enabled);
+const obcBackupBucket = ref(registryValues.global.registryBackup.obc.backupBucket);
+const obcEndpoint = ref(registryValues.global.registryBackup.obc.endpoint);
+const obcLogin = ref(model.OBCLogin);
+const obcPassword = ref(model.OBCPassword);
+
+yup.addMethod(yup.string, "parseCronExpression", function (errorMessage) {
+  return this.test(`parse-cron-expression`, errorMessage, function (value) {
+    const { path, createError } = this;
+    try {
+      parseCronExpression(value || "");
+      return true;
     }
     catch (e: any) {
-      console.log(e);
+      return createError({ path, message: errorMessage });
     }
-    this.cronExpressionChange();
-    this.backupCronExpressionChange();
-  },
-  methods: {
-    showBackupPlaceModal() {
-      this.backupPlacePopupShow = true;
-    },
-    hideBackupPlaceModal() {
-      this.backupPlacePopupShow = false;
-    },
-    backupPlaceSubmit(data: { backupBucket: string; endpoint: string; login: string; password: string; }) {
-      this.data.registryBackup.obc.backupBucket = data.backupBucket;
-      this.data.registryBackup.obc.endpoint = data.endpoint;
-      this.data.registryBackup.obc.login = data.login;
-      this.data.registryBackup.obc.password = data.password;
-      this.backupPlacePopupShow = false;
-    },
-    showBackupDeletePlaceModal() {
-      this.backupDeletePlacePopupShow = true;
-    },
-    hideBackupDeletePlaceModal() {
-      this.backupDeletePlacePopupShow = false;
-    },
-    backupDeletePlaceSubmit() {
-      this.data.registryBackup.obc.backupBucket = '';
-      this.data.registryBackup.obc.endpoint = '';
-      this.data.registryBackup.obc.login = '';
-      this.data.registryBackup.obc.password = '';
-      
-      this.backupDeletePlacePopupShow = false;
-    },
-    daysChange() {
-      const days = parseInt(this.data.days);
-      if (this.data.days === "") {
-        this.errors.days = 'required';
-      } else if (!/^[0-9]+$/.test(this.data.days) || isNaN(days) || days <= 0) {
-        this.errors.days = 'invalidFormat';
-      }
-    },
-    cronExpressionChange() {
-      this.errors.cronSchedule = "";
-      if (this.data.cronSchedule === "") {
-        this.nextDates = [];
-        this.errors.cronSchedule = 'required';
-        return;
-      }
-      try {
-        const cron = parseCronExpression(this.data.cronSchedule);
-        this.nextDates = [];
-        let dt = new Date();
-        for (let i = 0; i < 3; i++) {
-          const next = cron.getNextDate(dt);
-          this.nextDates.push(`${next.toLocaleDateString("uk")} ${next.toLocaleTimeString("uk")}`);
-          dt = next;
-        }
-      }
-      catch (e: any) {
-        this.nextDates = [];
-        this.errors.cronSchedule = 'invalidFormat';
-      }
-    },
-    backupCronExpressionChange() {
-      this.errors.registryBackupCronExpression = "";
-      if (this.data.registryBackup.obc.cronExpression === "") {
-        this.registryBackupNextDates = [];
-        this.errors.registryBackupCronExpression = 'required';
-        return;
-      }
-      try {
-        const cron = parseCronExpression(this.data.registryBackup.obc.cronExpression);
-        this.registryBackupNextDates = [];
-        let dt = new Date();
-        for (let i = 0; i < 3; i++) {
-          const next = cron.getNextDate(dt);
-          this.registryBackupNextDates.push(`${next.toLocaleDateString("uk")} ${next.toLocaleTimeString("uk")}`);
-          dt = next;
-        }
-      }
-      catch (e: any) {
-        this.registryBackupNextDates = [];
-        this.errors.registryBackupCronExpression = 'invalidFormat';
-      }
-    },
-    backupScheduleValidation() {
-      return new Promise < void  > ((resolve) => {
-        this.data.cronSchedule = this.data.cronSchedule.trim();
-        this.data.registryBackup.obc.cronExpression = this.data.registryBackup.obc.cronExpression.trim();
-        if (!this.data.enabled) {
-          resolve();
-          return;
-        }
-        this.beginValidation = true;
-        this.validated = false;
-        this.errors = {
-          cronSchedule: "",
-          days: "",
-          registryBackupCronExpression: "",
-        };
-        if (this.data.cronSchedule !== "") {
-          try {
-            parseCronExpression(this.data.cronSchedule);
-          }
-          catch (e: any) {
-            this.nextDates = [];
-            this.errors.cronSchedule = 'invalidFormat';
-          }
-        } else {
-          this.errors.cronSchedule = 'required';
-        }
-        if (this.data.registryBackup.obc.cronExpression !== "") {
-          try {
-            parseCronExpression(this.data.registryBackup.obc.cronExpression);
-          }
-          catch (e: any) {
-            this.registryBackupNextDates = [];
-            this.errors.registryBackupCronExpression = 'invalidFormat';
-          }
-        } else {
-          this.errors.registryBackupCronExpression = 'required';
-        }
-        const days = parseInt(this.data.days);
-        if (this.data.days === "") {
-          this.errors.days = 'required';
-        } else if (!/^[0-9]+$/.test(this.data.days) || isNaN(days) || days <= 0) {
-          this.errors.days = 'invalidFormat';
-        }
-        if ( this.errors.days ||  this.errors.cronSchedule || this.data.cronSchedule === "" || this.data.days === "") {
-          return;
-        }
-        if (this.errors.registryBackupCronExpression || this.data.registryBackup.obc.cronExpression === "") {
-          return;
-        }
-        this.validated = true;
-        this.beginValidation = false;
-        resolve();
-      });
-    },
-  },
+  });
 });
+
+const validationSchema = yup.object({
+  cronSchedule: parseCronExpressionRules(),
+  days: yup.string().required().matches(/^[1-9]+$/),
+  obcCronExpression: parseCronExpressionRules(),
+});
+
+const { useFieldModel, validate, errors } = useForm({
+  validationSchema, initialValues: {
+    cronSchedule: registryValues.global.registryBackup.schedule,
+    days: registryValues.global.registryBackup.expiresInDays,
+    obcCronExpression: registryValues.global.registryBackup.obc.cronExpression,
+  }
+});
+
+const [
+  cronSchedule,
+  days,
+  obcCronExpression,
+] = useFieldModel([
+  'cronSchedule',
+  'days',
+  'obcCronExpression',
+]);
+
+function validator() {
+  beginValidation.value = true;
+  return new Promise((resolve) => {
+    validate().then((res) => {
+      if (res.valid) {
+        beginValidation.value = false;
+        resolve(true);
+      }
+    });
+  });
+}
+
+defineExpose({
+  validator
+});
+
+onMounted(()=> {
+  cronExpressionChange();
+  backupCronExpressionChange();
+});
+
+function showBackupPlaceModal() {
+  backupPlacePopupShow.value = true;
+}
+
+function hideBackupPlaceModal() {
+  backupPlacePopupShow.value = false;
+}
+
+function showBackupDeletePlaceModal() {
+  backupDeletePlacePopupShow.value = true;
+}
+
+function hideBackupDeletePlaceModal() {
+  backupDeletePlacePopupShow.value = false;
+}
+
+function backupPlaceSubmit(data: { backupBucket: string; endpoint: string; login: string; password: string; }) {
+  obcBackupBucket.value = data.backupBucket;
+  obcEndpoint.value = data.endpoint;
+  obcLogin.value = data.login;
+  obcPassword.value = data.password;
+  backupPlacePopupShow.value = false;
+}
+
+function backupDeletePlaceSubmit() {
+  obcBackupBucket.value = '';
+  obcEndpoint.value = '';
+  obcLogin.value = '';
+  obcPassword.value = '';
+  
+  backupDeletePlacePopupShow.value = false;
+}
+
+function enabledChange () {
+  beginValidation.value = false;
+  cronSchedule.value = registryValues.global.registryBackup.schedule;
+  days.value = registryValues.global.registryBackup.expiresInDays;
+  obcCronExpression.value = registryValues.global.registryBackup.obc.cronExpression;
+  obcBackupBucket.value = registryValues.global.registryBackup.obc.backupBucket;
+  obcEndpoint.value = registryValues.global.registryBackup.obc.endpoint;
+  obcLogin.value = model.OBCLogin;
+  obcPassword.value = model.OBCPassword;
+}
+
+function cronExpressionChange () {
+  nextDates.value = [];
+  try {
+    const cron = parseCronExpression(cronSchedule.value);
+    let dt = new Date();
+    for (let i = 0; i < 3; i++) {
+      const next = cron?.getNextDate(dt);
+      nextDates.value.push(getFormattedDate(next.toISOString()));
+      dt = next;
+    }
+  }
+  catch (e: any) {
+    nextDates.value = [];
+  }
+}
+
+function backupCronExpressionChange () {
+  registryBackupNextDates.value = [];
+  try {
+    const cron = parseCronExpression(obcCronExpression.value);
+    let dt = new Date();
+    for (let i = 0; i < 3; i++) {
+      const next = cron?.getNextDate(dt);
+      registryBackupNextDates.value.push(getFormattedDate(next.toISOString()));
+      dt = next;
+    }
+  }
+  catch (e: any) {
+    registryBackupNextDates.value = [];
+  }
+}
 </script>
 
-
 <template>
-  <h2>Резервне копіювання</h2>
-  <p>Можливість вказати розклад створення резервних копій реєстру та термін їх зберігання.</p>
+  <div class="form-group">
+    <Typography variant="h3">Резервне копіювання</Typography>
+  </div>
+  <Typography variant="bodyText">Можливість вказати розклад створення резервних копій реєстру та термін їх зберігання.</Typography>
   <div class="toggle-switch backup-switch">
-      <input v-model="data.enabled" class="switch-input"
+      <input v-model="enabled" :onChange="enabledChange" class="switch-input"
               type="checkbox" id="backup-schedule-switch-input"  name="backup-schedule-enabled" />
       <label for="backup-schedule-switch-input">Toggle</label>
       <span>Налаштувати резервне копіювання</span>
   </div>
 
-  <div v-show="data.enabled">
-      <div class="form-group">
-        <TextField
-          label="Розклад"
-          name="cron-schedule"
-          placeholder="5 4 * * *"
-          description="Використовується Cron-формат."
-          :value="data.cronSchedule"
-          :error="beginValidation ? errors.cronSchedule : ''"
-          @update="val => data.cronSchedule = val"
-          @change="cronExpressionChange"
-        />
-      </div>
-      <div v-show="nextDates.length" class="form-group">
-          <label>Наступні запуски резервного копіювання (за київським часом)</label>
-          <ul class="cron-next-dates">
-              <li v-for="date in nextDates" v-bind:key="date">
-                <Typography variant="bodyText">{{ date }}</Typography>
-              </li>
-          </ul>
-      </div>
-
-      <div class="form-group">
-        <TextField
-          label="Час зберігання (днів)"
-          name="cron-schedule-days"
-          placeholder="3"
-          description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
-          :value="data.days"
-          :error="beginValidation ? errors.days : ''"
-          @update="val => data.days = val"
-          @change="daysChange"
-        />
-      </div>
-
-      <h2>Резервне копіювання реплікацій об’єктів S3</h2>
-      <div class="form-group">
-        <TextField
-          label="Розклад збереження резервних копій реплікацій об’єктів S3"
-          name="registry-backup-obc-cron-expression"
-          placeholder="5 4 * * *"
-          description="Якщо Ви бажаєте встановити розклад, що відмінний від дефолтного, будь ласка, введіть значення розкладу у Cron-форматі, або вкажіть дефолтне значення за київським часом: 30 17 * * * *"
-          :value="data.registryBackup.obc.cronExpression"
-          :error="beginValidation ? errors.registryBackupCronExpression : ''"
-          @update="val => data.registryBackup.obc.cronExpression = val"
-          @change="backupCronExpressionChange"
-        />
-      </div>
-      <div v-show="registryBackupNextDates.length" class="form-group">
+  <div v-show="enabled">
+    <div class="form-group">
+      <Typography variant="h5" upperCase>Резервне копіювання реєстру</Typography>
+    </div>
+    <div class="form-group">
+      <TextField
+        label="Розклад"
+        name="cron-schedule"
+        placeholder="5 4 * * *"
+        description="Використовується Cron-формат."
+        :value="cronSchedule"
+        :error="beginValidation ? errors.cronSchedule : ''"
+        @update="val => cronSchedule = val"
+        @change="cronExpressionChange"
+      />
+    </div>
+    <div v-show="nextDates.length" class="form-group">
         <label>Наступні запуски резервного копіювання (за київським часом)</label>
         <ul class="cron-next-dates">
-            <li v-for="date in registryBackupNextDates" v-bind:key="date">
+            <li v-for="date in nextDates" v-bind:key="date">
               <Typography variant="bodyText">{{ date }}</Typography>
             </li>
         </ul>
-      </div>
+    </div>
 
-      <div>
-        <Typography variant="subheading">Місце зберігання резервних копій реплікацій об’єктів S3</Typography>
-        <div class="rc-form-backup-obc" v-if="data.registryBackup.obc.endpoint">
-          <div>
-            <div class="bucket-field">
-              <Typography variant="small">Ім’я бакета</Typography>
-              <Typography variant="bodyText">{{ data.registryBackup.obc.backupBucket }}</Typography>
-            </div>
-            <div class="endpoint-field">
-              <Typography variant="small">Endpoint</Typography>
-              <Typography variant="bodyText">{{ data.registryBackup.obc.endpoint }}</Typography>
-            </div>
-            <input type="hidden" name="registry-backup-obc-backup-bucket" v-model="data.registryBackup.obc.backupBucket" class="rc-form-input-read-only" disbaled />
-            <input type="hidden" name="registry-backup-obc-endpoint" v-model="data.registryBackup.obc.endpoint" class="rc-form-input-read-only" disbaled />
-            <input type="hidden" name="registry-backup-obc-login" v-model="data.registryBackup.obc.login" class="rc-form-input-read-only" disbaled />
-            <input type="hidden" name="registry-backup-obc-password" v-model="data.registryBackup.obc.password" class="rc-form-input-read-only" disbaled />
-          </div>
+    <div class="form-group">
+      <TextField
+        label="Час зберігання (днів)"
+        name="cron-schedule-days"
+        placeholder="3"
+        description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+        :value="days"
+        :error="beginValidation ? errors.days : ''"
+        @update="val => days = val"
+      />
+    </div>
 
-          <div class="buttom-group">
-            <a href="#" @click.stop.prevent="showBackupPlaceModal"
-              class="icon-button">
-              <img alt="edit button" src="@/assets/img/action-edit.png" />
-            </a>
-            <a href="#" @click.stop.prevent="showBackupDeletePlaceModal"
-              class="icon-button">
-              <img alt="delete button" src="@/assets/img/action-delete.png" />
-            </a>
+    <div class="form-group">
+      <Typography variant="h5" upperCase>Резервне копіювання реплікацій об’єктів S3</Typography>
+    </div>
+    <div class="form-group">
+      <TextField
+        label="Розклад збереження резервних копій реплікацій об’єктів S3"
+        name="registry-backup-obc-cron-expression"
+        placeholder="30 17 * * *"
+        description="Якщо Ви бажаєте встановити розклад, що відмінний від дефолтного, будь ласка, введіть значення розкладу у Cron-форматі, або вкажіть дефолтне значення за київським часом: 30 17 * * * *"
+        :value="obcCronExpression"
+        :error="beginValidation ? errors.obcCronExpression : ''"
+        @update="val => obcCronExpression = val"
+        @change="backupCronExpressionChange"
+      />
+    </div>
+    <div v-show="registryBackupNextDates.length" class="form-group">
+      <label>Наступний запуск резервного копіювання реплікацій об’єктів S3 (за київським часом)</label>
+      <ul class="cron-next-dates">
+          <li v-for="date in registryBackupNextDates" v-bind:key="date">
+            <Typography variant="bodyText">{{ date }}</Typography>
+          </li>
+      </ul>
+    </div>
+
+    <div>
+      <Typography variant="subheading">Місце зберігання резервних копій реплікацій об’єктів S3</Typography>
+      <div class="rc-form-backup-obc" v-if="obcEndpoint">
+        <div>
+          <div class="bucket-field">
+            <Typography variant="small">Ім’я бакета</Typography>
+            <Typography variant="bodyText">{{ obcBackupBucket }}</Typography>
           </div>
+          <div class="endpoint-field">
+            <Typography variant="small">Endpoint</Typography>
+            <Typography variant="bodyText">{{ obcEndpoint }}</Typography>
+          </div>
+          <input type="hidden" name="registry-backup-obc-backup-bucket" v-model="obcBackupBucket" disbaled />
+          <input type="hidden" name="registry-backup-obc-endpoint" v-model="obcEndpoint" disbaled />
+          <input type="hidden" name="registry-backup-obc-login" v-model="obcLogin" disbaled />
+          <input type="hidden" name="registry-backup-obc-password" v-model="obcPassword" disbaled />
         </div>
-        <div class="rc-form-backup-obc-empty" v-if="!data.registryBackup.obc.endpoint">
-          <Typography variant="bodyText">Використовуються значення за замовчуванням, задані при розгортанні реєстру.</Typography>
-          <div>
-            <a href="#" @click.stop.prevent="showBackupPlaceModal" class="icon-button set-data-button">
-              <img alt="edit button" src="@/assets/img/action-edit.png" />
-              <Typography variant="buttonText">Задати власні значення</Typography>
-            </a>
-          </div>
+
+        <div class="buttom-group">
+          <a href="#" @click.stop.prevent="showBackupPlaceModal"
+            class="icon-button">
+            <img alt="edit button" src="@/assets/img/action-edit.png" />
+          </a>
+          <a href="#" @click.stop.prevent="showBackupDeletePlaceModal"
+            class="icon-button">
+            <img alt="delete button" src="@/assets/img/action-delete.png" />
+          </a>
         </div>
       </div>
+      <div class="rc-form-backup-obc-empty" v-if="!obcEndpoint">
+        <Typography variant="bodyText">Використовуються значення за замовчуванням, задані при розгортанні реєстру.</Typography>
+        <div>
+          <a href="#" @click.stop.prevent="showBackupPlaceModal" class="icon-button set-data-button">
+            <img alt="edit button" src="@/assets/img/action-edit.png" />
+            <Typography variant="buttonText" upperCase>Задати власні значення</Typography>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 
   <RegistryBackupSavePlaceModal
     :backupPlacePopupShow="backupPlacePopupShow"
-    :initialData="data.registryBackup.obc"
+    :initialData="{
+      backupBucket: obcBackupBucket, endpoint: obcEndpoint, login: obcLogin, password: obcPassword,
+    }"
     @submit-data="backupPlaceSubmit"
     @hide-backup-place-modal="hideBackupPlaceModal"
   />
@@ -323,7 +330,7 @@ export default defineComponent({
   />
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 
 .endpoint-field {
   margin-top: 16px;
@@ -346,6 +353,7 @@ export default defineComponent({
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
+  margin-top: 10px;
   padding: 8px 0px;
   gap: 8px;
   border-width: 1px 0px;
@@ -378,7 +386,7 @@ export default defineComponent({
 }
 
 .set-data-button {
-  margin: 16px;
+  margin: 10px;
 }
 
 .icon-button {

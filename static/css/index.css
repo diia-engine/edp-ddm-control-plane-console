@@ -11648,6 +11648,7 @@ div#kubernetes-component {
     border: none;
     font-family: "Oswald", sans-serif;
     margin-top: 8px;
+    cursor: pointer;
 }
 
 /*.rc-form-group button[type=submit] {*/

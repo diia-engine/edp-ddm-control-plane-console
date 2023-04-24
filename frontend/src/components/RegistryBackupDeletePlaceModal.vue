@@ -21,6 +21,7 @@ export default {
 <template>
   <Modal
     title="Видалити власні значення для зберігання резервних копій реплікацій об’єктів S3?"
+    submitBtnText="Видалити"
     :show="backupDeletePlacePopupShow"
     @close="hideBackupDeletePlaceModal"
     @submit="submit"

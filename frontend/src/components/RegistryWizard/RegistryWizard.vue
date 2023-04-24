@@ -163,7 +163,7 @@ export default defineComponent({
                         :max-total-file-size-prop="templateVariables.registryValues?.digitalDocuments.maxTotalFileSize" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'backupSchedule'">
-                  <RegistryBackupSchedule ref="backupScheduleTab" />
+                  <RegistryBackupSchedule ref="backupScheduleTab" :template-variables="templateVariables" />
                 </div>
               <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'trembita'">
                 <RegistryTrembita ref="trembitaTab" />

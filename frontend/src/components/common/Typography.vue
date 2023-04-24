@@ -3,6 +3,7 @@
 export default {
   props: {
     variant: { type: String },
+    upperCase: { type: Boolean },
   },
   computed: {
     Component() {
@@ -24,6 +25,10 @@ export default {
     classes() {
       const classes = ['typography', this.variant];
 
+      if (this.upperCase) {
+        classes.push('upperCase');
+      }
+
       return classes.join(' ');
     }
 
@@ -41,8 +46,8 @@ export default {
 <style lang="scss" scoped>
 
 .typography {
-  font-family: "Source Sans Pro", sans-serif;
-  margin: 0 4px;
+  font-family: 'Source Sans Pro', sans-serif;
+  margin: 0;
 }
 .tiny {
   font-style: normal;
@@ -68,7 +73,6 @@ export default {
   font-weight: 400;
   font-size: 18px;
   line-height: 24px;
-  text-transform: uppercase;
   color: $black-color;
   opacity: 0.5;
   display: inline;
@@ -86,6 +90,16 @@ export default {
   font-weight: 400;
   font-size: 24px;
   line-height: 32px;
+}
+.h5 {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 24px;
+}
+.upperCase {
+  text-transform: uppercase;
 }
 
 </style>

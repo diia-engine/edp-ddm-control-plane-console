@@ -1,8 +1,9 @@
-<script lang="ts">
+<script setup lang="ts">
 import Modal from '@/components/common/Modal.vue';
 import TextField from '@/components/common/TextField.vue';
 import * as yup from 'yup';
 import { useForm } from 'vee-validate';
+import { onUpdated, toRefs } from 'vue';
 
 interface Data {
   backupBucket: string;
@@ -11,63 +12,39 @@ interface Data {
   password: string;
 }
 
-yup.setLocale({
-    mixed: {
-        required: 'required',
-    },
-    string: {
-        min: 'checkFormat',
-        max: 'checkFormat',
-        matches: 'checkFormat',
-    },
-});
+interface RegistryBackupSavePlaceModalProps {
+  backupPlacePopupShow: boolean;
+  initialData: Data;
+}
 
 const validationSchema = yup.object({
-    backupBucket: yup.string().required().min(3).max(63).matches(/^[a-z0-9][a-z0-9.-]*$/i),
-    endpoint: yup.string().required().matches(/^[a-z0-9.\-/:]+$/i),
-    login: yup.string().required(),
-    password: yup.string().required(),
+  backupBucket: yup.string().required().min(3).max(63).matches(/^[a-z0-9][a-z0-9.-]*$/i),
+  endpoint: yup.string().required().matches(/^[a-z0-9.\-/:]+$/i),
+  login: yup.string().required(),
+  password: yup.string().required(),
 });
 
-export default {
-  props: {
-    backupPlacePopupShow: { type: Boolean },
-    initialData: { type: Object },
-  },
-  components: { Modal, TextField },
-  data() {
-    return {
-      handleSubmit: null as any,
-      setValues: null as any,
-      values: {} as Data,
-      errors: {} as Data,
-    };
-  },
-  mounted() {
-    const { handleSubmit, setValues, values, errors } = useForm({
-      validationSchema, initialValues: this.initialData
-    });
-    this.handleSubmit = handleSubmit;
-    this.setValues = setValues;
-    this.values = values as Data;
-    this.errors = errors as unknown as Data;
-  },
-  updated() {
-    this.setValues(this.initialData);
-  },
-  methods: {
-    submit() {
-      const validate = this.handleSubmit?.(async (data: Data) => {
-        this.$emit('submitData', data);
-      });
+const props = defineProps<RegistryBackupSavePlaceModalProps>();
+const { backupPlacePopupShow, initialData } = toRefs(props);
+const { handleSubmit, values, errors, setValues, setErrors } = useForm({
+  validationSchema, initialValues: initialData,
+});
 
-      validate(this.values);
-    },
-    hideBackupPlaceModal() {
-      this.$emit('hideBackupPlaceModal');
-    },
-  },
-};
+onUpdated(()=> {
+  setValues(initialData.value);
+  setErrors({});
+});
+
+const emit = defineEmits(['hideBackupPlaceModal', 'submitData']);
+
+function hideBackupPlaceModal() {
+  emit('hideBackupPlaceModal');
+}
+
+const submit = handleSubmit((data: Data) => {
+  emit('submitData', data);
+});
+
 </script>
 
 <template>
@@ -109,7 +86,6 @@ export default {
         :error="errors?.password"
         @update="val => values.password = val" 
       />
-
     </form>
   </Modal>
 </template>

@@ -2,3 +2,8 @@
     color: #000000;
     opacity: 0.25;
 }
+
+.body-modal-shown {
+    height: 100vh;
+    overflow: hidden;
+}

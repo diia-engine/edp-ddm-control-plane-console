@@ -10,6 +10,13 @@ export default {
     submitBtnText: { default: 'Підтвердити', type: String },
     hasCancelBtn: { default: true, type: Boolean },
   },
+  updated() {
+    if (this.show) {
+      document.body.classList.add('body-modal-shown');
+    } else {
+      document.body.classList.remove('body-modal-shown');
+    }
+  },
   methods: {
     close() {
       this.$emit('close');
@@ -25,7 +32,8 @@ export default {
   <div>
     <div class="common-modal-backdrop" v-cloak v-if="show"></div>
 
-    <div class="common-modal-window common-modal-admin-window" v-cloak v-if="show">
+    <div class="common-modal-window-wrapper" v-cloak v-if="show">
+      <div class="common-modal-window" v-cloak v-if="show" @click.stop.prevent>
         <div class="common-modal-header">
             <div class="common-modal-title">
               <Typography variant="h3">{{ title }}</Typography>
@@ -43,11 +51,13 @@ export default {
           <button v-if="hasCancelBtn" class="common-modal-cancel" @click.stop.prevent="close">Відмінити</button>
           <button class="submit-button" :class="redButton && 'red-button'" @click.stop.prevent="submit">{{ submitBtnText }}</button>
         </div>
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+
 .common-modal-backdrop {
   position: absolute;
   width: 100%;
@@ -68,20 +78,25 @@ export default {
 
 .common-modal-window {
   z-index: 1001;
-  position: absolute;
-  left: calc(50% - 248px);
   width: 496px;
   background: $white-color;
   opacity: 1;
-  top: 25%;
   box-shadow: 0 6px 20px -5px $shadow-window-color;
   border-radius: 4px;
   padding: 8px;
+  margin: auto;
 }
 
-.common-modal-admin-window {
-    top: 10%;
-    position: fixed;
+.common-modal-window-wrapper {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+  overflow-y: auto;
+  left: 0; top: 0; right: 0; bottom: 0;
 }
 
 .common-modal-header {
