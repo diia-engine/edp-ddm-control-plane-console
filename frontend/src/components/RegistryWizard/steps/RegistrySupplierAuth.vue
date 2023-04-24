@@ -25,7 +25,7 @@ export default defineComponent({
         :class="{'error': pageRoot.$data.wizard.tabs.supplierAuthentication.beginValidation && (pageRoot.$data.wizard.tabs.supplierAuthentication.data.url == '' || pageRoot.$data.wizard.tabs.supplierAuthentication.urlValidationFailed)}">
       <label for="sup-auth-url">Посилання <b class="red-star">*</b></label>
       <!--<input name="sup-auth-url" id="sup-auth-url" v-model="wizard.tabs.supplierAuthentication.data.url" />-->
-      <textarea rows="3" id="sup-auth-url" name="sup-auth-url" v-model="pageRoot.$data.wizard.tabs.supplierAuthentication.data.url"></textarea>
+      <input id="sup-auth-url" name="sup-auth-url" v-model="pageRoot.$data.wizard.tabs.supplierAuthentication.data.url">
       <span v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.beginValidation && pageRoot.$data.wizard.tabs.supplierAuthentication.data.url == ''">Обов’язкове поле</span>
       <span v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.beginValidation && pageRoot.$data.wizard.tabs.supplierAuthentication.urlValidationFailed">Перевірте формат поля</span>
       <p>URL, повинен починатись з http:// або https://</p>

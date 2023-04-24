@@ -934,7 +934,7 @@ export default {
                                             <i class="fa-solid fa-pen"></i>
                                         </a>
                                         <a :title="`${$al.type == 'platform' ? 'Система недоступна для видалення' : ''}`"
-                                            href="#" @click="showDeleteTrembitaClientForm($index, $al.Type, $event)">
+                                            href="#" @click="showDeleteTrembitaClientForm($index, $al.type, $event)">
                                             <i class="fa-solid fa-trash registry-trash"
                                                 :class="{ inactive: $al.type == 'platform' }"></i>
                                         </a>
