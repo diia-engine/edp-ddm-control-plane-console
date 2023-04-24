@@ -53,8 +53,8 @@ let app = Vue.createApp({
             this.wizard.registryAction = this.$refs.wizardAction.value;
 
             if (this.$refs.wizardAction.value === "edit") {
-                let registryData = JSON.parse(this.$refs.registryData.value);
-                this.wizard.tabs.general.registryName = registryData.name;
+                this.registryData = JSON.parse(this.$refs.registryData.value);
+                this.wizard.tabs.general.registryName = this.registryData.name;
                 this.wizard.tabs.template.visible = false;
                 this.wizard.tabs.confirmation.visible = false;
                 this.adminsChanged = false;
@@ -77,7 +77,8 @@ let app = Vue.createApp({
     },
     data() {
         return {
-            registryValues: null,
+            registryData: {},
+            registryValues: {},
             registryFormSubmitted: false,
             cidrChanged: true,
             officerCIDRValue: { value: '' },
@@ -226,23 +227,23 @@ let app = Vue.createApp({
                 tabs: [
                     {
                         key: 'administrators',
-                        title: 'Адміністратори'
+                        title: 'Адміністратори',
                     },
                     {
                         key: 'backup',
-                        title: 'Резервне копіювання'
+                        title: 'Резервне копіювання',
                     },
                     {
                         key: 'allowedCIDR',
-                        title: 'Дозволені CIDR'
+                        title: 'Дозволені CIDR',
                     },
                     {
                         key: 'dataAboutKey',
-                        title: 'Дані про ключ'
+                        title: 'Дані про ключ',
                     },
                     {
                         key: 'keycloakDNS',
-                        title: 'Keycloak DNS'
+                        title: 'Keycloak DNS',
                     },
                 ],
                 backup: {
@@ -327,7 +328,7 @@ let app = Vue.createApp({
                 return [];
             }
 
-            return this.registryValues.keycloak.customHosts;
+            return this.registryValues?.keycloak?.customHosts;
         },
         submitKeycloakDNSForm(e){
             this.clusterSettings.keycloak.submitInput = JSON.stringify(this.registryValues.keycloak.customHosts);
@@ -566,7 +567,7 @@ let app = Vue.createApp({
 
                 this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = this.registryValues.keycloak.citizenAuthFlow.edrCheck
             } catch (e) {
-                console.log(e);
+                // console.log(e);
             }
 
             try {
@@ -574,7 +575,7 @@ let app = Vue.createApp({
                 this.wizard.tabs.backupSchedule.data.cronSchedule = this.registryValues.global.registryBackup.schedule;
                 this.wizard.tabs.backupSchedule.data.days = this.registryValues.global.registryBackup.expiresInDays;
             } catch (e) {
-                console.log(e);
+                // console.log(e);
             }
 
             if (this.registryValues.keycloak.customHosts === null) {

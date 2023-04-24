@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-version"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
@@ -70,10 +72,11 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		return nil, errors.Wrap(err, "unable to get ini template data")
 	}
 
-	hasUpdate, branches, err := HasUpdate(userCtx, a.Services.Gerrit, reg, MRTargetRegistryVersionUpdate)
+	hasUpdate, branches, registryVersion, err := HasUpdate(userCtx, a.Services.Gerrit, reg, MRTargetRegistryVersionUpdate)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}
+	model.IsRegistry194Lower = IsRegistry194Lower(registryVersion)
 
 	dnsManual, err := a.getDNSManualURL(ctx)
 	if err != nil {
@@ -104,6 +107,11 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 	}
 
 	return router.MakeHTMLResponse(200, "registry/edit.html", responseParams), nil
+}
+
+func IsRegistry194Lower(registryVersion *version.Version) bool {
+	v, _ := version.NewVersion("1.9.4")
+	return registryVersion.LessThan(v)
 }
 
 func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParams gin.H, r *registry) error {

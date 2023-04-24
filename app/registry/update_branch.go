@@ -28,21 +28,17 @@ func BranchVersion(name string) *version.Version {
 	return v
 }
 
-func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *codebase.Codebase, mrTarget string) (bool, []string, error) {
+func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *codebase.Codebase, mrTarget string) (bool, []string, *version.Version, error) {
 	gerritProject, err := gerritService.GetProject(ctx, cb.Name)
 	if service.IsErrNotFound(err) {
-		return false, []string{}, nil
+		return false, []string{}, nil, nil
 	}
 
 	if err != nil {
-		return false, nil, errors.Wrap(err, "unable to get gerrit project")
+		return false, nil, nil, errors.Wrap(err, "unable to get gerrit project")
 	}
 
 	branches := UpdateBranches(gerritProject.Status.Branches)
-
-	if len(branches) == 0 {
-		return false, branches, nil
-	}
 
 	registryVersion := BranchVersion(cb.Spec.DefaultBranch)
 	if cb.Spec.BranchToCopyInDefaultBranch != "" {
@@ -55,7 +51,7 @@ func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *c
 
 	mrs, err := gerritService.GetMergeRequestByProject(ctx, gerritProject.Spec.Name)
 	if err != nil {
-		return false, branches, errors.Wrap(err, "unable to get merge requests")
+		return false, branches, nil, errors.Wrap(err, "unable to get merge requests")
 	}
 
 	branchesDict := make(map[string]string)
@@ -63,13 +59,14 @@ func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *c
 		branchesDict[br] = br
 	}
 
+	hasOpenMR := false
 	for _, mr := range mrs {
 		if mr.Labels[MRLabelTarget] != mrTarget {
 			continue
 		}
 
 		if mr.Status.Value == gerrit.StatusNew {
-			return false, branches, nil
+			hasOpenMR = true
 		}
 
 		if mr.Status.Value == gerrit.StatusMerged {
@@ -82,6 +79,10 @@ func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *c
 		}
 	}
 
+	if hasOpenMR {
+		return false, nil, registryVersion, nil
+	}
+
 	branches = []string{}
 	for _, br := range branchesDict {
 		if registryVersion.LessThan(BranchVersion(br)) {
@@ -90,11 +91,11 @@ func HasUpdate(ctx context.Context, gerritService gerrit.ServiceInterface, cb *c
 	}
 
 	if len(branches) == 0 {
-		return false, branches, nil
+		return false, branches, registryVersion, nil
 	}
 
 	sort.Sort(SortByVersion(branches))
-	return true, branches, nil
+	return true, branches, registryVersion, nil
 }
 
 func LowestVersion(gerritProjectBranches []string) *version.Version {

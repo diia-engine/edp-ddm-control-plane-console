@@ -38,7 +38,7 @@ func (a *App) registryUpdateView(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get registry")
 	}
 
-	hasUpdate, branches, err := HasUpdate(userCtx, a.Services.Gerrit, reg, MRTargetRegistryVersionUpdate)
+	hasUpdate, branches, _, err := HasUpdate(userCtx, a.Services.Gerrit, reg, MRTargetRegistryVersionUpdate)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}

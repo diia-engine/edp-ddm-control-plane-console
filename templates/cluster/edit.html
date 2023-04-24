@@ -13,7 +13,8 @@
             <div class="wizard-contents">
                 <ul>
                     <template v-for="tab in clusterSettings.tabs">
-                        <li :class="{ active: clusterSettings.activeTab == tab.key }">
+                        <li v-show="!(tab.key == 'keycloakDNS' && registryValues.isRegistry194Lower)"
+                            :class="{ active: clusterSettings.activeTab == tab.key }">
                             <a @click="selectClusterSettingsTab(tab.key, $event)" href="#">[[ tab.title ]]</a>
                         </li>
                     </template>

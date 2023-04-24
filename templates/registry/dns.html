@@ -1,7 +1,7 @@
 {{ define "reg-dns" }}
     <h2>Налаштування DNS</h2>
 
-    <div class="rc-form-group show-errors-span dns-inputs">
+    <div v-if="!registryData.isRegistry194Lower" class="rc-form-group show-errors-span dns-inputs">
         <label for="keycloak-hostname"
                class="header-label">Сервіс управління користувачами та ролями (Keycloak)</label>
 

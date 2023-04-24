@@ -59,6 +59,7 @@ type registry struct {
 	CronScheduleDays       string   `form:"cron-schedule-days"`
 	EDRCheckEnabled        string   `form:"edr-check-enabled"`
 	KeycloakCustomHostname string   `form:"keycloak-custom-hostname"`
+	IsRegistry194Lower     bool     `form:"-" json:"isRegistry194Lower"`
 }
 
 func (r *registry) KeysRequired() bool {
