@@ -146,7 +146,7 @@ type WhiteListIP struct {
 
 type Trembita struct {
 	Registries map[string]TrembitaRegistry `yaml:"registries" json:"registries"`
-	IPList     []string                    `yaml:"ipList" json:"IPList"`
+	IPList     []string                    `yaml:"ipList" json:"ipList"`
 }
 
 type TrembitaRegistry struct {

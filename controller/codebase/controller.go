@@ -396,36 +396,34 @@ func SetCachedFiles(projectName string, appCache *cache.Cache, gitService *git.S
 }
 
 func updateRegistryValues(instance *codebaseService.Codebase, gitService *git.Service) (bool, error) {
-	valuesStr, err := gitService.GetFileContents(registry.ValuesLocation)
+	currentValuesValuesStr, err := gitService.GetFileContents(registry.ValuesLocation)
 	if err != nil {
 		return false, fmt.Errorf("unable to get values from repo, %w", err)
 	}
-	//TODO: merge values with new algo like in MR controller mergeMaps
-	var raw map[string]interface{}
-	if err := yaml.Unmarshal([]byte(valuesStr), &raw); err != nil {
+
+	var currentValues map[string]interface{}
+	if err := yaml.Unmarshal([]byte(currentValuesValuesStr), &currentValues); err != nil {
 		return false, fmt.Errorf("unable to decode values, %w", err)
 	}
-	if raw == nil {
-		raw = make(map[string]interface{})
+	if currentValues == nil {
+		currentValues = make(map[string]interface{})
 	}
 
-	var values map[string]interface{}
-	if err := json.Unmarshal([]byte(instance.Annotations[registry.AnnotationValues]), &values); err != nil {
+	var instanceValues map[string]interface{}
+	if err := json.Unmarshal([]byte(instance.Annotations[registry.AnnotationValues]), &instanceValues); err != nil {
 		return false, fmt.Errorf("unable to decode codebase values, %w", err)
 	}
 
-	for k, v := range values {
-		raw[k] = v
-	}
+	mergedValues := MergeMaps(currentValues, instanceValues)
 
-	bts, err := yaml.Marshal(raw)
+	bts, err := yaml.Marshal(mergedValues)
 	if err != nil {
 		return false, fmt.Errorf("unable to encode values yaml, %w", err)
 	}
 
 	newContents := string(bts)
 
-	if newContents != valuesStr {
+	if newContents != currentValuesValuesStr {
 		if err := gitService.SetFileContents(registry.ValuesLocation, newContents); err != nil {
 			return false, fmt.Errorf("unable to set values yaml file contents, %w", err)
 		}
@@ -435,17 +433,28 @@ func updateRegistryValues(instance *codebaseService.Codebase, gitService *git.Se
 		}
 
 		return true, nil
-
-		//if err := gitService.Commit("set initial values.yaml from admin console",
-		//	[]string{registry.ValuesLocation}, &git.User{
-		//		Name:  instance.Annotations[registry.AnnotationCreatorUsername],
-		//		Email: instance.Annotations[registry.AnnotationCreatorEmail],
-		//	}); err != nil {
-		//	return fmt.Errorf("unable to commit values yaml, %w", err)
-		//}
 	}
 
 	return false, nil
+}
+
+func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(a))
+	for k, v := range a {
+		out[k] = v
+	}
+	for k, v := range b {
+		if v, ok := v.(map[string]interface{}); ok {
+			if bv, ok := out[k]; ok {
+				if bv, ok := bv.(map[string]interface{}); ok {
+					out[k] = MergeMaps(bv, v)
+					continue
+				}
+			}
+		}
+		out[k] = v
+	}
+	return out
 }
 
 func (c *Controller) getGerritProject(ctx context.Context, name string) (*gerritService.GerritProject, error) {

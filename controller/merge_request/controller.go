@@ -558,7 +558,7 @@ func MergeValuesFiles(src, dst string) error {
 		return fmt.Errorf("unable to close dst, err: %w", err)
 	}
 
-	out := mergeMaps(dstData, srcData)
+	out := codebase.MergeMaps(dstData, srcData)
 
 	dstFp, err = os.Create(dst)
 	if err != nil {
@@ -574,25 +574,6 @@ func MergeValuesFiles(src, dst string) error {
 	}
 
 	return nil
-}
-
-func mergeMaps(a, b map[string]interface{}) map[string]interface{} {
-	out := make(map[string]interface{}, len(a))
-	for k, v := range a {
-		out[k] = v
-	}
-	for k, v := range b {
-		if v, ok := v.(map[string]interface{}); ok {
-			if bv, ok := out[k]; ok {
-				if bv, ok := bv.(map[string]interface{}); ok {
-					out[k] = mergeMaps(bv, v)
-					continue
-				}
-			}
-		}
-		out[k] = v
-	}
-	return out
 }
 
 func CopyFolder(src, dst string) error {

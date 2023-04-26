@@ -12,9 +12,9 @@ import { defineComponent, inject } from 'vue';
 import $ from "jquery";
 export default defineComponent({
   mounted() {
-    const IPList = this.templateVariables?.registryValues?.trembita?.IPList;
-    if (IPList) {
-      this.currentCIDR = IPList;
+    const ipList = this.templateVariables?.registryValues?.trembita?.ipList;
+    if (ipList) {
+      this.currentCIDR = ipList;
       if (this.currentCIDR.length > 0) {
         this.enabled = true;
       }
