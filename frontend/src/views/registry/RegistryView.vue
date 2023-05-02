@@ -965,7 +965,7 @@ export default {
                             </a>
                         </div>
                         <div v-if="!trembitaClient.registryCreation" class="view-registry-warning">
-                            Налаштування взаємодії доступне для версій реєстру 1.9.3 і вище.
+                            Налаштування взаємодії доступне для версій реєстру {{ trembitaClient.data.type === 'platform' ? '1.9.3' : '1.9.4' }} і вище.
                         </div>
                         <div v-if="trembitaClient.registryCreation" class="view-registry-warning">
                             Додавання взаємодії доступне для версій реєстру 1.9.4 і вище.
