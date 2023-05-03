@@ -3,11 +3,9 @@ import { defineComponent } from 'vue';
 import axios from 'axios';
 import $ from 'jquery';
 import Mustache from 'mustache';
-import { parseCronExpression } from 'cron-schedule';
 
 export default defineComponent({
   expose: [
-    'wizardCronExpressionChange',
     'wizardSupAuthFlowChange',
     'loadRegistryValues',
     'removeResourcesCatFromList',
@@ -16,7 +14,6 @@ export default defineComponent({
     'mergeResource',
     'isObject',
     'mergeDeep',
-    'wizardBackupScheduleChange',
     'wizardDNSEditVisibleChange',
     'wizardEditSubmit',
     'wizardNext',
@@ -26,7 +23,6 @@ export default defineComponent({
     'wizardTabChanged',
     'wizardEmptyValidation',
     'wizardGeneralValidation',
-    'wizardBackupScheduleValidation',
     'wizardSupAuthValidation',
     'wizardDNSValidation',
     'wizardCheckPEMFiles',
@@ -98,7 +94,6 @@ export default defineComponent({
       this.registryValues = this.templateVariables.registryValues;
       this.loadRegistryValues();
       this.dnsPreloadDataFromValues();
-      this.wizardCronExpressionChange();
     }
     if (childRefs.hasOwnProperty("registryUpdate")) {
       this.wizard.tabs.update.visible = true;
@@ -203,19 +198,8 @@ export default defineComponent({
           },
           backupSchedule: {
             title: "Резервне копіювання",
-            validated: false,
-            beginValidation: false,
+            validatorRef: 'backupScheduleTab',
             visible: true,
-            validator: this.wizardBackupScheduleValidation,
-            enabled: false,
-            nextLaunches: false,
-            wrongCronFormat: false,
-            wrongDaysFormat: false,
-            data: {
-              cronSchedule: "",
-              days: "",
-            },
-            nextDates: [],
           },
           trembita: {
             title: "ШБО Трембіта",
@@ -240,30 +224,6 @@ export default defineComponent({
         ...(wizardRefs.recipientAuthTab?.$refs || {}),
         ...(wizardRefs.backupScheduleTab?.$refs || {}),
       };
-    },
-    wizardCronExpressionChange(e: any) {
-      const bs = this.wizard.tabs.backupSchedule;
-      if (bs.data.cronSchedule === "") {
-        bs.nextLaunches = false;
-        bs.wrongCronFormat = false;
-        return;
-      }
-      try {
-        const cron = parseCronExpression(bs.data.cronSchedule);
-        bs.nextDates = [];
-        let dt = new Date();
-        for (let i = 0; i < 3; i++) {
-          const next = cron.getNextDate(dt);
-          bs.nextDates.push(`${next.toLocaleDateString("uk")} ${next.toLocaleTimeString("uk")}`);
-          dt = next;
-        }
-        bs.nextLaunches = true;
-        bs.wrongCronFormat = false;
-      }
-      catch (e: any) {
-        bs.nextLaunches = false;
-        bs.wrongCronFormat = true;
-      }
     },
     wizardSupAuthFlowChange() {
       this.wizard.tabs.supplierAuthentication.validated = false;
@@ -315,21 +275,9 @@ export default defineComponent({
       } catch (e: any) {
         console.log(e);
       }
-      try {
-        this.wizard.tabs.backupSchedule.enabled = this.registryValues.global.registryBackup.enabled;
-        this.wizard.tabs.backupSchedule.data.cronSchedule = this.registryValues.global.registryBackup.schedule;
-        this.wizard.tabs.backupSchedule.data.days = this.registryValues.global.registryBackup.expiresInDays;
-      }
-      catch (e: any) {
-        console.log(e);
-      }
       if (this.registryValues.keycloak.customHosts === null) {
         this.registryValues.keycloak.customHosts = [];
       }
-    },
-    wizardBackupScheduleChange(e: any) {
-      console.log(e);
-      //TODO: remove
     },
     wizardDNSEditVisibleChange(name: string, event: any) {
       console.log(name, event);
@@ -451,39 +399,6 @@ export default defineComponent({
             tab.validated = true;
             resolve();
           });
-      });
-    },
-    wizardBackupScheduleValidation(tab: any) {
-      return new Promise < void  > ((resolve) => {
-        const bs = this.wizard.tabs.backupSchedule;
-        bs.data.cronSchedule = bs.data.cronSchedule.trim();
-        if (!bs.enabled) {
-          resolve();
-          return;
-        }
-        tab.beginValidation = true;
-        tab.validated = false;
-        bs.wrongCronFormat = false;
-        bs.wrongDaysFormat = false;
-        if (bs.data.cronSchedule !== "") {
-          try {
-            parseCronExpression(bs.data.cronSchedule);
-          }
-          catch (e: any) {
-            bs.nextLaunches = false;
-            bs.wrongCronFormat = true;
-          }
-        }
-        const days = parseInt(bs.data.days);
-        if (bs.data.days !== "" && (!/^[0-9]+$/.test(bs.data.days) || isNaN(days) || days <= 0)) {
-          bs.wrongDaysFormat = true;
-        }
-        if (bs.wrongDaysFormat || bs.wrongCronFormat || bs.data.cronSchedule === "" || bs.data.days === "") {
-          return;
-        }
-        tab.validated = true;
-        tab.beginValidation = false;
-        resolve();
       });
     },
     wizardSupAuthValidation(tab: any) {

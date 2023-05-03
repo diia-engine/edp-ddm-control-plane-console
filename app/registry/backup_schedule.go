@@ -3,6 +3,7 @@ package registry
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,7 +33,27 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 		values.Global.RegistryBackup.Schedule = r.CronSchedule
 		values.Global.RegistryBackup.Enabled = true
 
+		values.Global.RegistryBackup.OBC.CronExpression = r.OBCCronExpression
+		values.Global.RegistryBackup.OBC.BackupBucket = r.OBCBackupBucket
+		values.Global.RegistryBackup.OBC.Endpoint = r.OBCEndpoint
+
+		vaultPath := a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", "buckets-backup", time.Now().Format("20060201T150405Z")))
+		values.Global.RegistryBackup.OBC.Credentials = vaultPath
+		vaultPath = ModifyVaultPath(vaultPath)
+		secretData := map[string]interface{}{
+			a.Config.BackupBucketAccessKeyID:     r.OBCLogin,
+			a.Config.BackupBucketSecretAccessKey: r.OBCPassword,
+		}
+
+		if _, err := a.Services.Vault.Write(
+			vaultPath, map[string]interface{}{
+				"data": secretData,
+			}); err != nil {
+			return fmt.Errorf("unable to write to vault: %w", err)
+		}
+
 		globalRaw, ok := values.OriginalYaml[GlobalValuesIndex]
+
 		if !ok {
 			globalRaw = make(map[string]interface{})
 		}

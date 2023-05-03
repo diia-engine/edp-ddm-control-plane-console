@@ -123,6 +123,11 @@ func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParam
 	}
 
 	//TODO: refactor to values struct
+	if err := a.loadOBCConfig(values, r); err != nil {
+		return errors.Wrap(err, "unable to load obc config")
+	}
+
+	//TODO: refactor to values struct
 	if err := a.loadRegistryResourcesConfig(values.OriginalYaml, r); err != nil {
 		return errors.Wrap(err, "unable to load resources config")
 	}
@@ -246,6 +251,52 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 
 	r.Admins = string(adminsJs)
 
+	return nil
+}
+
+func (a *App) loadOBCConfig(values *Values, r *registry) error {
+	if values.Global.RegistryBackup.OBC.Credentials == "" {
+		return nil
+	}
+
+	modPath := ModifyVaultPath(values.Global.RegistryBackup.OBC.Credentials)
+	s, err := a.Vault.Read(modPath)
+	if err != nil {
+		return fmt.Errorf("unable to load obc credential, err: %w", err)
+	}
+
+	data, ok := s.Data["data"]
+	if !ok {
+		return nil
+	}
+
+	dataDict, ok := data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	login, ok := dataDict[a.Config.BackupBucketAccessKeyID]
+	if !ok {
+		return nil
+	}
+
+	password, ok := dataDict[a.Config.BackupBucketSecretAccessKey]
+	if !ok {
+		return nil
+	}
+
+	loginStr, ok := login.(string)
+	if !ok {
+		return nil
+	}
+
+	passwordStr, ok := password.(string)
+	if !ok {
+		return nil
+	}
+
+	r.OBCLogin = loginStr
+	r.OBCPassword = passwordStr
 	return nil
 }
 

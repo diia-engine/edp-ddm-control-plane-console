@@ -39,6 +39,8 @@ type Config struct {
 	RegistryVersionFilter           string
 	KeycloakDefaultHostname         string
 	WiremockAddr                    string
+	BackupBucketAccessKeyID         string
+	BackupBucketSecretAccessKey     string
 }
 
 type Services struct {

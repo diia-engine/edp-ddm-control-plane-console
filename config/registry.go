@@ -26,6 +26,8 @@ func (cnf *Settings) RegistryConfig() registry.Config {
 		RegistryVersionFilter:           cnf.RegistryVersionFilter,
 		KeycloakDefaultHostname:         cnf.KeycloakDefaultHostname,
 		WiremockAddr:                    cnf.WiremockAddr,
+		BackupBucketAccessKeyID:         cnf.BackupBucketAccessKeyID,
+		BackupBucketSecretAccessKey:     cnf.BackupBucketSecretAccessKey,
 	}
 }
 

@@ -52,6 +52,14 @@ type RegistryBackup struct {
 	Enabled       bool   `yaml:"enabled" json:"enabled"`
 	Schedule      string `yaml:"schedule" json:"schedule"`
 	ExpiresInDays int    `yaml:"expiresInDays" json:"expiresInDays"`
+	OBC           OBC    `yaml:"obc" json:"obc"`
+}
+
+type OBC struct {
+	CronExpression string `yaml:"cronExpression" json:"cronExpression"`
+	BackupBucket   string `yaml:"backupBucket" json:"backupBucket"`
+	Endpoint       string `yaml:"endpoint" json:"endpoint"`
+	Credentials    string `yaml:"credentials" json:"credentials"`
 }
 
 type Keycloak struct {
