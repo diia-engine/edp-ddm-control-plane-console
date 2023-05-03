@@ -5,6 +5,8 @@ import "fmt"
 const (
 	DeploymentModeDevelopment = "development"
 	GlobalValuesIndex         = "global"
+	ResourcesIndex            = "registry"
+	CrunchyPostgresIndex      = "crunchyPostgres"
 )
 
 type Values struct {

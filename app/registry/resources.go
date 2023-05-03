@@ -31,13 +31,20 @@ func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{
 func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, values *Values,
 	_ map[string]map[string]interface{}, mrActions *[]string) error {
 
+	globalInterface, ok := values.OriginalYaml[GlobalValuesIndex]
+	if !ok {
+		globalInterface = make(map[string]interface{})
+	}
+	globalDict := globalInterface.(map[string]interface{})
+
 	if r.Resources != "" {
 		var resources map[string]interface{}
 		if err := json.Unmarshal([]byte(r.Resources), &resources); err != nil {
 			return errors.Wrap(err, "unable to decode resources")
 		}
-		values.Global.Registry = resources
-		values.OriginalYaml[GlobalValuesIndex] = values.Global
+
+		globalDict[ResourcesIndex] = values.Global.Registry
+		values.OriginalYaml[GlobalValuesIndex] = globalDict
 	}
 
 	if r.CrunchyPostgresMaxConnections != "" {
@@ -45,14 +52,16 @@ func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, values *Valu
 		if err != nil {
 			return fmt.Errorf("unable to parse max connectrions, %w", err)
 		}
-
 		values.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections = int(maxCon)
-		values.OriginalYaml[GlobalValuesIndex] = values.Global
+
+		globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
+		values.OriginalYaml[GlobalValuesIndex] = globalDict
 	}
 
 	if r.CrunchyPostgresStorageSize != "" {
 		values.Global.CrunchyPostgres.StorageSize = r.CrunchyPostgresStorageSize
-		values.OriginalYaml[GlobalValuesIndex] = values.Global
+		globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
+		globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
 	}
 
 	return nil
