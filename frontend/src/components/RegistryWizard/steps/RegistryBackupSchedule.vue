@@ -213,9 +213,10 @@ export default defineComponent({
 
   <div v-show="data.enabled">
       <div class="form-group">
-        <TextField 
+        <TextField
           label="Розклад"
           name="cron-schedule"
+          placeholder="5 4 * * *"
           description="Використовується Cron-формат."
           :value="data.cronSchedule"
           :error="beginValidation ? errors.cronSchedule : ''"
@@ -233,9 +234,10 @@ export default defineComponent({
       </div>
 
       <div class="form-group">
-        <TextField 
+        <TextField
           label="Час зберігання (днів)"
           name="cron-schedule-days"
+          placeholder="3"
           description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
           :value="data.days"
           :error="beginValidation ? errors.days : ''"
@@ -243,12 +245,13 @@ export default defineComponent({
           @change="daysChange"
         />
       </div>
-      
+
       <h2>Резервне копіювання реплікацій об’єктів S3</h2>
       <div class="form-group">
-        <TextField 
+        <TextField
           label="Розклад збереження резервних копій реплікацій об’єктів S3"
           name="registry-backup-obc-cron-expression"
+          placeholder="5 4 * * *"
           description="Якщо Ви бажаєте встановити розклад, що відмінний від дефолтного, будь ласка, введіть значення розкладу у Cron-форматі, або вкажіть дефолтне значення за київським часом: 30 17 * * * *"
           :value="data.registryBackup.obc.cronExpression"
           :error="beginValidation ? errors.registryBackupCronExpression : ''"

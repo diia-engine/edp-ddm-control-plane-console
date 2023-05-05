@@ -11,6 +11,7 @@ export default {
     value: { readonly: true, type: String },
     error: { type: String },
     type: { default: 'text', readonly: true, type: String },
+    placeholder: { type: String },
   },
   methods: {
     getErrorMessage(key: string) {
@@ -34,7 +35,7 @@ export default {
 <template>
   <div class="form-input-group" :class="{'error': error}">
     <label :for="name">{{ label }}</label>
-    <input :name="name" :aria-label="name" :type="type" v-model="inputVal" v-on="$attrs" />
+    <input :name="name" :aria-label="name" :type="type" :placeholder="placeholder" v-model="inputVal" v-on="$attrs" />
     <div v-if="error" class="form-input-group-error-message">
       <Typography variant="small">{{ getErrorMessage(error) }}</Typography>
     </div>
@@ -66,6 +67,11 @@ export default {
   border: 1px solid $grey-border-color;
   background: $white-color;
   padding: 8px;
+
+  &::placeholder {
+    color: $black-color;
+    opacity: 0.25;
+  }
 }
 
 .form-input-group input:focus {
