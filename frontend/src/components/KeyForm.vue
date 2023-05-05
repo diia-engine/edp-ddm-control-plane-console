@@ -24,7 +24,7 @@ export default {
             this.$emit('wizardAddAllowedKey');
         },
         wizardRemoveAllowedKey(key: string) {
-            this.$emit('wizardAddAllowedKey', key);
+            this.$emit('wizardRemoveAllowedKey', key);
         }
     },
 };
