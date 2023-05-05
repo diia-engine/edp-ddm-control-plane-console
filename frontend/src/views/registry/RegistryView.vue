@@ -60,8 +60,9 @@ import $ from 'jquery';
 import axios from 'axios';
 import { getGerritURL, getImageUrl, getJenkinsURL } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
     data() {
         return {
             forceMR: false,
@@ -648,7 +649,8 @@ export default {
             $("body").css("overflow", "scroll");
         },
         mockChanged(dataIndex: 'externalSystem' | 'trembitaClient') {
-            let data = this[dataIndex];
+            let data = this[dataIndex].data;
+
             if (data.mock) {
                 delete data['url'];
             } else {
@@ -774,7 +776,7 @@ export default {
         this.trembitaClient = this.trembitaClientDefaults();
     },
     components: { MergeRequestsTable },
-};
+});
 </script>
 
 <template>
