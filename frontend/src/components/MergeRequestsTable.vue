@@ -13,9 +13,15 @@ const { inPlatform, mergeRequests, mrAvailable } = toRefs(props);
 
 <script lang="ts">
 import $ from 'jquery';
-import moment from "moment";
 import 'datatables.net-dt';
-import { getMergeRequestAction, getMergeRequestPlatformAction, getMergeRequestName, getMergeRequestStatus } from '@/utils';
+import {
+  getDateTimestamp,
+  getFormattedDate,
+  getMergeRequestAction,
+  getMergeRequestPlatformAction,
+  getMergeRequestName,
+  getMergeRequestStatus,
+} from '@/utils';
 
 export default {
   methods: {
@@ -29,10 +35,6 @@ export default {
         paging: true,
         columnDefs: [
             { orderable: false, targets: 4 },
-            {
-                targets: 0,
-                render: (ts: number) => moment.unix(ts).format('DD.MM.YYYY HH:mm'),
-            },
         ],
         order: [[0, 'desc']],
         language: {
@@ -72,7 +74,7 @@ export default {
       </thead>
       <tbody>
           <tr v-for="($al, $index) in mergeRequests" :key="$index">
-              <td>{{ moment($al.metadata.creationTimestamp).unix() }}</td>
+              <td :data-order="getDateTimestamp($al.metadata.creationTimestamp)">{{getFormattedDate($al.metadata.creationTimestamp)}}</td>
               <td>{{ inPlatform ? $al.metadata.name : getMergeRequestName($al) }}</td>
               <td>{{ inPlatform ? getMergeRequestPlatformAction($al) : getMergeRequestAction($al) }}</td>
               <td class="mr-status">{{ getMergeRequestStatus($al) }}</td>
