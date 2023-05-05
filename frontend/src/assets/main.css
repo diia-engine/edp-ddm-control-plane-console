@@ -1,1 +1,4 @@
-#app {}
+#app input::placeholder {
+    color: #000000;
+    opacity: 0.25;
+}
