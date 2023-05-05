@@ -29,7 +29,6 @@ export default defineComponent({
       value: '',
       cidrPopupShow: false,
       currentCIDR: [] as Array<string>,
-      currentCIDRValue: {value: ''},
       cidrChanged: false,
       maxIPCount: 10,
     };
@@ -38,7 +37,6 @@ export default defineComponent({
     onEnabledChanged() {
       if (!this.enabled) {
         this.currentCIDR = [];
-        this.currentCIDRValue = {value: JSON.stringify(this.currentCIDR)};
         this.cidrChanged = true;
       }
     },
@@ -49,7 +47,6 @@ export default defineComponent({
       }
 
       this.currentCIDR.splice(spliceIndex, 1);
-      this.currentCIDRValue.value = JSON.stringify(this.currentCIDR);
       this.cidrChanged = true;
     },
     addAllowed() {
@@ -64,7 +61,6 @@ export default defineComponent({
     },
     onCidrAdded(cidr: string) {
       this.currentCIDR.push(cidr);
-      this.currentCIDRValue = {value: JSON.stringify(this.currentCIDR)};
       this.cidrChanged = true;
     },
   },
@@ -96,7 +92,7 @@ export default defineComponent({
   </div>
   <div v-if="enabled" class="rc-form-group trembita-soap-ips">
     <label for="admins">IP-адреси ШБО Трембіта</label>
-    <input type="hidden" id="trembita-soap-ips" name="trembita-ip-list" v-model="currentCIDRValue.value" />
+    <input type="hidden" id="trembita-soap-ips" name="trembita-ip-list" :value="JSON.stringify(currentCIDR)" />
     <div class="advanced-admins">
       <div v-cloak v-for="c in currentCIDR" class="child-admin" v-bind:key="c">
         {{ c }}

@@ -30,37 +30,30 @@ export default defineComponent({
     return {
       templateVariables,
       cidrChanged: true,
-      officerCIDRValue: { value: '' },
       officerCIDR: [],
-      citizenCIDRValue: { value: '' },
       citizenCIDR: [],
-      adminCIDRValue: { value: '' },
       adminCIDR: [],
       currentCIDR: [] as Array<string>,
-      currentCIDRValue: {},
       cidrPopupShow: false,
     };
   },
   methods: {
-    showCIDRForm(cidr: never[], value: object) {
+    showCIDRForm(cidr: never[]) {
       this.cidrPopupShow = true;
       $("body").css("overflow", "hidden");
       this.currentCIDR = cidr;
-      this.currentCIDRValue = value;
     },
     onCidrAdded(cidr: string) {
       this.currentCIDR.push(cidr);
-      this.currentCIDRValue = {value: JSON.stringify(this.currentCIDR)};
       this.cidrChanged = true;
     },
-    deleteCIDR(c: any, cidr: any, value: any) {
+    deleteCIDR(c: any, cidr: any) {
       for (let v in cidr) {
         if (cidr[v] === c) {
           cidr.splice(v, 1);
           break;
         }
       }
-      value = JSON.stringify(cidr);
       this.cidrChanged = true;
     },
   },
@@ -75,43 +68,43 @@ export default defineComponent({
       <label for="admins">CIDR для портала чиновника</label>
       <input type="checkbox" style="display: none;" v-model="cidrChanged" checked name="cidr-changed" />
 
-      <input type="hidden" id="officer-cidr" name="officer-cidr" v-model="officerCIDRValue.value" />
+      <input type="hidden" id="officer-cidr" name="officer-cidr" :value="JSON.stringify(officerCIDR)" />
       <div class="advanced-admins">
           <div v-cloak v-for="c in officerCIDR" class="child-admin" v-bind:key="c">
               {{ c }}
-              <a @click.stop.prevent="deleteCIDR(c, officerCIDR, officerCIDRValue)" href="#">
+              <a @click.stop.prevent="deleteCIDR(c, officerCIDR)" href="#">
                   <img src="@/assets/img/action-delete.png" />
               </a>
           </div>
-          <button type="button" @click="showCIDRForm(officerCIDR, officerCIDRValue)">+</button>
+          <button type="button" @click="showCIDRForm(officerCIDR)">+</button>
       </div>
   </div>
 
   <div class="rc-form-group">
       <label for="admins">CIDR для портала громадянина</label>
-      <input type="hidden" id="citizen-cidr" name="citizen-cidr" v-model="citizenCIDRValue.value" />
+      <input type="hidden" id="citizen-cidr" name="citizen-cidr" :value="JSON.stringify(citizenCIDR)" />
       <div class="advanced-admins">
           <div v-cloak v-for="c in citizenCIDR" class="child-admin" v-bind:key="c">
               {{ c }}
-              <a @click.stop.prevent="deleteCIDR(c, citizenCIDR, citizenCIDRValue)" href="#">
+              <a @click.stop.prevent="deleteCIDR(c, citizenCIDR)" href="#">
                   <img src="@/assets/img/action-delete.png" />
               </a>
           </div>
-          <button type="button" @click="showCIDRForm(citizenCIDR, citizenCIDRValue)">+</button>
+          <button type="button" @click="showCIDRForm(citizenCIDR)">+</button>
       </div>
   </div>
 
   <div class="rc-form-group">
       <label for="admins">CIDR для адміністративних компонент</label>
-      <input type="hidden" id="admin-cidr" name="admin-cidr" v-model="adminCIDRValue.value" />
+      <input type="hidden" id="admin-cidr" name="admin-cidr" :value="JSON.stringify(adminCIDR)" />
       <div class="advanced-admins">
           <div v-cloak v-for="c in adminCIDR" class="child-admin" v-bind:key="c">
               {{ c }}
-              <a @click.stop.prevent="deleteCIDR(c, adminCIDR, adminCIDRValue)" href="#">
+              <a @click.stop.prevent="deleteCIDR(c, adminCIDR)" href="#">
                   <img src="@/assets/img/action-delete.png" />
               </a>
           </div>
-          <button type="button" @click="showCIDRForm(adminCIDR, adminCIDRValue)">+</button>
+          <button type="button" @click="showCIDRForm(adminCIDR)">+</button>
       </div>
   </div>
 
