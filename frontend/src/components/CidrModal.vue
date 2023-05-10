@@ -5,6 +5,7 @@ import {defineComponent} from 'vue';
 export default defineComponent({
     props: {
       cidrPopupShow: Boolean,
+      maskAllowed: Boolean,
       title: String,
       subTitle: String,
     },
@@ -19,14 +20,20 @@ export default defineComponent({
         createCIDR(e: any) {
             this.disabled = true;
             let cidrVal = String(this.editCIDR).toLowerCase();
-            if (cidrVal !== "0.0.0.0/0" && !cidrVal.
-            match(/^([01]?\d\d?|2[0-4]\d|25[0-5])(?:\.(?:[01]?\d\d?|2[0-4]\d|25[0-5])){3}(?:\/[0-2]\d|\/3[0-2])?$/)) {
+            if (!this.isIP(cidrVal)) {
               this.cidrFormatError = true;
               return;
             }
 
             this.$emit('cidrAdded', this.editCIDR);
             this.hideCIDRForm();
+        },
+        isIP(val: string) {
+          if (this.maskAllowed) {
+            return val == "0.0.0.0/0" || val.match(/^([01]?\d\d?|2[0-4]\d|25[0-5])(?:\.(?:[01]?\d\d?|2[0-4]\d|25[0-5])){3}(?:\/[0-2]\d|\/3[0-2])?$/);
+          }
+
+          return val.match(/^([01]?\d\d?|2[0-4]\d|25[0-5])(?:\.(?:[01]?\d\d?|2[0-4]\d|25[0-5])){3}$/);
         },
         hideCIDRForm() {
             this.$emit('update:cidrPopupShow', false);
@@ -59,7 +66,8 @@ export default defineComponent({
                 <div class="rc-form-group">
                     <label for="cidr-value">{{ subTitle }}</label>
                     <input id="cidr-value" type="text" v-model="editCIDR" />
-                    <p>Допустимі символи "0-9", "/", ".". Приклад: 172.16.0.0/12.</p>
+                    <p v-if="maskAllowed">Допустимі символи "0-9", "/", ".". Приклад: 172.16.0.0/12.</p>
+                    <p v-if="!maskAllowed">Допустимі символи "0-9", "." Наприклад: 127.0.0.1</p>
                 </div>
             </div>
             <div class="popup-footer active">

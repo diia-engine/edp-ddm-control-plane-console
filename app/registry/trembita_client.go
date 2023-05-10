@@ -254,6 +254,9 @@ func (a *App) prepareTrembitaIPList(ctx *gin.Context, r *registry, values *Value
 
 		values.Trembita.IPList = ipList
 		values.OriginalYaml[trembitaValuesKey] = values.Trembita
+	} else if r.TrembitaIPList == "" && len(values.Trembita.IPList) > 0 {
+		values.Trembita.IPList = []string{}
+		values.OriginalYaml[trembitaValuesKey] = values.Trembita
 	}
 
 	return nil

@@ -159,7 +159,7 @@ export default defineComponent({
                   <RegistryBackupSchedule ref="backupScheduleTab" />
                 </div>
               <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'trembita'">
-                <RegistryTrembita />
+                <RegistryTrembita ref="trembitaTab" />
               </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'confirmation'">
                     <h2>Підтвердження</h2>

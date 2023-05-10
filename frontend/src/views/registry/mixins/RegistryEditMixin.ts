@@ -203,6 +203,7 @@ export default defineComponent({
           },
           trembita: {
             title: "ШБО Трембіта",
+            validatorRef: 'trembitaTab',
             visible: true,
           },
           confirmation: { title: "Підтвердження", validated: true, visible: true, }

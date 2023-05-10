@@ -133,7 +133,7 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	clusterDescription := "cluster description"
 	cbService.On("Get", cnf.ClusterCodebaseName).Return(&codebase.Codebase{
 		ObjectMeta: metav1.ObjectMeta{Name: cnf.ClusterCodebaseName},
-		Spec:       codebase.CodebaseSpec{Description: &clusterDescription},
+		Spec:       codebase.CodebaseSpec{Description: &clusterDescription, Repository: &codebase.Repository{}},
 	}, nil)
 	cbService.On("GetBranchesByCodebase", mock.Anything, cnf.ClusterCodebaseName).Return([]codebase.CodebaseBranch{
 		{
@@ -149,7 +149,7 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	mockDescription := "mock description"
 	cbService.On("Get", "mock").Return(&codebase.Codebase{
 		ObjectMeta: metav1.ObjectMeta{Name: "mock"},
-		Spec:       codebase.CodebaseSpec{Description: &mockDescription},
+		Spec:       codebase.CodebaseSpec{Description: &mockDescription, Repository: &codebase.Repository{}},
 	}, nil)
 	cbService.On("GetBranchesByCodebase", mock.Anything, "mock").Return([]codebase.CodebaseBranch{
 		{

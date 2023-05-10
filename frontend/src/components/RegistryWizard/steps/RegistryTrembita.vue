@@ -27,6 +27,7 @@ export default defineComponent({
       templateVariables,
       enabled: false,
       value: '',
+      requiredError: false,
       cidrPopupShow: false,
       currentCIDR: [] as Array<string>,
       cidrChanged: false,
@@ -36,7 +37,6 @@ export default defineComponent({
   methods: {
     onEnabledChanged() {
       if (!this.enabled) {
-        this.currentCIDR = [];
         this.cidrChanged = true;
       }
     },
@@ -60,9 +60,27 @@ export default defineComponent({
       $("body").css("overflow", "hidden");
     },
     onCidrAdded(cidr: string) {
-      this.currentCIDR.push(cidr);
+      if (!this.currentCIDR.includes(cidr)) {
+        this.currentCIDR.push(cidr);
+      }
       this.cidrChanged = true;
     },
+    validator(tab: any) {
+      return new Promise<void>((resolve) => {
+        this.requiredError = false;
+
+        if (!this.enabled) {
+          this.currentCIDR = [];
+        }
+
+        if (this.enabled && this.currentCIDR.length == 0) {
+          this.requiredError = true;
+          return;
+        }
+
+        resolve();
+      });
+    }
   },
   components: {CidrModal,}
 });
@@ -90,7 +108,7 @@ export default defineComponent({
     <label for="trembita-enable-input">Toggle</label>
     <span>Ввімкнути доступ до API через ШБО Трембіта</span>
   </div>
-  <div v-if="enabled" class="rc-form-group trembita-soap-ips">
+  <div v-if="enabled" class="rc-form-group trembita-soap-ips" :class="{'error': requiredError}">
     <label for="admins">IP-адреси ШБО Трембіта</label>
     <input type="hidden" id="trembita-soap-ips" name="trembita-ip-list" :value="JSON.stringify(currentCIDR)" />
     <div class="advanced-admins">
@@ -102,6 +120,7 @@ export default defineComponent({
       </div>
       <button type="button" @click="showCIDRForm()" :class="{'add-cidr-disabled': !addAllowed()}">+</button>
     </div>
+    <span v-if="requiredError">Поле обов'язкове для заповнення</span>
     <p>Допустима кількість значень - {{ maxIPCount }}</p>
   </div>
 
@@ -110,6 +129,7 @@ export default defineComponent({
       v-model:cidr-popup-show="cidrPopupShow"
       title="Дозволити доступ з IP-адреси"
       sub-title="IP-адреса ШБО Трембіта"
+      :mask-allowed="false"
       @cidrAdded="onCidrAdded"
   />
 </template>

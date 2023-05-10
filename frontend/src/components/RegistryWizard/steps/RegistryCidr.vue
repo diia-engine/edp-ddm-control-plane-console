@@ -112,6 +112,7 @@ export default defineComponent({
       v-model:cidr-popup-show="cidrPopupShow"
       title="Додати CIDR"
       sub-title="IP-адреси та маски"
+      :mask-allowed="true"
      @cidrAdded="onCidrAdded"
   />
 </template>
