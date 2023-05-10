@@ -1,7 +1,7 @@
 export const getErrorMessage = (key: string): string => {
     switch (key) {
         case 'required':
-            return 'Не може бути порожнім';
+            return 'Поле обов’язкове для заповнення';
         case 'only-integer':
             return 'Тільки цілі числа';
         case 'cron-expression':
@@ -10,6 +10,8 @@ export const getErrorMessage = (key: string): string => {
           return 'Перевірте формат поля';
         case 'invalidFormat':
           return 'Невірний формат';
+        case 'moreThanMaxValue': 
+            return 'Перевищено максимально допустиме значення';
         default:
             return '';
     }

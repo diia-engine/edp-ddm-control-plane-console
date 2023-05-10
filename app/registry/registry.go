@@ -67,6 +67,7 @@ type registry struct {
 	OBCEndpoint                   string   `form:"registry-backup-obc-endpoint"`
 	OBCLogin                      string   `form:"registry-backup-obc-login"`
 	OBCPassword                   string   `form:"registry-backup-obc-password"`
+	DigitalDocuments              string   `form:"digital-documents"`
 }
 
 func (r *registry) KeysRequired() bool {

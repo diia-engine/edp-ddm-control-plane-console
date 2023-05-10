@@ -196,6 +196,11 @@ export default defineComponent({
               edrCheckEnabled: true
             }
           },
+          digitalDocuments: {
+            title: "Цифрові документи",
+            visible: true,
+            validatorRef: 'digitalDocumentsTab',
+          },
           backupSchedule: {
             title: "Резервне копіювання",
             validatorRef: 'backupScheduleTab',
@@ -224,6 +229,7 @@ export default defineComponent({
         ...(wizardRefs.supplierAuthTab?.$refs || {}),
         ...(wizardRefs.recipientAuthTab?.$refs || {}),
         ...(wizardRefs.backupScheduleTab?.$refs || {}),
+        ...(wizardRefs.digitalDocumentsTab?.$refs || {}),
       };
     },
     wizardSupAuthFlowChange() {

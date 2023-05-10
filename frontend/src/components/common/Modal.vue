@@ -7,6 +7,8 @@ export default {
     show: { type: Boolean },
     redButton: { type: Boolean },
     title: { readonly: true, type: String },
+    submitBtnText: { default: 'Підтвердити', type: String },
+    hasCancelBtn: { default: true, type: Boolean },
   },
   methods: {
     close() {
@@ -38,8 +40,8 @@ export default {
         </div>
 
         <div class="common-modal-footer">
-          <button class="common-modal-cancel" @click.stop.prevent="close">Відмінити</button>
-          <button class="submit-button" :class="redButton && 'red-button'" @click.stop.prevent="submit">Підтвердити</button>
+          <button v-if="hasCancelBtn" class="common-modal-cancel" @click.stop.prevent="close">Відмінити</button>
+          <button class="submit-button" :class="redButton && 'red-button'" @click.stop.prevent="submit">{{ submitBtnText }}</button>
         </div>
     </div>
   </div>

@@ -33,13 +33,13 @@ export default {
 </script>
 
 <template>
-  <div class="form-input-group" :class="{'error': error}">
+  <div class="form-input-group" :class="{ 'error': error }">
     <label :for="name">{{ label }}</label>
     <input :name="name" :aria-label="name" :type="type" :placeholder="placeholder" v-model="inputVal" v-on="$attrs" />
     <div v-if="error" class="form-input-group-error-message">
       <Typography variant="small">{{ getErrorMessage(error) }}</Typography>
     </div>
-    <div class="form-input-group-error-description">
+    <div class="form-input-group-error-description" v-if="description">
       <Typography variant="small">{{ description }}</Typography>
     </div>
   </div>
@@ -116,6 +116,5 @@ export default {
 .form-input-group-error-description {
   max-width: 464px;
 }
-
 </style>
 

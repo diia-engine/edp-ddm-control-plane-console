@@ -10,14 +10,20 @@ const (
 )
 
 type Values struct {
-	Administrators  []Admin                   `yaml:"administrators" json:"administrators"`
-	ExternalSystems map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
-	Global          Global                    `yaml:"global" json:"global"`
-	Trembita        Trembita                  `yaml:"trembita" json:"trembita"`
-	SignWidget      SignWidget                `yaml:"signWidget" json:"signWidget"`
-	Keycloak        Keycloak                  `yaml:"keycloak" json:"keycloak"`
-	Portals         Portals                   `yaml:"portals" json:"portals"`
-	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
+	Administrators   []Admin                   `yaml:"administrators" json:"administrators"`
+	ExternalSystems  map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
+	Global           Global                    `yaml:"global" json:"global"`
+	Trembita         Trembita                  `yaml:"trembita" json:"trembita"`
+	SignWidget       SignWidget                `yaml:"signWidget" json:"signWidget"`
+	Keycloak         Keycloak                  `yaml:"keycloak" json:"keycloak"`
+	Portals          Portals                   `yaml:"portals" json:"portals"`
+	OriginalYaml     map[string]interface{}    `yaml:"-" json:"-"`
+	DigitalDocuments DigitalDocuments          `yaml:"digitalDocuments" json:"digitalDocuments"`
+}
+
+type DigitalDocuments struct {
+	MaxFileSize      string `yaml:"maxFileSize" json:"maxFileSize"`
+	MaxTotalFileSize string `yaml:"maxTotalFileSize" json:"maxTotalFileSize"`
 }
 
 type CrunchyPostgres struct {

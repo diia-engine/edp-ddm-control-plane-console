@@ -15,6 +15,7 @@ import RegistrySupplierAuth from './steps/RegistrySupplierAuth.vue';
 import RegistryRecipientAuth from './steps/RegistryRecipientAuth.vue';
 import RegistryTemplate from './steps/RegistryTemplate.vue';
 import RegistryTrembita from './steps/RegistryTrembita.vue';
+import RegistryDigitalDocuments from './steps/RegistryDigitalDocuments.vue';
 import KeyForm from '../KeyForm.vue';
 
 export default defineComponent({
@@ -39,6 +40,7 @@ export default defineComponent({
       KeyForm,
       RegistryTemplate,
       RegistryTrembita,
+      RegistryDigitalDocuments
     },
     watch: {
       formSubmitted() {
@@ -153,7 +155,12 @@ export default defineComponent({
                     <RegistrySupplierAuth ref="supplierAuthTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'recipientAuthentication'">
-                  <RegistryRecipientAuth ref="recipientAuthTab"/>
+                    <RegistryRecipientAuth ref="recipientAuthTab" />
+                </div>
+                <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'digitalDocuments'">
+                    <RegistryDigitalDocuments ref="digitalDocumentsTab"
+                        :max-file-size-prop="templateVariables.registryValues?.digitalDocuments.maxFileSize"
+                        :max-total-file-size-prop="templateVariables.registryValues?.digitalDocuments.maxTotalFileSize" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'backupSchedule'">
                   <RegistryBackupSchedule ref="backupScheduleTab" />

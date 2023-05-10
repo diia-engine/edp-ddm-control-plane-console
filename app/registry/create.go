@@ -60,6 +60,7 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareKeycloakCustomHostname,
 		a.prepareEDRCheck,
 		a.prepareTrembitaIPList,
+		a.prepareDigitalDocuments,
 	}
 }
 
