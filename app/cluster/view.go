@@ -109,7 +109,7 @@ func (a *App) getClusterVersion(gerritProjectBranches []string, mrs []ExtendedMe
 	registryVersion := registry.LowestVersion(registry.UpdateBranches(gerritProjectBranches))
 
 	for _, mr := range mrs {
-		if mr.Labels[registry.MRLabelTarget] != MRTypeClusterUpdate {
+		if mr.Labels[registry.MRLabelTarget] != MRTargetClusterUpdate {
 			continue
 		}
 

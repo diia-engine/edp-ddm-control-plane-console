@@ -81,7 +81,7 @@ func (a *App) viewGetMasterJobStatus(ctx context.Context, registryName string, _
 	}
 
 	viewParams["mrAvailable"] = status == jenkins.StatusSuccess || status == jenkins.StatusNotBuild ||
-		status == jenkins.StatusAborted
+		status == jenkins.StatusAborted || status == jenkins.StatusFailure
 
 	return nil
 }

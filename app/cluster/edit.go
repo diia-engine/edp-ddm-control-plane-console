@@ -59,7 +59,7 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get registry")
 	}
 
-	hasUpdate, branches, err := registry.HasUpdate(userCtx, a.Services.Gerrit, cb, MRTypeClusterUpdate)
+	hasUpdate, branches, err := registry.HasUpdate(userCtx, a.Services.Gerrit, cb, registry.MRTargetClusterUpdate)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}

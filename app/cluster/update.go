@@ -55,14 +55,12 @@ func (a *App) clusterUpdate(ctx *gin.Context) (router.Response, error) {
 
 	if err := a.Services.Gerrit.CreateMergeRequest(ctx, &gerrit.MergeRequest{
 		CommitMessage: fmt.Sprintf("Update cluster to %s", ur.Branch),
-		//SourceBranch:        ur.Branch,
-		ProjectName: prj.Spec.Name,
-		Name:        fmt.Sprintf("%s-update-%d", a.Config.CodebaseName, time.Now().Unix()),
-		AuthorName:  ctx.GetString(router.UserNameSessionKey),
-		AuthorEmail: ctx.GetString(router.UserEmailSessionKey),
-		//AdditionalArguments: []string{"-X", "ours"},
+		ProjectName:   prj.Spec.Name,
+		Name:          fmt.Sprintf("%s-update-%d", a.Config.CodebaseName, time.Now().Unix()),
+		AuthorName:    ctx.GetString(router.UserNameSessionKey),
+		AuthorEmail:   ctx.GetString(router.UserEmailSessionKey),
 		Labels: map[string]string{
-			registry.MRLabelTarget:       MRTypeClusterUpdate,
+			registry.MRLabelTarget:       registry.MRTargetClusterUpdate,
 			registry.MRLabelAction:       registry.MRLabelActionBranchMerge,
 			registry.MRLabelSourceBranch: ur.Branch,
 			registry.MRLabelTargetBranch: cb.Spec.DefaultBranch,

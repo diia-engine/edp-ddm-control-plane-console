@@ -129,7 +129,7 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 		authorEmail:   ctx.GetString(router.UserEmailSessionKey),
 		authorName:    ctx.GetString(router.UserNameSessionKey),
 		commitMessage: "update platform backup schedule config",
-		targetLabel:   MRTypeClusterBackupSchedule,
+		targetLabel:   MRTargetClusterBackupSchedule,
 		name:          fmt.Sprintf("backup-schedule-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")

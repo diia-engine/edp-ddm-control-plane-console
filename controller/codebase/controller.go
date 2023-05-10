@@ -87,6 +87,15 @@ func ProcessRegistryVersion(ctx context.Context, versionFilter *registry.Version
 		return false, fmt.Errorf("unable to load registry version, %w", err)
 	}
 
+	if cbs[0].Version.Original() == "0" {
+		clusterProject, err := gr.GetProject(ctx, cb.Name)
+		if err != nil {
+			return false, fmt.Errorf("unable to get cluster gerrit project, %w", err)
+		}
+
+		cbs[0].Version = registry.LowestVersion(registry.UpdateBranches(clusterProject.Status.Branches))
+	}
+
 	cbs = versionFilter.FilterCodebases(cbs)
 
 	return len(cbs) > 0, nil

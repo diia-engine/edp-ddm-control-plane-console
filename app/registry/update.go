@@ -18,6 +18,7 @@ import (
 
 const (
 	MRTargetRegistryVersionUpdate = "registry-version-update"
+	MRTargetClusterUpdate         = "cluster-update"
 )
 
 type updateRequest struct {
