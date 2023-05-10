@@ -11,14 +11,22 @@ import (
 const (
 	registryBackupIndex    = "registryBackup"
 	MRActionBackupSchedule = "backup-schedule"
+	globalIndex            = "global"
 )
 
 func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Values,
 	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	globalRaw, ok := values.OriginalYaml[globalIndex]
+	if !ok {
+		globalRaw = make(map[string]interface{})
+	}
+	globalDict := globalRaw.(map[string]interface{})
 
 	if r.BackupScheduleEnabled == "" && values.Global.RegistryBackup.Enabled {
 		values.Global.RegistryBackup.Enabled = false
-		values.OriginalYaml[registryBackupIndex] = values.Global.RegistryBackup
+		globalDict[registryBackupIndex] = values.Global.RegistryBackup
+		values.OriginalYaml[globalIndex] = globalDict
+
 		*mrActions = append(*mrActions, MRActionBackupSchedule)
 		return nil
 	}
@@ -52,15 +60,8 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 			return fmt.Errorf("unable to write to vault: %w", err)
 		}
 
-		globalRaw, ok := values.OriginalYaml[GlobalValuesIndex]
-
-		if !ok {
-			globalRaw = make(map[string]interface{})
-		}
-
-		globalDict := globalRaw.(map[string]interface{})
 		globalDict[registryBackupIndex] = values.Global.RegistryBackup
-		values.OriginalYaml[GlobalValuesIndex] = globalDict
+		values.OriginalYaml[globalIndex] = globalDict
 
 		*mrActions = append(*mrActions, MRActionBackupSchedule)
 	}
