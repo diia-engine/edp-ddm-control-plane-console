@@ -7,6 +7,7 @@ export const getStatus = (status: string): string => {
         case "status-failed":
         case "status-failure":
         case "status-FAILURE":
+        case "status-ABORTED":
             return "Помилка";
         case "status-inactive":
             return "В обробці";

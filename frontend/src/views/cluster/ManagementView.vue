@@ -27,7 +27,7 @@ const gerritURL = variables?.gerritURL;
 </script>
 <script lang="ts">
 import $ from 'jquery';
-import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getMergeRequestPlatformAction, getMergeRequestStatus, getStatus } from '@/utils';
+import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getStatus } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
 
 export default {

@@ -58,7 +58,7 @@ const mrAvailable = variables?.mrAvailable;
 <script lang="ts">
 import $ from 'jquery';
 import axios from 'axios';
-import { getGerritURL, getImageUrl, getJenkinsURL } from '@/utils';
+import { getGerritURL, getImageUrl, getJenkinsURL, getStatus } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
 import { defineComponent } from 'vue';
 
@@ -531,20 +531,6 @@ export default defineComponent({
                 return auth.type;
             }
             return '-';
-        },
-        getStatus(status: any) {
-            switch (`status-${status}`) {
-                case "status-active":
-                case "status-SUCCESS":
-                case "status-ok":
-                    return "Активний";
-                case "status-failed":
-                case "status-failure":
-                case "status-FAILURE":
-                    return "Помилка";
-                case "status-inactive":
-                    return "В обробці";
-            }
         },
         getExtStatus(status: string, enabled: boolean) {
             if (status === "") {

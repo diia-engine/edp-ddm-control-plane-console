@@ -43,7 +43,7 @@ func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, values *Valu
 			return errors.Wrap(err, "unable to decode resources")
 		}
 
-		globalDict[ResourcesIndex] = values.Global.Registry
+		globalDict[ResourcesIndex] = resources
 		values.OriginalYaml[GlobalValuesIndex] = globalDict
 	}
 
