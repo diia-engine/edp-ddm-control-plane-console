@@ -976,7 +976,7 @@ export default defineComponent({
 
                                 <div v-if="mockAvailable()" class="rc-form-group">
                                     <label class="form-checkbox-container">
-                                        Використати мок зовнішньої інтеграції (для версій реєстру 1.9.4 і вище)
+                                        Використати мок зовнішньої інтеграції
                                         <input @change="mockChanged('trembitaClient')" v-model="trembitaClient.data.mock"
                                             type="checkbox">
                                         <span class="form-checkbox-checkmark"></span>
@@ -1293,7 +1293,7 @@ export default defineComponent({
 
                             <div v-if="mockAvailable()" class="rc-form-group">
                                 <label class="form-checkbox-container">
-                                    Використати мок зовнішньої інтеграції (для версій реєстру 1.9.4 і вище)
+                                    Використати мок зовнішньої інтеграції
                                     <input @change="mockChanged('externalSystem')" v-model="externalSystem.data.mock"
                                         type="checkbox">
                                     <span class="form-checkbox-checkmark"></span>
