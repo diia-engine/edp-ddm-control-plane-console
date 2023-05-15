@@ -26,10 +26,11 @@ export default defineComponent({
     }
   },
   data() {
+    //TODO: move to props
     const templateVariables = inject('TEMPLATE_VARIABLES') as RegistryEditTemplateVariables;
     return {
       templateVariables,
-      cidrChanged: true,
+      cidrChanged: false,
       officerCIDR: [],
       citizenCIDR: [],
       adminCIDR: [],
@@ -66,7 +67,7 @@ export default defineComponent({
   <p>Ці налаштування є необов’язковими.</p>
   <div class="rc-form-group">
       <label for="admins">CIDR для портала чиновника</label>
-      <input type="checkbox" style="display: none;" v-model="cidrChanged" checked name="cidr-changed" />
+      <input type="checkbox" style="display: none;" v-model="cidrChanged" name="cidr-changed" />
 
       <input type="hidden" id="officer-cidr" name="officer-cidr" :value="JSON.stringify(officerCIDR)" />
       <div class="advanced-admins">

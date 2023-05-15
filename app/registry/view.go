@@ -65,7 +65,6 @@ func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registr
 		a.viewRegistryGetMergeRequests,
 		a.viewRegistryExternalRegistration,
 		a.viewDNSConfig,
-		a.viewSMTPConfig,
 		a.viewCIDRConfig,
 		a.viewAdministratorsConfig,
 		a.viewRegistryHasUpdates,
@@ -252,14 +251,6 @@ func (a *App) viewCIDRConfig(userCtx context.Context, registryName string, value
 
 	if values.Global.WhiteListIP.OfficerPortal != "" {
 		viewParams["officerCIDR"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
-	}
-
-	return nil
-}
-
-func (a *App) viewSMTPConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
-	if values.Global.Notifications.Email.Type != "" {
-		viewParams["smtpType"] = values.Global.Notifications.Email.Type
 	}
 
 	return nil

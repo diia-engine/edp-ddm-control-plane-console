@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,7 @@ func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{
 }
 
 func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, values *Values,
-	_ map[string]map[string]interface{}, mrActions *[]string) error {
+	_ map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
 
 	globalInterface, ok := values.OriginalYaml[GlobalValuesIndex]
 	if !ok {
@@ -37,34 +38,44 @@ func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, values *Valu
 	}
 	globalDict := globalInterface.(map[string]interface{})
 
+	valuesChanged := false
+
 	if r.Resources != "" {
 		var resources map[string]interface{}
 		if err := json.Unmarshal([]byte(r.Resources), &resources); err != nil {
-			return errors.Wrap(err, "unable to decode resources")
+			return false, errors.Wrap(err, "unable to decode resources")
 		}
 
-		globalDict[ResourcesIndex] = resources
-		values.OriginalYaml[GlobalValuesIndex] = globalDict
+		if !reflect.DeepEqual(resources, globalDict[ResourcesIndex]) {
+			valuesChanged = true
+			globalDict[ResourcesIndex] = resources
+			values.OriginalYaml[GlobalValuesIndex] = globalDict
+		}
 	}
 
 	if r.CrunchyPostgresMaxConnections != "" {
 		maxCon, err := strconv.ParseInt(r.CrunchyPostgresMaxConnections, 10, 32)
 		if err != nil {
-			return fmt.Errorf("unable to parse max connectrions, %w", err)
+			return false, fmt.Errorf("unable to parse max connectrions, %w", err)
 		}
-		values.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections = int(maxCon)
 
-		globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
-		values.OriginalYaml[GlobalValuesIndex] = globalDict
+		if values.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections != int(maxCon) {
+			values.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections = int(maxCon)
+
+			globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
+			values.OriginalYaml[GlobalValuesIndex] = globalDict
+			valuesChanged = true
+		}
 	}
 
-	if r.CrunchyPostgresStorageSize != "" {
+	if r.CrunchyPostgresStorageSize != "" && values.Global.CrunchyPostgres.StorageSize != r.CrunchyPostgresStorageSize {
 		values.Global.CrunchyPostgres.StorageSize = r.CrunchyPostgresStorageSize
 		globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
 		globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
+		valuesChanged = true
 	}
 
-	return nil
+	return valuesChanged, nil
 }
 
 func (a *App) preloadTemplateValues(ctx *gin.Context) (rsp router.Response, retErr error) {

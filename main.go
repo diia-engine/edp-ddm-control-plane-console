@@ -69,6 +69,16 @@ func main() {
 		panic(err)
 	}
 
+	buildInfo := config.BuildInfoGet()
+	logger.Sugar().Infow("starting the console",
+		"version", buildInfo.Version,
+		"git-commit", buildInfo.GitCommit,
+		"git-tag", buildInfo.GitTag,
+		"build-date", buildInfo.BuildDate,
+		"go-version", buildInfo.Go,
+		"platform", buildInfo.Platform,
+	)
+
 	logger.Info("init gin router")
 	gin.SetMode(cnf.GinMode)
 	r := gin.New()
@@ -80,7 +90,7 @@ func main() {
 	r.Use(sessions.Sessions("cookie-session", store))
 
 	logger.Info("init apps")
-	if err := initApps(logger, cnf, r); err != nil {
+	if err := initApps(logger, cnf, r, buildInfo.Date()); err != nil {
 		panic(fmt.Sprintf("%+v", err))
 	}
 
@@ -268,13 +278,13 @@ func initControllers(sch *runtime.Scheme, namespace string, logger *zap.Logger, 
 	return nil
 }
 
-func initApps(logger *zap.Logger, cnf *config.Settings, r *gin.Engine) error {
+func initApps(logger *zap.Logger, cnf *config.Settings, r *gin.Engine, buildTime time.Time) error {
 	restConf, err := initKubeConfig()
 	if err != nil {
 		return fmt.Errorf("unable to init kube config, %w", err)
 	}
 
-	appRouter := router.Make(r, logger)
+	appRouter := router.Make(r, logger, buildTime)
 
 	sch := runtime.NewScheme()
 	if err := v1.AddToScheme(sch); err != nil {

@@ -102,7 +102,7 @@ export default {
                     },
                     resources: {
                         title: 'Ресурси реєстру', validated: false, beginValidation: false,
-                        validator: /*this.wizardResourcesValidation*/ this.wizardEmptyValidation, visible: true,
+                        validator: this.wizardEmptyValidation, visible: true,
                     },
                     dns: {
                         title: 'DNS', validated: false, data: { officer: '', citizen: '', },

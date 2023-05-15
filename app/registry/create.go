@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -47,9 +48,9 @@ const (
 )
 
 func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
 	return []func(*gin.Context, *registry, *Values,
-		map[string]map[string]interface{}, *[]string) error{
+		map[string]map[string]interface{}, *[]string) (bool, error){
 		a.prepareDNSConfig,
 		a.prepareCIDRConfig,
 		a.prepareMailServerConfig,
@@ -343,7 +344,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 	mrActions := make([]string, 0)
 
 	for _, proc := range a.createUpdateRegistryProcessors() {
-		if err := proc(ginContext, r, values, vaultSecretData, &mrActions); err != nil {
+		if _, err := proc(ginContext, r, values, vaultSecretData, &mrActions); err != nil {
 			return errors.Wrap(err, "error during registry create")
 		}
 	}
@@ -394,44 +395,22 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 	return nil
 }
 
-func ModifyVaultPath(path string) string {
-	if strings.Contains(path, "/data/") {
-		return path
-	}
-
-	pathParts := strings.Split(path, "/")
-	pathParts = append(pathParts[:1], append([]string{"data"}, pathParts[1:]...)...)
-	return strings.Join(pathParts, "/")
-}
-
 func CreateVaultSecrets(v vault.ServiceInterface, secretData map[string]map[string]interface{}, append bool) error {
 	for vPath, pathSecretData := range secretData {
-		modPath := ModifyVaultPath(vPath)
-
 		if append {
-			sec, err := v.Read(modPath)
-			if err != nil {
+			sec, err := v.Read(vPath)
+			if err != nil && !errors.Is(err, vault.ErrSecretIsNil) {
 				return errors.Wrap(err, "unable to read secret")
 			}
 
-			if sec != nil {
-				currentSecretData, ok := sec.Data["data"]
-				if ok {
-					currentSecretData, ok := currentSecretData.(map[string]interface{})
-					if ok {
-						for k, v := range pathSecretData {
-							currentSecretData[k] = v
-						}
-
-						pathSecretData = currentSecretData
-					}
-				}
+			for k, v := range pathSecretData {
+				sec[k] = v
 			}
+
+			pathSecretData = sec
 		}
 
-		if _, err := v.Write(modPath, map[string]interface{}{
-			"data": pathSecretData,
-		}); err != nil {
+		if _, err := v.Write(vPath, pathSecretData); err != nil {
 			return errors.Wrap(err, "unable to write to vault")
 		}
 	}
@@ -464,46 +443,36 @@ func (a *App) keyManagementRegistryVaultPath(registryName string) string {
 }
 
 func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
-	_ map[string]map[string]interface{}, mrActions *[]string) error {
-	values := _values.OriginalYaml
-	//TODO: refactor to new values
-
-	//TODO: remove this check
+	_ map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
 	if ctx.PostForm("action") == "edit" && ctx.PostForm("cidr-changed") == "" {
-		return nil
+		return false, nil
 	}
 
-	globalInterface, ok := values[GlobalValuesIndex]
+	globalInterface, ok := _values.OriginalYaml[GlobalValuesIndex]
 	if !ok {
 		globalInterface = make(map[string]interface{})
 	}
 	globalDict := globalInterface.(map[string]interface{})
 
-	whiteListInterface, ok := globalDict["whiteListIP"]
-	if !ok {
-		whiteListInterface = make(map[string]interface{})
-	}
-	whiteListDict := whiteListInterface.(map[string]interface{})
-
-	if err := handleCIDRCategory(r.CIDRCitizen, "citizenPortal", whiteListDict); err != nil {
-		return errors.Wrap(err, "unable to handle cidr category")
+	if err := handleCIDRCategory(r.CIDRCitizen, &_values.Global.WhiteListIP.CitizenPortal); err != nil {
+		return false, errors.Wrap(err, "unable to handle cidr category")
 	}
 
-	if err := handleCIDRCategory(r.CIDROfficer, "officerPortal", whiteListDict); err != nil {
-		return errors.Wrap(err, "unable to handle cidr category")
+	if err := handleCIDRCategory(r.CIDROfficer, &_values.Global.WhiteListIP.OfficerPortal); err != nil {
+		return false, errors.Wrap(err, "unable to handle cidr category")
 	}
 
-	if err := handleCIDRCategory(r.CIDRAdmin, "adminRoutes", whiteListDict); err != nil {
-		return errors.Wrap(err, "unable to handle cidr category")
+	if err := handleCIDRCategory(r.CIDRAdmin, &_values.Global.WhiteListIP.AdminRoutes); err != nil {
+		return false, errors.Wrap(err, "unable to handle cidr category")
 	}
 
-	globalDict["whiteListIP"] = whiteListDict
-	values[GlobalValuesIndex] = globalDict
+	globalDict[WhiteListIPIndex] = _values.Global.WhiteListIP
+	_values.OriginalYaml[GlobalValuesIndex] = globalDict
 
-	return nil
+	return true, nil
 }
 
-func handleCIDRCategory(cidrCategory, dictIndex string, whiteListDict map[string]interface{}) error {
+func handleCIDRCategory(cidrCategory string, categoryValue *string) error {
 	if cidrCategory == "" {
 		return nil
 	}
@@ -513,17 +482,13 @@ func handleCIDRCategory(cidrCategory, dictIndex string, whiteListDict map[string
 		return errors.Wrap(err, "unable to decode cidr")
 	}
 
-	if len(cidr) > 0 {
-		whiteListDict[dictIndex] = strings.Join(cidr, " ")
-	} else if _, ok := whiteListDict[dictIndex]; ok {
-		delete(whiteListDict, dictIndex)
-	}
+	*categoryValue = strings.Join(cidr, " ")
 
 	return nil
 }
 
 func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
 	values := _values.OriginalYaml
 	//TODO: refactor to new values
 
@@ -531,7 +496,7 @@ func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
 	if r.Admins != "" && r.AdminsChanged == "on" {
 		admins, err := validateAdmins(r.Admins)
 		if err != nil {
-			return errors.Wrap(err, "unable to validate admins")
+			return false, errors.Wrap(err, "unable to validate admins")
 		}
 
 		adminsVaultPath := a.vaultRegistryPathKey(r.Name, "administrators")
@@ -547,56 +512,37 @@ func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
 		}
 
 		values[AdministratorsValuesKey] = admins
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Values,
-	secretData map[string]map[string]interface{}, mrActions *[]string) error {
-	//TODO: refactor to new values struct
-	values := _values.OriginalYaml
+	secretData map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+	//TODO: add something to mrActions
+	valuesChanged := false
 
-	portals, ok := values["portals"]
-	if !ok {
-		portals = make(map[string]interface{})
-	}
-	portalsDict := portals.(map[string]interface{})
-
-	citizen, ok := portalsDict["citizen"]
-	if !ok {
-		citizen = make(map[string]interface{})
-	}
-	citizenDict := citizen.(map[string]interface{})
-
-	officer, ok := portalsDict["officer"]
-	if !ok {
-		officer = make(map[string]interface{})
-	}
-	officerDict := officer.(map[string]interface{})
-
-	if r.DNSNameOfficerEnabled == "" {
-		delete(portalsDict, "officer")
-		delete(officerDict, "customDns")
+	if r.DNSNameOfficerEnabled == "" && _values.Portals.Officer.CustomDNS.Enabled {
+		_values.Portals.Officer.CustomDNS.Enabled = false
+		valuesChanged = true
 	} else if r.DNSNameOfficerEnabled != "" && r.DNSNameOfficer != "" {
-		customDNS := make(map[string]interface{})
-		customDNS["enabled"] = true
-		customDNS["host"] = r.DNSNameOfficer
-		officerDict["customDns"] = customDNS
+		_values.Portals.Officer.CustomDNS = CustomDNS{Enabled: true, Host: r.DNSNameOfficer}
+		valuesChanged = true
 
 		certFile, _, err := ginContext.Request.FormFile("officer-ssl")
 		if err != nil {
-			return errors.Wrap(err, "unable to get officer ssl certificate")
+			return false, errors.Wrap(err, "unable to get officer ssl certificate")
 		}
 
 		certData, err := ioutil.ReadAll(certFile)
 		if err != nil {
-			return errors.Wrap(err, "unable to read officer ssl data")
+			return false, errors.Wrap(err, "unable to read officer ssl data")
 		}
 
 		pemInfo, err := DecodePEM(certData)
 		if err != nil {
-			return validator.ValidationErrors([]validator.FieldError{
+			return false, validator.ValidationErrors([]validator.FieldError{
 				router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
 		}
 
@@ -612,28 +558,26 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 		secretData[secretPath][VaultKeyPK] = pemInfo.PrivateKey
 	}
 
-	if r.DNSNameCitizenEnabled == "" {
-		delete(portalsDict, "citizen")
-		delete(citizenDict, "customDns")
+	if r.DNSNameCitizenEnabled == "" && _values.Portals.Citizen.CustomDNS.Enabled {
+		_values.Portals.Citizen.CustomDNS.Enabled = false
+		valuesChanged = true
 	} else if r.DNSNameCitizenEnabled != "" && r.DNSNameCitizen != "" {
-		customDNS := make(map[string]interface{})
-		customDNS["enabled"] = true
-		customDNS["host"] = r.DNSNameCitizen
-		citizenDict["customDns"] = customDNS
+		_values.Portals.Citizen.CustomDNS = CustomDNS{Host: r.DNSNameCitizen, Enabled: true}
+		valuesChanged = true
 
 		certFile, _, err := ginContext.Request.FormFile("citizen-ssl")
 		if err != nil {
-			return errors.Wrap(err, "unable to get citizen ssl certificate")
+			return false, errors.Wrap(err, "unable to get citizen ssl certificate")
 		}
 
 		certData, err := ioutil.ReadAll(certFile)
 		if err != nil {
-			return errors.Wrap(err, "unable to read citizen ssl data")
+			return false, errors.Wrap(err, "unable to read citizen ssl data")
 		}
 
 		pemInfo, err := DecodePEM(certData)
 		if err != nil {
-			return validator.ValidationErrors([]validator.FieldError{
+			return false, validator.ValidationErrors([]validator.FieldError{
 				router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
 		}
 
@@ -649,35 +593,28 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 		secretData[secretPath][VaultKeyPK] = pemInfo.PrivateKey
 	}
 
-	if len(citizenDict) > 0 {
-		portalsDict["citizen"] = citizenDict
+	if valuesChanged {
+		_values.OriginalYaml[PortalsIndex] = _values.Portals
 	}
 
-	if len(officerDict) > 0 {
-		portalsDict["officer"] = officerDict
-	}
-
-	values["portals"] = portalsDict
-
-	return nil
+	return valuesChanged, nil
 }
 
 func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Values,
-	secretData map[string]map[string]interface{}, mrActions *[]string) error {
+	secretData map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
 	values := _values.OriginalYaml
-	//TODO: refactor to new values
 
-	notifications := make(map[string]interface{})
+	email := make(map[string]interface{})
 
 	if r.MailServerType == SMTPTypeExternal {
 		var smptOptsDict map[string]string
 		if err := json.Unmarshal([]byte(r.MailServerOpts), &smptOptsDict); err != nil {
-			return errors.Wrap(err, "unable to decode mail server opts")
+			return false, errors.Wrap(err, "unable to decode mail server opts")
 		}
 
 		pwd, ok := smptOptsDict["password"]
 		if !ok {
-			return errors.New("no password in mail server opts")
+			return false, errors.New("no password in mail server opts")
 		}
 
 		vaultPath := a.vaultRegistryPathKey(r.Name, "smtp")
@@ -691,10 +628,10 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 
 		port, err := strconv.ParseInt(smptOptsDict["port"], 10, 32)
 		if err != nil {
-			return errors.Wrapf(err, "wrong smtp port value: %s", smptOptsDict["port"])
+			return false, errors.Wrapf(err, "wrong smtp port value: %s", smptOptsDict["port"])
 		}
 
-		notifications["email"] = map[string]interface{}{
+		email = map[string]interface{}{
 			"type":      "external",
 			"host":      smptOptsDict["host"],
 			"port":      port,
@@ -704,9 +641,13 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 			"vaultKey":  a.Config.VaultRegistrySMTPPwdSecretKey,
 		}
 	} else {
-		notifications["email"] = map[string]interface{}{
+		email = map[string]interface{}{
 			"type": "internal",
 		}
+	}
+
+	if reflect.DeepEqual(email, _values.Global.Notifications.Email) {
+		return false, nil
 	}
 
 	globalInterface, ok := values[GlobalValuesIndex]
@@ -715,10 +656,12 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 	}
 	globalDict := globalInterface.(map[string]interface{})
 
-	globalDict["notifications"] = notifications
+	globalDict["notifications"] = map[string]interface{}{
+		"email": email,
+	}
 	values[GlobalValuesIndex] = globalDict
 
-	return nil
+	return true, nil
 }
 
 func (a *App) prepareRegistryCodebase(r *registry) *codebase.Codebase {

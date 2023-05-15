@@ -69,7 +69,6 @@ func (a *App) setAdminsVaultPassword(admins []Admin) error {
 		vaultPath := a.vaultPlatformPathKey(admin.Email)
 
 		admins[i].PasswordVaultSecret = vaultPath
-		vaultPath = registry.ModifyVaultPath(vaultPath)
 
 		secretData := map[string]interface{}{
 			a.Config.VaultClusterAdminsPasswordKey: admin.TmpPassword,

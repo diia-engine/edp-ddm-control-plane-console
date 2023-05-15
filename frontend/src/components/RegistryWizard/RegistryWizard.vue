@@ -71,7 +71,7 @@ export default defineComponent({
             </ul>
         </div>
         <div class="wizard-body">
-            <form id="create-form" @submit="pageRoot.$data.registryFormSubmit" class="registry-create-form wizard-form" method="post"
+            <form id="create-form" class="registry-create-form wizard-form" method="post"
                 enctype="multipart/form-data" action="" ref="registryWizardForm">
                 <input type="hidden" ref="wizardAction" name="action" :value="templateVariables.action" />
                 <input type="hidden" ref="registryData" :value="templateVariables.registryData" />
@@ -176,7 +176,7 @@ export default defineComponent({
                     <template v-if="templateVariables.action === 'create'">
                         <button class="wizard-prev" @click="pageRoot.wizardPrev" v-show="pageRoot.$data.wizard.activeTab != 'general'" type="button">Назад</button>
                         <button class="wizard-next" @click="pageRoot.wizardNext" v-show="pageRoot.$data.wizard.activeTab != 'confirmation'" type="button">Далі</button>
-                        <button class="wizard-next" type="submit" name="submit" v-show="pageRoot.$data.wizard.activeTab == 'confirmation'">Створити реєстр</button>
+                        <button class="wizard-next" @click="pageRoot.wizardEditSubmit" v-show="pageRoot.$data.wizard.activeTab == 'confirmation'">Створити реєстр</button>
                     </template>
 
                     <button v-if="templateVariables.action === 'edit'" v-show="pageRoot.$data.wizard.activeTab != 'update'" class="wizard-next" type="button"

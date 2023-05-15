@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -12,8 +13,9 @@ type Logger interface {
 }
 
 type Router struct {
-	engine *gin.Engine
-	logger Logger
+	engine    *gin.Engine
+	logger    Logger
+	buildTime time.Time
 }
 
 type HTMLResponse struct {
@@ -104,6 +106,7 @@ func (r *Router) makeViewResponder(handler func(ctx *gin.Context) (Response, err
 
 func (r *Router) includeSessionVars(ctx *gin.Context, params gin.H) gin.H {
 	params["username"] = ctx.GetString(UserNameSessionKey)
+	params["buildDate"] = r.buildTime.Unix()
 	params["canViewRegistries"] = ctx.GetBool(CanViewRegistriesSessionKey) || ctx.GetBool(CanCreateRegistriesSessionKey)
 	params["canViewClusterManagement"] = ctx.GetBool(CanViewClusterManagementSessionKey)
 
@@ -118,9 +121,10 @@ func (r *Router) POST(relativePath string, handler func(ctx *gin.Context) (Respo
 	r.engine.POST(relativePath, r.makeViewResponder(handler))
 }
 
-func Make(engine *gin.Engine, logger Logger) *Router {
+func Make(engine *gin.Engine, logger Logger, buildTime time.Time) *Router {
 	return &Router{
-		engine: engine,
-		logger: logger,
+		engine:    engine,
+		logger:    logger,
+		buildTime: buildTime,
 	}
 }
