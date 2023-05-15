@@ -21,6 +21,7 @@ import {
   getMergeRequestPlatformAction,
   getMergeRequestName,
   getMergeRequestStatus,
+  mrIsInProgress,
 } from '@/utils';
 
 export default {
@@ -61,6 +62,12 @@ export default {
 };
 </script>
 
+<style scoped>
+.mr-refresh {
+  margin-left: 5px;
+}
+</style>
+
 <template>
   <table class="rg-info-table rg-info-table-config" id="mr-table">
       <thead>
@@ -77,7 +84,10 @@ export default {
               <td :data-order="getDateTimestamp($al.metadata.creationTimestamp)">{{getFormattedDate($al.metadata.creationTimestamp)}}</td>
               <td>{{ inPlatform ? $al.metadata.name : getMergeRequestName($al) }}</td>
               <td>{{ inPlatform ? getMergeRequestPlatformAction($al) : getMergeRequestAction($al) }}</td>
-              <td class="mr-status">{{ getMergeRequestStatus($al) }}</td>
+              <td class="mr-status">
+                {{ getMergeRequestStatus($al) }}
+                <a title="Оновити" class="mr-refresh" href="" v-if="mrIsInProgress($al)"><i class="fa-solid fa-arrow-rotate-right"></i></a>
+              </td>
               <td class="mr-actions">
                   <i v-if="!inPlatform && !mrAvailable && $al.status.value === 'NEW'" title="Реєстр в процесі оновлення" class="fa-solid fa-lock"></i>
 

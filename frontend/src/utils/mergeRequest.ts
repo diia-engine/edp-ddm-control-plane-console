@@ -78,10 +78,14 @@ export const getMergeRequestPlatformAction = (mergeRequest: any): string => {
 	return "-";
 };
 
-export const getMergeRequestStatus = (mergeRequest: any) => {
+export const mrIsInProgress = (mergeRequest: any) => {
     const { metadata } = mergeRequest;
-    if ((metadata?.labels?.["console/action"] == "branch-merge" && mergeRequest.spec.sourceBranch == "") || mergeRequest.status.value == "" ||
-        (mergeRequest.status.value == "sourceBranch or changesConfigMap must be specified" && mergeRequest.spec.sourceBranch != "")) {
+    return (metadata?.labels?.["console/action"] == "branch-merge" && mergeRequest.spec.sourceBranch == "") || mergeRequest.status.value == "" ||
+        (mergeRequest.status.value == "sourceBranch or changesConfigMap must be specified" && mergeRequest.spec.sourceBranch != "");
+};
+
+export const getMergeRequestStatus = (mergeRequest: any) => {
+    if (mrIsInProgress(mergeRequest)) {
         return "У процесі виконання";
     }
 
