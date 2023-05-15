@@ -4,7 +4,6 @@ import * as yup from 'yup';
 import { useForm } from 'vee-validate';
 import { parseCronExpression } from 'cron-schedule';
 
-import { getFormattedDate } from '@/utils/date';
 import Typography from '@/components/common/Typography.vue';
 import TextField from '@/components/common/TextField.vue';
 // @ts-ignore
@@ -53,15 +52,16 @@ const parseCronExpressionRules = () => {
 
 const props = defineProps<RegistryEditTemplateVariables>();
 const { templateVariables } = toRefs(props);
-const { registryValues, model } = templateVariables.value;
+const registryValues = templateVariables?.value?.registryValues || {};
+const model = templateVariables?.value?.model || {};
 const beginValidation = ref(false);
 const nextDates = ref([] as string[]);
 const registryBackupNextDates = ref([] as string[]);
 const backupPlacePopupShow = ref(false);
 const backupDeletePlacePopupShow = ref(false);
-const enabled = ref(registryValues.global.registryBackup.enabled);
-const obcBackupBucket = ref(registryValues.global.registryBackup.obc.backupBucket);
-const obcEndpoint = ref(registryValues.global.registryBackup.obc.endpoint);
+const enabled = ref(registryValues.global?.registryBackup.enabled);
+const obcBackupBucket = ref(registryValues.global?.registryBackup.obc.backupBucket);
+const obcEndpoint = ref(registryValues.global?.registryBackup.obc.endpoint);
 const obcLogin = ref(model.OBCLogin);
 const obcPassword = ref(model.OBCPassword);
 
@@ -86,9 +86,9 @@ const validationSchema = yup.object({
 
 const { useFieldModel, validate, errors } = useForm({
   validationSchema, initialValues: {
-    cronSchedule: registryValues.global.registryBackup.schedule,
-    days: registryValues.global.registryBackup.expiresInDays,
-    obcCronExpression: registryValues.global.registryBackup.obc.cronExpression,
+    cronSchedule: registryValues.global?.registryBackup.schedule,
+    days: registryValues.global?.registryBackup.expiresInDays,
+    obcCronExpression: registryValues.global?.registryBackup.obc.cronExpression,
   }
 });
 
@@ -105,6 +105,9 @@ const [
 function validator() {
   beginValidation.value = true;
   return new Promise((resolve) => {
+    if (!enabled.value) {
+      return resolve(true);
+    }
     validate().then((res) => {
       if (res.valid) {
         beginValidation.value = false;
@@ -158,11 +161,11 @@ function backupDeletePlaceSubmit() {
 
 function enabledChange () {
   beginValidation.value = false;
-  cronSchedule.value = registryValues.global.registryBackup.schedule;
-  days.value = registryValues.global.registryBackup.expiresInDays;
-  obcCronExpression.value = registryValues.global.registryBackup.obc.cronExpression;
-  obcBackupBucket.value = registryValues.global.registryBackup.obc.backupBucket;
-  obcEndpoint.value = registryValues.global.registryBackup.obc.endpoint;
+  cronSchedule.value = registryValues.global?.registryBackup.schedule;
+  days.value = registryValues.global?.registryBackup.expiresInDays;
+  obcCronExpression.value = registryValues.global?.registryBackup.obc.cronExpression;
+  obcBackupBucket.value = registryValues.global?.registryBackup.obc.backupBucket;
+  obcEndpoint.value = registryValues.global?.registryBackup.obc.endpoint;
   obcLogin.value = model.OBCLogin;
   obcPassword.value = model.OBCPassword;
 }
@@ -174,7 +177,7 @@ function cronExpressionChange () {
     let dt = new Date();
     for (let i = 0; i < 3; i++) {
       const next = cron?.getNextDate(dt);
-      nextDates.value.push(getFormattedDate(next.toISOString()));
+      nextDates.value.push(`${next.toLocaleDateString("uk")} ${next.toLocaleTimeString("uk")}`);
       dt = next;
     }
   }
@@ -190,7 +193,7 @@ function backupCronExpressionChange () {
     let dt = new Date();
     for (let i = 0; i < 3; i++) {
       const next = cron?.getNextDate(dt);
-      registryBackupNextDates.value.push(getFormattedDate(next.toISOString()));
+      registryBackupNextDates.value.push(`${next.toLocaleDateString("uk")} ${next.toLocaleTimeString("uk")}`);
       dt = next;
     }
   }
