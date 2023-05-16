@@ -403,7 +403,6 @@ function backupCronExpressionChange () {
 }
 
 .icon-button > img {
-  width: 18px;
   height: 18px;
   margin-right: 13px;
 }

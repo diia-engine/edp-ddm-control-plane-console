@@ -48,6 +48,7 @@ export default {
 .typography {
   font-family: 'Source Sans Pro', sans-serif;
   margin: 0;
+  color: $black-color;
 }
 .tiny {
   font-style: normal;
