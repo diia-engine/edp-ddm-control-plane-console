@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"ddm-admin-console/service/codebase"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -17,6 +18,7 @@ import (
 
 const (
 	MRTargetRegistryVersionUpdate = "registry-version-update"
+	MRTargetClusterUpdate         = "cluster-update"
 )
 
 type updateRequest struct {
@@ -43,11 +45,18 @@ func (a *App) registryUpdateView(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}
 
-	return router.MakeHTMLResponse(200, "registry/update.html", gin.H{
+	templateArgs, err := json.Marshal(gin.H{
 		"updateBranches": branches,
-		"hasUpdate":      hasUpdate,
 		"registry":       reg,
-		"page":           "registry",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode template arguments")
+	}
+
+	return router.MakeHTMLResponse(200, "registry/update.html", gin.H{
+		"page":         "registry",
+		"hasUpdate":    hasUpdate,
+		"templateArgs": string(templateArgs),
 	}), nil
 }
 
@@ -90,7 +99,7 @@ func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
 	if a.EnableBranchProvisioners {
 		prov := branchProvisioner(ur.Branch)
 		cb.Spec.JobProvisioning = &prov
-		if err := a.Services.Codebase.Update(cb); err != nil {
+		if err := a.Services.Codebase.Update(ctx, cb); err != nil {
 			return nil, errors.Wrap(err, "unable to update codebase provisioner")
 		}
 

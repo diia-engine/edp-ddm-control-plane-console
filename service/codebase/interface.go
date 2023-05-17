@@ -9,10 +9,10 @@ import (
 type ServiceInterface interface {
 	GetAllByType(tp string) ([]Codebase, error)
 	Get(name string) (*Codebase, error)
-	GetBranchesByCodebase(codebaseName string) ([]CodebaseBranch, error)
+	GetBranchesByCodebase(ctx context.Context, codebaseName string) ([]CodebaseBranch, error)
 	Create(cb *Codebase) error
 	CreateBranch(branch *CodebaseBranch) error
-	Update(cb *Codebase) error
+	Update(ctx context.Context, cb *Codebase) error
 	Delete(name string) error
 	CreateDefaultBranch(cb *Codebase) error
 	ServiceForContext(ctx context.Context) (ServiceInterface, error)

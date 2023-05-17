@@ -53,8 +53,8 @@ let app = Vue.createApp({
             this.wizard.registryAction = this.$refs.wizardAction.value;
 
             if (this.$refs.wizardAction.value === "edit") {
-                this.registryData = JSON.parse(this.$refs.registryData.value);
-                this.wizard.tabs.general.registryName = this.registryData.name;
+                let registryData = JSON.parse(this.$refs.registryData.value);
+                this.wizard.tabs.general.registryName = registryData.name;
                 this.wizard.tabs.template.visible = false;
                 this.wizard.tabs.confirmation.visible = false;
                 this.adminsChanged = false;
@@ -66,7 +66,6 @@ let app = Vue.createApp({
             this.registryValues = JSON.parse(this.$refs.registryValues.value);
 
             this.loadRegistryValues();
-            this.loadClusterBackupSettings();
             this.dnsPreloadDataFromValues();
             this.wizardCronExpressionChange();
         }
@@ -77,8 +76,7 @@ let app = Vue.createApp({
     },
     data() {
         return {
-            registryData: {},
-            registryValues: {},
+            registryValues: null,
             registryFormSubmitted: false,
             cidrChanged: true,
             officerCIDRValue: { value: '' },
@@ -227,51 +225,25 @@ let app = Vue.createApp({
                 tabs: [
                     {
                         key: 'administrators',
-                        title: 'Адміністратори',
+                        title: 'Адміністратори'
                     },
                     {
                         key: 'backup',
-                        title: 'Резервне копіювання',
+                        title: 'Резервне копіювання'
                     },
                     {
                         key: 'allowedCIDR',
-                        title: 'Дозволені CIDR',
+                        title: 'Дозволені CIDR'
                     },
                     {
                         key: 'dataAboutKey',
-                        title: 'Дані про ключ',
+                        title: 'Дані про ключ'
                     },
                     {
                         key: 'keycloakDNS',
-                        title: 'Keycloak DNS',
+                        title: 'Keycloak DNS'
                     },
                 ],
-                backup: {
-                    scheduleError: {
-                        nexus: false,
-                        controlPlane: false,
-                        userManagement: false,
-                        monitoring: false,
-                    },
-                    schedule: {
-                        nexus: '',
-                        controlPlane: '',
-                        userManagement: '',
-                        monitoring: '',
-                    },
-                    expiresError: {
-                        nexus: false,
-                        controlPlane: false,
-                        userManagement: false,
-                        monitoring: false,
-                    },
-                    expires: {
-                        nexus: 0,
-                        controlPlane: 0,
-                        userManagement: 0,
-                        monitoring: 0,
-                    },
-                },
                 keycloak: {
                     editDisabled: false,
                     deleteHostname: '',
@@ -289,23 +261,6 @@ let app = Vue.createApp({
         }
     },
     methods: {
-        clusterBackupValidate(event) {
-            for (const i in this.clusterSettings.backup.schedule) {
-                this.clusterSettings.backup.scheduleError[i] = false;
-                try {
-                    cronSchedule.parseCronExpression(this.clusterSettings.backup.schedule[i])
-                } catch (e) {
-                    event.preventDefault();
-                    this.clusterSettings.backup.scheduleError[i] = true;
-                }
-
-                this.clusterSettings.backup.expiresError[i] = false;
-                if (!/^\d+$/.test(this.clusterSettings.backup.expires[i]) || parseInt(this.clusterSettings.backup.expires[i]) <= 0) {
-                    this.clusterSettings.backup.expiresError[i] = true;
-                    event.preventDefault();
-                }
-            }
-        },
         editClusterKeycloakDNSHost(hostname, certificatePath, e) {
             e.preventDefault();
             this.clusterSettings.keycloak.editHostname = hostname;
@@ -328,7 +283,7 @@ let app = Vue.createApp({
                 return [];
             }
 
-            return this.registryValues?.keycloak?.customHosts;
+            return this.registryValues.keycloak.customHosts;
         },
         submitKeycloakDNSForm(e){
             this.clusterSettings.keycloak.submitInput = JSON.stringify(this.registryValues.keycloak.customHosts);
@@ -532,20 +487,6 @@ let app = Vue.createApp({
                 }
             }
         },
-        loadClusterBackupSettings() {
-            const velero = this.registryValues?.velero;
-            if (velero) {
-                this.clusterSettings.backup.schedule.nexus = velero.backup.nexus.schedule;
-                this.clusterSettings.backup.schedule.controlPlane = velero.backup.controlPlane.schedule;
-                this.clusterSettings.backup.schedule.userManagement = velero.backup.userManagement.schedule;
-                this.clusterSettings.backup.schedule.monitoring = velero.backup.monitoring.schedule;
-
-                this.clusterSettings.backup.expires.nexus = velero.backup.nexus.expiresInDays;
-                this.clusterSettings.backup.expires.controlPlane = velero.backup.controlPlane.expiresInDays;
-                this.clusterSettings.backup.expires.userManagement = velero.backup.userManagement.expiresInDays;
-                this.clusterSettings.backup.expires.monitoring = velero.backup.monitoring.expiresInDays;
-            }
-        },
         loadRegistryValues() {
             try {
                 this.wizard.tabs.supplierAuthentication.selfRegistrationEnabled = this.registryValues.keycloak.realms.officerPortal.selfRegistration || false;
@@ -567,7 +508,7 @@ let app = Vue.createApp({
 
                 this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = this.registryValues.keycloak.citizenAuthFlow.edrCheck
             } catch (e) {
-                // console.log(e);
+                console.log(e);
             }
 
             try {
@@ -575,7 +516,7 @@ let app = Vue.createApp({
                 this.wizard.tabs.backupSchedule.data.cronSchedule = this.registryValues.global.registryBackup.schedule;
                 this.wizard.tabs.backupSchedule.data.days = this.registryValues.global.registryBackup.expiresInDays;
             } catch (e) {
-                // console.log(e);
+                console.log(e);
             }
 
             if (this.registryValues.keycloak.customHosts === null) {

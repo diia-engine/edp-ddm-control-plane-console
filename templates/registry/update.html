@@ -1,29 +1,8 @@
 {{ define "registry/update.html" }}
     {{template "header" .}}
-    <div class="registry registry-create" id="registry-form">
-        <div class="registry-header">
-            <a href="{{ .BasePath }}/admin/registry/overview" class="registry-add">
-                <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
-                <span>НАЗАД</span>
-            </a>
-        </div>
 
-        <h1>Оновити реєстр "{{.registry.Name}}"</h1>
+    <div id="template-args" style="display: none;" data-args="{{ .templateArgs }}"></div>
+    <div id="app"></div>
 
-        <form id="registry-update-form" class="registry-create-form" method="post"
-              action="/admin/registry/update/{{ .registry.Name }}">
-            <div class="rc-form-group">
-                <label for="branch">Оновити реєстр</label>
-                <select id="branch" name="branch" required>
-                    <option></option>
-                    {{range $key, $val := .updateBranches}}
-                        <option>{{$val}}</option>
-                    {{end}}
-                </select>
-            </div>
-            <div class="rc-form-group">
-                <button type="submit" name="submit">Підтвердити</button>
-            </div>
-        </form>
-    </div>
+    {{template  "scripts" .}}
 {{end}}

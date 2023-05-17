@@ -59,7 +59,7 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get registry")
 	}
 
-	hasUpdate, branches, registryVersion, err := registry.HasUpdate(userCtx, a.Services.Gerrit, cb, MRTypeClusterUpdate)
+	hasUpdate, branches, registryVersion, err := registry.HasUpdate(userCtx, a.Services.Gerrit, cb, registry.MRTargetClusterUpdate)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}
@@ -74,6 +74,16 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to load values")
 	}
 	values.IsRegistry194Lower = registry.IsRegistry194Lower(registryVersion)
+
+	valuesJs, err := json.Marshal(values)
+	if err != nil {
+		return nil, fmt.Errorf("unable to encode values to json, %w", err)
+	}
+
+	dnsManual, err := registry.GetManualURL(ctx, a.EDPComponent, a.DDMManualEDPComponent, a.RegistryDNSManualPath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get manual, %w", err)
+	}
 
 	valuesJs, err := json.Marshal(values)
 	if err != nil {
@@ -100,7 +110,15 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		}
 	}
 
-	return router.MakeHTMLResponse(200, "cluster/edit.html", rspParams), nil
+	templateArgs, err := json.Marshal(rspParams)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode template arguments")
+	}
+
+	return router.MakeHTMLResponse(200, "cluster/edit.html", gin.H{
+		"page":         "cluster",
+		"templateArgs": string(templateArgs),
+	}), nil
 }
 
 func (a *App) editDataLoaders() []func(context.Context, *Values, gin.H) error {

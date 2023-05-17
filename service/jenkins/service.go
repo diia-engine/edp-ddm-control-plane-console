@@ -16,6 +16,14 @@ import (
 	pkgScheme "sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
+const (
+	StatusSuccess  = "SUCCESS"
+	StatusUnstable = "UNSTABLE"
+	StatusFailure  = "FAILURE"
+	StatusNotBuild = "NOT_BUILT"
+	StatusAborted  = "ABORTED"
+)
+
 type Service struct {
 	service.UserConfig
 	Config

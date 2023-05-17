@@ -27,13 +27,13 @@ type ScheduleItem struct {
 
 type BackupScheduleForm struct {
 	NexusSchedule               string `form:"nexus-schedule" binding:"required,cron-expression"`
-	NexusExpiresInDays          string `form:"nexus-expires-in-days" binding:"required,only-integer"`
+	NexusExpiresInDays          string `form:"nexus-expires-in-days" binding:"required,cron-expires"`
 	ControlPlaneSchedule        string `form:"control-plane-schedule" binding:"required,cron-expression"`
-	ControlPlaneExpiresInDays   string `form:"control-plane-expires-in-days" binding:"required,only-integer"`
+	ControlPlaneExpiresInDays   string `form:"control-plane-expires-in-days" binding:"required,cron-expires"`
 	UserManagementSchedule      string `form:"user-management-schedule" binding:"required,cron-expression"`
-	UserManagementExpiresInDays string `form:"user-management-expires-in-days" binding:"required,only-integer"`
+	UserManagementExpiresInDays string `form:"user-management-expires-in-days" binding:"required,cron-expires"`
 	MonitoringSchedule          string `form:"monitoring-schedule" binding:"required,cron-expression"`
-	MonitoringExpiresInDays     string `form:"monitoring-expires-in-days" binding:"required,only-integer"`
+	MonitoringExpiresInDays     string `form:"monitoring-expires-in-days" binding:"required,cron-expires"`
 }
 
 func (bs BackupSchedule) ToForm() BackupScheduleForm {
@@ -95,8 +95,12 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 			return nil, errors.Wrap(err, "unable to parse registry form")
 		}
 
-		return router.MakeHTMLResponse(200, "cluster/edit.html",
-			gin.H{"page": "cluster", "errorsMap": validationErrors, "backupSchedule": bs}), nil
+		errorsMap := make(map[string][]interface{})
+		for _, v := range validationErrors {
+			errorsMap[v.Field()] = append(errorsMap[v.Field()], v.Tag())
+		}
+
+		return router.MakeJSONResponse(http.StatusUnprocessableEntity, gin.H{"errors": errorsMap}), nil
 	}
 
 	values, err := a.getValuesDict(ctx)
@@ -125,13 +129,13 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 		authorEmail:   ctx.GetString(router.UserEmailSessionKey),
 		authorName:    ctx.GetString(router.UserNameSessionKey),
 		commitMessage: "update platform backup schedule config",
-		targetLabel:   MRTypeClusterBackupSchedule,
+		targetLabel:   MRTargetClusterBackupSchedule,
 		name:          fmt.Sprintf("backup-schedule-%s-%d", a.Config.CodebaseName, time.Now().Unix()),
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
-	return router.MakeRedirectResponse(http.StatusFound, "/admin/cluster/management"), nil
+	return router.MakeJSONResponse(http.StatusOK, gin.H{"errors": nil}), nil
 }
 
 func CronExpressionValidator(fl validator.FieldLevel) bool {
@@ -143,9 +147,13 @@ func CronExpressionValidator(fl validator.FieldLevel) bool {
 	return true
 }
 
-func OnlyIntegerValidator(fl validator.FieldLevel) bool {
+func CronDaysValidator(fl validator.FieldLevel) bool {
 	expression := fl.Field().String()
-	if _, err := strconv.ParseInt(expression, 10, 24); err != nil {
+	if _, err := strconv.ParseInt(expression, 10, 64); err != nil {
+		return false
+	}
+
+	if expression == "0" {
 		return false
 	}
 

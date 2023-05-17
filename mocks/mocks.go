@@ -18,6 +18,7 @@ import (
 	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/openshift"
+	"errors"
 	"net/url"
 	"time"
 
@@ -30,17 +31,6 @@ import (
 )
 
 func InitServices(cnf *config.Settings) *config.Services {
-	edpComponent := mockEdpComponent.ServiceInterface{}
-	edpComponent.On("GetAll", mock.Anything, mock.Anything).Return([]edpcomponent.EDPComponent{}, nil)
-	edpComponent.On("Get", mock.Anything, mock.Anything).Return(&edpcomponent.EDPComponent{
-		Spec: edpcomponent.EDPComponentSpec{Url: "https://example.com/foo/bar"},
-	}, nil)
-	edpComponent.On("GetAllNamespace", mock.Anything, mock.Anything, true).Return([]edpcomponent.EDPComponent{
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "mock"},
-		},
-	}, nil)
-
 	openShift := mockOpenshift.ServiceInterface{}
 	openShift.On("GetMe", mock.Anything).Return(&openshift.User{
 		Metadata: openshift.Metadata{
@@ -55,6 +45,15 @@ func InitServices(cnf *config.Settings) *config.Services {
 	pms.On("FilterCodebases", mock.Anything, mock.Anything, mock.Anything).Return([]codebase.WithPermissions{
 		{
 			Codebase:  &codebase.Codebase{ObjectMeta: metav1.ObjectMeta{Name: "mock"}},
+			CanUpdate: true,
+			CanDelete: true,
+		},
+		{
+			Codebase: &codebase.Codebase{
+				ObjectMeta: metav1.ObjectMeta{Name: "mock-branch-inactive", Annotations: map[string]string{
+					codebase.StatusAnnotation: codebase.StatusAnnotationInactiveBranches,
+				}},
+			},
 			CanUpdate: true,
 			CanDelete: true,
 		},
@@ -84,6 +83,7 @@ func initEDPComponent() *mockEdpComponent.ServiceInterface {
 	edpComponent.On("GetAllNamespace", mock.Anything, mock.Anything, true).Return([]edpcomponent.EDPComponent{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "mock"},
+			Spec:       edpcomponent.EDPComponentSpec{Url: "http://google.com"},
 		},
 	}, nil)
 	edpComponent.On("GetAllCategory", mock.Anything, mock.Anything).Return(map[string][]edpcomponent.EDPComponentItem{
@@ -97,7 +97,11 @@ func initEDPComponent() *mockEdpComponent.ServiceInterface {
 
 func initJenkinsService() *mockJenkins.ServiceInterface {
 	svc := mockJenkins.ServiceInterface{}
-	svc.On("GetJobStatus", mock.Anything, mock.Anything).Return("SUCCESS", int64(11), nil)
+	svc.On("GetJobStatus", mock.Anything, "mock/view/MOCK-BRANCH/job/MOCK-BRANCH-Build-mock").
+		Return("SUCCESS", int64(11), nil)
+
+	svc.On("GetJobStatus", mock.Anything, "mock/view/MASTER/job/MASTER-Build-mock").
+		Return("FAILURE", int64(11), nil)
 
 	return &svc
 }
@@ -116,6 +120,11 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "mock"},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "mock-branch-inactive", Annotations: map[string]string{
+				codebase.StatusAnnotation: codebase.StatusAnnotationInactiveBranches,
+			}},
+		},
 	}, nil)
 	cbService.On("CheckPermissions", mock.Anything, mock.Anything).Return([]codebase.WithPermissions{}, nil)
 	cbService.On("CheckIsAllowedToCreate", mock.Anything).Return(true, nil)
@@ -124,11 +133,15 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	clusterDescription := "cluster description"
 	cbService.On("Get", cnf.ClusterCodebaseName).Return(&codebase.Codebase{
 		ObjectMeta: metav1.ObjectMeta{Name: cnf.ClusterCodebaseName},
-		Spec:       codebase.CodebaseSpec{Description: &clusterDescription},
+		Spec:       codebase.CodebaseSpec{Description: &clusterDescription, Repository: &codebase.Repository{}},
 	}, nil)
-	cbService.On("GetBranchesByCodebase", cnf.ClusterCodebaseName).Return([]codebase.CodebaseBranch{
+	cbService.On("GetBranchesByCodebase", mock.Anything, cnf.ClusterCodebaseName).Return([]codebase.CodebaseBranch{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "master"},
+			Spec: codebase.CodebaseBranchSpec{
+				BranchName:   "mock-branch",
+				CodebaseName: "mock",
+			},
 		},
 	}, nil)
 	cbService.On("CheckIsAllowedToUpdate", mock.Anything, mock.Anything).Return(true, nil)
@@ -136,13 +149,19 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	mockDescription := "mock description"
 	cbService.On("Get", "mock").Return(&codebase.Codebase{
 		ObjectMeta: metav1.ObjectMeta{Name: "mock"},
-		Spec:       codebase.CodebaseSpec{Description: &mockDescription},
+		Spec:       codebase.CodebaseSpec{Description: &mockDescription, Repository: &codebase.Repository{}},
 	}, nil)
-	cbService.On("GetBranchesByCodebase", "mock").Return([]codebase.CodebaseBranch{
+	cbService.On("GetBranchesByCodebase", mock.Anything, "mock").Return([]codebase.CodebaseBranch{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "master"},
+			Spec: codebase.CodebaseBranchSpec{
+				BranchName:   "mock-branch",
+				CodebaseName: "mock",
+			},
 		},
 	}, nil)
+
+	cbService.On("Get", "mock2").Return(nil, errors.New("not found"))
 
 	return &cbService
 }
@@ -165,6 +184,13 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 				Branches: []string{"mock-branch"},
 			},
 		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "registry-tenant-template-tpl1"},
+			Status: gerrit.GerritProjectStatus{
+				Branches: []string{"refs/heads/1.0"},
+			},
+			Spec: gerrit.GerritProjectSpec{Name: "registry-tenant-template-tpl1"},
+		},
 	}, nil)
 
 	mockClusterValuesFromRegistry := registry.ClusterValues{Keycloak: registry.ClusterKeycloak{CustomHosts: []registry.CustomHost{
@@ -180,12 +206,37 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 		url.PathEscape(registry.ValuesLocation)).Return(string(clusterValuesBts), nil)
 
 	mockRegistryValues := registry.Values{
-		Global: registry.Global{},
+		Global: registry.Global{
+			DeploymentMode: registry.DeploymentModeDevelopment,
+			WhiteListIP: registry.WhiteListIP{
+				CitizenPortal: "192.168.1.1 18.1.1.0/32",
+				AdminRoutes:   "10.0.0.1 8.8.8.8",
+				OfficerPortal: "10.5.1.2/32 2.5.2.1",
+			},
+			CrunchyPostgres: registry.CrunchyPostgres{
+				CrunchyPostgresPostgresql: registry.CrunchyPostgresPostgresql{
+					CrunchyPostgresPostgresqlParameters: registry.CrunchyPostgresPostgresqlParameters{
+						MaxConnections: 150},
+				},
+				StorageSize: "10Gi",
+			},
+		},
 		Administrators: []registry.Admin{
 			{Email: "foo@bar.com"},
 		},
 		Keycloak: registry.Keycloak{
 			CustomHost: "foo.bar.com",
+		},
+		Trembita: registry.Trembita{
+			IPList: []string{"8.8.8.8", "9.9.9.9", "10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4", "10.0.0.5",
+				"10.0.0.6", "10.0.0.7"},
+			Registries: map[string]registry.TrembitaRegistry{
+				"test": {
+					Mock: true,
+					URL:  "http://wiremock/",
+					Type: "registry",
+				},
+			},
 		},
 	}
 	registryValuesBts, err := yaml.Marshal(mockRegistryValues)
@@ -194,14 +245,16 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 	}
 
 	grService.On("GetBranchContent", "mock", "master", url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
+	grService.On("GetBranchContent", "registry-tenant-template-tpl1", "1.0",
+		url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
 	grService.On("GetMergeRequestByProject", mock.Anything, cnf.ClusterCodebaseName).Return([]gerrit.GerritMergeRequest{
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr"},
+			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr", Labels: map[string]string{}},
 		},
 	}, nil)
 	grService.On("GetMergeRequestByProject", mock.Anything, "mock").Return([]gerrit.GerritMergeRequest{
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr"},
+			ObjectMeta: metav1.ObjectMeta{Name: "mock-mr", Labels: map[string]string{}},
 		},
 	}, nil)
 	grService.On("GetProject", mock.Anything, cnf.ClusterCodebaseName).Return(&gerrit.GerritProject{
@@ -223,10 +276,10 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 				CertificatePath: "/foo2/bar/com",
 			},
 		}},
-		Velero: cluster.Velero{Backup: cluster.BackupSchedule{Nexus: cluster.ScheduleItem{
-			Schedule:      "30 10 * * *",
-			ExpiresInDays: 5,
-		}}},
+        Velero: cluster.Velero{Backup: cluster.BackupSchedule{Nexus: cluster.ScheduleItem{
+            Schedule:      "30 10 * * *",
+            ExpiresInDays: 5,
+        }}},
 	}
 	bts, err := yaml.Marshal(mockClusterValues)
 	if err != nil {

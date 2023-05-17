@@ -13,6 +13,7 @@ WORKDIR /go/bin
 ENV ZONEINFO=/usr/local/go/lib/time/zoneinfo.zip
 
 COPY static static
+COPY frontend frontend
 COPY templates templates
 COPY default.env .
 COPY locale locale

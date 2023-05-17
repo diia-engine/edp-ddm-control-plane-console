@@ -72,7 +72,7 @@ func (e ExtendedMergeRequests) Action() string {
 		sourceBranch = e.Labels[registry.MRLabelSourceBranch]
 	}
 
-	if e.Labels[registry.MRLabelTarget] == MRTypeClusterUpdate {
+	if e.Labels[registry.MRLabelTarget] == registry.MRTargetClusterUpdate {
 		return fmt.Sprintf("Оновлення платформи до %s", sourceBranch)
 	}
 

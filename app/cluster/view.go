@@ -35,7 +35,7 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get cluster codebase")
 	}
 
-	branches, err := cbService.GetBranchesByCodebase(cb.Name)
+	branches, err := cbService.GetBranchesByCodebase(ctx, cb.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get registry branches")
 	}
@@ -81,18 +81,27 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get cluster gerrit project")
 	}
 
-	return router.MakeHTMLResponse(200, "cluster/view.html", gin.H{
+	rspParams := gin.H{
 		"branches":         branches,
 		"codebase":         cb,
 		"jenkinsURL":       jenkinsComponent.Spec.Url,
 		"gerritURL":        gerritComponent.Spec.Url,
-		"page":             "cluster",
 		"edpComponents":    namespacedEDPComponents,
 		"canUpdateCluster": canUpdateCluster,
 		"admins":           adminsStr,
 		"cidr":             cidr,
 		"version":          a.getClusterVersion(clusterProject.Status.Branches, emrs),
 		"mergeRequests":    emrs,
+	}
+
+	templateArgs, err := json.Marshal(rspParams)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to encode template arguments")
+	}
+
+	return router.MakeHTMLResponse(200, "cluster/view.html", gin.H{
+		"page":         "cluster",
+		"templateArgs": string(templateArgs),
 	}), nil
 }
 
@@ -100,7 +109,7 @@ func (a *App) getClusterVersion(gerritProjectBranches []string, mrs []ExtendedMe
 	registryVersion := registry.LowestVersion(registry.UpdateBranches(gerritProjectBranches))
 
 	for _, mr := range mrs {
-		if mr.Labels[registry.MRLabelTarget] != MRTypeClusterUpdate {
+		if mr.Labels[registry.MRLabelTarget] != MRTargetClusterUpdate {
 			continue
 		}
 

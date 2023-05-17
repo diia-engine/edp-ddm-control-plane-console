@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-version"
@@ -106,6 +105,13 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		return nil, errors.Wrap(err, "unable to load dns config")
 	}
 
+	templateArgs, templateErr := json.Marshal(responseParams)
+	if templateErr != nil {
+		return nil, errors.Wrap(templateErr, "unable to encode template arguments")
+	}
+
+	responseParams["templateArgs"] = string(templateArgs)
+
 	return router.MakeHTMLResponse(200, "registry/edit.html", responseParams), nil
 }
 
@@ -119,13 +125,14 @@ func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParam
 		return errors.Wrap(err, "unable to load smtp config")
 	}
 
-	if err := a.loadCIDRConfig(values, rspParams); err != nil {
-		return errors.Wrap(err, "unable to load cidr config")
-	}
-
 	//TODO: refactor to values struct
 	if err := a.loadAdminsConfig(values.OriginalYaml, r); err != nil {
 		return errors.Wrap(err, "unable to load admins config")
+	}
+
+	//TODO: refactor to values struct
+	if err := a.loadOBCConfig(values, r); err != nil {
+		return errors.Wrap(err, "unable to load obc config")
 	}
 
 	//TODO: refactor to values struct
@@ -157,12 +164,7 @@ func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParam
 		return errors.Wrap(err, "unable to encode registry data")
 	}
 	rspParams["registryData"] = string(registryData)
-
-	valuesJson, err := json.Marshal(values)
-	if err != nil {
-		return errors.Wrap(err, "unable to encode registry values")
-	}
-	rspParams["registryValues"] = string(valuesJson)
+	rspParams["registryValues"] = values
 
 	return nil
 }
@@ -203,7 +205,7 @@ func (a *App) loadIDGovUAClientID(values *Values) error {
 }
 
 func (a *App) loadRegistryResourcesConfig(values map[string]interface{}, r *registry) error {
-	global, ok := values["global"]
+	global, ok := values[GlobalValuesIndex]
 	if !ok {
 		return nil
 	}
@@ -260,31 +262,54 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 	return nil
 }
 
-func (a *App) loadCIDRConfig(values *Values, rspParams gin.H) error {
-	//TODO: remove this and pass whole values yaml to edit view
-	whiteListIPDict := make(map[string][]string)
-
-	if values.Global.WhiteListIP.AdminRoutes != "" {
-		whiteListIPDict["admin"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
-	}
-	if values.Global.WhiteListIP.CitizenPortal != "" {
-		whiteListIPDict["citizen"] = strings.Split(values.Global.WhiteListIP.CitizenPortal, " ")
-	}
-	if values.Global.WhiteListIP.OfficerPortal != "" {
-		whiteListIPDict["officer"] = strings.Split(values.Global.WhiteListIP.OfficerPortal, " ")
+func (a *App) loadOBCConfig(values *Values, r *registry) error {
+	if values.Global.RegistryBackup.OBC.Credentials == "" {
+		return nil
 	}
 
-	cidrConfig, err := json.Marshal(whiteListIPDict)
+	modPath := ModifyVaultPath(values.Global.RegistryBackup.OBC.Credentials)
+	s, err := a.Vault.Read(modPath)
 	if err != nil {
-		return errors.Wrap(err, "unable to encode cidr to JSON")
+		return fmt.Errorf("unable to load obc credential, err: %w", err)
 	}
 
-	rspParams["cidrConfig"] = string(cidrConfig)
+	data, ok := s.Data["data"]
+	if !ok {
+		return nil
+	}
+
+	dataDict, ok := data.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	login, ok := dataDict[a.Config.BackupBucketAccessKeyID]
+	if !ok {
+		return nil
+	}
+
+	password, ok := dataDict[a.Config.BackupBucketSecretAccessKey]
+	if !ok {
+		return nil
+	}
+
+	loginStr, ok := login.(string)
+	if !ok {
+		return nil
+	}
+
+	passwordStr, ok := password.(string)
+	if !ok {
+		return nil
+	}
+
+	r.OBCLogin = loginStr
+	r.OBCPassword = passwordStr
 	return nil
 }
 
 func (a *App) loadSMTPConfig(values map[string]interface{}, rspParams gin.H) error {
-	global, ok := values["global"]
+	global, ok := values[GlobalValuesIndex]
 	if !ok {
 		rspParams["smtpConfig"] = "{}"
 		return nil
@@ -421,7 +446,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		}
 	}
 
-	if err := cbService.Update(cb); err != nil {
+	if err := cbService.Update(ctx, cb); err != nil {
 		return errors.Wrap(err, "unable to update codebase")
 	}
 

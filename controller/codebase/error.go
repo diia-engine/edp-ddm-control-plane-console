@@ -1,10 +1,9 @@
 package codebase
 
 import (
+	"errors"
 	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 type ErrPostpone time.Duration
@@ -13,7 +12,11 @@ func (e ErrPostpone) Error() string {
 	return fmt.Sprintf("postpone for: %s", time.Duration(e).String())
 }
 
+func (e ErrPostpone) D() time.Duration {
+	return time.Duration(e)
+}
+
 func IsErrPostpone(err error) bool {
-	_, ok := errors.Cause(err).(ErrPostpone)
-	return ok
+	d := ErrPostpone(time.Second)
+	return errors.As(err, &d)
 }

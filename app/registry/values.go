@@ -2,15 +2,42 @@ package registry
 
 import "fmt"
 
+const (
+	DeploymentModeDevelopment = "development"
+	GlobalValuesIndex         = "global"
+	ResourcesIndex            = "registry"
+	CrunchyPostgresIndex      = "crunchyPostgres"
+)
+
 type Values struct {
-	Administrators  []Admin                   `yaml:"administrators" json:"administrators"`
-	ExternalSystems map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
-	Global          Global                    `yaml:"global" json:"global"`
-	Trembita        Trembita                  `yaml:"trembita" json:"trembita"`
-	SignWidget      SignWidget                `yaml:"signWidget" json:"signWidget"`
-	Keycloak        Keycloak                  `yaml:"keycloak" json:"keycloak"`
-	Portals         Portals                   `yaml:"portals" json:"portals"`
-	OriginalYaml    map[string]interface{}    `yaml:"-" json:"-"`
+	Administrators   []Admin                   `yaml:"administrators" json:"administrators"`
+	ExternalSystems  map[string]ExternalSystem `yaml:"external-systems" json:"externalSystems"`
+	Global           Global                    `yaml:"global" json:"global"`
+	Trembita         Trembita                  `yaml:"trembita" json:"trembita"`
+	SignWidget       SignWidget                `yaml:"signWidget" json:"signWidget"`
+	Keycloak         Keycloak                  `yaml:"keycloak" json:"keycloak"`
+	Portals          Portals                   `yaml:"portals" json:"portals"`
+	OriginalYaml     map[string]interface{}    `yaml:"-" json:"-"`
+	DigitalDocuments DigitalDocuments          `yaml:"digitalDocuments" json:"digitalDocuments"`
+}
+
+type DigitalDocuments struct {
+	MaxFileSize      string `yaml:"maxFileSize" json:"maxFileSize"`
+	MaxTotalFileSize string `yaml:"maxTotalFileSize" json:"maxTotalFileSize"`
+}
+
+type CrunchyPostgres struct {
+	CrunchyPostgresPostgresql CrunchyPostgresPostgresql `yaml:"postgresql" json:"postgresql"`
+	StorageSize               string                    `yaml:"storageSize" json:"storageSize"`
+	Backups                   interface{}               `yaml:"backups" json:"-"`
+}
+
+type CrunchyPostgresPostgresql struct {
+	CrunchyPostgresPostgresqlParameters CrunchyPostgresPostgresqlParameters `yaml:"parameters" json:"parameters"`
+}
+
+type CrunchyPostgresPostgresqlParameters struct {
+	MaxConnections int `yaml:"max_connections" json:"max_connections"`
 }
 
 type Portals struct {
@@ -31,9 +58,18 @@ type RegistryBackup struct {
 	Enabled       bool   `yaml:"enabled" json:"enabled"`
 	Schedule      string `yaml:"schedule" json:"schedule"`
 	ExpiresInDays int    `yaml:"expiresInDays" json:"expiresInDays"`
+	OBC           OBC    `yaml:"obc" json:"obc"`
+}
+
+type OBC struct {
+	CronExpression string `yaml:"cronExpression" json:"cronExpression"`
+	BackupBucket   string `yaml:"backupBucket" json:"backupBucket"`
+	Endpoint       string `yaml:"endpoint" json:"endpoint"`
+	Credentials    string `yaml:"credentials" json:"credentials"`
 }
 
 type Keycloak struct {
+	CustomHost        string                           `yaml:"customHost,omitempty" json:"customHost"`
 	Realms            KeycloakRealms                   `yaml:"realms" json:"realms"`
 	AuthFlows         KeycloakAuthFlows                `yaml:"authFlows" json:"authFlows"`
 	CitizenAuthFlow   KeycloakAuthFlowsCitizenAuthFlow `yaml:"citizenAuthFlow" json:"citizenAuthFlow"`
@@ -89,6 +125,7 @@ type ExternalSystem struct {
 	Type     string            `yaml:"type" json:"type"`
 	Protocol string            `yaml:"protocol" json:"protocol"`
 	Auth     map[string]string `yaml:"auth,omitempty" json:"auth"`
+	Mock     bool              `yaml:"mock" json:"mock"`
 }
 
 func (e ExternalSystem) StrAuth() string {
@@ -110,9 +147,12 @@ func (e ExternalSystem) FaStatus() string {
 }
 
 type Global struct {
-	WhiteListIP    WhiteListIP    `json:"whiteListIP" yaml:"whiteListIP"`
-	Notifications  Notifications  `json:"notifications" yaml:"notifications"`
-	RegistryBackup RegistryBackup `yaml:"registryBackup" json:"registryBackup"`
+	WhiteListIP     WhiteListIP            `json:"whiteListIP" yaml:"whiteListIP"`
+	Notifications   Notifications          `json:"notifications" yaml:"notifications"`
+	RegistryBackup  RegistryBackup         `yaml:"registryBackup" json:"registryBackup"`
+	DeploymentMode  string                 `yaml:"deploymentMode" json:"deploymentMode"`
+	CrunchyPostgres CrunchyPostgres        `yaml:"crunchyPostgres" json:"crunchyPostgres"`
+	Registry        map[string]interface{} `yaml:"registry" json:"registry"`
 }
 
 type WhiteListIP struct {
@@ -123,6 +163,7 @@ type WhiteListIP struct {
 
 type Trembita struct {
 	Registries map[string]TrembitaRegistry `yaml:"registries" json:"registries"`
+	IPList     []string                    `yaml:"ipList" json:"ipList"`
 }
 
 type TrembitaRegistry struct {
@@ -134,6 +175,7 @@ type TrembitaRegistry struct {
 	Client          TrembitaRegistryClient  `yaml:"client,omitempty" json:"client,omitempty"`
 	Service         TrembitaRegistryService `yaml:"service,omitempty" json:"service,omitempty"`
 	Auth            map[string]string       `yaml:"auth,omitempty" json:"auth,omitempty"`
+	Mock            bool                    `yaml:"mock" json:"mock"`
 }
 
 func (t TrembitaRegistry) StrType() string {

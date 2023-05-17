@@ -2,8 +2,10 @@ package registry
 
 import (
 	"ddm-admin-console/router"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -16,7 +18,7 @@ const (
 
 type TrembitaClientRegistryForm struct {
 	TrembitaClientProtocolVersion string `form:"trembita-client-protocol-version" binding:"required"`
-	TrembitaClientURL             string `form:"trembita-client-url" binding:"required"`
+	TrembitaClientURL             string `form:"trembita-client-url"`
 	TrembitaClientUserID          string `form:"trembita-client-user-id" binding:"required"`
 	TrembitaClientXRoadInstance   string `form:"trembita-client-x-road-instance" binding:"required"`
 	TrembitaClientMemberClass     string `form:"trembita-client-member-class" binding:"required"`
@@ -34,7 +36,7 @@ type TrembitaClientRegistryForm struct {
 	TrembitaServiceAuthSecret     string `form:"trembita-service-auth-secret"`
 }
 
-func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
+func (tf TrembitaClientRegistryForm) ToNestedStruct(wiremockAddr string) TrembitaRegistry {
 	tr := TrembitaRegistry{
 		URL:             tf.TrembitaClientURL,
 		UserID:          tf.TrembitaClientUserID,
@@ -56,6 +58,11 @@ func (tf TrembitaClientRegistryForm) ToNestedStruct() TrembitaRegistry {
 		Auth: map[string]string{
 			"type": tf.TrembitaServiceAuthType,
 		},
+	}
+
+	if tr.URL == "" {
+		tr.Mock = true
+		tr.URL = wiremockAddr
 	}
 
 	return tr
@@ -83,7 +90,8 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.New("wrong registry name")
 	}
 
-	trembitaRegistry := tf.ToNestedStruct()
+	trembitaRegistry := tf.ToNestedStruct(strings.ReplaceAll(a.Config.WiremockAddr, registryNamePlaceholder,
+		registryName))
 	trembitaRegistry.Type = trembitaRegistryFromValues.Type
 	trembitaRegistry.Protocol = trembitaRegistryFromValues.Protocol
 
@@ -150,7 +158,8 @@ func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "trembita client already exists")
 	}
 
-	trembitaRegistry := tf.ToNestedStruct()
+	trembitaRegistry := tf.ToNestedStruct(strings.ReplaceAll(a.Config.WiremockAddr, registryNamePlaceholder,
+		registryName))
 	trembitaRegistry.Type = externalSystemDeletableType
 	trembitaRegistry.Protocol = tf.TrembitaClientProtocol
 
@@ -167,6 +176,7 @@ func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Respons
 				return nil, errors.Wrap(err, "unable to create auth token secret")
 			}
 		}
+
 		trembitaRegistry.Auth["secret"] = prefixedPath
 	}
 	values.Trembita.Registries[tf.TrembitaClientRegitryName] = trembitaRegistry
@@ -235,4 +245,22 @@ func (a *App) checkTrembitaClientExists(ctx *gin.Context) (rsp router.Response, 
 	}
 
 	return router.MakeStatusResponse(http.StatusNotFound), nil
+}
+
+func (a *App) prepareTrembitaIPList(ctx *gin.Context, r *registry, values *Values,
+	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	if r.TrembitaIPList != "" {
+		var ipList []string
+		if err := json.Unmarshal([]byte(r.TrembitaIPList), &ipList); err != nil {
+			return fmt.Errorf("unable to decode trembita ip list %w", err)
+		}
+
+		values.Trembita.IPList = ipList
+		values.OriginalYaml[trembitaValuesKey] = values.Trembita
+	} else if r.TrembitaIPList == "" && len(values.Trembita.IPList) > 0 {
+		values.Trembita.IPList = []string{}
+		values.OriginalYaml[trembitaValuesKey] = values.Trembita
+	}
+
+	return nil
 }

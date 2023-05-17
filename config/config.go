@@ -66,6 +66,9 @@ type Settings struct {
 	KeycloakDefaultHostname               string `envconfig:"KEYCLOAK_DEFAULT_HOSTNAME"`
 	Mock                                  string `envconfig:"MOCK"`
 	RegistryVersionFilter                 string `envconfig:"REGISTRY_VERSION_FILTER"`
+	WiremockAddr                          string `envconfig:"WIREMOCK_ADDR" default:"http://wiremock.{NAME_REGISTRY}:9021/"`
+	BackupBucketAccessKeyID               string `envconfig:"ACCESS_KEY_ID" default:"accessKeyId"`
+	BackupBucketSecretAccessKey           string `envconfig:"SECRET_ACCESS_KEY" default:"secretAccessKey"`
 }
 
 type Services struct {

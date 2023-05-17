@@ -5,11 +5,11 @@ const (
 )
 
 type Values struct {
-	Velero             Velero   `yaml:"velero" json:"velero"`
-	Global             Global   `yaml:"global" json:"global"`
-	Admins             []Admin  `yaml:"administrators" json:"administrators"`
-	Keycloak           Keycloak `yaml:"keycloak" json:"keycloak"`
-	OriginalYaml       map[string]interface{}
+	Velero       Velero   `yaml:"velero" json:"velero"`
+	Global       Global   `yaml:"global" json:"global"`
+	Admins       []Admin  `yaml:"administrators" json:"administrators"`
+	Keycloak     Keycloak `yaml:"keycloak" json:"keycloak"`
+	OriginalYaml map[string]interface{}
 	IsRegistry194Lower bool `yaml:"-" json:"isRegistry194Lower"`
 }
 

@@ -64,11 +64,8 @@ func LoadRegistryVersions(ctx context.Context, gerritService gerrit.ServiceInter
 
 		currentRegistryMrs := registryMrs[cb.Name]
 		for _, mr := range currentRegistryMrs {
-			if mr.Labels[MRLabelTarget] != MRTargetRegistryVersionUpdate {
-				continue
-			}
-
-			if mr.Status.Value == gerrit.StatusMerged {
+			if (mr.Labels[MRLabelTarget] == MRTargetRegistryVersionUpdate ||
+				mr.Labels[MRLabelTarget] == MRTargetClusterUpdate) && mr.Status.Value == gerrit.StatusMerged {
 				mergedBranchVersion := BranchVersion(mr.Spec.SourceBranch)
 				if registryVersion.LessThan(mergedBranchVersion) {
 					registryVersion = mergedBranchVersion

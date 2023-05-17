@@ -57,8 +57,10 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareRegistryResources,
 		a.prepareSupplierAuthConfig,
 		a.prepareBackupSchedule,
-		a.prepareEDRCheck,
 		a.prepareKeycloakCustomHostname,
+		a.prepareEDRCheck,
+		a.prepareTrembitaIPList,
+		a.prepareDigitalDocuments,
 	}
 }
 
@@ -136,7 +138,7 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		return nil, fmt.Errorf("unable to load keycloak hostnames, %w", err)
 	}
 
-	return router.MakeHTMLResponse(200, "registry/create.html", gin.H{
+	responseParams := gin.H{
 		"dnsManual":            dnsManual,
 		"page":                 "registry",
 		"gerritProjects":       prjs,
@@ -144,12 +146,20 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		"model":                registry{KeyDeviceType: KeyDeviceTypeFile},
 		"hwINITemplateContent": hwINITemplateContent,
 		"smtpConfig":           "{}",
-		"cidrConfig":           "{}",
 		"action":               "create",
 		"registryData":         "{}",
 		"keycloakHostname":     keycloakHostname,
 		"keycloakHostnames":    keycloakHostnames,
-	}), nil
+	}
+
+	templateArgs, templateErr := json.Marshal(responseParams)
+	if templateErr != nil {
+		return nil, errors.Wrap(templateErr, "unable to encode template arguments")
+	}
+
+	responseParams["templateArgs"] = string(templateArgs)
+
+	return router.MakeHTMLResponse(200, "registry/create.html", responseParams), nil
 }
 
 func GetManualURL(ctx context.Context, edpComponentService edpComponent.ServiceInterface, ddmManualComponent, manualPath string) (string, error) {
@@ -463,7 +473,7 @@ func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
 		return nil
 	}
 
-	globalInterface, ok := values["global"]
+	globalInterface, ok := values[GlobalValuesIndex]
 	if !ok {
 		globalInterface = make(map[string]interface{})
 	}
@@ -488,7 +498,7 @@ func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
 	}
 
 	globalDict["whiteListIP"] = whiteListDict
-	values["global"] = globalDict
+	values[GlobalValuesIndex] = globalDict
 
 	return nil
 }
@@ -699,14 +709,14 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 		}
 	}
 
-	globalInterface, ok := values["global"]
+	globalInterface, ok := values[GlobalValuesIndex]
 	if !ok {
 		globalInterface = make(map[string]interface{})
 	}
 	globalDict := globalInterface.(map[string]interface{})
 
 	globalDict["notifications"] = notifications
-	values["global"] = globalDict
+	values[GlobalValuesIndex] = globalDict
 
 	return nil
 }

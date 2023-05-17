@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	MRTypeClusterAdmins         = "cluster-admins"
-	MRTypeClusterCIDR           = "cluster-cidr"
-	MRTypeClusterKeycloakDNS    = "cluster-keycloak-dns"
-	MRTypeClusterUpdate         = "cluster-update"
-	MRTypeClusterBackupSchedule = "cluster-backup-schedule"
-	ValuesAdminsKey             = "administrators"
+	MRTypeClusterAdmins           = "cluster-admins"
+	MRTypeClusterCIDR             = "cluster-cidr"
+	MRTypeClusterKeycloakDNS      = "cluster-keycloak-dns"
+	MRTargetClusterUpdate         = "cluster-update"
+	MRTargetClusterBackupSchedule = "cluster-backup-schedule"
+	ValuesAdminsKey               = "administrators"
 )
 
 type Admin struct {

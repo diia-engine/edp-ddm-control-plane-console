@@ -129,8 +129,8 @@ func (s *Service) CreateBranch(branch *CodebaseBranch) error {
 	return nil
 }
 
-func (s *Service) Update(cb *Codebase) error {
-	if err := s.k8sClient.Update(context.Background(), cb); err != nil {
+func (s *Service) Update(ctx context.Context, cb *Codebase) error {
+	if err := s.k8sClient.Update(ctx, cb); err != nil {
 		return errors.Wrapf(err, "unable to update codebase: %+v", cb)
 	}
 
@@ -154,17 +154,17 @@ func (s *Service) Delete(name string) error {
 	return nil
 }
 
-func (s *Service) GetAllBranches() ([]CodebaseBranch, error) {
+func (s *Service) GetAllBranches(ctx context.Context) ([]CodebaseBranch, error) {
 	var lst CodebaseBranchList
-	if err := s.k8sClient.List(context.Background(), &lst, &client.ListOptions{Namespace: s.namespace}); err != nil {
+	if err := s.k8sClient.List(ctx, &lst, &client.ListOptions{Namespace: s.namespace}); err != nil {
 		return nil, errors.Wrap(err, "unable to get all codebase branches")
 	}
 
 	return lst.Items, nil
 }
 
-func (s *Service) GetBranchesByCodebase(codebaseName string) ([]CodebaseBranch, error) {
-	branches, err := s.GetAllBranches()
+func (s *Service) GetBranchesByCodebase(ctx context.Context, codebaseName string) ([]CodebaseBranch, error) {
+	branches, err := s.GetAllBranches(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get all branches")
 	}

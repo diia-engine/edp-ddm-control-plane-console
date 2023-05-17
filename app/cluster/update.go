@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"ddm-admin-console/app/registry"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -15,7 +16,7 @@ import (
 )
 
 type updateRequest struct {
-	Branch string `form:"branch" binding:"required"`
+	Branch string `form:"branch" binding:"required" json:"branch"`
 }
 
 func (a *App) clusterUpdate(ctx *gin.Context) (router.Response, error) {
@@ -26,8 +27,20 @@ func (a *App) clusterUpdate(ctx *gin.Context) (router.Response, error) {
 			return nil, errors.Wrap(err, "unable to parse registry form")
 		}
 
+		templateArgs, err := json.Marshal(gin.H{
+			"errorsMap": validationErrors,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to encode template arguments")
+		}
+
 		return router.MakeHTMLResponse(200, "cluster/edit.html",
-			gin.H{"page": "cluster", "errorsMap": validationErrors, "backupConf": BackupConfig{}}), nil
+			gin.H{
+				"page":         "cluster",
+				"errorsMap":    validationErrors,
+				"backupConf":   BackupConfig{},
+				"templateArgs": string(templateArgs),
+			}), nil
 	}
 
 	prj, err := a.Services.Gerrit.GetProject(ctx, a.Config.CodebaseName)
@@ -42,14 +55,12 @@ func (a *App) clusterUpdate(ctx *gin.Context) (router.Response, error) {
 
 	if err := a.Services.Gerrit.CreateMergeRequest(ctx, &gerrit.MergeRequest{
 		CommitMessage: fmt.Sprintf("Update cluster to %s", ur.Branch),
-		//SourceBranch:        ur.Branch,
-		ProjectName: prj.Spec.Name,
-		Name:        fmt.Sprintf("%s-update-%d", a.Config.CodebaseName, time.Now().Unix()),
-		AuthorName:  ctx.GetString(router.UserNameSessionKey),
-		AuthorEmail: ctx.GetString(router.UserEmailSessionKey),
-		//AdditionalArguments: []string{"-X", "ours"},
+		ProjectName:   prj.Spec.Name,
+		Name:          fmt.Sprintf("%s-update-%d", a.Config.CodebaseName, time.Now().Unix()),
+		AuthorName:    ctx.GetString(router.UserNameSessionKey),
+		AuthorEmail:   ctx.GetString(router.UserEmailSessionKey),
 		Labels: map[string]string{
-			registry.MRLabelTarget:       MRTypeClusterUpdate,
+			registry.MRLabelTarget:       registry.MRTargetClusterUpdate,
 			registry.MRLabelAction:       registry.MRLabelActionBranchMerge,
 			registry.MRLabelSourceBranch: ur.Branch,
 			registry.MRLabelTargetBranch: cb.Spec.DefaultBranch,

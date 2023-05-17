@@ -1,14 +1,16 @@
 # Admin Console
 
 ## Overview
-
 ## Dependencies
 
 ## Setup for local development
-1. This project uses **go modules** so to install all dependencies you need to run
-`go mod download && go mod vendor`
+1. This project uses **go modules** and **npm modules** so to install all dependencies you need to run:
+   - `go mod download && go mod vendor` in `./` (project root)
+   - `npm install` in `./frontend`
 2. Configure environment in default.env
 3. Compile and run
+    - `go run main.go`
+    - `npm run build:dev` (inside `./frontend`)
 
 ## Project structure
 - *app* - applications which contains main business logic
@@ -16,6 +18,7 @@
 - *templates* - html templates for html rendering https://pkg.go.dev/html/template
 - *config* - app config structure
 - *service* - external services clients
+- *frontend* - Vue.js SPA. All frontend will migrate here in time. Used for all new pages.
 
 ## Errors & Logging
 The project uses pkg/errors lib to handle errors and stack traces. Every error must be wrapped as follows:

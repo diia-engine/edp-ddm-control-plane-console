@@ -58,12 +58,14 @@ func (_m *ServiceInterface) GetJobStatus(ctx context.Context, jobName string) (s
 		r0 = ret.Get(0).(string)
 	}
 
+	var r1 int64
 	if rf, ok := ret.Get(1).(func(context.Context, string) int64); ok {
 		r1 = rf(ctx, jobName)
 	} else {
 		r1 = ret.Get(1).(int64)
 	}
 
+	var r2 error
 	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
 		r2 = rf(ctx, jobName)
 	} else {

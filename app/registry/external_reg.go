@@ -34,6 +34,7 @@ const (
 	erStatusDisabled           = "disabled"
 	mrTargetExternalReg        = "external-reg"
 	mrTargetEditRegistry       = "edit-registry"
+	mrTargetEditTrembita       = "trembita-registry-update"
 	mrSubTargetCreation        = "creation"
 	mrSubTargetDisable         = "disable"
 	mrSubTargetEnable          = "enable"
@@ -49,11 +50,11 @@ func (m MRExists) Error() string {
 }
 
 type ExternalRegistration struct {
-	Name     string `yaml:"name"`
-	Enabled  bool   `yaml:"enabled"`
-	External bool   `yaml:"external"`
-	status   string
-	KeyValue string `yaml:"-"`
+	Name               string `yaml:"name"`
+	Enabled            bool   `yaml:"enabled"`
+	External           bool   `yaml:"external"`
+	StatusRegistration string `yaml:"-"`
+	KeyValue           string `yaml:"-"`
 }
 
 func (e ExternalRegistration) TypeStr() string {
@@ -69,7 +70,7 @@ func (e ExternalRegistration) Inactive() bool {
 }
 
 func (e ExternalRegistration) Status() string {
-	s := e.status
+	s := e.StatusRegistration
 	if s == "" {
 		s = erStatusActive
 	}
