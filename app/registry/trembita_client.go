@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -89,7 +90,8 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.New("wrong registry name")
 	}
 
-	trembitaRegistry := tf.ToNestedStruct(a.Config.WiremockAddr)
+	trembitaRegistry := tf.ToNestedStruct(strings.ReplaceAll(a.Config.WiremockAddr, registryNamePlaceholder,
+		registryName))
 	trembitaRegistry.Type = trembitaRegistryFromValues.Type
 	trembitaRegistry.Protocol = trembitaRegistryFromValues.Protocol
 
@@ -156,7 +158,8 @@ func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "trembita client already exists")
 	}
 
-	trembitaRegistry := tf.ToNestedStruct(a.Config.WiremockAddr)
+	trembitaRegistry := tf.ToNestedStruct(strings.ReplaceAll(a.Config.WiremockAddr, registryNamePlaceholder,
+		registryName))
 	trembitaRegistry.Type = externalSystemDeletableType
 	trembitaRegistry.Protocol = tf.TrembitaClientProtocol
 

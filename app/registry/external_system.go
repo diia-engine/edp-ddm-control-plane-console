@@ -4,6 +4,7 @@ import (
 	"ddm-admin-console/router"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ const (
 	authTypeBearer          = "BEARER"
 	authTypeBasic           = "BASIC"
 	authTypeAuthTokenBearer = "AUTH_TOKEN+BEARER"
+	registryNamePlaceholder = "{NAME_REGISTRY}"
 )
 
 type RegistryExternalSystemForm struct {
@@ -190,7 +192,8 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "external system already exists")
 	}
 
-	extenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName), a.WiremockAddr)
+	extenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName),
+		strings.ReplaceAll(a.WiremockAddr, registryNamePlaceholder, registryName))
 	extenalSystem.Protocol = externalSystemDefaultProtocol
 	extenalSystem.Type = externalSystemDeletableType
 
@@ -239,7 +242,8 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to get external system")
 	}
 
-	editExtenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName), a.WiremockAddr)
+	editExtenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName),
+		strings.ReplaceAll(a.WiremockAddr, registryNamePlaceholder, registryName))
 	editExtenalSystem.Type = valuesExternalSystem.Type
 	editExtenalSystem.Protocol = valuesExternalSystem.Protocol
 
