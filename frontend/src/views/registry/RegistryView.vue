@@ -765,6 +765,12 @@ export default defineComponent({
 });
 </script>
 
+<style scoped>
+  .form-checkbox-checkmark {
+    margin: 0;
+  }
+</style>
+
 <template>
     <div class="registry" id="registry-view">
         <input type="hidden" :value="variables.valuesJson" ref="valuesJson" />
