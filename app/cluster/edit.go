@@ -85,16 +85,6 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		return nil, fmt.Errorf("unable to get manual, %w", err)
 	}
 
-	valuesJs, err := json.Marshal(values)
-	if err != nil {
-		return nil, fmt.Errorf("unable to encode values to json, %w", err)
-	}
-
-	dnsManual, err := registry.GetManualURL(ctx, a.EDPComponent, a.DDMManualEDPComponent, a.RegistryDNSManualPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get manual, %w", err)
-	}
-
 	rspParams := gin.H{
 		"dnsManual":            dnsManual,
 		"page":                 "cluster",
