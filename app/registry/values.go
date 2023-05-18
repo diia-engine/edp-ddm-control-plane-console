@@ -105,8 +105,15 @@ type KeycloakAuthFlowsOfficerAuthFlow struct {
 	WidgetHeight int `yaml:"widgetHeight" json:"widgetHeight"`
 }
 
+type KeycloakWidgetAuthSettings struct {
+	Url    string `yaml:"url" json:"url,omitempty"`
+	Height int    `yaml:"height" json:"height,string,omitempty"`
+}
+
 type KeycloakAuthFlowsCitizenAuthFlow struct {
-	EDRCheck bool `yaml:"edrCheck" json:"edrCheck"`
+	EDRCheck bool                       `yaml:"edrCheck" json:"edrCheck"`
+	AuthType string                     `yaml:"authType" json:"authType"`
+	Widget   KeycloakWidgetAuthSettings `yaml:"widget" json:"widget"`
 }
 
 type KeycloakRealms struct {

@@ -168,12 +168,8 @@ export default defineComponent({
           },
           recipientAuthentication: {
             title: 'Автентифікація отримувачів послуг',
-            validated: true,
-            beginValidation:false,
+            validatorRef: 'recipientAuthTab',
             visible: true,
-            data: {
-              edrCheckEnabled: true
-            }
           },
           digitalDocuments: {
             title: "Цифрові документи",
@@ -257,8 +253,6 @@ export default defineComponent({
           this.wizard.tabs.supplierAuthentication.data.secret = "*****";
         }
 
-        this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = this.registryValues.keycloak.citizenAuthFlow.edrCheck;
-        this.wizard.tabs.supplierAuthentication.selfRegistrationEnabled = this.registryValues.keycloak.realms.officerPortal.selfRegistration;
       } catch (e: any) {
         console.log(e);
       }

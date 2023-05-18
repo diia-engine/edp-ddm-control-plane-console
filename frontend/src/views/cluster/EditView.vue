@@ -273,8 +273,6 @@ export default {
                     this.wizard.tabs.supplierAuthentication.data.clientId = (this.registryValues as any).keycloak.identityProviders?.idGovUa.clientId;
                     this.wizard.tabs.supplierAuthentication.data.secret = '*****';
                 }
-
-                this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = (this.registryValues as any).keycloak.citizenAuthFlow?.edrCheck;
             } catch (e) {
                 console.log(e);
             }

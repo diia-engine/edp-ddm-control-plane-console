@@ -16,10 +16,10 @@ func TestPrepareEDRCheckTrue(t *testing.T) {
 	secrets := map[string]map[string]interface{}{}
 	var mrActions []string
 	r := registry{
-		EDRCheckEnabled: "true",
+		RegistryCitizenAuth: `{"edrCheck": true }`,
 	}
 
-	_, result := app.prepareEDRCheck(&ctx, &r, &values, secrets, &mrActions)
+	result := app.prepareCitizenAuthSettings(&ctx, &r, &values, secrets, &mrActions)
 
 	assert.Nil(t, result)
 	assert.Equal(t, values.Keycloak.CitizenAuthFlow.EDRCheck, true)
@@ -35,10 +35,10 @@ func TestPrepareEDRCheckFalse(t *testing.T) {
 	secrets := map[string]map[string]interface{}{}
 	var mrActions []string
 	r := registry{
-		EDRCheckEnabled: "",
+		RegistryCitizenAuth: `{"edrCheck": false }`,
 	}
 
-	_, result := app.prepareEDRCheck(&ctx, &r, &values, secrets, &mrActions)
+	result := app.prepareCitizenAuthSettings(&ctx, &r, &values, secrets, &mrActions)
 
 	assert.Nil(t, result)
 	assert.Equal(t, values.Keycloak.CitizenAuthFlow.EDRCheck, false)

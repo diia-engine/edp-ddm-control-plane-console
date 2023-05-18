@@ -157,7 +157,10 @@ export default defineComponent({
                     <RegistrySupplierAuth ref="supplierAuthTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'recipientAuthentication'">
-                    <RegistryRecipientAuth ref="recipientAuthTab" />
+                    <RegistryRecipientAuth
+                        :data="templateVariables.registryValues?.keycloak.citizenAuthFlow"
+                        ref="recipientAuthTab"
+                    />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'digitalDocuments'">
                     <RegistryDigitalDocuments ref="digitalDocumentsTab"
