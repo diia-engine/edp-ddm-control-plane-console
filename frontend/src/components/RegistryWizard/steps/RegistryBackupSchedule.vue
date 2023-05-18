@@ -260,7 +260,7 @@ function backupCronExpressionChange () {
         label="Розклад збереження резервних копій реплікацій об’єктів S3"
         name="registry-backup-obc-cron-expression"
         placeholder="30 17 * * *"
-        description="Якщо Ви бажаєте встановити розклад, що відмінний від дефолтного, будь ласка, введіть значення розкладу у Cron-форматі, або вкажіть дефолтне значення за київським часом: 30 17 * * * *"
+        description="Якщо Ви бажаєте встановити розклад, що відмінний від дефолтного, будь ласка, введіть значення розкладу у Cron-форматі, або вкажіть дефолтне значення за UTC: 30 17 * * * *"
         :value="obcCronExpression"
         :error="beginValidation ? errors.obcCronExpression : ''"
         @update="val => obcCronExpression = val"
@@ -268,7 +268,7 @@ function backupCronExpressionChange () {
       />
     </div>
     <div v-show="registryBackupNextDates.length" class="form-group">
-      <label>Наступний запуск резервного копіювання реплікацій об’єктів S3 (за київським часом)</label>
+      <label>Наступний запуск резервного копіювання реплікацій об’єктів S3 (за UTC)</label>
       <ul class="cron-next-dates">
           <li v-for="date in registryBackupNextDates" v-bind:key="date">
             <Typography variant="bodyText">{{ date }}</Typography>
