@@ -12,7 +12,8 @@ interface HTMLEvent<T extends EventTarget = HTMLElement> extends Event {
 
 enum CitizenAuthType {
   widget = 'widget',
-  idGovUa = 'platform-id-gov-ua'
+  registryIdGovUa = 'registry-id-gov-ua',
+  platformIdGovUa = 'platform-id-gov-ua',
 }
 
 interface OutFormValues {
@@ -41,22 +42,23 @@ const validationSchema = Yup.object<FormValues>({
   authType: Yup.string()
     .required(),
   url: Yup.string()
-    .required()
-    .url(),
+    .when('authType', {
+      is: (value: CitizenAuthType) => value === CitizenAuthType.widget,
+      then: (schema) => schema.required().url(),
+    }),
   widgetHeight: Yup.number()
-    .required()
-    .min(1)
-    .integer()
-    .positive()
-    .typeError('wrongFormat'),
+  .when('authType', {
+    is: (value: CitizenAuthType) => value === CitizenAuthType.widget,
+    then: (schema) => schema.required().min(1).integer().positive().typeError('wrongFormat'),
+  }),
   clientId: Yup.string()
     .when('authType', {
-      is: (value: CitizenAuthType) => value === CitizenAuthType.idGovUa,
+      is: (value: CitizenAuthType) => value === CitizenAuthType.registryIdGovUa,
       then: (schema) => schema.required(),
     }),
   secret: Yup.string()
     .when('authType', {
-      is: (value: CitizenAuthType) => value === CitizenAuthType.idGovUa,
+      is: (value: CitizenAuthType) => value === CitizenAuthType.registryIdGovUa,
       then: (schema) => schema.required(),
     })
 });
@@ -144,13 +146,13 @@ const preparedValues = computed((): OutFormValues => ({
   <Typography variant="bodyText" class="mb16">Є можливість використовувати власний віджет автентифікації або налаштувати інтеграцію з id.gov.ua.</Typography>
   <div class="rc-form-group" :class="{'error': !!errors.authType}">
       <label for="rec-auth-type">Вкажіть тип автентифікації</label>
-      <!-- @change="pageRoot.wizardRecAuthFlowChange" -->
       <select
         name="rec-auth-browser-flow" id="rec-auth-type"
         v-model="authType"
         @change="handleChangeAuthType"
       >
-        <option :value="CitizenAuthType.widget">Віджет</option>
+        <option selected :value="CitizenAuthType.widget">Віджет</option>
+        <option :value="CitizenAuthType.platformIdGovUa">Платформенна інтеграція з id.gov.ua</option>
       </select>
       <span v-if="!!errors.authType">{{ getErrorMessage(errors.authType) }}</span>
   </div>
@@ -172,7 +174,7 @@ const preparedValues = computed((): OutFormValues => ({
     />
   </div>
 
-  <div v-if="authType === CitizenAuthType.idGovUa">
+  <div v-if="authType === CitizenAuthType.registryIdGovUa">
     <TextField
       required
       label="Ідентифікатор клієнта (client_id)"
