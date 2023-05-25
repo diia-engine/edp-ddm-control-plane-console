@@ -1,14 +1,11 @@
 package registry
 
 import (
-	"ddm-admin-console/router"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
-
-	"github.com/go-playground/validator/v10"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -30,8 +27,9 @@ type KeyManagement interface {
 	RemoteKeyHost() string
 	RemoteKeyPassword() string
 	INIConfig() string
-	KeysRequired() bool
 	VaultSecretPath() string
+	KeyDataChanged() bool
+	KeyVerificationChanged() bool
 }
 
 type DigitalSignature struct {
@@ -56,41 +54,48 @@ type DigitalSignatureEnv struct {
 
 func PrepareRegistryKeys(reg KeyManagement, rq *http.Request, secretData map[string]map[string]interface{},
 	values map[string]interface{}, repoFiles map[string]string) (bool, error) {
-	createKeys, key6Fl, caCertFl, caJSONFl, err := validateRegistryKeys(rq, reg)
-	if err != nil {
-		return false, fmt.Errorf("unable to validate registry keys, err: %w", err)
-	}
-	if !createKeys {
-		return false, nil
-	}
 
-	ds := DigitalSignature{
-		Env: DigitalSignatureEnv{
-			SignKeyDeviceType: reg.KeyDeviceType(),
-		},
-		Data: DigitalSignatureData{
-			AllowedKeysYml: reg.VaultSecretPath(),
-		},
-	}
+	if reg.KeyVerificationChanged() {
+		caCertFl, _, err := rq.FormFile("ca-cert")
+		if err != nil {
+			return false, fmt.Errorf("no ca-cert file")
+		}
 
-	keySecretData := make(map[string]interface{})
+		caJSONFl, _, err := rq.FormFile("ca-json")
+		if err != nil {
+			return false, fmt.Errorf("no ca-json file")
+		}
 
-	if err := setCASecretData(repoFiles, caCertFl, caJSONFl); err != nil {
-		return false, fmt.Errorf("unable to set ca secret data for registry, err: %w", err)
+		if err := setCASecretData(repoFiles, caCertFl, caJSONFl); err != nil {
+			return false, fmt.Errorf("unable to set ca secret data for registry, err: %w", err)
+		}
 	}
 
-	if err := setKeySecretDataFromRegistry(reg, key6Fl, keySecretData, &ds); err != nil {
-		return false, fmt.Errorf("unable to set key vars from registry form, err: %w", err)
+	if reg.KeyDataChanged() {
+		ds := DigitalSignature{
+			Env: DigitalSignatureEnv{
+				SignKeyDeviceType: reg.KeyDeviceType(),
+			},
+			Data: DigitalSignatureData{
+				AllowedKeysYml: reg.VaultSecretPath(),
+			},
+		}
+
+		keySecretData := make(map[string]interface{})
+
+		if err := setKeySecretDataFromRegistry(reg, rq, keySecretData, &ds); err != nil {
+			return false, fmt.Errorf("unable to set key vars from registry form, err: %w", err)
+		}
+
+		if err := setAllowedKeysSecretData(reg, keySecretData, &ds); err != nil {
+			return false, fmt.Errorf("unable to set allowed keys secret data, err: %w", err)
+		}
+
+		secretData[reg.VaultSecretPath()] = keySecretData
+		values["digital-signature"] = ds
 	}
 
-	if err := setAllowedKeysSecretData(reg, keySecretData, &ds); err != nil {
-		return false, fmt.Errorf("unable to set allowed keys secret data, err: %w", err)
-	}
-
-	secretData[reg.VaultSecretPath()] = keySecretData
-	values["digital-signature"] = ds
-
-	return true, nil
+	return reg.KeyVerificationChanged() || reg.KeyDataChanged(), nil
 }
 
 func setCASecretData(repoFiles map[string]string, caCertFl, caJSONFl multipart.File) error {
@@ -109,10 +114,15 @@ func setCASecretData(repoFiles map[string]string, caCertFl, caJSONFl multipart.F
 	return nil
 }
 
-func setKeySecretDataFromRegistry(reg KeyManagement, key6Fl multipart.File,
+func setKeySecretDataFromRegistry(reg KeyManagement, rq *http.Request,
 	keySecretData map[string]interface{}, ds *DigitalSignature) error {
 
 	if reg.KeyDeviceType() == KeyDeviceTypeFile {
+		key6Fl, _, err := rq.FormFile("key6")
+		if err != nil {
+			return fmt.Errorf("unable to get key6 file, %w", err)
+		}
+
 		key6Bytes, err := ioutil.ReadAll(key6Fl)
 		if err != nil {
 			return errors.Wrap(err, "unable to read file")
@@ -162,39 +172,4 @@ func setAllowedKeysSecretData(reg KeyManagement, keySecretData map[string]interf
 	}
 
 	return nil
-}
-
-func validateRegistryKeys(rq *http.Request, r KeyManagement) (createKeys bool, key6Fl, caCertFl,
-	caJSONFl multipart.File, err error) {
-
-	var fieldErrors []validator.FieldError
-	caCertFl, _, err = rq.FormFile("ca-cert")
-	if err != nil {
-		if !r.KeysRequired() {
-			err = nil
-			return
-		}
-
-		fieldErrors = append(fieldErrors, router.MakeFieldError("CACertificate", "required"))
-	}
-
-	caJSONFl, _, err = rq.FormFile("ca-json")
-	if err != nil {
-		fieldErrors = append(fieldErrors, router.MakeFieldError("CAsJSON", "required"))
-	}
-
-	if r.KeyDeviceType() == KeyDeviceTypeFile {
-		key6Fl, _, err = rq.FormFile("key6")
-		if err != nil {
-			fieldErrors = append(fieldErrors, router.MakeFieldError("Key6", "required"))
-		}
-	}
-
-	if len(fieldErrors) > 0 {
-		err = validator.ValidationErrors(fieldErrors)
-		return
-	}
-
-	createKeys = true
-	return
 }

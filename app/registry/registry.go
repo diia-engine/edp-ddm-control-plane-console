@@ -69,6 +69,8 @@ type registry struct {
 	OBCPassword                   string   `form:"registry-backup-obc-password"`
 	DigitalDocuments              string   `form:"digital-documents"`
 	IsRegistry194Lower            bool     `form:"-" json:"isRegistry194Lower"`
+	KeyDataChanged                string   `form:"key-data-changed"`
+	KeyVerificationChanged        string   `form:"key-verification-changed"`
 }
 
 func (r *registry) KeysRequired() bool {
@@ -137,14 +139,18 @@ func (k keyManagement) INIConfig() string {
 	return k.r.INIConfig
 }
 
-func (k keyManagement) KeysRequired() bool {
-	return k.r.KeysRequired()
-}
-
 func (k keyManagement) FilesSecretName() string {
 	return fmt.Sprintf("digital-signature-ops-%s-data", k.r.Name)
 }
 
 func (k keyManagement) EnvVarsSecretName() string {
 	return fmt.Sprintf("digital-signature-ops-%s-env-vars", k.r.Name)
+}
+
+func (k keyManagement) KeyDataChanged() bool {
+	return k.r.KeyDataChanged == "on"
+}
+
+func (k keyManagement) KeyVerificationChanged() bool {
+	return k.r.KeyVerificationChanged == "on"
 }

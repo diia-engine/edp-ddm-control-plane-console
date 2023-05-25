@@ -16,7 +16,8 @@ import RegistryRecipientAuth from './steps/RegistryRecipientAuth.vue';
 import RegistryTemplate from './steps/RegistryTemplate.vue';
 import RegistryTrembita from './steps/RegistryTrembita.vue';
 import RegistryDigitalDocuments from './steps/RegistryDigitalDocuments.vue';
-import KeyForm from '../KeyForm.vue';
+import KeyData from './steps/KeyData.vue';
+import KeyVerification from "./steps/KeyVerification.vue";
 
 export default defineComponent({
     props: {
@@ -24,7 +25,7 @@ export default defineComponent({
     },
     data() {
         return {
-            pageRoot: this.$parent as any,
+            pageRoot: this.$parent as any, //TODO: remove this
             templatePreloadedData: {},
             parentFormSubmitted: false,
         };
@@ -37,7 +38,8 @@ export default defineComponent({
       RegistrySupplierAuth,
       RegistryBackupSchedule,
       RegistryRecipientAuth,
-      KeyForm,
+      KeyData,
+      KeyVerification,
       RegistryTemplate,
       RegistryTrembita,
       RegistryDigitalDocuments
@@ -130,16 +132,14 @@ export default defineComponent({
                     <RegistrySmtp ref="smtpTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'key'">
-                    <KeyForm
-                      ref="keyTab"
-                      :wizard="pageRoot.$data.wizard"
-                      :model="templateVariables.model"
-                      :action="templateVariables.action"
-                      @wizard-tab-changed="pageRoot.wizardTabChanged"
-                      @wizard-key-hardware-data-changed="pageRoot.wizardKeyHardwareDataChanged"
-                      @wizard-add-allowed-key="pageRoot.wizardAddAllowedKey"
-                      @wizard-remove-allowed-key="pageRoot.wizardRemoveAllowedKey"
-                    />
+                    <KeyData
+                      :registry-action="templateVariables.action"
+                      ref="keyDataTab" />
+                </div>
+                <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'keyVerification'">
+                  <KeyVerification
+                      :registry-action="templateVariables.action"
+                      ref="keyVerificationTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'resources'">
                     <RegistryResources ref="resourcesTab" :template-preloaded-data="templatePreloadedData"

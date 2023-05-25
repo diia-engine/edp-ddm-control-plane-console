@@ -10,10 +10,6 @@ export default defineComponent({
     'loadRegistryValues',
     'removeResourcesCatFromList',
     'decodeResourcesEnvVars',
-    'mergeResource',
-    'isObject',
-    'mergeDeep',
-    'wizardDNSEditVisibleChange',
     'wizardEditSubmit',
     'wizardNext',
     'dnsPreloadDataFromValues',
@@ -29,12 +25,6 @@ export default defineComponent({
     'wizardAdministratorsValidation',
     'wizardTemplateValidation',
     'wizardMailValidation',
-    'keyFormValidation',
-    'wizardKeyValidation',
-    'renderINITemplate',
-    'wizardKeyHardwareDataChanged',
-    'wizardRemoveAllowedKey',
-    'wizardAddAllowedKey',
     'addResourceCat',
     'addEnvVar',
     'removeEnvVar',
@@ -142,21 +132,15 @@ export default defineComponent({
             visible: true
           },
           mail: { title: "Поштовий сервер", validated: false, beginValidation: false, validator: this.wizardMailValidation, visible: true, },
-          key: { title: "Дані про ключ", validated: false, deviceType: "file", beginValidation: false, hardwareData: {
-              remoteType: "криптомод. ІІТ Гряда-301",
-              remoteKeyPWD: "",
-              remoteCaName: "",
-              remoteCaHost: "",
-              remoteCaPort: "",
-              remoteSerialNumber: "",
-              remoteKeyPort: "",
-              remoteKeyHost: "",
-              remoteKeyMask: "",
-              iniConfig: "",
-            }, fileData: {
-              signKeyIssuer: "",
-              signKeyPWD: "",
-            }, allowedKeys: [{ issuer: "", serial: "", removable: false }], caCertRequired: false, caJSONRequired: false, key6Required: false, validator: this.wizardKeyValidation, visible: true, changed: false,
+          key: {
+            title: "Дані про ключ",
+            visible: true,
+            validatorRef: 'keyDataTab',
+          },
+          keyVerification: {
+            title: 'Дані для перевірки підписів',
+            visible: true,
+            validatorRef: 'keyVerificationTab',
           },
           resources: {
             title: "Ресурси реєстру", visible: true,
@@ -280,10 +264,6 @@ export default defineComponent({
         this.registryValues.keycloak.customHosts = [];
       }
     },
-    wizardDNSEditVisibleChange(name: string, event: any) {
-      console.log(name, event);
-      //TODO: remove
-    },
     wizardEditSubmit(event: any) {
       const childRefs = this.getChildrenRefs();
       const tab = this.wizard.tabs[this.wizard.activeTab];
@@ -360,9 +340,6 @@ export default defineComponent({
         }
         wizard.activeTab = tabName;
       });
-    },
-    wizardTabChanged(tabName: string) {
-      this.wizard.tabs[tabName].changed = true;
     },
     wizardEmptyValidation(tab: string) {
       return new Promise < void  > ((resolve) => {
@@ -526,88 +503,6 @@ export default defineComponent({
         tab.validated = true;
         resolve();
       });
-    },
-    keyFormValidation(tab: any, resolve: () => void) {
-      const childRefs = this.getChildrenRefs();
-      if (this.wizard.registryAction === "edit" && !this.wizard.tabs.key.changed) {
-        resolve();
-        return true;
-      }
-      this.renderINITemplate();
-      tab.validated = false;
-      tab.beginValidation = true;
-      this.wizard.tabs.key.caCertRequired = false;
-      this.wizard.tabs.key.caJSONRequired = false;
-      this.wizard.tabs.key.key6Required = false;
-      let validationFailed = false;
-      if (childRefs.keyCaCert.files.length === 0) {
-        this.wizard.tabs.key.caCertRequired = true;
-        validationFailed = true;
-      }
-      if (childRefs.keyCaJSON.files.length === 0) {
-        this.wizard.tabs.key.caJSONRequired = true;
-        validationFailed = true;
-      }
-      for (let i = 0; i < this.wizard.tabs.key.allowedKeys.length; i++) {
-        if (this.wizard.tabs.key.allowedKeys[i].issuer === "" ||
-          this.wizard.tabs.key.allowedKeys[i].serial === "") {
-          validationFailed = true;
-        }
-      }
-      if (this.wizard.tabs.key.deviceType === "hardware") {
-        for (const key in this.wizard.tabs.key.hardwareData) {
-          if (this.wizard.tabs.key.hardwareData[key] === "") {
-            validationFailed = true;
-          }
-        }
-      }
-      else {
-        for (const key in this.wizard.tabs.key.fileData) {
-          if (this.wizard.tabs.key.hardwareData[key] === "") {
-            validationFailed = true;
-          }
-        }
-        if (childRefs.key6.files.length === 0) {
-          this.wizard.tabs.key.key6Required = true;
-          validationFailed = true;
-        }
-      }
-      if (validationFailed) {
-        return false;
-      }
-      tab.beginValidation = false;
-      tab.validated = true;
-      resolve();
-      return true;
-    },
-    wizardKeyValidation(tab: any) {
-      return new Promise < void  > ((resolve) => {
-        this.keyFormValidation(tab, resolve);
-      });
-    },
-    renderINITemplate() {
-      const iniTemplate = document.getElementById("ini-template")?.innerHTML;
-      this.wizard.tabs.key.hardwareData.iniConfig = Mustache.render(iniTemplate || '', {
-        "CA_NAME": this.wizard.tabs.key.hardwareData.remoteCaName,
-        "CA_HOST": this.wizard.tabs.key.hardwareData.remoteCaHost,
-        "CA_PORT": this.wizard.tabs.key.hardwareData.remoteCaPort,
-        "KEY_SN": this.wizard.tabs.key.hardwareData.remoteSerialNumber,
-        "KEY_HOST": this.wizard.tabs.key.hardwareData.remoteKeyHost,
-        "KEY_ADDRESS_MASK": this.wizard.tabs.key.hardwareData.remoteKeyMask,
-      }).trim();
-    },
-    wizardKeyHardwareDataChanged(e: any) {
-      this.renderINITemplate();
-      this.wizard.tabs.key.changed = true;
-    },
-    wizardRemoveAllowedKey(item: unknown) {
-      const searchIdx = this.wizard.tabs.key.allowedKeys.indexOf(item);
-      if (searchIdx !== -1) {
-        this.wizard.tabs.key.allowedKeys.splice(searchIdx, 1);
-      }
-    },
-    wizardAddAllowedKey() {
-      this.wizard.tabs.key.allowedKeys.push({ issuer: "", serial: "", removable: true });
     },
     registryFormSubmit(e: any) {
       if (this.registryFormSubmitted && e) {

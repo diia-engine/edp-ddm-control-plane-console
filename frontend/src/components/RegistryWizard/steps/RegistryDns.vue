@@ -39,7 +39,7 @@ export default defineComponent({
   <div class="rc-form-group show-errors-span dns-inputs">
       <label for="officer-dns" class="header-label">кабінет посадової особи</label>
       <div class="toggle-switch">
-          <input @change="pageRoot.wizardDNSEditVisibleChange('officer', $event)" v-model="pageRoot.$data.wizard.tabs.dns.editVisible.officer"
+          <input v-model="pageRoot.$data.wizard.tabs.dns.editVisible.officer"
                   class="switch-input" type="checkbox"
                   id="officer-switch-input" name="officer-dns-enabled" />
           <label for="officer-switch-input">Toggle</label>
@@ -64,7 +64,7 @@ export default defineComponent({
   <div class="rc-form-group show-errors-span dns-inputs">
     <label for="citizen-dns" class="header-label">кабінет отримувача послуг</label>
     <div class="toggle-switch">
-          <input @change="pageRoot.wizardDNSEditVisibleChange('citizen', $event)" v-model="pageRoot.$data.wizard.tabs.dns.editVisible.citizen"
+          <input v-model="pageRoot.$data.wizard.tabs.dns.editVisible.citizen"
                   class="switch-input" type="checkbox"
                   id="citizen-switch-input" name="citizen-dns-enabled" />
           <label for="citizen-switch-input">Toggle</label>

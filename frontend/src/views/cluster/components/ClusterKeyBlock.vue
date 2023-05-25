@@ -1,59 +1,66 @@
-<script setup lang="ts">
-import { toRefs } from 'vue';
-
-interface ClusterKeyBlockProps {
-    wizard: any;
-}
-
-const props = defineProps<ClusterKeyBlockProps>();
-const { wizard } = toRefs(props);
-
-</script>
 <script lang="ts">
-import KeyForm from '@/components/KeyForm.vue';
-export default {
+import { defineComponent } from 'vue';
+import KeyData from '@/components/RegistryWizard/steps/KeyData.vue';
+import KeyVerification from '@/components/RegistryWizard/steps/KeyVerification.vue';
+
+export default defineComponent({
+    props: {
+      activeTab: String
+    },
     components: {
-        KeyForm,
+      KeyData,
+      KeyVerification,
     },
     data() {
         return {
             disabled: false,
-            pageRoot: this.$parent as any,
         };
     },
     methods: {
         submit(event: any) {
+            event.preventDefault();
             this.disabled = true;
-            if (!this.pageRoot.keyFormValidation(this.pageRoot.$data.wizard.tabs.key, function () {
 
-            })) {
-                this.disabled = false;
-                event.preventDefault();
+            let validatorTab = this.$refs.keyDataTab as any;
+            if (this.activeTab === 'dataAboutKeyVerification') {
+              validatorTab = this.$refs.keyVerificationTab as any;
             }
+
+            const clusterKeyDataForm = this.$refs.clusterKeyDataForm as any;
+            validatorTab.validator().then(() => {
+              this.$nextTick(() => {
+                HTMLFormElement.prototype.submit.call(clusterKeyDataForm);
+              });
+            }).catch(() => {
+              this.disabled = false;
+            });
         },
-        wizardTabChanged(key: string) {
-            this.$emit('wizardTabChanged', key);
-        },
-        wizardKeyHardwareDataChanged() {
-            this.$emit('wizardKeyHardwareDataChanged');
-        },
-        wizardAddAllowedKey() {
-            this.$emit('wizardAddAllowedKey');
-        },
-        wizardRemoveAllowedKey(key: string) {
-            this.$emit('wizardAddAllowedKey', key);
-        }
     }
-};
+});
 </script>
 
+<style scoped>
+  .rc-form-group button {
+    margin-top: 20px;
+  }
+</style>
+
 <template>
-    <form @submit="submit" class="registry-create-form wizard-form" enctype="multipart/form-data" method="post"
+    <form @submit="submit" ref="clusterKeyDataForm" id="clusterKeyDataForm" class="registry-create-form wizard-form"
+          enctype="multipart/form-data" method="post"
         action="/admin/cluster/key">
 
-        <key-form :wizard="wizard" @wizard-tab-changed="wizardTabChanged"
-            @wizard-key-hardware-data-changed="wizardKeyHardwareDataChanged" @wizard-add-allowed-key="wizardAddAllowedKey"
-            @wizard-remove-allowed-key="wizardRemoveAllowedKey" ref="keyFormRef" />
+      <div v-if="activeTab === 'dataAboutKey'">
+        <KeyData
+            registry-action="create"
+            ref="keyDataTab" />
+      </div>
+
+      <div v-if="activeTab === 'dataAboutKeyVerification'">
+        <KeyVerification
+            registry-action="create"
+            ref="keyVerificationTab" />
+      </div>
 
         <div class="rc-form-group">
             <button type="submit" name="submit" :disabled="disabled">Підтвердити</button>

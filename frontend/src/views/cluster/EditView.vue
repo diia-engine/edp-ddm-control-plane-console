@@ -174,6 +174,10 @@ export default {
                         title: 'Дані про ключ'
                     },
                     {
+                      key: 'dataAboutKeyVerification',
+                      title: 'Дані для перевірки підписів'
+                    },
+                    {
                         key: 'keycloakDNS',
                         title: 'Keycloak DNS'
                     },
@@ -847,11 +851,8 @@ export default {
                     <cidr-block :adminCIDR="adminCIDR" :adminCIDRValue="adminCIDRValue" @delete-cidr="deleteCIDR"
                         @show-cidr-form="showCIDRForm" />
                 </div>
-                <div class="wizard-tab" v-show="clusterSettings.activeTab == 'dataAboutKey'">
-                    <cluster-key-block :wizard="wizard" @wizard-tab-changed="wizardTabChanged"
-                        @wizard-key-hardware-data-changed="wizardKeyHardwareDataChanged"
-                        @wizard-add-allowed-key="wizardAddAllowedKey" @wizard-remove-allowed-key="wizardRemoveAllowedKey"
-                        ref="clusterKeyRef" />
+                <div class="wizard-tab" v-show="clusterSettings.activeTab === 'dataAboutKey' || clusterSettings.activeTab === 'dataAboutKeyVerification'">
+                    <cluster-key-block ref="clusterKeyRef" :active-tab="clusterSettings.activeTab" />
                 </div>
                 <div class="wizard-tab" v-show="clusterSettings.activeTab == 'keycloakDNS'">
                     <cluster-keycloak-block :keycloak-hostname="keycloakHostname"
