@@ -66,7 +66,7 @@ export default defineComponent({
                     </li>
                 </template>
                 <li v-if="templateVariables.hasUpdate">
-                    <a :href="`/admin/registry/update/${templateVariables.registry.name}`">Оновити реєстр</a>
+                    <a :href="`/admin/registry/update/${templateVariables.registry.metadata.name}`">Оновити реєстр</a>
                 </li>
             </ul>
         </div>
