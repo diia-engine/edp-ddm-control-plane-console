@@ -58,13 +58,10 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 			vaultPath := a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", "buckets-backup",
 				time.Now().Format("20060201T150405Z")))
 			values.Global.RegistryBackup.OBC.Credentials = vaultPath
-			secretData := map[string]interface{}{
-				a.Config.BackupBucketAccessKeyID:     r.OBCLogin,
-				a.Config.BackupBucketSecretAccessKey: r.OBCPassword,
-			}
 
 			secrets[vaultPath] = map[string]interface{}{
-				"data": secretData,
+				a.Config.BackupBucketAccessKeyID:     r.OBCLogin,
+				a.Config.BackupBucketSecretAccessKey: r.OBCPassword,
 			}
 		}
 
