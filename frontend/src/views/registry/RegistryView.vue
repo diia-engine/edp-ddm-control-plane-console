@@ -1,32 +1,8 @@
 <script setup lang="ts">
 import { inject } from 'vue';
-interface RegistryTemplateVariables {
-    openMergeRequests: boolean;
-    registry: any;
-    allowedToEdit: any;
-    hasUpdate: any;
-    regisrtyAdministrationComponents: any;
-    registryOperationalComponents: any;
-    platformAdministrationComponents: any;
-    platformOperationalComponents: any;
-    externalRegAvailableRegistriesJSON: any;
-    admins: any;
-    citizenPortalHost: any;
-    officerPortalHost: any;
-    smtpType: any;
-    officerCIDR: any;
-    citizenCIDR: any;
-    adminCIDR: any;
-    values: any;
-    externalRegs: any;
-    branches: any;
-    mergeRequests: any;
-    created: any;
-    valuesJson: any;
-    gerritURL: string;
-    jenkinsURL: string;
-    mrAvailable: string;
-}
+import type { RegistryTemplateVariables } from '@/types/registry';
+import { getTypeStr, getExtStatus } from '@/utils/registry';
+
 const variables = inject('TEMPLATE_VARIABLES') as RegistryTemplateVariables;
 
 const openMergeRequests = variables?.openMergeRequests;
@@ -136,7 +112,7 @@ export default defineComponent({
             e.preventDefault();
             return false;
         },
-        disableExternalReg(name: any, type: any, e: any) {
+        disableExternalReg(name: string, type: string, e: Event) {
             e.preventDefault();
 
             if (this.hasNewMergeRequests()) {
@@ -531,15 +507,6 @@ export default defineComponent({
                 return auth.type;
             }
             return '-';
-        },
-        getExtStatus(status: string, enabled: boolean) {
-            if (status === "") {
-                return "status-active";
-            }
-            if (!enabled) {
-                return "status-disabled";
-            }
-            return `status-${status}`;
         },
         inactive(status: string) {
             return status === "inactive" || status === "failed";
@@ -1487,26 +1454,23 @@ export default defineComponent({
                                 <td>
                                     <div class="rg-external-system-actions"
                                         :class="{ inactive: getExtStatus($er.StatusRegistration, $er.Enabled) == 'status-inactive' }">
-
                                         <a v-if="$er.External"
                                             @click="
                                                 getExtStatus($er.StatusRegistration, $er.Enabled) === 'status-active' ? showExternalKey(String($er.Name), String($er.KeyValue), $event) : disabledLink"
                                             href="#">
                                             <img title="Перевірити пароль" alt="key"
-                                                :src="getImageUrl(`key-status-${$er.StatusRegistration}`)" />
+                                                :src="getImageUrl(`key-${getExtStatus($er.StatusRegistration, $er.Enabled)}`)" />
                                         </a>
-
-
                                         <a :status="inactive($er.StatusRegistration)"
-                                            @click="inactive($er.StatusRegistration) ? disabledLink : disableExternalReg($er.Name, $er.TypeStr, $event)"
+                                            @click="inactive($er.StatusRegistration) ? disabledLink : disableExternalReg($er.Name, getTypeStr($er), $event)"
                                             href="#">
                                             <img :title="$er.StatusRegistration == ' status-disabled' ? 'Розблокувати доступ' : 'Заблокувати доступ'"
-                                                alt="key" :src="getImageUrl(`lock-status-${$er.StatusRegistration}`)" />
+                                                alt="key" :src="getImageUrl(`lock-${getExtStatus($er.StatusRegistration, $er.Enabled)}`)" />
                                         </a>
-                                        <a @click="inactive($er.StatusRegistration) ? disabledLink : removeExternalReg($er.Name, $er.TypeStr, $event)"
+                                        <a @click="inactive($er.StatusRegistration) ? disabledLink : removeExternalReg($er.Name, getTypeStr($er), $event)"
                                             href="#">
                                             <img title="Скасувати доступ" alt="key"
-                                                :src="getImageUrl(`disable-status-${$er.StatusRegistration}`)" />
+                                                :src="getImageUrl(`disable-${getExtStatus($er.StatusRegistration, $er.Enabled)}`)" />
                                         </a>
                                     </div>
                                 </td>
