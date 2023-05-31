@@ -446,7 +446,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 		git.CommitMessageWithChangeID(
 			fmt.Sprintf("Add new branch %s\n\nupdate branch values.yaml from [%s] branch", sourceBranch,
 				targetBranch),
-			changeID)); err != nil {
+			changeID)); err != nil && !strings.Contains(err.Error(), "nothing to commit") {
 		return fmt.Errorf("unable to commit changes, %w", err)
 	}
 
