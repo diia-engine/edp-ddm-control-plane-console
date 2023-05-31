@@ -4,6 +4,7 @@ export default {
   props: {
     variant: { type: String },
     upperCase: { type: Boolean },
+    class: { type: String },
   },
   computed: {
     Component() {
@@ -23,7 +24,7 @@ export default {
       }
     },
     classes() {
-      const classes = ['typography', this.variant];
+      const classes = ['typography', this.variant, this.class];
 
       if (this.upperCase) {
         classes.push('upperCase');

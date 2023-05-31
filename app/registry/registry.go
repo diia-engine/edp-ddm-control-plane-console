@@ -68,7 +68,7 @@ type registry struct {
 	OBCLogin                      string   `form:"registry-backup-obc-login"`
 	OBCPassword                   string   `form:"registry-backup-obc-password"`
 	DigitalDocuments              string   `form:"digital-documents"`
-	IsRegistry194Lower     bool     `form:"-" json:"isRegistry194Lower"`
+	IsRegistry194Lower            bool     `form:"-" json:"isRegistry194Lower"`
 }
 
 func (r *registry) KeysRequired() bool {

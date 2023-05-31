@@ -36,12 +36,8 @@ export default {
   <div class="form-input-group" :class="{ 'error': error }">
     <label :for="name">{{ label }}</label>
     <input :name="name" :aria-label="name" :type="type" :placeholder="placeholder" v-model="inputVal" v-on="$attrs" />
-    <div v-if="error" class="form-input-group-error-message">
-      <Typography variant="small">{{ getErrorMessage(error) }}</Typography>
-    </div>
-    <div class="form-input-group-error-description" v-if="description">
-      <Typography variant="small">{{ description }}</Typography>
-    </div>
+    <Typography v-if="error" variant="small" class="form-input-group-error-message">{{ getErrorMessage(error) }}</Typography>
+    <Typography v-if="description" variant="small" class="form-input-group-error-description">{{ description }}</Typography>
   </div>
 </template>
 
