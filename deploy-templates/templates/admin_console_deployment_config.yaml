@@ -85,7 +85,7 @@ spec:
             - name: ENABLE_BRANCH_PROVISIONERS
               value: "{{ .Values.enable_branch_provisioners }}"
             - name: REGISTRY_DNS_MANUAL_PATH
-              value: "ua/platform/1.9.4/admin/registry-management/custom-dns/cp-custom-dns-keycloak.html#external-configuration"
+              value: "ua/platform/1.9.5/admin/registry-management/custom-dns/cp-custom-dns-keycloak.html#external-configuration"
           image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
           imagePullPolicy: IfNotPresent
           livenessProbe:
