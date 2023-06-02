@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -14,6 +15,28 @@ type CachedFile struct {
 
 func CachedFilesIndex(registryName string) string {
 	return fmt.Sprintf("%s-cached-files", registryName)
+}
+
+func ClearRepoFiles(registryName string, c *cache.Cache) error {
+	files, ok := c.Get(CachedFilesIndex(registryName))
+	if !ok {
+		return nil
+	}
+
+	cachedFiles, ok := files.([]CachedFile)
+	if !ok {
+		return errors.New("wrong files type")
+	}
+
+	for _, cf := range cachedFiles {
+		if err := os.RemoveAll(cf.TempPath); err != nil {
+			return fmt.Errorf("unable to remove cached file, %w", err)
+		}
+	}
+
+	c.Delete(CachedFilesIndex(registryName))
+
+	return nil
 }
 
 func CacheRepoFiles(tempFolder, registryName string, repoFiles map[string]string, c *cache.Cache) error {
