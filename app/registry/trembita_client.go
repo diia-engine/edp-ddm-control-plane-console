@@ -258,7 +258,7 @@ func (a *App) prepareTrembitaIPList(ctx *gin.Context, r *registry, values *Value
 			return false, fmt.Errorf("unable to decode trembita ip list %w", err)
 		}
 
-		valuesChanged = reflect.DeepEqual(values.Trembita.IPList, ipList)
+		valuesChanged = !reflect.DeepEqual(values.Trembita.IPList, ipList)
 		values.Trembita.IPList = ipList
 		values.OriginalYaml[trembitaValuesKey] = values.Trembita
 	} else if r.TrembitaIPList == "" && len(values.Trembita.IPList) > 0 {

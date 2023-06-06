@@ -10,7 +10,7 @@ GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-
 override LDFLAGS += \
   -w -s \
   -X ${PACKAGE}.version=${VERSION} \
-  -X ${PACKAGE}.buildDate=${BUILD_DATE} \
+  -X '${PACKAGE}.buildDate=${BUILD_DATE}' \
   -X ${PACKAGE}.gitCommit=${GIT_COMMIT} \
 
 ifneq (${GIT_TAG},)
