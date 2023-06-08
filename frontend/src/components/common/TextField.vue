@@ -11,6 +11,7 @@ interface TextFieldProps {
   value?: HTMLInputElement['value']
   required?: boolean
   placeholder?: HTMLInputElement['placeholder'],
+  rootClass?: string
 }
 
 defineProps<TextFieldProps>();
@@ -23,7 +24,7 @@ export default {
 </script>
 
 <template>
-  <div class="form-input-group" :class="{ 'error': error }">
+  <div class="form-input-group" :class="[ error ? 'error' : '', rootClass ? rootClass : '']">
     <label :for="name">
       {{ label }} <b v-if="required" class="red-star">*</b>
     </label>

@@ -23,6 +23,11 @@ type Values struct {
 	OriginalYaml     map[string]interface{}    `yaml:"-" json:"-"`
 	DigitalDocuments DigitalDocuments          `yaml:"digitalDocuments" json:"digitalDocuments"`
 	PublicApi        []PublicAPI               `yaml:"publicApi" json:"publicApi"`
+	CitizenPortal    CitizenPortal             `yaml:"citizenPortal" json:"citizenPortal"`
+}
+
+type CitizenPortal struct {
+	SignWidget CitizenSignWidget `yaml:"signWidget" json:"signWidget"`
 }
 
 type DigitalDocuments struct {
@@ -127,6 +132,12 @@ type KeycloakRealmsOfficerPortal struct {
 
 type SignWidget struct {
 	URL string `yaml:"url" json:"url"`
+}
+
+type CitizenSignWidget struct {
+	URL                string `yaml:"url" json:"url"`
+	Height             int    `yaml:"height" json:"height,string"`
+	CopyFromAuthWidget bool   `yaml:"copyFromAuthWidget" json:"copyFromAuthWidget"`
 }
 
 type Notifications struct {

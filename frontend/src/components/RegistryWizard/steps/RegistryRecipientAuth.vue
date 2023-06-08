@@ -2,48 +2,53 @@
 import Typography from '@/components/common/Typography.vue';
 import TextField from '@/components/common/TextField.vue';
 import { getErrorMessage } from '@/utils';
-import { computed } from 'vue';
+import { computed, watch, type Ref } from 'vue';
 import { useForm } from 'vee-validate';
 import * as Yup from 'yup';
+import type { CitizenAuthFlow, CitizenPortalSettings } from '@/types/registry';
+import { CitizenAuthType } from '@/types/registry';
 
 interface HTMLEvent<T extends EventTarget = HTMLElement> extends Event {
   target: T
 }
 
-enum CitizenAuthType {
-  widget = 'widget',
-  registryIdGovUa = 'registry-id-gov-ua',
-  platformIdGovUa = 'platform-id-gov-ua',
-}
 
-interface OutFormValues {
-  edrCheck: boolean
-  authType: CitizenAuthType
-  widget: {
-    url: string
-    height: number
-  }
+
+interface OutFormValues extends CitizenAuthFlow {
+  citizenPortal: CitizenPortalSettings
 }
 
 interface FormValues {
   edrCheckEnabled: boolean,
   authType: CitizenAuthType,
-  url: string,
+  widgetUrl: string,
+  idGovUaUrl: string,
   widgetHeight: number,
   clientId: string,
   secret: string,
+  copyFromAuthWidget: boolean,
+  signWidgetHeight: number,
+  signWidgetUrl: string,
 }
 interface RegistryRecipientAuthProps {
-  data: OutFormValues,
+  keycloakSettings: CitizenAuthFlow,
+  citizenPortalSettings: CitizenPortalSettings,
 }
-
+const props = defineProps<RegistryRecipientAuthProps>();
+const isSecretExists = props.keycloakSettings?.registryIdGovUa?.clientSecret?.length > 0;
 
 const validationSchema = Yup.object<FormValues>({
   authType: Yup.string()
-    .required(),
-  url: Yup.string()
+    .required()
+    .oneOf([CitizenAuthType.platformIdGovUa, CitizenAuthType.widget]),
+  widgetUrl: Yup.string()
     .when('authType', {
       is: (value: CitizenAuthType) => value === CitizenAuthType.widget,
+      then: (schema) => schema.required().url(),
+    }),
+  idGovUaUrl: Yup.string()
+    .when('authType', {
+      is: (value: CitizenAuthType) => value === CitizenAuthType.registryIdGovUa,
       then: (schema) => schema.required().url(),
     }),
   widgetHeight: Yup.number()
@@ -58,27 +63,55 @@ const validationSchema = Yup.object<FormValues>({
     }),
   secret: Yup.string()
     .when('authType', {
-      is: (value: CitizenAuthType) => value === CitizenAuthType.registryIdGovUa,
+      is: (value: CitizenAuthType) => value === CitizenAuthType.registryIdGovUa && !isSecretExists,
       then: (schema) => schema.required(),
-    })
+    }),
+  signWidgetHeight: Yup.number()
+    .when('copyFromAuthWidget', {
+      is: (value: boolean) => !value,
+      then: (schema) => schema.required().min(1).integer().positive().typeError('wrongFormat'),
+    }),
+  signWidgetUrl: Yup.string()
+    .when('copyFromAuthWidget', {
+      is: (value: boolean) => !value,
+      then: (schema) => schema.required().url(),
+    }),
 });
+const defaultWidget = {
+    url: 'https://eu.iit.com.ua/sign-widget/v20200922/',
+    height: 720,
+};
 const defaultValues: OutFormValues = {
   authType: CitizenAuthType.widget,
   edrCheck: true,
-  widget: {
-    url: 'https://eu.iit.com.ua/sign-widget/v20200922/',
-    height: 720,
+  widget: defaultWidget,
+  registryIdGovUa: {
+    url: '',
+    clientId: '',
+    clientSecret: '',
+  },
+  citizenPortal: {
+    signWidget: {
+      copyFromAuthWidget: false,
+      height: defaultWidget.height,
+      url: defaultWidget.url,
+    },
   }
 };
-const props = defineProps<RegistryRecipientAuthProps>();
 
 const { errors, useFieldModel, validate, values, setFieldValue } = useForm<FormValues>({
   validationSchema,
   initialValues: {
-    edrCheckEnabled: props.data?.edrCheck ?? defaultValues.edrCheck,
-    authType: props.data?.authType || defaultValues.authType,
-    url: props.data?.widget.url ?? defaultValues.widget.url,
-    widgetHeight: props.data?.widget.height ?? defaultValues.widget.height,
+    edrCheckEnabled: props.keycloakSettings?.edrCheck ?? defaultValues.edrCheck,
+    authType: props.keycloakSettings?.authType || defaultValues.authType,
+    widgetUrl: props.keycloakSettings?.widget.url ?? defaultValues.widget.url,
+    widgetHeight: props.keycloakSettings?.widget.height ?? defaultValues.widget.height,
+    idGovUaUrl: props.keycloakSettings?.registryIdGovUa?.url ?? defaultValues.registryIdGovUa.url,
+    clientId: props.keycloakSettings?.registryIdGovUa?.clientId ?? defaultValues.registryIdGovUa.clientId,
+    secret: defaultValues.registryIdGovUa.clientSecret,
+    copyFromAuthWidget: props.citizenPortalSettings?.signWidget?.copyFromAuthWidget || defaultValues.citizenPortal.signWidget.copyFromAuthWidget,
+    signWidgetHeight: props.citizenPortalSettings?.signWidget?.height ?? defaultValues.citizenPortal.signWidget.height,
+    signWidgetUrl: props.citizenPortalSettings?.signWidget?.url ?? defaultValues.citizenPortal.signWidget.url,
   }
 });
 
@@ -88,8 +121,23 @@ const [
   url,
   widgetHeight,
   clientId,
-  secret
-] = useFieldModel(['edrCheckEnabled', 'authType', 'url', 'widgetHeight', 'clientId', 'secret']);
+  secret,
+  idGovUaUrl,
+  copyFromAuthWidget,
+  signWidgetHeight,
+  signWidgetUrl,
+] = useFieldModel([
+  'edrCheckEnabled',
+  'authType',
+  'widgetUrl',
+  'widgetHeight',
+  'clientId',
+  'secret',
+  'idGovUaUrl',
+  'copyFromAuthWidget',
+  'signWidgetHeight',
+  'signWidgetUrl',
+]);
 
 function validator() {
   return new Promise((resolve) => {
@@ -107,18 +155,43 @@ defineExpose({
 
 function handleChangeAuthType(e: Event) {
   const event = e as HTMLEvent<HTMLSelectElement>;
-  const isWidgetValuesExist = props.data?.widget && Object.keys(props.data?.widget).length > 0;
+  const isWidgetValuesExist = props.keycloakSettings?.widget && Object.keys(props.keycloakSettings?.widget).length > 0;
   if (event.target.value === CitizenAuthType.widget && !isWidgetValuesExist) {
-    setFieldValue('url', defaultValues.widget.url);
+    setFieldValue('widgetUrl', defaultValues.widget.url);
     setFieldValue('widgetHeight', defaultValues.widget.height);
   }
 }
+
+watch(copyFromAuthWidget as Ref<boolean>, (newValue, oldValue) => {
+  if (newValue === true && oldValue === false) {
+    setFieldValue('signWidgetUrl', url.value as string);
+    setFieldValue('signWidgetHeight', widgetHeight.value as number);
+  }
+});
+watch([url, widgetHeight], () => {
+  if (copyFromAuthWidget.value === true) {
+    setFieldValue('signWidgetUrl', url.value as string);
+    setFieldValue('signWidgetHeight', widgetHeight.value as number);
+  }
+});
 const preparedValues = computed((): OutFormValues => ({
   edrCheck: values.edrCheckEnabled,
   authType: values.authType,
   widget: {
-    url: values.url,
+    url: values.widgetUrl,
     height: values.widgetHeight
+  },
+  registryIdGovUa: {
+    clientId: values.clientId,
+    clientSecret: values.secret,
+    url: values.idGovUaUrl,
+  },
+  citizenPortal: {
+    signWidget: {
+      copyFromAuthWidget: values.copyFromAuthWidget,
+      url: values.signWidgetUrl,
+      height: values.signWidgetHeight,
+    }
   }
 }));
 </script>
@@ -161,7 +234,7 @@ const preparedValues = computed((): OutFormValues => ({
       required
       label="Посилання"
       name="rec-auth-url"
-      :error="errors.url"
+      :error="errors.widgetUrl"
       v-model="url"
       description="URL, повинен починатись з http:// або https://"
     />
@@ -175,6 +248,14 @@ const preparedValues = computed((): OutFormValues => ({
   </div>
 
   <div v-if="authType === CitizenAuthType.registryIdGovUa">
+    <TextField
+      required
+      label="Посилання"
+      name="rec-id-gov-ua-url"
+      :error="errors.idGovUaUrl"
+      v-model="idGovUaUrl"
+      description="URL, повинен починатись з http:// або https://"
+    />
     <TextField
       required
       label="Ідентифікатор клієнта (client_id)"
@@ -191,11 +272,41 @@ const preparedValues = computed((): OutFormValues => ({
       type="password"
     />
   </div>
+  <Typography variant="h5" upper-case class="subheading">Віджет підпису документів</Typography>
+  <div v-if="authType === CitizenAuthType.widget">
+      <div class="toggle-switch">
+      <input class="switch-input" type="checkbox" id="sign-widget-copy" name="sign-widget-copy"
+            v-model="copyFromAuthWidget" />
+      <label for="sign-widget-copy">Toggle</label>
+      <span>Використовувати налаштування віджету автентифікації</span>
+    </div>
+  </div>
+  <TextField
+      v-if="!copyFromAuthWidget"
+      root-class="mt16"
+      required
+      label="Посилання"
+      name="rec-sign-widget-url"
+      :error="errors.signWidgetUrl"
+      v-model="signWidgetUrl"
+      description="URL, повинен починатись з http:// або https://"
+    />
+    <TextField
+      v-if="!copyFromAuthWidget"
+      required
+      label="Висота віджета, px"
+      name="rec-sign-widget-height"
+      :error="errors.signWidgetHeight"
+      v-model="signWidgetHeight"
+    />
 </template>
 
 <style scoped>
   .mb16 {
     margin-bottom: 16px;
+  }
+  .mt16 {
+    margin-top: 16px;
   }
   .subheading {
     margin-top: 32px;

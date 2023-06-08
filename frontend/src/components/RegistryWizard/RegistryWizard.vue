@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { inject } from 'vue';
-  const templateVariables = inject('TEMPLATE_VARIABLES') as any;
+  const templateVariables = inject('TEMPLATE_VARIABLES') as RegistryWizardTemplateVariables;
 </script>
 
 <script lang="ts">
@@ -18,6 +18,7 @@ import RegistryTrembita from './steps/RegistryTrembita.vue';
 import RegistryDigitalDocuments from './steps/RegistryDigitalDocuments.vue';
 import KeyData from './steps/KeyData.vue';
 import KeyVerification from "./steps/KeyVerification.vue";
+import type { RegistryWizardTemplateVariables } from '@/types/registry';
 
 export default defineComponent({
     props: {
@@ -126,7 +127,7 @@ export default defineComponent({
                 </div>
                 <div v-if="templateVariables.action === 'create'" class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'template'">
                     <RegistryTemplate ref="templateTab" @preload-template-data="onPreloadTemplateData"
-                                      :template-variables="templateVariables" />
+                                      :template-variables="templateVariables as any" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'mail'">
                     <RegistrySmtp ref="smtpTab" />
@@ -158,7 +159,8 @@ export default defineComponent({
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'recipientAuthentication'">
                     <RegistryRecipientAuth
-                        :data="templateVariables.registryValues?.keycloak.citizenAuthFlow"
+                        :keycloak-settings="templateVariables.registryValues?.keycloak.citizenAuthFlow"
+                        :citizen-portal-settings="templateVariables.registryValues?.citizenPortal"
                         ref="recipientAuthTab"
                     />
                 </div>
