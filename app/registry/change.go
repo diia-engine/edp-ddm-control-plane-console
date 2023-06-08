@@ -148,6 +148,18 @@ func (a *App) getChangeContents(ctx context.Context, changeInfo *goGerrit.Change
 	return string(bts), nil
 }
 
+func (a *App) getChangeContentData(changeID, fileName, projectName string) (string, error) {
+	content, newHttpRsp, err := a.Gerrit.GoGerritClient().Changes.GetContent(changeID, currentRevision, fileName)
+	if err != nil && newHttpRsp != nil && newHttpRsp.StatusCode != 404 {
+		return "", errors.New("unable to get file content")
+	}
+	if newHttpRsp == nil || content == nil {
+		return "", errors.New("empty response")
+	}
+
+	return *content, nil
+}
+
 // TODO: split function
 func (a *App) getChangeFileChanges(changeID, fileName, projectName string) (string, error) {
 	commitInfo, _, err := a.Gerrit.GoGerritClient().Changes.GetCommit(changeID, currentRevision, &goGerrit.CommitOptions{})

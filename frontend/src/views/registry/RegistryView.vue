@@ -23,6 +23,7 @@ const citizenCIDR = variables?.citizenCIDR;
 const adminCIDR = variables?.adminCIDR;
 const values = variables?.values;
 const externalRegs = variables?.externalRegs;
+const publicApi = variables?.publicApi;
 const branches = variables?.branches;
 const mergeRequests = variables?.mergeRequests;
 const created = variables?.created;
@@ -36,6 +37,7 @@ import $ from 'jquery';
 import axios from 'axios';
 import { getGerritURL, getImageUrl, getJenkinsURL, getStatus } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
+import PublicApiBlock from './components/PublicApiBlock.vue';
 import { defineComponent } from 'vue';
 
 export default defineComponent({
@@ -107,6 +109,19 @@ export default defineComponent({
             //todo: load data
 
             $("body").css("overflow", "hidden");
+        },
+        checkOpenedMR(e: any) {
+            if (this.mergeRequest.has) {
+                this.showOpenMRForm();
+                return true;
+            }
+
+            if (this.hasNewMergeRequests()) {
+                this.showMrError(e);
+                return true;
+            }
+
+            return false;
         },
         disabledLink(e: any) {
             e.preventDefault();
@@ -728,7 +743,7 @@ export default defineComponent({
         this.externalSystem = this.externalSystemDefaults();
         this.trembitaClient = this.trembitaClientDefaults();
     },
-    components: { MergeRequestsTable },
+    components: { MergeRequestsTable, PublicApiBlock },
 });
 </script>
 
@@ -1400,15 +1415,19 @@ export default defineComponent({
                         <a class="href-red" :href="deleteExternalSystemLink()">Видалити</a>
                     </div>
                 </div>
-
-
-
                 <!-- registry-external-system end-->
-
-
-
-
             </div>
+
+            <div class="rg-info-block">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'public-access' }"
+                    @click="accordion = 'public-access'">
+                    <span>Публічний доступ</span>
+                    <i class="fa-solid"
+                        :class="{ 'fa-caret-up': accordion == 'public-access', 'fa-caret-down': accordion != 'public-access' }"></i>
+                </div>
+                <PublicApiBlock :publicApi="publicApi" v-show="accordion == 'public-access'" :registry="registry.metadata.name" :checkOpenedMR="checkOpenedMR"/>
+            </div>
+
             <div class="rg-info-block">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'external-access' }"
                     @click="accordion = 'external-access'">
