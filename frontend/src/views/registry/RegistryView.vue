@@ -925,12 +925,6 @@ export default defineComponent({
                                 <img alt="close popup window" src="@/assets/img/close.png" />
                             </a>
                         </div>
-                        <div v-if="!trembitaClient.registryCreation" class="view-registry-warning">
-                            Налаштування взаємодії доступне для версій реєстру {{ trembitaClient.data.type === 'platform' ? '1.9.3' : '1.9.4' }} і вище.
-                        </div>
-                        <div v-if="trembitaClient.registryCreation" class="view-registry-warning">
-                            Додавання взаємодії доступне для версій реєстру 1.9.4 і вище.
-                        </div>
                         <form @submit="setTrembitaClientForm" id="trembita-client-form" method="post"
                             :action="trembitaClientFormAction()">
                             <div class="popup-body">
@@ -1242,9 +1236,6 @@ export default defineComponent({
                         реєстру.
                         Мережеві політики доступу будуть створені автоматично.
                     </p>
-                    <div class="view-registry-warning">
-                        Налаштування взаємодії доступне для версій реєстру 1.9.3 і вище.
-                    </div>
                     <form @submit="setExternalSystemForm" id="external-system-form" method="post"
                         :action="externalSystemFormAction()">
                         <div class="popup-body">

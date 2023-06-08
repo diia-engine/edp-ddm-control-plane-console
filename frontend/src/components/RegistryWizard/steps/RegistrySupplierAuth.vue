@@ -12,7 +12,6 @@ export default defineComponent({
 <template>
   <h2>Автентифікація надавачів послуг</h2>
   <p>Є можливість використовувати власний віджет автентифікації або налаштувати інтеграцію з id.gov.ua.</p>
-  <div class="wizard-warning">Зміна типу автентифікації доступна для версій реєстру 1.9.3 і вище.</div>
   <div class="rc-form-group">
       <label for="sup-auth-type">Вкажіть тип автентифікації</label>
       <select name="sup-auth-browser-flow" id="sup-auth-type"

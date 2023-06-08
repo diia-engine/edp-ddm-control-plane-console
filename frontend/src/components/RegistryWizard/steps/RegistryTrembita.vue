@@ -101,7 +101,6 @@ export default defineComponent({
   <h2>ШБО Трембіта</h2>
   <p>Щоб забезпечити можливість зовнішнім системам звертатись до реєстру через ШБО Трембіта, вкажіть IP-адреси ШБО
     Трембіта, з яких буде дозволено доступ до SOAP API реєстру.</p>
-  <div class="wizard-warning">Налаштування доступне для версій реєстру 1.9.5 і вище.</div>
   <div class="toggle-switch">
     <input class="switch-input" type="checkbox" id="trembita-enable-input"
            v-model="enabled" @change="onEnabledChanged"/>
