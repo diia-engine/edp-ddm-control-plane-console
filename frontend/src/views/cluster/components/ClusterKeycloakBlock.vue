@@ -30,7 +30,7 @@ export default {
             this.$emit('editClusterKeycloakDNSHost', host, certificatePath);
         },
         checkClusterDeleteKeycloakDNS(host: string) {
-            this.$emit('editClusterKeycloakDNSHost', host);
+            this.$emit('checkClusterDeleteKeycloakDNS', host);
         },
         showClusterKeycloakDNSForm() {
             this.$emit('showClusterKeycloakDNSForm');
@@ -78,7 +78,7 @@ export default {
 <template>
     <h2>Keycloak DNS</h2>
     <br />
-    <form @submit.prevent="submit" class="registry-create-form wizard-form cluster-keycloak" method="post"
+    <form @submit="submit" class="registry-create-form wizard-form cluster-keycloak" method="post"
         action="/admin/cluster/add-keycloak-dns">
         <p>Налаштування додаткових DNS імен для сервісу управління користувачами та ролями (Keycloak).
             Для додаткових DNS необхідно провести зовнішню конфігурацію записів у реєстранта доменних імен.</p>

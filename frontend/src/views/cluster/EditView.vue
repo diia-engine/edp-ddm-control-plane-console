@@ -608,7 +608,7 @@ export default {
             }
         },
         submitKeycloakDNSForm() {
-            this.clusterSettings.keycloak.submitInput = JSON.stringify((this.$refs.registryValues as any).keycloak.customHosts);
+            this.clusterSettings.keycloak.submitInput = JSON.stringify((this.registryValues as any).keycloak.customHosts);
         },
         clusterKeycloakDNSCustomHosts() {
             if (this.registryValues === null) {
