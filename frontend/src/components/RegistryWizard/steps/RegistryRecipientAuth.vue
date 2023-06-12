@@ -3,7 +3,7 @@ import Typography from '@/components/common/Typography.vue';
 import TextField from '@/components/common/TextField.vue';
 import { getErrorMessage } from '@/utils';
 import { computed, watch, type Ref } from 'vue';
-import { useForm } from 'vee-validate';
+import { useForm, useField } from 'vee-validate';
 import * as Yup from 'yup';
 import type { CitizenAuthFlow, PortalSettings } from '@/types/registry';
 import { CitizenAuthType } from '@/types/registry';
@@ -104,7 +104,7 @@ const defaultValues: OutFormValues = {
   },
 };
 
-const { errors, useFieldModel, validate, values, setFieldValue } = useForm<FormValues>({
+const { errors, validate, values, setFieldValue } = useForm<FormValues>({
   validationSchema,
   initialValues: {
     edrCheckEnabled: props.keycloakSettings?.edrCheck ?? defaultValues.edrCheck,
@@ -122,29 +122,16 @@ const { errors, useFieldModel, validate, values, setFieldValue } = useForm<FormV
   }
 });
 
-const [
-  edrCheckEnabled,
-  authType,
-  url,
-  widgetHeight,
-  clientId,
-  secret,
-  idGovUaUrl,
-  copyFromAuthWidget,
-  signWidgetHeight,
-  signWidgetUrl,
-] = useFieldModel([
-  'edrCheckEnabled',
-  'authType',
-  'widgetUrl',
-  'widgetHeight',
-  'clientId',
-  'secret',
-  'idGovUaUrl',
-  'copyFromAuthWidget',
-  'signWidgetHeight',
-  'signWidgetUrl',
-]);
+const { value: idGovUaUrl } = useField('idGovUaUrl');
+const { value: edrCheckEnabled } = useField('edrCheckEnabled');
+const { value: authType } = useField('authType');
+const { value: widgetUrl } = useField('widgetUrl');
+const { value: widgetHeight } = useField('widgetHeight');
+const { value: clientId } = useField('clientId');
+const { value: secret } = useField('secret');
+const { value: copyFromAuthWidget } = useField('copyFromAuthWidget');
+const { value: signWidgetHeight } = useField('signWidgetHeight');
+const { value: signWidgetUrl } = useField('signWidgetUrl');
 
 function validator() {
   return new Promise((resolve) => {
@@ -171,13 +158,13 @@ function handleChangeAuthType(e: Event) {
 
 watch(copyFromAuthWidget as Ref<boolean>, (newValue, oldValue) => {
   if (newValue === true && oldValue === false) {
-    setFieldValue('signWidgetUrl', url.value as string);
+    setFieldValue('signWidgetUrl', widgetUrl.value as string);
     setFieldValue('signWidgetHeight', widgetHeight.value as number);
   }
 });
-watch([url, widgetHeight], () => {
+watch([widgetUrl, widgetHeight], () => {
   if (copyFromAuthWidget.value === true) {
-    setFieldValue('signWidgetUrl', url.value as string);
+    setFieldValue('signWidgetUrl', widgetUrl.value as string);
     setFieldValue('signWidgetHeight', widgetHeight.value as number);
   }
 });
@@ -244,7 +231,7 @@ const preparedValues = computed<OutFormValues>(() => ({
       label="Посилання"
       name="rec-auth-url"
       :error="errors.widgetUrl"
-      v-model="url"
+      v-model="widgetUrl"
       description="URL, повинен починатись з http:// або https://"
     />
     <TextField
@@ -292,7 +279,7 @@ const preparedValues = computed<OutFormValues>(() => ({
     </div>
   </div>
   <TextField
-      v-if="!copyFromAuthWidget"
+      v-if="!copyFromAuthWidget || authType !== CitizenAuthType.widget"
       root-class="mt16"
       required
       label="Посилання"
@@ -302,7 +289,7 @@ const preparedValues = computed<OutFormValues>(() => ({
       description="URL, повинен починатись з http:// або https://"
     />
     <TextField
-      v-if="!copyFromAuthWidget"
+      v-if="!copyFromAuthWidget || authType !== CitizenAuthType.widget"
       required
       type="number"
       label="Висота віджета, px"
