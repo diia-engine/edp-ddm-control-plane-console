@@ -27,7 +27,7 @@ ci:
 
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -a -installsuffix cgo -ldflags="${LDFLAGS}"
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -a -installsuffix cgo -ldflags="${LDFLAGS}" -o control-plane-console
 
 .PHONY: deps
 deps:

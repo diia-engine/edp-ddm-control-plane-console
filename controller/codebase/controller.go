@@ -35,7 +35,7 @@ const (
 	keySecretIndex     = "id_rsa"
 )
 
-const DefaultRetryTimeout = time.Second * 10
+const DefaultRetryTimeout = time.Second * 15
 
 type Controller struct {
 	logger        controller.Logger
@@ -191,7 +191,7 @@ func (c *Controller) checkBranchesStatus(ctx context.Context, instance *codebase
 			return fmt.Errorf("unable to update instance, %w", err)
 		}
 
-		return ErrPostpone(time.Second)
+		return ErrPostpone(DefaultRetryTimeout)
 	}
 
 	if annotationStatus, ok := instance.Annotations[codebaseService.StatusAnnotation]; ok &&
@@ -213,13 +213,13 @@ func (c *Controller) updateImportRepo(ctx context.Context, instance *codebaseSer
 
 	prj, err := c.getGerritProject(ctx, instance.Name)
 	if service.IsErrNotFound(err) {
-		return ErrPostpone(time.Second * 5)
+		return ErrPostpone(DefaultRetryTimeout)
 	} else if err != nil {
 		return fmt.Errorf("unknown error, %w", err)
 	}
 
 	if prj.Status.Value != "OK" {
-		return ErrPostpone(time.Second * 5)
+		return ErrPostpone(DefaultRetryTimeout)
 	}
 
 	if err := c.pushRegistryTemplate(ctx, instance); err != nil {
@@ -367,14 +367,16 @@ func GetGerritPrivateKey(ctx context.Context, k8sClient client.Client, cnf *conf
 
 func SetCachedFiles(projectName string, appCache *cache.Cache, gitService *git.Service) (bool, error) {
 	//TODO: remove cached files
-	files, ok := appCache.Get(registry.CachedFilesIndex(projectName))
+	key := registry.CachedFilesIndex(projectName)
+	files, ok := appCache.Get(key)
 	if !ok {
 		return false, nil
 	}
 
 	cachedFiles, ok := files.([]registry.CachedFile)
 	if !ok {
-		return false, errors.New("wrong files type")
+		appCache.Delete(key)
+		return false, fmt.Errorf("wrong files type, %+v", files)
 	}
 
 	updatedFiles := 0

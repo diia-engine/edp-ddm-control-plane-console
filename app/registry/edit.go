@@ -382,7 +382,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		}
 	}
 
-	if valuesChanged || len(repoFiles) > 0 {
+	if valuesChanged || len(repoFiles) > 0 || keysModified {
 		if err := CreateEditMergeRequest(ginContext, r.Name, values.OriginalYaml, a.Gerrit, mrActions); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}

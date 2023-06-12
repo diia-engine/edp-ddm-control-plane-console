@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -25,7 +24,7 @@ func ClearRepoFiles(registryName string, c *cache.Cache) error {
 
 	cachedFiles, ok := files.([]CachedFile)
 	if !ok {
-		return errors.New("wrong files type")
+		return fmt.Errorf("wrong files type, %+v", files)
 	}
 
 	for _, cf := range cachedFiles {

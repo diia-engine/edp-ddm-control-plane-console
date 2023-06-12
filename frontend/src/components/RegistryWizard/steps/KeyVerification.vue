@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Typography from '@/components/common/Typography.vue';
+import FileField from '@/components/common/FileField.vue';
 </script>
 
 <script lang="ts">
@@ -8,6 +9,7 @@ import { defineComponent } from 'vue';
 export default defineComponent({
   props: {
     registryAction: String,
+    pageDescription: String,
   },
   methods: {
     validator() {
@@ -19,19 +21,17 @@ export default defineComponent({
 
         this.validated = false;
         this.beginValidation = true;
-        this.caCertRequired = false;
-        this.caJSONRequired = false;
+        this.caCertError = '';
+        this.caJSONError = '';
         let validationFailed = false;
 
-        const keyCaCert = this.$refs.keyCaCert as any;
-        if (keyCaCert.files.length === 0) {
-          this.caCertRequired = true;
+        if (!this.caCertSelected) {
+          this.caCertError = 'Обов’язкове поле';
           validationFailed = true;
         }
 
-        const keyCaJSON = this.$refs.keyCaJSON as any;
-        if (keyCaJSON.files.length === 0) {
-          this.caJSONRequired = true;
+        if (!this.caJSONSelected) {
+          this.caJSONError = 'Обов’язкове поле';
           validationFailed = true;
         }
 
@@ -46,12 +46,30 @@ export default defineComponent({
         return true;
       });
     },
+    onCACertFileSelected(){
+      this.caCertSelected = true;
+      this.caCertError = '';
+      this.changed = true;
+    },
+    onCACertFileReset(){
+      this.caCertSelected = false;
+    },
+    onCAJSONFileSelected(){
+      this.caJSONSelected = true;
+      this.caJSONError = '';
+      this.changed = true;
+    },
+    onCAJSONFileReset(){
+      this.caJSONSelected = false;
+    },
   },
   data() {
     return {
-      caCertRequired: false,
+      caCertError: '',
+      caCertSelected: false,
       changed: false,
-      caJSONRequired: false,
+      caJSONError: '',
+      caJSONSelected: false,
       validated: false,
       beginValidation: false,
     };
@@ -70,20 +88,13 @@ export default defineComponent({
   <div class="form-group">
     <Typography variant="h3">Дані для перевірки підписів</Typography>
   </div>
-  <Typography variant="bodyText" class="key-sign-page-description">Внесені сертифікати АЦСК для перевірки ключів
-    системного підпису та КЕП користувачів будуть застосовані для налаштувань поточного реєстру.</Typography>
+  <Typography variant="bodyText" class="key-sign-page-description">{{ pageDescription }}</Typography>
 
   <input type="checkbox" style="display: none;" v-model="changed" name="key-verification-changed" />
-  <div class="rc-form-group" :class="{ 'error': caCertRequired }">
-    <label for="ca-cert">Публічні сертифікати АЦСК (розширення .p7b)</label>
-    <input @change="changed = true; caCertRequired = false;" ref="keyCaCert" type="file"
-           name="ca-cert" id="ca-cert" accept=".p7b" />
-    <span v-if="caCertRequired">Обов’язкове поле</span>
-  </div>
-  <div class="rc-form-group" :class="{ 'error': caJSONRequired }">
-    <label for="ca-json">Перелік АЦСК (розширення .json)</label>
-    <input @change="changed = true; caJSONRequired = false;" ref="keyCaJSON" type="file"
-           name="ca-json" id="ca-json" accept=".json" />
-    <span v-if="caJSONRequired">Обов’язкове поле</span>
-  </div>
+
+  <FileField label="Публічні сертифікати АЦСК (CACertificate.p7b)" sub-label="Обрати файл" name="ca-cert" accept=".p7b"
+             :error="caCertError" @selected="onCACertFileSelected" @reset="onCACertFileReset" id="ca-cert-upload" />
+
+  <FileField label="Перелік АЦСК (розширення .json)" sub-label="Обрати файл" name="ca-json" accept=".json"
+             :error="caJSONError" @selected="onCAJSONFileSelected" @reset="onCAJSONFileReset" id="ca-json-upload" />
 </template>

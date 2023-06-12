@@ -53,12 +53,14 @@ export default defineComponent({
       <div v-if="activeTab === 'dataAboutKey'">
         <KeyData
             registry-action="create"
+            page-description="Внесені ключі КЕП користувачів будуть застосовані для налаштувань Платформи."
             ref="keyDataTab" />
       </div>
 
       <div v-if="activeTab === 'dataAboutKeyVerification'">
         <KeyVerification
             registry-action="create"
+            page-description="Внесені сертифікати АЦСК для перевірки ключів КЕП користувачів будуть застосовані для налаштувань Платформи."
             ref="keyVerificationTab" />
       </div>
 

@@ -134,11 +134,13 @@ export default defineComponent({
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'key'">
                     <KeyData
                       :registry-action="templateVariables.action"
+                      page-description="Внесені ключі системного підпису та КЕП користувачів будуть застосовані для налаштувань поточного реєстру."
                       ref="keyDataTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'keyVerification'">
                   <KeyVerification
                       :registry-action="templateVariables.action"
+                      page-description="Внесені сертифікати АЦСК для перевірки ключів системного підпису та КЕП користувачів будуть застосовані для налаштувань поточного реєстру."
                       ref="keyVerificationTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'resources'">

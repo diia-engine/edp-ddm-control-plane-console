@@ -106,8 +106,9 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 	}
 
 	return router.MakeHTMLResponse(200, "cluster/edit.html", gin.H{
-		"page":         "cluster",
-		"templateArgs": string(templateArgs),
+		"page":                 "cluster",
+		"templateArgs":         string(templateArgs),
+		"hwINITemplateContent": hwINITemplateContent,
 	}), nil
 }
 

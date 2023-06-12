@@ -273,7 +273,7 @@ export default defineComponent({
         this.$nextTick(() => {
           childRefs.registryWizardForm.submit();
         });
-      });
+      }).catch(() => {});
     },
     wizardNext() {
       const tabKeys = Object.keys(this.wizard.tabs);

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Typography from '@/components/common/Typography.vue';
+import FileField from '@/components/common/FileField.vue';
 </script>
 
 <script lang="ts">
@@ -9,6 +10,7 @@ import Mustache from "mustache";
 export default defineComponent({
   props: {
     registryAction: String,
+    pageDescription: String,
   },
   methods: {
     renderINITemplate() {
@@ -35,6 +37,14 @@ export default defineComponent({
       this.renderINITemplate();
       this.changed = true;
     },
+    onKey6FileSelected(){
+      this.key6FileSelected = true;
+      this.key6Error = '';
+      this.changed = true;
+    },
+    onKey6FileReset(){
+      this.key6FileSelected = false;
+    },
     validator() {
       return new Promise<void>((resolve, reject) => {
         if (this.registryAction === "edit" && !this.changed) {
@@ -44,7 +54,7 @@ export default defineComponent({
         this.renderINITemplate();
         this.validated = false;
         this.beginValidation = true;
-        this.key6Required = false;
+        this.key6Error = '';
         let validationFailed = false;
 
         for (let i = 0; i < this.allowedKeys.length; i++) {
@@ -66,9 +76,8 @@ export default defineComponent({
             }
           }
 
-          const key6 = this.$refs.key6 as any;
-          if (key6.files.length === 0) {
-            this.key6Required = true;
+          if (!this.key6FileSelected) {
+            this.key6Error = 'Обов’язкове поле';
             validationFailed = true;
           }
         }
@@ -91,7 +100,8 @@ export default defineComponent({
       changed: false,
       allowedKeys: [{ issuer: "", serial: "", removable: false }],
       beginValidation: false,
-      key6Required: false,
+      key6Error: '',
+      key6FileSelected: false,
       deviceType: "file",
       hardwareData: {
         remoteType: "криптомод. ІІТ Гряда-301",
@@ -117,14 +127,34 @@ export default defineComponent({
     .key-data-page-description {
       margin-bottom: 32px;
     }
+
+    .add-allowed-key-btn {
+      display: flex;
+      text-decoration: none;
+      align-items: baseline;
+      margin-bottom: 16px;
+    }
+
+    .add-allowed-key-btn:hover {
+      text-decoration: none;
+    }
+
+    .add-allowed-key-btn div {
+      font-family: "Oswald", "MuseoSans", sans-serif;
+      font-weight: 400;
+      font-size: 18px;
+      text-transform: uppercase;
+      color: rgba(0, 0, 0, 0.5);
+      margin-left: 13px;
+    }
+
 </style>
 
 <template>
   <div class="form-group">
     <Typography variant="h3">Дані про ключ</Typography>
   </div>
-  <Typography variant="bodyText" class="key-data-page-description">Внесені ключі системного підпису та КЕП користувачів будуть застосовані для
-    налаштувань поточного реєстру.</Typography>
+  <Typography variant="bodyText" class="key-data-page-description">{{ pageDescription }}</Typography>
 
   <input type="checkbox" style="display: none;" v-model="changed" name="key-data-changed" />
   <div class="rc-form-group">
@@ -207,12 +237,8 @@ export default defineComponent({
     </div>
   </div>
   <div class="key-type-file key-type-section" v-if="deviceType === 'file'" v-cloak>
-    <div class="rc-form-group" :class="{ 'error': key6Required }">
-      <label for="key6">Файловий ключ (розширення .dat)</label>
-      <input @change="changed = true; key6Required = false;" ref="key6" type="file"
-             name="key6" id="key6" accept=".dat" />
-      <span v-if="key6Required">Обов’язкове поле</span>
-    </div>
+    <FileField label="Файловий ключ (розширення .dat)" sub-label="Обрати файл" name="key6" accept=".dat"
+               :error="key6Error" @selected="onKey6FileSelected" @reset="onKey6FileReset" id="key6-upload" />
     <div class="rc-form-group"
          :class="{ 'error': fileData.signKeyIssuer === '' && beginValidation }">
       <label for="sign-key-issuer">АЦСК, що видав ключ</label>
@@ -229,12 +255,13 @@ export default defineComponent({
     </div>
   </div>
 
-  <h3>Перелік дозволених ключів <button type="button" class="allowed-keys-add" id="allowed-keys-add"
-                                        @click="addAllowedKey">+</button>
-  </h3>
-  <hr />
   <div class="rc-form-group allowed-keys-body" id="allowed-keys-body">
-    <div class="allowed-keys-row" v-for="ak in allowedKeys" :key="ak.serial"
+    <label>Перелік дозволених ключів</label>
+    <a class="add-allowed-key-btn" href="#" @click.prevent="addAllowedKey">
+      <i class="fa-solid fa-plus"></i>
+      <div>Додати ключ</div>
+    </a>
+    <div class="allowed-keys-row" v-for="(ak, index) in allowedKeys" :key="index"
          :class="{ 'error': beginValidation && (ak.serial === '' || ak.issuer === '') }">
       <input @change="changed = true;" name="allowed-keys-issuer[]" v-model="ak.issuer"
              class="allowed-keys-input allowed-keys-issuer" aria-label="key issuer" placeholder="Емітент ключа"

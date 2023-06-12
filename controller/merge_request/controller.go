@@ -148,14 +148,18 @@ func (c *Controller) reconcile(ctx context.Context, request reconcile.Request) e
 		return fmt.Errorf("unable to proceed cached files, %w", err)
 	}
 
-	if err := c.checkBuildJobStatus(ctx, cb); err != nil {
+	if err := c.checkBuildJobStatus(ctx, &instance, cb); err != nil {
 		return fmt.Errorf("unable to check build status, %w", err)
 	}
 
 	return nil
 }
 
-func (c *Controller) checkBuildJobStatus(ctx context.Context, cb *codebaseSvc.Codebase) error {
+func (c *Controller) checkBuildJobStatus(ctx context.Context, instance *gerritService.GerritMergeRequest, cb *codebaseSvc.Codebase) error {
+	if instance.Status.Value != gerritService.StatusNew {
+		return nil
+	}
+
 	branches, err := c.codebaseService.GetBranchesByCodebase(ctx, cb.Name)
 	if err != nil {
 		return fmt.Errorf("unable to get branches, %w", err)
@@ -175,7 +179,7 @@ func (c *Controller) checkBuildJobStatus(ctx context.Context, cb *codebaseSvc.Co
 				return fmt.Errorf("unable to update instance, %w", err)
 			}
 
-			return codebase.ErrPostpone(time.Second * 5)
+			return codebase.ErrPostpone(codebase.DefaultRetryTimeout)
 		}
 	}
 
@@ -263,11 +267,15 @@ func (c *Controller) addCachedFiles(ctx context.Context, instance *gerritService
 		return nil
 	}
 
-	files, ok := c.appCache.Get(registry.CachedFilesIndex(instance.Spec.ProjectName))
+	key := registry.CachedFilesIndex(instance.Spec.ProjectName)
 
+	files, ok := c.appCache.Get(key)
 	_, ok = files.([]registry.CachedFile)
 	if !ok {
-		return errors.New("wrong files type")
+		c.appCache.Delete(key)
+		c.logger.Infow("wrong cached files type", "Request.Namespace", instance.Namespace,
+			"Request.Name", instance.Name)
+		return nil
 	}
 
 	_, _, projectPath, err := prepareControllerFolders(c.cnf.TempFolder, instance.Spec.ProjectName)

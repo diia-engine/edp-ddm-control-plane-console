@@ -18,7 +18,7 @@ type clusterKey struct {
 	Scenario               string
 	SignKeyIssuer          string   `form:"sign-key-issuer" binding:"required_if=KeyDeviceType file Scenario key-required"`
 	SignKeyPwd             string   `form:"sign-key-pwd" binding:"required_if=KeyDeviceType file Scenario key-required"`
-	KeyDeviceType          string   `form:"key-device-type" binding:"oneof=file hardware"`
+	KeyDeviceType          string   `form:"key-device-type"`
 	RemoteType             string   `form:"remote-type" binding:"required_if=KeyDeviceType hardware Scenario key-required"`
 	RemoteKeyPassword      string   `form:"remote-key-pwd" binding:"required_if=KeyDeviceType hardware Scenario key-required"`
 	RemoteCAName           string   `form:"remote-ca-name" binding:"required_if=KeyDeviceType hardware Scenario key-required"`
@@ -110,7 +110,7 @@ func (a *App) updateKeyView(ctx *gin.Context) (router.Response, error) {
 }
 
 func (a *App) updateKey(ctx *gin.Context) error {
-	ck := clusterKey{Scenario: registry.ScenarioKeyRequired}
+	ck := clusterKey{}
 
 	if err := ctx.ShouldBind(&ck); err != nil {
 		_, ok := err.(validator.ValidationErrors)
