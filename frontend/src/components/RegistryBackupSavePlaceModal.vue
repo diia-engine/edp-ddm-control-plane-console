@@ -54,27 +54,27 @@ const submit = handleSubmit((data: Data) => {
         label="Ім’я бакета"
         name="backupBucket"
         description="Довжина назви має бути від 3 до 63 символів. Допустимі символи “a-z”, “0-9”, “.”, “-”"
-        :value="values.backupBucket"
+        v-model="values.backupBucket"
         :error="errors?.backupBucket"
-        @update="val => values.backupBucket = val" 
+        required
       />
 
       <TextField 
         label="Endpoint"
         name="endpoint"
         description="Наприклад: “https://endpoint.com”"
-        :value="values.endpoint"
+        v-model="values.endpoint"
         :error="errors?.endpoint"
-        @update="val => values.endpoint = val" 
+        required
       />
 
       <TextField 
         label="Логін"
         name="login"
         description="Надається постачальником послуги"
-        :value="values.login"
+        v-model="values.login"
         :error="errors?.login"
-        @update="val => values.login = val" 
+        required
       />
 
       <TextField 
@@ -82,9 +82,9 @@ const submit = handleSubmit((data: Data) => {
         name="password"
         type="password"
         description="Надається постачальником послуги"
-        :value="values.password"
+        v-model="values.password"
         :error="errors?.password"
-        @update="val => values.password = val" 
+        required
       />
     </form>
   </Modal>

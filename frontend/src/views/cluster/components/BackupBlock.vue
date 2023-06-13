@@ -125,9 +125,9 @@ function onSubmit() {
         name="nexus-schedule"
         placeholder="0 10 * * *"
         description="Використовується Cron-формат."
-        :value="NexusSchedule"
+        v-model="NexusSchedule"
         :error="beginValidation ? errors.NexusSchedule : ''"
-        @update="val => NexusSchedule = val"
+        required
         @change="validate"
       />
     </div>
@@ -137,9 +137,9 @@ function onSubmit() {
         name="nexus-expires-in-days"
         placeholder="5"
         description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
-        :value="NexusExpiresInDays"
+        v-model="NexusExpiresInDays"
         :error="beginValidation ? errors.NexusExpiresInDays : ''"
-        @update="val => NexusExpiresInDays = val"
+        required
         @change="validate"
       />
     </div>
@@ -151,9 +151,9 @@ function onSubmit() {
         name="control-plane-schedule"
         placeholder="0 10 * * *"
         description="Використовується Cron-формат."
-        :value="ControlPlaneSchedule"
+        v-model="ControlPlaneSchedule"
         :error="beginValidation ? errors.ControlPlaneSchedule : ''"
-        @update="val => ControlPlaneSchedule = val"
+        required
         @change="validate"
       />
     </div>
@@ -163,9 +163,9 @@ function onSubmit() {
         name="control-plane-expires-in-days"
         placeholder="5"
         description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
-        :value="ControlPlaneExpiresInDays"
+        v-model="ControlPlaneExpiresInDays"
         :error="beginValidation ? errors.ControlPlaneExpiresInDays : ''"
-        @update="val => ControlPlaneExpiresInDays = val"
+        required
         @change="validate"
       />
     </div>
@@ -177,9 +177,9 @@ function onSubmit() {
         name="user-management-schedule"
         placeholder="0 10 * * *"
         description="Використовується Cron-формат."
-        :value="UserManagementSchedule"
+        v-model="UserManagementSchedule"
         :error="beginValidation ? errors.UserManagementSchedule : ''"
-        @update="val => UserManagementSchedule = val"
+        required
         @change="validate"
       />
     </div>
@@ -189,9 +189,9 @@ function onSubmit() {
         name="user-management-expires-in-days"
         placeholder="5"
         description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
-        :value="UserManagementExpiresInDays"
+        v-model="UserManagementExpiresInDays"
         :error="beginValidation ? errors.UserManagementExpiresInDays : ''"
-        @update="val => UserManagementExpiresInDays = val"
+        required
         @change="validate"
       />
     </div>
@@ -203,9 +203,9 @@ function onSubmit() {
         name="monitoring-schedule"
         placeholder="0 10 * * *"
         description="Використовується Cron-формат."
-        :value="MonitoringSchedule"
+        v-model="MonitoringSchedule"
         :error="beginValidation ? errors.MonitoringSchedule : ''"
-        @update="val => MonitoringSchedule = val"
+        required
         @change="validate"
       />
     </div>
@@ -215,9 +215,9 @@ function onSubmit() {
         name="monitoring-expires-in-days"
         placeholder="5"
         description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
-        :value="MonitoringExpiresInDays"
+        v-model="MonitoringExpiresInDays"
         :error="beginValidation ? errors.MonitoringExpiresInDays : ''"
-        @update="val => MonitoringExpiresInDays = val"
+        required
         @change="validate"
       />
     </div>

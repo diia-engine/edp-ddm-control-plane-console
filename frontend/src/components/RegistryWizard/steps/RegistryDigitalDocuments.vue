@@ -89,15 +89,15 @@ defineExpose({
     завантаження в 100 МБ, встановленого на рівні Платформи.</div>
   <input type="hidden" name="digital-documents" :value="preparedDigitalDocuments" />
   <div class="rc-form-group">
-    <TextField label="Максимальний розмір файлу для завантаження, MB *" name="maxFileSize" :value="maxFileSize"
-      @update="val => maxFileSize = val" :error="errors.maxFileSize" />
+    <TextField label="Максимальний розмір файлу для завантаження, MB" name="maxFileSize"
+      v-model="maxFileSize" required :error="errors.maxFileSize" />
     <p>Допустимі символи: “0-9”, “.”. Значення не може перевищувати довжину у 4 символи. <a href="#"
         @click.stop.prevent="handleShowMaxFileSizePopUp">Детальніше</a>.</p>
   </div>
 
   <div class="rc-form-group">
-    <TextField label="Макс. сумарний розмір групи файлів для завантаження, MB *" name="maxTotalFileSize"
-      :value="maxTotalFileSize" @update="val => maxTotalFileSize = val" :error="errors.maxTotalFileSize" />
+    <TextField label="Макс. сумарний розмір групи файлів для завантаження, MB" name="maxTotalFileSize"
+      v-model="maxTotalFileSize" required :error="errors.maxTotalFileSize" />
     <p>Допустимі символи: “0-9”, “.”. Значення не може перевищувати довжину у 4 символи. <a href="#"
         @click.stop.prevent="handleShowMaxTotalFileSize">Детальніше</a>.</p>
   </div>

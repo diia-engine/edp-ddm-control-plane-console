@@ -86,17 +86,17 @@ const submit = handleSubmit(() => {
         label="Службова назва запиту"
         name="name"
         description='Допустимі символи "a-z", цифри "0-9", "-". Назва не може перевищувати довжину у 32 символи. Назва повинна починатись і закінчуватись символами латинського алфавіту або цифрами та бути унікальною.'
-        :value="values.name"
+        v-model="values.name"
         :error="errors?.name"
-        @update="val => values.name = val"
+        required
       />
       <TextField 
         label="Точка інтеграції (шлях до публічного пошукового запиту)"
         name="url"
         description='Допустимі символи “A-Z”, "a-z", цифри "0-9", "-", крапка, "_", "/". Посилання повинно бути унікальним.'
-        :value="values.url"
+        v-model="values.url"
         :error="errors?.url"
-        @update="val => values.url = val" 
+        required
       />
       <Typography variant="small">Наприклад: /search-laboratories-by-city.</Typography>
     </form>

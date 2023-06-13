@@ -38,7 +38,7 @@ export default defineComponent({
       <span v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.beginValidation && pageRoot.$data.wizard.tabs.supplierAuthentication.heightIsNotNumber">Перевірте формат поля</span>
   </div>
 
-  <div v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.data.authType == 'id-gov-ua-officer-redirector'">
+  <div v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.data.authType == 'id-gov-ua-officer-redirector'" class="rc-form-group">
       <div class="rc-form-group"
             :class="{'error': pageRoot.$data.wizard.tabs.supplierAuthentication.beginValidation && pageRoot.$data.wizard.tabs.supplierAuthentication.data.clientId == ''}">
           <label for="diia-client-id">Ідентифікатор клієнта (client_id) <b class="red-star">*</b></label>
