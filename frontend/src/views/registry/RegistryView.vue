@@ -1419,16 +1419,6 @@ export default defineComponent({
             </div>
 
             <div class="rg-info-block">
-                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'public-access' }"
-                    @click="accordion = 'public-access'">
-                    <span>Публічний доступ</span>
-                    <i class="fa-solid"
-                        :class="{ 'fa-caret-up': accordion == 'public-access', 'fa-caret-down': accordion != 'public-access' }"></i>
-                </div>
-                <PublicApiBlock :publicApi="publicApi" v-show="accordion == 'public-access'" :registry="registry.metadata.name" :checkOpenedMR="checkOpenedMR"/>
-            </div>
-
-            <div class="rg-info-block">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'external-access' }"
                     @click="accordion = 'external-access'">
                     <span>Доступ для реєстрів платформи та зовнішніх систем</span>
@@ -1436,7 +1426,7 @@ export default defineComponent({
                         :class="{ 'fa-caret-up': accordion == 'external-access', 'fa-caret-down': accordion != 'external-access' }"></i>
                 </div>
                 <div class="rg-info-block-body" v-show="accordion == 'external-access'">
-                    <table class="rg-info-table rg-info-table-config" v-if="externalRegs && externalRegs.length">
+                    <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
                                 <th>Статус</th>
@@ -1445,7 +1435,7 @@ export default defineComponent({
                                 <th></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody v-if="externalRegs && externalRegs.length">
                             <tr v-for="($er, $index) in externalRegs" :key="$index">
                                 <td>
                                     <img :alt="getStatus($er.StatusRegistration)"
@@ -1487,7 +1477,7 @@ export default defineComponent({
                             </tr>
                         </tbody>
                     </table>
-                    <div class="rg-info-block-no-content" v-else>
+                    <div class="rg-info-block-no-content" v-if="!externalRegs?.length">
                         Немає реєстрів або систем, що мають доступ до цього реєстра.
                     </div>
                     <div class="link-grant-access">
@@ -1504,6 +1494,18 @@ export default defineComponent({
                 <input type="hidden" id="disable-form-value" :value="systemToDisable" name="reg-name" />
                 <input type="hidden" id="disable-form-type" :value="systemToDisableType" name="external-system-type" />
             </form>
+
+            <div class="rg-info-block">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'public-access' }"
+                    @click="accordion = 'public-access'">
+                    <span>Публічний доступ</span>
+                    <i class="fa-solid"
+                        :class="{ 'fa-caret-up': accordion == 'public-access', 'fa-caret-down': accordion != 'public-access' }"></i>
+                </div>
+                <div v-show="accordion == 'public-access'">
+                    <PublicApiBlock :publicApi="publicApi" :registry="registry.metadata.name" :checkOpenedMR="checkOpenedMR"/>
+                </div>
+            </div>
 
             <div class="rg-info-block" v-if="branches && branches.length">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'configuration' }"

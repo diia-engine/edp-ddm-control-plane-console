@@ -86,12 +86,11 @@ function inactive(status?: string) {
     return status === "inactive" || status === "failed";
 }
 
-
 </script>
 
 <template>
   <div class="rg-info-block-body">
-      <table class="rg-info-table rg-info-table-config" v-if="publicApi && publicApi.length">
+      <table class="rg-info-table rg-info-table-config">
           <thead>
               <tr>
                   <th>Статус</th>
@@ -100,7 +99,7 @@ function inactive(status?: string) {
                   <th></th>
               </tr>
           </thead>
-          <tbody>
+          <tbody v-if="publicApi && publicApi.length">
               <tr v-for="(publicApiItem, $index) in publicApi" :key="$index">
                   <td>
                       <img :alt="getActualStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)"
@@ -127,8 +126,8 @@ function inactive(status?: string) {
               </tr>
           </tbody>
       </table>
-      <div class="rg-info-block-no-content" v-else>
-          Немає реєстрів або систем, що мають доступ до цього реєстра.
+      <div class="rg-info-block-no-content" v-if="!publicApi.length">
+          Немає реєстрів або систем, що мають публічний доступ до даних цього реєтра.
       </div>
       <div class="link-grant-access">
           <a class="" href="#" @click="showPublicApiEditReg($event)">
