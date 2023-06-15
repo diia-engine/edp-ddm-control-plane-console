@@ -201,6 +201,11 @@ func (a *App) removePublicAPIReg(ctx *gin.Context) (router.Response, error) {
 
 func (a *App) makeViewPublicAPIMR(mr gerrit.GerritMergeRequest, registryName string) (PublicAPI, error) {
 	var publicAPI PublicAPI
+
+	if mr.Status.ChangeID == "" {
+		return publicAPI, nil
+	}
+
 	changeInfo, _, err := a.Gerrit.GoGerritClient().Changes.GetChangeDetail(mr.Status.ChangeID, &goGerrit.ChangeOptions{})
 
 	if err != nil {
