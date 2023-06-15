@@ -14,17 +14,29 @@ interface Data {
 
 interface RegistryEditPublicApiModalProps {
   publicApiPopupShow: boolean;
-  publicApi: Data | null;
+  publicApiValues: Data | null;
+  publicApiList: Data[];
   registry: string;
 }
 
+const props = defineProps<RegistryEditPublicApiModalProps>();
+const { publicApiPopupShow, publicApiValues, publicApiList, registry } = toRefs(props);
+
 const validationSchema = yup.object({
-  name: yup.string().required().min(3).max(32).matches(/^[a-z0-9](?:[-]?[a-z0-9]){1,30}[a-z0-9]$/i),
-  url: yup.string().required().matches(/^[A-Za-z0-9-._/]*$/i),
+  name: yup.string().required().min(3).max(32).matches(/^[a-z0-9]([a-z0-9-]){1,30}[a-z0-9]$/i).test({
+    message: 'isUnique',
+    test: function (value) {
+      return publicApiList.value?.findIndex(({ name }) => name === value) === -1;
+    },
+  }),
+  url: yup.string().required().matches(/^[A-Za-z0-9-_/]*$/i).test({
+    message: 'isUnique',
+    test: function (value) {
+      return publicApiList.value?.findIndex(({ url }) => url === value) === -1;
+    },
+  }),
 });
 
-const props = defineProps<RegistryEditPublicApiModalProps>();
-const { publicApiPopupShow, publicApi, registry } = toRefs(props);
 const { handleSubmit, values, errors, setValues, setErrors } = useForm({
   validationSchema,
 });
@@ -36,8 +48,8 @@ function hideModalWindow() {
 }
 
 onUpdated(()=> {
-  if (publicApi?.value) {
-    setValues(publicApi?.value);
+  if (publicApiValues?.value) {
+    setValues(publicApiValues?.value);
   } else {
     setValues({ name: '', url: '' });
   }
@@ -50,7 +62,7 @@ const submit = handleSubmit(() => {
   formData.append("reg-name", values.name);
   formData.append("reg-url", values.url);
 
-  if (publicApi?.value?.name) {
+  if (publicApiValues?.value?.name) {
     axios.post(`/admin/registry/public-api-edit/${registry.value}`, formData, {
       headers: {
           'Content-Type': 'multipart/form-data'
@@ -76,13 +88,18 @@ const submit = handleSubmit(() => {
 </script>
 
 <template>
-  <Modal :show="publicApiPopupShow" @close="hideModalWindow" @submit="submit" title="Надати публічний доступ" submitBtnText="Надати">
+  <Modal 
+    :show="publicApiPopupShow"
+    :title="publicApiValues?.name ? `Редагувати “${publicApiValues?.name}”` : `Надати публічний доступ`"
+    :submitBtnText="publicApiValues?.name ? 'Підтвердити' : 'Надати'"
+    @close="hideModalWindow" @submit="submit"
+  >
     <form id="backupPlace-form">
-      <Typography variant="bodyText" class="content-text" v-if="!publicApi?.name">
-        Ви можете надати публічний доступ до даних цього реєстру (master). Для цього в мастер-реєстрі буде створено окремого користувача реєстра-клієнта, від імені якого здійснюватеметься доступ до мастер-реєстру.
+      <Typography variant="bodyText" class="content-text" v-if="!publicApiValues?.name">
+        Ви можете надати публічний доступ до даних цього реєстру (master). Для цього в мастер-реєстрі буде створено окремого користувача реєстра-клієнта, від імені якого здійснюватиметься доступ до мастер-реєстру.
       </Typography>
       <TextField 
-        v-if="!publicApi?.name"
+        v-if="!publicApiValues?.name"
         label="Службова назва запиту"
         name="name"
         description='Допустимі символи "a-z", цифри "0-9", "-". Назва не може перевищувати довжину у 32 символи. Назва повинна починатись і закінчуватись символами латинського алфавіту або цифрами та бути унікальною.'
@@ -93,12 +110,12 @@ const submit = handleSubmit(() => {
       <TextField 
         label="Точка інтеграції (шлях до публічного пошукового запиту)"
         name="url"
-        description='Допустимі символи “A-Z”, "a-z", цифри "0-9", "-", крапка, "_", "/". Посилання повинно бути унікальним.'
+        description='Допустимі символи "A-Z", "a-z", цифри "0-9", "-", "/". Посилання повинно бути унікальним.'
         v-model="values.url"
         :error="errors?.url"
         required
       />
-      <Typography variant="small">Наприклад: /search-laboratories-by-city.</Typography>
+      <Typography variant="small">Наприклад: /search-laboratories-by-city</Typography>
     </form>
   </Modal>
 </template>

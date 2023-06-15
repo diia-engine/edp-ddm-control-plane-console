@@ -47,25 +47,25 @@ function showDeletePublicAccessReg(e: any, publicApi?: PublicApi) {
   deletePublicApiPopupShow.value = true;
 }
 
-function getPublicApiBlockTitle(e: any, publicApi?: PublicApi) {
+function getPublicApiBlockTitle(publicApi?: PublicApi) {
   if (inactive(publicApi?.StatusRegistration)) {
-        return undefined;
-    }
-    if (publicApi?.enabled) {
-        return 'Заблокувати доступ';
-    }
-    return 'Розблокувати доступ';
+    return undefined;
+  }
+  if (publicApi?.enabled) {
+    return 'Заблокувати доступ';
+  }
+  return 'Розблокувати доступ';
 }
 
 function getActualStatus(status: string, enable: boolean) {
   if (status) {
-        return status;
-    }
-    if (!enable) {
-        return "disabled";
-    }
+    return status;
+  }
+  if (!enable) {
+    return "disabled";
+  }
 
-    return "active";
+  return "active";
 }
 
 function disablePublicAccessReg(registry: string, name: string, e: any) {
@@ -83,82 +83,91 @@ function disablePublicAccessReg(registry: string, name: string, e: any) {
 }
 
 function inactive(status?: string) {
-    return status === "inactive" || status === "failed";
+  return status === "inactive" || status === "failed";
 }
 
 </script>
 
 <template>
   <div class="rg-info-block-body">
-      <table class="rg-info-table rg-info-table-config">
-          <thead>
-              <tr>
-                  <th>Статус</th>
-                  <th>Назва</th>
-                  <th>URL</th>
-                  <th></th>
-              </tr>
-          </thead>
-          <tbody v-if="publicApi && publicApi.length">
-              <tr v-for="(publicApiItem, $index) in publicApi" :key="$index">
-                  <td>
-                      <img :alt="getActualStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)"
-                          :src="getImageUrl(`status-${getActualStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)}`)" />
-                  </td>
-                  <td>{{ publicApiItem.name }}</td>
-                  <td>{{ publicApiItem.url }}</td>
-                  <td>
-                      <div class="rg-public-api-actions">
-                          <a href="#" @click="showPublicApiEditReg($event, publicApiItem)">
-                              <i class="fa-solid fa-pen"></i>
-                          </a>
-                          <a :class="inactive(publicApiItem.StatusRegistration) ? 'inactive' : ''"
-                              @click="!inactive(publicApiItem.StatusRegistration) && disablePublicAccessReg(registry, publicApiItem.name, $event)"
-                              href="#">
-                              <img :title="getPublicApiBlockTitle(publicApiItem)"
-                                  alt="key" :src="getImageUrl(`lock-status-${publicApiItem.StatusRegistration ? publicApiItem.StatusRegistration : (publicApiItem.enabled ? 'active' : 'disabled')}`)" />
-                          </a>
-                          <a href="#" @click="showDeletePublicAccessReg($event, publicApiItem)">
-                              <i class="fa-solid fa-trash registry-trash"></i>
-                          </a>
-                      </div>
-                  </td>
-              </tr>
-          </tbody>
-      </table>
-      <div class="rg-info-block-no-content" v-if="!publicApi.length">
-          Немає реєстрів або систем, що мають публічний доступ до даних цього реєтра.
-      </div>
-      <div class="link-grant-access">
-          <a class="" href="#" @click="showPublicApiEditReg($event)">
-              <img alt="Надати доступ" src="@/assets/img/plus.png" />
-              <span>Надати доступ</span>
-          </a>
-      </div>
+    <table class="rg-info-table rg-info-table-config">
+      <thead>
+        <tr>
+          <th>Статус</th>
+          <th>Назва</th>
+          <th>URL</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody v-if="publicApi && publicApi.length">
+        <tr v-for="(publicApiItem, $index) in publicApi" :key="$index">
+          <td>
+            <img :alt="getActualStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)"
+              :src="getImageUrl(`status-${getActualStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)}`)" />
+          </td>
+          <td>{{ publicApiItem.name }}</td>
+          <td>{{ publicApiItem.url }}</td>
+          <td>
+            <div class="rg-public-api-actions">
+              <a href="#" @click="showPublicApiEditReg($event, publicApiItem)" title="Редагувати">
+                <i class="fa-solid fa-pen"></i>
+              </a>
+              <a :class="inactive(publicApiItem.StatusRegistration) ? 'inactive' : ''"
+                @click="!inactive(publicApiItem.StatusRegistration) && disablePublicAccessReg(registry, publicApiItem.name, $event)"
+                href="#">
+                <img :title="getPublicApiBlockTitle(publicApiItem)"
+                  alt="key" :src="getImageUrl(`lock-status-${publicApiItem.StatusRegistration ? publicApiItem.StatusRegistration : (publicApiItem.enabled ? 'active' : 'disabled')}`)" />
+              </a>
+              <a href="#" @click="showDeletePublicAccessReg($event, publicApiItem)">
+                <img title="Видалити" alt="key"
+                  :src="getImageUrl(`disable-status-active`)" />
+              </a>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="rg-info-block-no-content" v-if="!publicApi.length">
+      Немає реєстрів або систем, що мають публічний доступ до даних цього реєтра.
+    </div>
+    <div class="link-grant-access">
+      <a class="" href="#" @click="showPublicApiEditReg($event)">
+        <img alt="Надати доступ" src="@/assets/img/plus.png" />
+        <span>Надати доступ</span>
+      </a>
+    </div>
   </div>
 
-  <RegistryEditPublicApiModal :registry="registry" :publicApiPopupShow="publicApiPopupShow" :publicApi="publicApiValues" @hideModalWindow="hideModalWindow" />
+  <RegistryEditPublicApiModal 
+    :registry="registry"
+    :publicApiPopupShow="publicApiPopupShow"
+    :publicApiList="publicApi"
+    :publicApiValues="publicApiValues"
+    @hideModalWindow="hideModalWindow"
+  />
   <RegistryDeletePublicApiModal :registry="registry" :publicApiPopupShow="deletePublicApiPopupShow" :publicApiName="publicApiValues?.name" @hideModalWindow="hideModalWindow" />
 </template>
 
 <style lang="scss" scoped>
 .rg-public-api-actions {
-    display: flex;
-    justify-content: flex-end;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .rg-public-api-actions a {
-    margin-right: 36px;
-    display: flex;
-    align-items: center;
+  margin-right: 36px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  background-color: transparent;
 }
 
-.rg-external-system-actions a:last-of-type {
-    margin: 0;
+.rg-public-api-actions a:last-child {
+  margin: 0;
 }
 
 .rg-public-api-actions a.inactive {
-    cursor: not-allowed;
+  cursor: not-allowed;
 }
 </style>
 
