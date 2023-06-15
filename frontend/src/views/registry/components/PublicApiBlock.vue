@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import RegistryEditPublicApiModal from '@/components/RegistryEditPublicApiModal.vue';
 import RegistryDeletePublicApiModal from '@/components/RegistryDeletePublicApiModal.vue';
-import { getImageUrl } from '@/utils';
+import { getImageUrl, getStatus } from '@/utils';
+import { getExtStatus } from '@/utils/registry';
 import { toRefs, ref } from 'vue';
 import axios from 'axios';
 
@@ -48,13 +49,10 @@ function showDeletePublicAccessReg(e: any, publicApi?: PublicApi) {
 }
 
 function getPublicApiBlockTitle(publicApi?: PublicApi) {
-  if (inactive(publicApi?.StatusRegistration)) {
-    return undefined;
+  if (!publicApi?.enabled) {
+    return 'Розблокувати доступ';
   }
-  if (publicApi?.enabled) {
-    return 'Заблокувати доступ';
-  }
-  return 'Розблокувати доступ';
+  return 'Заблокувати доступ';
 }
 
 function getActualStatus(status: string, enable: boolean) {
@@ -102,25 +100,22 @@ function inactive(status?: string) {
       <tbody v-if="publicApi && publicApi.length">
         <tr v-for="(publicApiItem, $index) in publicApi" :key="$index">
           <td>
-            <img :alt="getActualStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)"
+            <img :title="getStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)" :alt="getActualStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)"
               :src="getImageUrl(`status-${getActualStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)}`)" />
           </td>
           <td>{{ publicApiItem.name }}</td>
           <td>{{ publicApiItem.url }}</td>
           <td>
-            <div class="rg-public-api-actions">
-              <a href="#" @click="showPublicApiEditReg($event, publicApiItem)" title="Редагувати">
+            <div class="rg-public-api-actions" :class="{ inactive: getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) == 'status-inactive' }">
+              <a href="#" @click.prevent="getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) !== 'status-inactive' && showPublicApiEditReg($event, publicApiItem)" title="Редагувати">
                 <i class="fa-solid fa-pen"></i>
               </a>
-              <a :class="inactive(publicApiItem.StatusRegistration) ? 'inactive' : ''"
-                @click="!inactive(publicApiItem.StatusRegistration) && disablePublicAccessReg(registry, publicApiItem.name, $event)"
-                href="#">
+              <a @click.prevent="getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) !== 'status-inactive' && disablePublicAccessReg(registry, publicApiItem.name, $event)" href="#">
                 <img :title="getPublicApiBlockTitle(publicApiItem)"
                   alt="key" :src="getImageUrl(`lock-status-${publicApiItem.StatusRegistration ? publicApiItem.StatusRegistration : (publicApiItem.enabled ? 'active' : 'disabled')}`)" />
               </a>
-              <a href="#" @click="showDeletePublicAccessReg($event, publicApiItem)">
-                <img title="Видалити" alt="key"
-                  :src="getImageUrl(`disable-status-active`)" />
+              <a href="#" @click.prevent="getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) !== 'status-inactive' && showDeletePublicAccessReg($event, publicApiItem)">
+                <img title="Видалити" alt="key" :src="getImageUrl(`disable-${getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)}`)" />
               </a>
             </div>
           </td>
@@ -166,8 +161,9 @@ function inactive(status?: string) {
   margin: 0;
 }
 
-.rg-public-api-actions a.inactive {
-  cursor: not-allowed;
+.rg-public-api-actions.inactive a {
+    cursor: not-allowed;
+    color: #BFBFBF;
 }
-</style>
 
+</style>

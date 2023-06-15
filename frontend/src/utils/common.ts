@@ -1,8 +1,12 @@
-export const getStatus = (status: string): string => {
+export const getStatus = (status: string, enabled: boolean = true): string => {
+    if (enabled === false) {
+        return "Заблокований";
+    }
     switch (`status-${status}`) {
         case "status-active":
         case "status-SUCCESS":
         case "status-ok":
+        case "status-":
             return "Активний";
         case "status-failed":
         case "status-failure":

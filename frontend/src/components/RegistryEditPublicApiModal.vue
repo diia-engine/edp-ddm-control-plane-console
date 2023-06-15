@@ -26,10 +26,13 @@ const validationSchema = yup.object({
   name: yup.string().required().min(3).max(32).matches(/^[a-z0-9]([a-z0-9-]){1,30}[a-z0-9]$/i).test({
     message: 'isUnique',
     test: function (value) {
+      if (publicApiValues.value?.name) {
+        return true;
+      }
       return publicApiList.value?.findIndex(({ name }) => name === value) === -1;
     },
   }),
-  url: yup.string().required().matches(/^[A-Za-z0-9-_/]*$/i).test({
+  url: yup.string().required().matches(/^[A-Za-z0-9-/]*$/i).test({
     message: 'isUnique',
     test: function (value) {
       return publicApiList.value?.findIndex(({ url }) => url === value) === -1;
@@ -62,7 +65,7 @@ const submit = handleSubmit(() => {
   formData.append("reg-name", values.name);
   formData.append("reg-url", values.url);
 
-  if (publicApiValues?.value?.name) {
+  if (publicApiValues.value?.name) {
     axios.post(`/admin/registry/public-api-edit/${registry.value}`, formData, {
       headers: {
           'Content-Type': 'multipart/form-data'
