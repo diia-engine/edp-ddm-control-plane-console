@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import RegistryEditPublicApiModal from '@/components/RegistryEditPublicApiModal.vue';
 import RegistryDeletePublicApiModal from '@/components/RegistryDeletePublicApiModal.vue';
-import { getImageUrl, getStatus } from '@/utils';
+import { getImageUrl } from '@/utils';
 import { getExtStatus } from '@/utils/registry';
 import { toRefs, ref } from 'vue';
 import axios from 'axios';
@@ -29,6 +29,20 @@ function hideModalWindow() {
   publicApiPopupShow.value = false;
   deletePublicApiPopupShow.value = false; 
 }
+
+const getStatus = (status: string, enabled: boolean = true): string => {
+  if (status === "inactive") {
+    return "В обробці";
+  }
+  if (status === "failed") {
+    return "Помилка";
+  }
+  if (enabled === false) {
+      return "Заблокований";
+  }
+
+  return "Активний";
+};
 
 function showPublicApiEditReg(e: any, publicApi?: PublicApi) {
   e.preventDefault();

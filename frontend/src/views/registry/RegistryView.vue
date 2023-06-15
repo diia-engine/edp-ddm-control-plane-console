@@ -1438,9 +1438,9 @@ export default defineComponent({
                         <tbody v-if="externalRegs && externalRegs.length">
                             <tr v-for="($er, $index) in externalRegs" :key="$index">
                                 <td>
-                                    <img :alt="getStatus($er.StatusRegistration, $er.Enabled)"
+                                    <img :alt="getStatus($er.StatusRegistration)"
                                         :src="getImageUrl(`status-${$er.StatusRegistration}`)"
-                                        :title="getStatus($er.StatusRegistration, $er.Enabled)" />
+                                        :title="getStatus($er.StatusRegistration)" />
                                 </td>
                                 <td class="ereg-name">
                                     {{ $er.Name }}
