@@ -174,12 +174,12 @@ watch([url, widgetHeight], () => {
     setFieldValue('signWidgetHeight', widgetHeight.value as number);
   }
 });
-const preparedValues = computed((): OutFormValues => ({
+const preparedValues = computed(() => ({
   edrCheck: values.edrCheckEnabled,
   authType: values.authType,
   widget: {
     url: values.widgetUrl,
-    height: values.widgetHeight
+    height: values.widgetHeight.toString()
   },
   registryIdGovUa: {
     clientId: values.clientId,
@@ -190,7 +190,7 @@ const preparedValues = computed((): OutFormValues => ({
     signWidget: {
       copyFromAuthWidget: values.copyFromAuthWidget,
       url: values.signWidgetUrl,
-      height: values.signWidgetHeight,
+      height: values.signWidgetHeight.toString(),
     }
   }
 }));
