@@ -13,15 +13,16 @@ import (
 )
 
 const (
-	publicAPISystemType     = "publicAPI-system"
-	publicAPIValuesIndex    = "publicApi"
-	publicAPIStatusInactive = "inactive"
-	publicAPIStatusFailed   = "failed"
-	publicAPIStatusActive   = "active"
-	publicAPIStatusDisabled = "disabled"
-	mrTargetPublicAPIReg    = "publicAPI-reg"
-	MRLabelPublicApiTarget  = "console/target"
-	MRLabelPublicApiName    = "publicAPI-reg-name"
+	publicAPISystemType       = "publicAPI-system"
+	publicAPIValuesIndex      = "publicApi"
+	publicAPIStatusInactive   = "inactive"
+	publicAPIStatusFailed     = "failed"
+	publicAPIStatusActive     = "active"
+	publicAPIStatusDisabled   = "disabled"
+	mrTargetPublicAPIReg      = "publicAPI-reg"
+	MRLabelPublicApiTarget    = "console/target"
+	MRLabelPublicApiSubTarget = "console/sub-target"
+	MRLabelPublicApiName      = "publicAPI-reg-name"
 )
 
 func (a *App) editPublicAPIReg(ctx *gin.Context) (router.Response, error) {
@@ -58,6 +59,7 @@ func (a *App) editPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 		a.Gerrit, []string{},
 		MRLabel{Key: MRLabelPublicApiTarget, Value: mrTargetPublicAPIReg},
 		MRLabel{Key: MRLabelPublicApiName, Value: ctx.PostForm("reg-name")},
+		MRLabel{Key: MRLabelPublicApiSubTarget, Value: "edition"},
 	); err != nil {
 		return nil, fmt.Errorf("unable to create MR, %w", err)
 	}
@@ -102,6 +104,7 @@ func (a *App) addPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 		a.Gerrit, []string{},
 		MRLabel{Key: MRLabelPublicApiTarget, Value: mrTargetPublicAPIReg},
 		MRLabel{Key: MRLabelPublicApiName, Value: ctx.PostForm("reg-name")},
+		MRLabel{Key: MRLabelPublicApiSubTarget, Value: "creation"},
 	); err != nil {
 		return nil, fmt.Errorf("unable to create MR, %w", err)
 	}
@@ -123,10 +126,18 @@ func (a *App) disablePublicAPIReg(ctx *gin.Context) (router.Response, error) {
 	}
 
 	found := false
+	var action string
+
 	for i, v := range vals.PublicApi {
 		if v.Name == systemName {
 			vals.PublicApi[i].Enabled = !vals.PublicApi[i].Enabled
 			found = true
+
+			if vals.PublicApi[i].Enabled {
+				action = "enable"
+			} else {
+				action = "disable"
+			}
 			break
 		}
 	}
@@ -143,6 +154,7 @@ func (a *App) disablePublicAPIReg(ctx *gin.Context) (router.Response, error) {
 		a.Gerrit, []string{},
 		MRLabel{Key: MRLabelPublicApiTarget, Value: mrTargetPublicAPIReg},
 		MRLabel{Key: MRLabelPublicApiName, Value: ctx.PostForm("reg-name")},
+		MRLabel{Key: MRLabelPublicApiSubTarget, Value: action},
 	); err != nil {
 		return nil, fmt.Errorf("unable to create MR, %w", err)
 	}
@@ -191,6 +203,7 @@ func (a *App) removePublicAPIReg(ctx *gin.Context) (router.Response, error) {
 		a.Gerrit, []string{},
 		MRLabel{Key: MRLabelPublicApiTarget, Value: mrTargetPublicAPIReg},
 		MRLabel{Key: MRLabelPublicApiName, Value: ctx.PostForm("reg-name")},
+		MRLabel{Key: MRLabelPublicApiSubTarget, Value: "deletion"},
 	); err != nil {
 		return nil, fmt.Errorf("unable to create MR, %w", err)
 	}
