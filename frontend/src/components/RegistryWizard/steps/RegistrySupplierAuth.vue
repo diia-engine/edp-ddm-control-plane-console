@@ -38,7 +38,7 @@ export default defineComponent({
       <span v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.beginValidation && pageRoot.$data.wizard.tabs.supplierAuthentication.heightIsNotNumber">Перевірте формат поля</span>
   </div>
 
-  <div v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.data.authType == 'id-gov-ua-officer-redirector'" class="rc-form-group">
+  <div v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.data.authType == 'id-gov-ua-officer-redirector'">
       <div class="rc-form-group"
             :class="{'error': pageRoot.$data.wizard.tabs.supplierAuthentication.beginValidation && pageRoot.$data.wizard.tabs.supplierAuthentication.data.clientId == ''}">
           <label for="diia-client-id">Ідентифікатор клієнта (client_id) <b class="red-star">*</b></label>
@@ -53,15 +53,23 @@ export default defineComponent({
       </div>
   </div>
 
-  <h2>Самостійна реєстрація користувачів</h2>
-  <p>Передбачає наявність у реєстрі попередньо змодельованого бізнес-процесу самореєстрації.</p>
-  <div class="toggle-switch backup-switch">
-    <input v-model="pageRoot.$data.wizard.tabs.supplierAuthentication.selfRegistrationEnabled" class="switch-input"
-           type="checkbox" id="self-registration-switch-input" name="self-registration-enabled" />
-    <label for="self-registration-switch-input">Toggle</label>
-    <span>Дозволити самостійну реєстрацію</span>
-  </div>
-  <div class="wizard-warning" v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.selfRegistrationEnabled">
-    При вимкненні можливості, користувачі, які почали процес самореєстрації, не зможуть виконати свої задачі, якщо вони змодельовані.
+  <div class="rc-self-registration">
+    <h2>Самостійна реєстрація користувачів</h2>
+    <p>Передбачає наявність у реєстрі попередньо змодельованого бізнес-процесу самореєстрації.</p>
+    <div class="toggle-switch backup-switch">
+      <input v-model="pageRoot.$data.wizard.tabs.supplierAuthentication.selfRegistrationEnabled" class="switch-input"
+            type="checkbox" id="self-registration-switch-input" name="self-registration-enabled" />
+      <label for="self-registration-switch-input">Toggle</label>
+      <span>Дозволити самостійну реєстрацію</span>
+    </div>
+    <div class="wizard-warning" v-if="pageRoot.$data.wizard.tabs.supplierAuthentication.selfRegistrationEnabled">
+      При вимкненні можливості, користувачі, які почали процес самореєстрації, не зможуть виконати свої задачі, якщо вони змодельовані.
+    </div>
   </div>
 </template>
+
+<style scoped>
+  .rc-self-registration {
+    margin-top: 32px;
+  }
+</style>

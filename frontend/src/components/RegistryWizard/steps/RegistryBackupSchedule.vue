@@ -162,7 +162,7 @@ function backupDeletePlaceSubmit() {
 function enabledChange () {
   beginValidation.value = false;
   cronSchedule.value = registryValues.global?.registryBackup.schedule;
-  days.value = registryValues.global?.registryBackup.expiresInDays;
+  days.value = registryValues.global?.registryBackup.expiresInDays || "";
   obcCronExpression.value = registryValues.global?.registryBackup.obc.cronExpression;
   obcBackupBucket.value = registryValues.global?.registryBackup.obc.backupBucket;
   obcEndpoint.value = registryValues.global?.registryBackup.obc.endpoint;
