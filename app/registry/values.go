@@ -7,9 +7,6 @@ const (
 	GlobalValuesIndex         = "global"
 	ResourcesIndex            = "registry"
 	CrunchyPostgresIndex      = "crunchyPostgres"
-	PortalsIndex              = "portals"
-	WhiteListIPIndex          = "whiteListIP"
-	NotificationsIndex        = "notifications"
 )
 
 type Values struct {
@@ -65,10 +62,10 @@ type RegistryBackup struct {
 }
 
 type OBC struct {
-	CronExpression string `yaml:"cronExpression,omitempty" json:"cronExpression"`
-	BackupBucket   string `yaml:"backupBucket,omitempty" json:"backupBucket"`
-	Endpoint       string `yaml:"endpoint,omitempty" json:"endpoint"`
-	Credentials    string `yaml:"credentials,omitempty" json:"credentials"`
+	CronExpression string `yaml:"cronExpression" json:"cronExpression"`
+	BackupBucket   string `yaml:"backupBucket" json:"backupBucket"`
+	Endpoint       string `yaml:"endpoint" json:"endpoint"`
+	Credentials    string `yaml:"credentials" json:"credentials"`
 }
 
 type Keycloak struct {
@@ -115,7 +112,11 @@ type SignWidget struct {
 }
 
 type Notifications struct {
-	Email map[string]interface{} `yaml:"email" json:"email"`
+	Email NotificationsEmail `yaml:"email" json:"email"`
+}
+
+type NotificationsEmail struct {
+	Type string `yaml:"type" json:"type"`
 }
 
 type ExternalSystem struct {
@@ -154,9 +155,9 @@ type Global struct {
 }
 
 type WhiteListIP struct {
-	AdminRoutes   string `yaml:"adminRoutes,omitempty" json:"adminRoutes"`
-	CitizenPortal string `yaml:"citizenPortal,omitempty" json:"citizenPortal"`
-	OfficerPortal string `yaml:"officerPortal,omitempty" json:"officerPortal"`
+	AdminRoutes   string `yaml:"adminRoutes" json:"adminRoutes"`
+	CitizenPortal string `yaml:"citizenPortal" json:"citizenPortal"`
+	OfficerPortal string `yaml:"officerPortal" json:"officerPortal"`
 }
 
 type Trembita struct {
