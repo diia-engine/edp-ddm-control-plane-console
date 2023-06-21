@@ -16,6 +16,7 @@ const (
 	idGovUASecretPath         = "officer-id-gov-ua-client-info"
 	idGovUASecretClientID     = "clientId"
 	idGovUASecretClientSecret = "clientSecret"
+	emptyClientSecret         = "*****"
 )
 
 func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *Values,
@@ -50,19 +51,25 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 		}
 
 		values.Keycloak.IdentityProviders.IDGovUA.URL = r.SupAuthURL
-		if r.SupAuthClientID != "" && r.SupAuthClientSecret != "" && r.SupAuthClientSecret != "*****" {
+		if r.SupAuthClientID != "" && r.SupAuthClientSecret != "" {
 			secretPath := a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", idGovUASecretPath,
 				time.Now().Format("20060201T150405Z")))
 
-			secretChanged, err := a.idGovUASecretChanged(secretPath, r)
+			idGovUaCredsChanged, oldClientSecret, err := a.idGovUASecretChanged(values.Keycloak.IdentityProviders.IDGovUA.SecretKey, r)
 			if err != nil {
 				return false, fmt.Errorf("unable to get secret, %w", err)
 			}
 
-			if secretChanged {
+			if idGovUaCredsChanged {
+				var clientSecret string
+				if r.SupAuthClientSecret == emptyClientSecret {
+					clientSecret = oldClientSecret
+				} else {
+					clientSecret = r.SupAuthClientSecret
+				}
 				secrets[secretPath] = map[string]interface{}{
 					idGovUASecretClientID:     r.SupAuthClientID,
-					idGovUASecretClientSecret: r.SupAuthClientSecret,
+					idGovUASecretClientSecret: clientSecret,
 				}
 
 				values.Keycloak.IdentityProviders.IDGovUA.SecretKey = secretPath
@@ -93,29 +100,29 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 	return true, nil
 }
 
-func (a *App) idGovUASecretChanged(path string, r *registry) (bool, error) {
+func (a *App) idGovUASecretChanged(path string, r *registry) (bool, string, error) {
 	data, err := a.Vault.Read(path)
 	if err != nil && !errors.Is(err, vault.ErrSecretIsNil) {
-		return false, fmt.Errorf("unable to get secret, %w", err)
+		return false, "", fmt.Errorf("unable to get secret, %w", err)
 	}
 
 	if errors.Is(err, vault.ErrSecretIsNil) {
-		return true, nil
+		return true, "", nil
 	}
 
 	clID, ok := data[idGovUASecretClientID]
 	if !ok {
-		return true, nil
+		return true, "", nil
 	}
 
 	clSecret, ok := data[idGovUASecretClientSecret]
 	if !ok {
-		return true, nil
+		return true, "", nil
 	}
 
-	if clID != r.SupAuthClientID || clSecret != r.SupAuthClientSecret {
-		return true, nil
+	if clID != r.SupAuthClientID || (clSecret != r.SupAuthClientSecret && r.SupAuthClientSecret != emptyClientSecret) {
+		return true, clSecret.(string), nil
 	}
 
-	return false, nil
+	return false, "", nil
 }
