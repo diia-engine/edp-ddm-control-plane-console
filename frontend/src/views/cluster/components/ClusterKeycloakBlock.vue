@@ -6,10 +6,11 @@ interface ClusterKeycloakBlockProps {
     clusterKeycloakDNSCustomHosts: any;
     clusterSettings: any;
     backdropShow: any;
+    dnsManual: string;
 }
 
 const props = defineProps<ClusterKeycloakBlockProps>();
-const { keycloakHostname, clusterKeycloakDNSCustomHosts, clusterSettings, backdropShow } = toRefs(props);
+const { keycloakHostname, clusterKeycloakDNSCustomHosts, clusterSettings, backdropShow, dnsManual } = toRefs(props);
 
 </script>
 <script lang="ts">
@@ -83,7 +84,7 @@ export default {
             Для додаткових DNS необхідно провести зовнішню конфігурацію записів у реєстранта доменних імен.</p>
 
         <div class="keycloak-dns-manual">
-            <a href="#">Інструкція з зовнішньої конфігурації</a>
+            <a :href="dnsManual" target="_blank">Інструкція з зовнішньої конфігурації</a>
         </div>
 
 

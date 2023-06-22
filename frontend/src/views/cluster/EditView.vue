@@ -11,6 +11,7 @@ interface PlatformUpdateTemplateVariables {
     backupSchedule: any;
     cidrConfig: any;
     keycloakHostname: any;
+    dnsManual: string;
 }
 const variables = inject('TEMPLATE_VARIABLES') as PlatformUpdateTemplateVariables;
 const updateBranches = variables?.updateBranches;
@@ -21,6 +22,7 @@ const adminsData = variables?.admins;
 const backupSchedule = variables?.backupSchedule;
 const cidrConfig = variables?.cidrConfig;
 const keycloakHostname = variables?.keycloakHostname;
+const dnsManual = variables?.dnsManual;
 
 </script>
 <script lang="ts">
@@ -857,7 +859,7 @@ export default {
                 <div class="wizard-tab" v-show="clusterSettings.activeTab == 'keycloakDNS'">
                     <cluster-keycloak-block :keycloak-hostname="keycloakHostname"
                         :cluster-keycloak-d-n-s-custom-hosts="customHosts" :cluster-settings="clusterSettings"
-                        :backdrop-show="backdropShow" @submitKeycloakDNSForm="submitKeycloakDNSForm"
+                        :backdrop-show="backdropShow" :dns-manual="dnsManual" @submitKeycloakDNSForm="submitKeycloakDNSForm"
                         @editClusterKeycloakDNSHost="editClusterKeycloakDNSHost"
                         @checkClusterDeleteKeycloakDNS="checkClusterDeleteKeycloakDNS"
                         @showClusterKeycloakDNSForm="showClusterKeycloakDNSForm"

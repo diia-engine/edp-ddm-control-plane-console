@@ -83,13 +83,12 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 	}
 
 	responseParams := gin.H{
-		"dnsManual":            dnsManual,
-		"registry":             reg,
-		"page":                 "registry",
-		"hwINITemplateContent": hwINITemplateContent,
-		"updateBranches":       branches,
-		"hasUpdate":            hasUpdate,
-		"action":               "edit",
+		"dnsManual":      dnsManual,
+		"registry":       reg,
+		"page":           "registry",
+		"updateBranches": branches,
+		"hasUpdate":      hasUpdate,
+		"action":         "edit",
 	}
 
 	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
@@ -111,6 +110,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 	}
 
 	responseParams["templateArgs"] = string(templateArgs)
+	responseParams["hwINITemplateContent"] = hwINITemplateContent
 
 	return router.MakeHTMLResponse(200, "registry/edit.html", responseParams), nil
 }

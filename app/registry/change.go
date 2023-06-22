@@ -100,11 +100,20 @@ func (a *App) viewChange(ctx *gin.Context) (response router.Response, retErr err
 		return nil, fmt.Errorf("unable to get changes, %w", err)
 	}
 
-	return router.MakeHTMLResponse(200, "registry/change.html", gin.H{
-		"page":     "registry",
+	rspParams := gin.H{
 		"changes":  changes,
 		"change":   changeInfo,
 		"changeID": changeID,
+	}
+
+	templateArgs, err := json.Marshal(rspParams)
+	if err != nil {
+		return nil, errors.New("unable to encode template arguments")
+	}
+
+	return router.MakeHTMLResponse(200, "registry/change.html", gin.H{
+		"page":         "registry",
+		"templateArgs": string(templateArgs),
 	}), nil
 }
 

@@ -182,7 +182,7 @@ export default defineComponent({
                     </template>
 
                     <button v-if="templateVariables.action === 'edit'" v-show="pageRoot.$data.wizard.activeTab != 'update'" class="wizard-next" type="button"
-                            @click="pageRoot.wizardEditSubmit">Підтвердити</button>
+                            @click="pageRoot.wizardEditSubmit" :disabled="pageRoot.$data.disabled">Підтвердити</button>
                 </div>
             </form>
         </div>

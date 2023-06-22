@@ -86,12 +86,11 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 	}
 
 	rspParams := gin.H{
-		"dnsManual":            dnsManual,
-		"page":                 "cluster",
-		"updateBranches":       branches,
-		"hasUpdate":            hasUpdate,
-		"hwINITemplateContent": hwINITemplateContent,
-		"values":               string(valuesJs),
+		"dnsManual":      dnsManual,
+		"page":           "cluster",
+		"updateBranches": branches,
+		"hasUpdate":      hasUpdate,
+		"values":         string(valuesJs),
 	}
 
 	for _, f := range a.editDataLoaders() {

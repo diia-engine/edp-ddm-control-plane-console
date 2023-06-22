@@ -139,17 +139,16 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 	}
 
 	responseParams := gin.H{
-		"dnsManual":            dnsManual,
-		"page":                 "registry",
-		"gerritProjects":       prjs,
-		"gerritBranches":       gerritBranches,
-		"model":                registry{KeyDeviceType: KeyDeviceTypeFile},
-		"hwINITemplateContent": hwINITemplateContent,
-		"smtpConfig":           "{}",
-		"action":               "create",
-		"registryData":         "{}",
-		"keycloakHostname":     keycloakHostname,
-		"keycloakHostnames":    keycloakHostnames,
+		"dnsManual":         dnsManual,
+		"page":              "registry",
+		"gerritProjects":    prjs,
+		"gerritBranches":    gerritBranches,
+		"model":             registry{KeyDeviceType: KeyDeviceTypeFile},
+		"smtpConfig":        "{}",
+		"action":            "create",
+		"registryData":      "{}",
+		"keycloakHostname":  keycloakHostname,
+		"keycloakHostnames": keycloakHostnames,
 	}
 
 	templateArgs, templateErr := json.Marshal(responseParams)
@@ -158,6 +157,7 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 	}
 
 	responseParams["templateArgs"] = string(templateArgs)
+	responseParams["hwINITemplateContent"] = hwINITemplateContent
 
 	return router.MakeHTMLResponse(200, "registry/create.html", responseParams), nil
 }

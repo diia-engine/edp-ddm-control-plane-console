@@ -95,6 +95,7 @@ export default defineComponent({
   },
   data() {
     return {
+      disabled: false,
       registryValues: null,
       registryFormSubmitted: false,
       adminsValue: "",
@@ -279,6 +280,7 @@ export default defineComponent({
       const tab = this.wizard.tabs[this.wizard.activeTab];
 
       this.callValidator(tab).then(() => {
+        this.disabled = true;
         this.registryFormSubmit(event);
         this.$nextTick(() => {
           childRefs.registryWizardForm.submit();
