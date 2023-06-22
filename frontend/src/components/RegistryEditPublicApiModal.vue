@@ -23,7 +23,7 @@ const props = defineProps<RegistryEditPublicApiModalProps>();
 const { publicApiPopupShow, publicApiValues, publicApiList, registry } = toRefs(props);
 
 const validationSchema = yup.object({
-  name: yup.string().required().min(3).max(32).matches(/^[a-z0-9]([a-z0-9-]){1,30}[a-z0-9]$/i).test({
+  name: yup.string().required().min(3).max(32).matches(/^[a-z0-9]([a-z0-9-]){1,30}[a-z0-9]$/).test({
     message: 'isUnique',
     test: function (value) {
       if (publicApiValues.value?.name) {
