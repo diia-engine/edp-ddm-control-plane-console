@@ -2,8 +2,48 @@
 interface WizardTemplateVariables {
   registryValues: any;
 }
-import {defineComponent, type PropType} from 'vue';
+import { defineComponent, type PropType } from 'vue';
+import * as Yup from 'yup';
+import { useForm, useField } from 'vee-validate';
+import TextField from '@/components/common/TextField.vue';
+const MAX_POOL_SIZE = '10';
+const REGEX_POSITIVE_VALUE = /^\d*[1-9]\d*$/;
+
 export default defineComponent({
+  components: { TextField },
+  setup(props) {
+    const validationSchema = Yup.object({
+      restApi: Yup.string().required().matches(REGEX_POSITIVE_VALUE),
+      kafkaApi: Yup.string().required().matches(REGEX_POSITIVE_VALUE),
+    });
+    const { errors, validate } = useForm({
+      validationSchema,
+      initialValues: {
+        restApi: props.templateVariables.registryValues?.global.registry.restApi.datasource?.maxPoolSize || MAX_POOL_SIZE,
+        kafkaApi: props.templateVariables.registryValues?.global.registry.kafkaApi.datasource?.maxPoolSize || MAX_POOL_SIZE,
+      }
+    });
+
+    const { value: restApi } = useField('restApi');
+    const { value: kafkaApi } = useField('kafkaApi');
+
+    function validator() {
+      return new Promise((resolve) => {
+        validate().then((res) => {
+          if (res.valid) {
+            resolve(true);
+          }
+        });
+      });
+    }
+
+    return {
+      restApi,
+      kafkaApi,
+      errors,
+      validator
+    };
+  },
   props: {
     templatePreloadedData: Object,
     formSubmitted: Boolean,
@@ -75,7 +115,7 @@ export default defineComponent({
     },
     encodeRegistryResources() {
       const prepare = {} as Record<string, unknown>;
-      this.registryResources.addedCats.forEach(function (el: any) {
+      this.registryResources.addedCats.forEach((el: any) => {
         const cloneEL = JSON.parse(JSON.stringify(el));
         const envVars = {} as Record<string, unknown>;
         cloneEL.config.container.envVars.forEach(function (el: any) {
@@ -85,10 +125,25 @@ export default defineComponent({
         prepare[cloneEL.name] = {
           istio: cloneEL.config.istio,
           container: cloneEL.config.container,
+          datasource: this.addDataSource(el.name)
         };
       });
       this.cleanEmptyProperties(prepare);
       this.registryResources.encoded = JSON.stringify(prepare);
+    },
+    addDataSource(name: string) {
+      switch (name) {
+        case "restApi":
+          return {
+            maxPoolSize: this.restApi,
+          };
+        case "kafkaApi":
+          return {
+            maxPoolSize: this.kafkaApi,
+          };
+        default:
+          break;
+      }
     },
     cleanEmptyProperties(obj: Record<string, unknown>) {
       if (this.isObject(obj)) {
@@ -205,7 +260,7 @@ export default defineComponent({
       for (const i in data) {
         this.removeResourcesCatFromList(i);
         if ("container" in data[i] &&
-            this.isObject(data[i].container) &&  "envVars" in data[i].container) {
+          this.isObject(data[i].container) && "envVars" in data[i].container) {
           data[i].container.envVars = this.decodeResourcesEnvVars(data[i].container.envVars);
         }
         const mergedData = this.mergeResource(data[i]);
@@ -247,9 +302,13 @@ export default defineComponent({
 </script>
 
 <style scoped>
-  .crunchy-postgres {
-    margin-top: 16px;
-  }
+.crunchy-postgres {
+  margin-top: 16px;
+}
+
+.rc-form-group-mb {
+  margin-bottom: 24px;
+}
 </style>
 
 <template>
@@ -301,6 +360,26 @@ export default defineComponent({
                   </div>
                   <a class="env-add-lnk" @click="addEnvVar(cat.config.container.envVars, $event)" href="#">Додати змінну оточення</a>
               </div>
+          </div>
+          <div v-if="cat.name === 'restApi'" class="rc-form-group rc-form-group-mb">
+            <h5>Database connection parameters</h5>
+            <TextField
+              label="Maximum pool size"
+              description="Допустиме значення параметру > 0"
+              name="restApi"
+              v-model="restApi"
+              :error="errors.restApi"
+            />
+          </div>
+          <div v-if="cat.name === 'kafkaApi'" class="rc-form-group rc-form-group-mb">
+            <h5>Database connection parameters</h5>
+            <TextField
+              label="Maximum pool size"
+              description="Допустиме значення параметру > 0"
+              name="kafkaApi"
+              v-model="kafkaApi"
+              :error="errors.kafkaApi"
+            />
           </div>
       </div>
 

@@ -144,7 +144,7 @@ export default defineComponent({
             validatorRef: 'keyVerificationTab',
           },
           resources: {
-            title: "Ресурси реєстру", visible: true,
+            title: "Ресурси реєстру", visible: true, validatorRef: 'resourcesTab',
           },
           dns: { title: "DNS", validated: false, data: { officer: "", citizen: "", }, beginValidation: false, formatError: { officer: false, citizen: false, }, requiredError: { officer: false, citizen: false, }, typeError: { officer: false, citizen: false, }, editVisible: { officer: false, citizen: false }, validator: this.wizardDNSValidation, visible: true, preloadValues: {} },
           cidr: { title: "Обмеження доступу", validated: true, visible: true, },
