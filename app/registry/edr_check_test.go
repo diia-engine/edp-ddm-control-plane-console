@@ -1,9 +1,10 @@
 package registry
 
 import (
+	"testing"
+
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestPrepareEDRCheckTrue(t *testing.T) {
@@ -18,7 +19,7 @@ func TestPrepareEDRCheckTrue(t *testing.T) {
 		EDRCheckEnabled: "true",
 	}
 
-	result := app.prepareEDRCheck(&ctx, &r, &values, secrets, &mrActions)
+	_, result := app.prepareEDRCheck(&ctx, &r, &values, secrets, &mrActions)
 
 	assert.Nil(t, result)
 	assert.Equal(t, values.Keycloak.CitizenAuthFlow.EDRCheck, true)
@@ -37,9 +38,9 @@ func TestPrepareEDRCheckFalse(t *testing.T) {
 		EDRCheckEnabled: "",
 	}
 
-	result := app.prepareEDRCheck(&ctx, &r, &values, secrets, &mrActions)
+	_, result := app.prepareEDRCheck(&ctx, &r, &values, secrets, &mrActions)
 
 	assert.Nil(t, result)
 	assert.Equal(t, values.Keycloak.CitizenAuthFlow.EDRCheck, false)
-	assert.Equal(t, values.OriginalYaml[keycloakIndex], values.Keycloak)
+	assert.NotEqual(t, values.OriginalYaml[keycloakIndex], values.Keycloak)
 }

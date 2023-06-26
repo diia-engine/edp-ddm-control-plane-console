@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -248,19 +249,23 @@ func (a *App) checkTrembitaClientExists(ctx *gin.Context) (rsp router.Response, 
 }
 
 func (a *App) prepareTrembitaIPList(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+	valuesChanged := false
+
 	if r.TrembitaIPList != "" {
 		var ipList []string
 		if err := json.Unmarshal([]byte(r.TrembitaIPList), &ipList); err != nil {
-			return fmt.Errorf("unable to decode trembita ip list %w", err)
+			return false, fmt.Errorf("unable to decode trembita ip list %w", err)
 		}
 
+		valuesChanged = !reflect.DeepEqual(values.Trembita.IPList, ipList)
 		values.Trembita.IPList = ipList
 		values.OriginalYaml[trembitaValuesKey] = values.Trembita
 	} else if r.TrembitaIPList == "" && len(values.Trembita.IPList) > 0 {
 		values.Trembita.IPList = []string{}
 		values.OriginalYaml[trembitaValuesKey] = values.Trembita
+		valuesChanged = true
 	}
 
-	return nil
+	return valuesChanged, nil
 }

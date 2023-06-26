@@ -149,7 +149,9 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	mockDescription := "mock description"
 	cbService.On("Get", "mock").Return(&codebase.Codebase{
 		ObjectMeta: metav1.ObjectMeta{Name: "mock"},
-		Spec:       codebase.CodebaseSpec{Description: &mockDescription, Repository: &codebase.Repository{}},
+		Spec: codebase.CodebaseSpec{Description: &mockDescription, Repository: &codebase.Repository{
+			Url: "mock-url",
+		}, DefaultBranch: "master"},
 	}, nil)
 	cbService.On("GetBranchesByCodebase", mock.Anything, "mock").Return([]codebase.CodebaseBranch{
 		{
@@ -219,6 +221,14 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 						MaxConnections: 150},
 				},
 				StorageSize: "10Gi",
+			},
+			Notifications: registry.Notifications{Email: map[string]interface{}{
+				"type": registry.SMTPTypePlatform,
+			}},
+		},
+		Portals: registry.Portals{
+			Officer: registry.Portal{
+				CustomDNS: registry.CustomDNS{Enabled: true, Host: "officer.com"},
 			},
 		},
 		Administrators: []registry.Admin{

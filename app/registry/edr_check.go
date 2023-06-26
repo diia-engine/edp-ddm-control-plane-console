@@ -7,8 +7,13 @@ const (
 )
 
 func (a *App) prepareEDRCheck(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+	if values.Keycloak.CitizenAuthFlow.EDRCheck == (r.EDRCheckEnabled != "") {
+		return false, nil
+	}
+
 	values.Keycloak.CitizenAuthFlow.EDRCheck = r.EDRCheckEnabled != ""
 	values.OriginalYaml[keycloakIndex] = values.Keycloak
-	return nil
+	
+	return true, nil
 }

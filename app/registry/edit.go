@@ -121,6 +121,7 @@ func IsRegistry194Lower(registryVersion *version.Version) bool {
 }
 
 func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParams gin.H, r *registry) error {
+	//TODO: refactor to values struct
 	if err := a.loadSMTPConfig(values.OriginalYaml, rspParams); err != nil {
 		return errors.Wrap(err, "unable to load smtp config")
 	}
@@ -130,14 +131,8 @@ func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParam
 		return errors.Wrap(err, "unable to load admins config")
 	}
 
-	//TODO: refactor to values struct
 	if err := a.loadOBCConfig(values, r); err != nil {
 		return errors.Wrap(err, "unable to load obc config")
-	}
-
-	//TODO: refactor to values struct
-	if err := a.loadRegistryResourcesConfig(values.OriginalYaml, r); err != nil {
-		return errors.Wrap(err, "unable to load resources config")
 	}
 
 	if err := a.loadIDGovUAClientID(values); err != nil {
@@ -174,20 +169,9 @@ func (a *App) loadIDGovUAClientID(values *Values) error {
 		return nil
 	}
 
-	modPath := ModifyVaultPath(values.Keycloak.IdentityProviders.IDGovUA.SecretKey)
-	s, err := a.Vault.Read(modPath)
+	dataDict, err := a.Vault.Read(values.Keycloak.IdentityProviders.IDGovUA.SecretKey)
 	if err != nil {
 		return fmt.Errorf("unable to load id-gov-ua secret, err: %w", err)
-	}
-
-	data, ok := s.Data["data"]
-	if !ok {
-		return nil
-	}
-
-	dataDict, ok := data.(map[string]interface{})
-	if !ok {
-		return nil
 	}
 
 	d, ok := dataDict[idGovUASecretClientID]
@@ -201,30 +185,6 @@ func (a *App) loadIDGovUAClientID(values *Values) error {
 	}
 
 	values.Keycloak.IdentityProviders.IDGovUA.ClientID = str
-	return nil
-}
-
-func (a *App) loadRegistryResourcesConfig(values map[string]interface{}, r *registry) error {
-	global, ok := values[GlobalValuesIndex]
-	if !ok {
-		return nil
-	}
-	globalDict, ok := global.(map[string]interface{})
-	if !ok {
-		return nil
-	}
-
-	resources, ok := globalDict[ResourcesValuesKey]
-	if !ok {
-		return nil
-	}
-
-	resJS, err := json.Marshal(resources)
-	if err != nil {
-		return errors.Wrap(err, "unable to encode resources config")
-	}
-
-	r.Resources = string(resJS)
 	return nil
 }
 
@@ -267,20 +227,9 @@ func (a *App) loadOBCConfig(values *Values, r *registry) error {
 		return nil
 	}
 
-	modPath := ModifyVaultPath(values.Global.RegistryBackup.OBC.Credentials)
-	s, err := a.Vault.Read(modPath)
+	dataDict, err := a.Vault.Read(values.Global.RegistryBackup.OBC.Credentials)
 	if err != nil {
 		return fmt.Errorf("unable to load obc credential, err: %w", err)
-	}
-
-	data, ok := s.Data["data"]
-	if !ok {
-		return nil
-	}
-
-	dataDict, ok := data.(map[string]interface{})
-	if !ok {
-		return nil
 	}
 
 	login, ok := dataDict[a.Config.BackupBucketAccessKeyID]
@@ -355,7 +304,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 	}
 
 	registryName := ctx.Param("name")
-
+	//TODO: move this to middleware
 	allowed, err := cbService.CheckIsAllowedToUpdate(registryName, k8sService)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check access")
@@ -401,40 +350,39 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		return errors.Wrap(err, "unable to get values from git")
 	}
 
-	initialValuesHash, err := MapHash(values.OriginalYaml)
-	if err != nil {
-		return errors.Wrap(err, "unable to hash values")
-	}
-
-	vaultSecretData := make(map[string]map[string]interface{})
-	mrActions := make([]string, 0)
+	var (
+		vaultSecretData = make(map[string]map[string]interface{})
+		mrActions       = make([]string, 0)
+		valuesChanged   = false
+		repoFiles       = make(map[string]string)
+	)
 
 	for _, proc := range a.createUpdateRegistryProcessors() {
-		if err := proc(ginContext, r, values, vaultSecretData, &mrActions); err != nil {
+		procValuesChanged, err := proc(ginContext, r, values, vaultSecretData, &mrActions)
+		if err != nil {
 			return errors.Wrap(err, "error during registry create")
+		}
+		if procValuesChanged {
+			valuesChanged = true
 		}
 	}
 
-	repoFiles := make(map[string]string)
-
-	if _, err := PrepareRegistryKeys(keyManagement{
+	keysModified, err := PrepareRegistryKeys(keyManagement{
 		r: r,
 		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
 			time.Now().Format("20060201T150405Z"))),
-	}, ginContext.Request, vaultSecretData, values.OriginalYaml, repoFiles); err != nil {
+	}, ginContext.Request, vaultSecretData, values.OriginalYaml, repoFiles)
+	if err != nil {
 		return errors.Wrap(err, "unable to create registry keys")
 	}
 
-	if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
-		return fmt.Errorf("unable to cache repo file, %w", err)
+	if keysModified {
+		if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
+			return fmt.Errorf("unable to cache repo file, %w", err)
+		}
 	}
 
-	changedValuesHash, err := MapHash(values.OriginalYaml)
-	if err != nil {
-		return errors.Wrap(err, "unable to get values map hash")
-	}
-
-	if initialValuesHash != changedValuesHash || len(repoFiles) > 0 {
+	if valuesChanged || len(repoFiles) > 0 || keysModified {
 		if err := CreateEditMergeRequest(ginContext, r.Name, values.OriginalYaml, a.Gerrit, mrActions); err != nil {
 			return errors.Wrap(err, "unable to create edit merge request")
 		}

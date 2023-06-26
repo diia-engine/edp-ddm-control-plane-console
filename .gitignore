@@ -14,3 +14,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+ddm-admin-console
+control-plane-console
+default.env

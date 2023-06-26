@@ -11,21 +11,28 @@ import (
 )
 
 func (a *App) prepareKeycloakCustomHostname(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
 	keycloakDefaultHostname, err := LoadKeycloakDefaultHostname(ctx, a.KeycloakDefaultHostname, a.EDPComponent)
 	if err != nil {
-		return fmt.Errorf("unable to load keycloak default hostname")
+		return false, fmt.Errorf("unable to load keycloak default hostname")
 	}
 
+	valuesChanged := false
+
 	if keycloakDefaultHostname == r.KeycloakCustomHostname {
+		valuesChanged = values.Keycloak.CustomHost != ""
 		values.Keycloak.CustomHost = ""
 	} else if r.KeycloakCustomHostname != "" && keycloakDefaultHostname != r.KeycloakCustomHostname {
+		valuesChanged = values.Keycloak.CustomHost != r.KeycloakCustomHostname
 		values.Keycloak.CustomHost = r.KeycloakCustomHostname
 	}
 
-	values.OriginalYaml["keycloak"] = values.Keycloak
+	if !valuesChanged {
+		return false, nil
+	}
 
-	return nil
+	values.OriginalYaml["keycloak"] = values.Keycloak
+	return true, nil
 }
 
 func (a *App) loadKeycloakHostnames() ([]string, error) {

@@ -82,19 +82,9 @@ func (a *App) getBasicUsername(ctx *gin.Context) (rsp router.Response, retErr er
 		return nil, fmt.Errorf("unable to find registry, %w", err)
 	}
 
-	s, err := a.Vault.Read(ModifyVaultPath(externalSystemsSecretPath(a.vaultRegistryPath(registryName))))
+	dataDict, err := a.Vault.Read(externalSystemsSecretPath(a.vaultRegistryPath(registryName)))
 	if err != nil {
 		return nil, fmt.Errorf("unable to load id-gov-ua secret, err: %w", err)
-	}
-
-	data, ok := s.Data["data"]
-	if !ok {
-		return nil, errors.New("no data")
-	}
-
-	dataDict, ok := data.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("wrong data")
 	}
 
 	d, ok := dataDict[fmt.Sprintf("external-systems.%s.auth.secret.username", systemRegsitryName)]

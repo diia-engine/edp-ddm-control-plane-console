@@ -10,11 +10,6 @@ export default defineComponent({
     'loadRegistryValues',
     'removeResourcesCatFromList',
     'decodeResourcesEnvVars',
-    'preloadRegistryResources',
-    'mergeResource',
-    'isObject',
-    'mergeDeep',
-    'wizardDNSEditVisibleChange',
     'wizardEditSubmit',
     'wizardNext',
     'dnsPreloadDataFromValues',
@@ -65,11 +60,6 @@ export default defineComponent({
       else {
         this.smtpServerType = "platform-mail-server";
       }
-    }
-
-    if (childRefs.hasOwnProperty("resourcesEditConfig") && childRefs.resourcesEditConfig.value !== "") {
-      const resourcesConfig = JSON.parse(childRefs.resourcesEditConfig.value);
-      this.preloadRegistryResources(resourcesConfig);
     }
 
     if (childRefs.hasOwnProperty("wizardAction")) {
@@ -268,6 +258,7 @@ export default defineComponent({
         }
 
         this.wizard.tabs.recipientAuthentication.data.edrCheckEnabled = this.registryValues.keycloak.citizenAuthFlow.edrCheck;
+        this.wizard.tabs.supplierAuthentication.selfRegistrationEnabled = this.registryValues.keycloak.realms.officerPortal.selfRegistration;
       } catch (e: any) {
         console.log(e);
       }
