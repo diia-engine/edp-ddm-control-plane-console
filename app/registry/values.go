@@ -30,9 +30,19 @@ type DigitalDocuments struct {
 	MaxTotalFileSize string `yaml:"maxTotalFileSize" json:"maxTotalFileSize"`
 }
 
+type Limits struct {
+	Second int `json:"second,omitempty" yaml:"second,omitempty"`
+	Minute int `json:"minute,omitempty" yaml:"minute,omitempty"`
+	Hour   int `json:"hour,omitempty" yaml:"hour,omitempty"`
+	Day    int `json:"day,omitempty" yaml:"day,omitempty"`
+	Month  int `json:"month,omitempty" yaml:"month,omitempty"`
+	Year   int `json:"year,omitempty" yaml:"year,omitempty"`
+}
+
 type PublicAPI struct {
 	Name               string `yaml:"name" json:"name"`
 	URL                string `yaml:"url" json:"url"`
+	Limits             Limits `yaml:"limits,omitempty" json:"limits"`
 	Enabled            bool   `yaml:"enabled" json:"enabled"`
 	StatusRegistration string `yaml:"-"`
 }
