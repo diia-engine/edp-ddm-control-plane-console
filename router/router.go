@@ -8,6 +8,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var ConsoleVersion = "0"
+
 type Logger interface {
 	Error(msg string, fields ...zap.Field)
 }
@@ -54,6 +56,8 @@ func MakeJSONResponse(code int, data interface{}) Response {
 }
 
 func MakeHTMLResponse(code int, viewTemplate string, params gin.H) Response {
+	params["consoleVersion"] = ConsoleVersion
+
 	return &HTMLResponse{
 		StatusResponse: StatusResponse{
 			StatusCode: code,

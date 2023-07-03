@@ -204,7 +204,6 @@ const preparedValues = computed<OutFormValues>(() => ({
     Перевірка даних з КЕП користувачів в ЄДР відбувається за умови налаштованої інтеграції поточного реєстру з ЄДР через
     ШБО Трембіта.
   </Typography>
-  <div class="wizard-warning">Відключення перевірки в ЄДР доступне для версій реєстру 1.9.4 і вище.</div>
   <div class="toggle-switch">
     <input class="switch-input" type="checkbox" id="edr-check-input" name="edr-check-enabled"
            v-model="edrCheckEnabled"/>

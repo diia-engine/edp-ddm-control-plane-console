@@ -79,6 +79,7 @@ func main() {
 		"platform", buildInfo.Platform,
 	)
 
+	router.ConsoleVersion = buildInfo.Version
 	logger.Info("init gin router")
 	gin.SetMode(cnf.GinMode)
 	r := gin.New()
