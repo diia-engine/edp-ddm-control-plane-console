@@ -112,7 +112,7 @@ type KeycloakAuthFlowsOfficerAuthFlow struct {
 
 type KeycloakWidgetAuthSettings struct {
 	Url    string `yaml:"url" json:"url,omitempty"`
-	Height int    `yaml:"height" json:"height,string,omitempty"`
+	Height int    `yaml:"height" json:"height,omitempty"`
 }
 
 type KeycloakAuthFlowsCitizenAuthFlow struct {
@@ -136,7 +136,7 @@ type SignWidget struct {
 
 type CitizenSignWidget struct {
 	URL                string `yaml:"url" json:"url"`
-	Height             int    `yaml:"height" json:"height,string"`
+	Height             int    `yaml:"height" json:"height"`
 	CopyFromAuthWidget bool   `yaml:"copyFromAuthWidget" json:"copyFromAuthWidget"`
 }
 

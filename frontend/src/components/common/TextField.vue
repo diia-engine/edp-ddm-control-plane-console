@@ -15,7 +15,12 @@ interface TextFieldProps {
 }
 
 defineProps<TextFieldProps>();
-defineEmits(['update:modelValue']);
+const $emit = defineEmits(['update:modelValue']);
+
+const onChange = (value: any, type: string) => {
+  const val = type === 'number' ? +value : value;
+  $emit('update:modelValue', val);
+};
 </script>
 <script lang="ts">
 export default {
@@ -34,10 +39,11 @@ export default {
       :placeholder="placeholder"
       v-bind="$attrs"
       :value="modelValue ?? value"
-      @input="$emit('update:modelValue', ($event.target as any).value)"
+      @input="onChange(($event.target as any).value, $attrs.type as string)"
     />
     <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error) }}</Typography>
-    <Typography class="form-input-group-error-description" v-if="description" variant="small">{{ description }}</Typography>
+    <Typography v-if="description" class="form-input-group-error-description" variant="small">{{ description }}</Typography>
+    <slot></slot>
   </div>
 </template>
 
@@ -67,6 +73,17 @@ export default {
   &::placeholder {
     color: $black-color;
     opacity: 0.25;
+  }
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type=number] {
+    -moz-appearance:textfield;
+    appearance:textfield;
   }
 }
 

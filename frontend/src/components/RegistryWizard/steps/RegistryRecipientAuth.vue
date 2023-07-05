@@ -179,7 +179,7 @@ const preparedValues = computed(() => ({
   authType: values.authType,
   widget: {
     url: values.widgetUrl,
-    height: values.widgetHeight.toString()
+    height: values.widgetHeight
   },
   registryIdGovUa: {
     clientId: values.clientId,
@@ -190,7 +190,7 @@ const preparedValues = computed(() => ({
     signWidget: {
       copyFromAuthWidget: values.copyFromAuthWidget,
       url: values.signWidgetUrl,
-      height: values.signWidgetHeight.toString(),
+      height: values.signWidgetHeight,
     }
   }
 }));
@@ -240,6 +240,7 @@ const preparedValues = computed(() => ({
     />
     <TextField
       required
+      type="number"
       label="Висота віджета, px"
       name="rec-auth-widget-height"
       :error="errors.widgetHeight"
@@ -294,6 +295,7 @@ const preparedValues = computed(() => ({
     <TextField
       v-if="!copyFromAuthWidget"
       required
+      type="number"
       label="Висота віджета, px"
       name="rec-sign-widget-height"
       :error="errors.signWidgetHeight"
