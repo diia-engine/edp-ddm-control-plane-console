@@ -22,11 +22,19 @@ type Values struct {
 	Portals          Portals                   `yaml:"portals" json:"portals"`
 	OriginalYaml     map[string]interface{}    `yaml:"-" json:"-"`
 	DigitalDocuments DigitalDocuments          `yaml:"digitalDocuments" json:"digitalDocuments"`
+	PublicApi        []PublicAPI               `yaml:"publicApi" json:"publicApi"`
 }
 
 type DigitalDocuments struct {
 	MaxFileSize      string `yaml:"maxFileSize" json:"maxFileSize"`
 	MaxTotalFileSize string `yaml:"maxTotalFileSize" json:"maxTotalFileSize"`
+}
+
+type PublicAPI struct {
+	Name               string `yaml:"name" json:"name"`
+	URL                string `yaml:"url" json:"url"`
+	Enabled            bool   `yaml:"enabled" json:"enabled"`
+	StatusRegistration string `yaml:"-"`
 }
 
 type CrunchyPostgres struct {

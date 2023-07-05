@@ -35,4 +35,9 @@ func (a *App) createRoutes() {
 
 	a.router.GET("/admin/registry/preload-values", a.preloadTemplateValues)
 	a.router.GET("/admin/registry/get-basic-username/:name", a.getBasicUsername)
+
+	a.router.POST("/admin/registry/public-api-add/:name", a.addPublicAPIReg)
+	a.router.POST("/admin/registry/public-api-edit/:name", a.editPublicAPIReg)
+	a.router.POST("/admin/registry/public-api-delete/:name", a.removePublicAPIReg)
+	a.router.POST("/admin/registry/public-api-disable/:name", a.disablePublicAPIReg)
 }

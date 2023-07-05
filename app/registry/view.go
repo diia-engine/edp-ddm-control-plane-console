@@ -40,7 +40,12 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 		"valuesJson": string(valuesJson),
 	}
 
-	for _, f := range a.viewRegistryProcessFunctions() {
+	mrs, err := a.Services.Gerrit.GetMergeRequestByProject(userCtx, registryName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get merge reqyests by project, %w", err)
+	}
+
+	for _, f := range a.viewRegistryProcessFunctions(mrs) {
 		if err := f(userCtx, registryName, values, viewParams); err != nil {
 			return nil, errors.Wrap(err, "error during view registry function")
 		}
@@ -57,13 +62,15 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 	}), nil
 }
 
-func (a *App) viewRegistryProcessFunctions() []func(ctx context.Context, registryName string, values *Values, viewParams gin.H) error {
+func (a *App) viewRegistryProcessFunctions(mrs []gerrit.GerritMergeRequest) []func(ctx context.Context,
+	registryName string, values *Values, viewParams gin.H) error {
 	return []func(ctx context.Context, registryName string, values *Values, viewParams gin.H) error{
 		a.viewRegistryAllowedToEdit,
 		a.viewRegistryGetRegistryAndBranches,
 		a.viewRegistryGetEDPComponents,
-		a.viewRegistryGetMergeRequests,
-		a.viewRegistryExternalRegistration,
+		a.makeViewRegistryGetMergeRequests(mrs),
+		a.makeViewRegistryExternalRegistration(mrs),
+		a.makeViewRegistryPublicAPI(mrs),
 		a.viewDNSConfig,
 		a.viewCIDRConfig,
 		a.viewAdministratorsConfig,
@@ -127,48 +134,79 @@ func (a *App) viewRegistryHasUpdates(userCtx context.Context, registryName strin
 	return nil
 }
 
-func (a *App) viewRegistryExternalRegistration(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
-	eRegs, mergeRequestsForER := make([]ExternalRegistration, 0), make(map[string]struct{})
-	mrs, err := a.Services.Gerrit.GetMergeRequestByProject(userCtx, registryName)
-	if err != nil {
-		return errors.Wrap(err, "unable to get gerrit merge requests")
-	}
-	for _, mr := range mrs {
-		if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value == gerrit.StatusNew {
-			eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
-				External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusInactive})
-			mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
-		} else if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value != gerrit.StatusMerged && mr.Status.Value != gerrit.StatusAbandoned {
-			eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
-				External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusFailed})
-			mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
+func (a *App) makeViewRegistryExternalRegistration(mrs []gerrit.GerritMergeRequest) func(userCtx context.Context,
+	registryName string, values *Values, viewParams gin.H) error {
+	return func(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+		eRegs, mergeRequestsForER := make([]ExternalRegistration, 0), make(map[string]struct{})
+
+		for _, mr := range mrs {
+			if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value == gerrit.StatusNew {
+				eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
+					External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusInactive})
+				mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
+			} else if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value != gerrit.StatusMerged && mr.Status.Value != gerrit.StatusAbandoned {
+				eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
+					External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusFailed})
+				mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
+			}
 		}
-	}
 
-	//TODO: refactor to values struct
-	_eRegs, err := decodeExternalRegsFromValues(values.OriginalYaml)
-	if err != nil {
-		return errors.Wrap(err, "unable to decode external regs")
-	}
-
-	for _, _er := range _eRegs {
-		if _, ok := mergeRequestsForER[_er.Name]; !ok {
-			eRegs = append(eRegs, _er)
+		//TODO: refactor to values struct
+		_eRegs, err := decodeExternalRegsFromValues(values.OriginalYaml)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode external regs")
 		}
+
+		for _, _er := range _eRegs {
+			if _, ok := mergeRequestsForER[_er.Name]; !ok {
+				eRegs = append(eRegs, _er)
+			}
+		}
+
+		if err := a.loadKeysForExternalRegs(userCtx, registryName, eRegs); err != nil {
+			return errors.Wrap(err, "unable load keys for ext regs")
+		}
+
+		viewParams["externalRegs"] = eRegs
+		viewParams["values"] = values
+
+		if err := a.loadCodebasesForExternalRegistrations(registryName, eRegs, viewParams); err != nil {
+			return errors.Wrap(err, "unable to load codebases for external reg")
+		}
+
+		return nil
 	}
+}
 
-	if err := a.loadKeysForExternalRegs(userCtx, registryName, eRegs); err != nil {
-		return errors.Wrap(err, "unable load keys for ext regs")
+func (a *App) makeViewRegistryPublicAPI(mrs []gerrit.GerritMergeRequest) func(userCtx context.Context,
+	registryName string, values *Values, viewParams gin.H) error {
+
+	return func(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+		publicAPI, mergeRequestsForER := make([]PublicAPI, 0), make(map[string]struct{})
+		for _, mr := range mrs {
+			if mr.Labels[MRLabelTarget] == mrTargetPublicAPIReg {
+				_publicAPI, err := a.makeViewPublicAPIMR(mr, registryName)
+				if err != nil {
+					return fmt.Errorf("unable to get public api from MR, %w", err)
+				}
+				if _publicAPI.Name != "" {
+					publicAPI = append(publicAPI, _publicAPI)
+					mergeRequestsForER[_publicAPI.Name] = struct{}{}
+				}
+			}
+		}
+
+		for _, _publicAPI := range values.PublicApi {
+			if _, ok := mergeRequestsForER[_publicAPI.Name]; !ok {
+				publicAPI = append(publicAPI, _publicAPI)
+			}
+		}
+
+		viewParams["publicApi"] = publicAPI
+		viewParams["values"] = values
+
+		return nil
 	}
-
-	viewParams["externalRegs"] = eRegs
-	viewParams["values"] = values
-
-	if err := a.loadCodebasesForExternalRegistrations(registryName, eRegs, viewParams); err != nil {
-		return errors.Wrap(err, "unable to load codebases for external reg")
-	}
-
-	return nil
 }
 
 func (a *App) loadKeysForExternalRegs(ctx context.Context, registryName string, eRegs []ExternalRegistration) error {
@@ -284,24 +322,23 @@ func (a *App) viewDNSConfig(userCtx context.Context, registryName string, values
 	return nil
 }
 
-func (a *App) viewRegistryGetMergeRequests(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
-	mrs, err := a.Services.Gerrit.GetMergeRequestByProject(userCtx, registryName)
-	if err != nil {
-		return errors.Wrap(err, "unable to list gerrit merge requests")
-	}
+func (a *App) makeViewRegistryGetMergeRequests(mrs []gerrit.GerritMergeRequest) func(userCtx context.Context,
+	registryName string, _ *Values, viewParams gin.H) error {
 
-	sort.Sort(gerrit.SortByCreationDesc(mrs))
+	return func(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
+		sort.Sort(gerrit.SortByCreationDesc(mrs))
 
-	emrs := make([]ExtendedMergeRequests, 0, len(mrs))
-	for _, mr := range mrs {
-		if mr.Status.Value == gerrit.StatusNew {
-			viewParams["openMergeRequests"] = true
+		emrs := make([]ExtendedMergeRequests, 0, len(mrs))
+		for _, mr := range mrs {
+			if mr.Status.Value == gerrit.StatusNew {
+				viewParams["openMergeRequests"] = true
+			}
+			emrs = append(emrs, ExtendedMergeRequests{GerritMergeRequest: mr})
 		}
-		emrs = append(emrs, ExtendedMergeRequests{GerritMergeRequest: mr})
-	}
 
-	viewParams["mergeRequests"] = emrs
-	return nil
+		viewParams["mergeRequests"] = emrs
+		return nil
+	}
 }
 
 func (a *App) viewRegistryAllowedToEdit(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {

@@ -11,6 +11,10 @@ export const getMergeRequestName = (mergeRequest: any): string => {
         return "Оновлення версії реєстру";
     }
 
+    if (target == "publicAPI-reg") {
+        return metadata.labels['publicAPI-reg-name'];
+    }
+
     if (target == "edit-registry" || target == "trembita-registry-update") {
         return "Редагування реєстру";
     }
@@ -33,6 +37,24 @@ export const getMergeRequestAction = (mergeRequest: any): string => {
                     return "Створення";
                 case "mre-action-deletion":
                     return "Скасування";
+            }
+        }
+    }
+
+    if (target == "publicAPI-reg") {
+        const res = metadata.labels["console/sub-target"];
+        if (res) {
+            switch (res) {
+                case "edition":
+                    return "Редагування";
+                case "disable":
+                    return "Заблокування";
+                case "enable":
+                    return "Розблокування";
+                case "creation":
+                    return "Створення";
+                case "deletion":
+                    return "Видалення";
             }
         }
     }

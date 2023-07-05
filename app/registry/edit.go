@@ -434,17 +434,6 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[str
 		return MRExists("there is already open merge request(s) for this registry")
 	}
 
-	mrs, err := gerritService.GetMergeRequestByProject(ctx, projectName)
-	if err != nil {
-		return errors.Wrap(err, "unable to get MRs")
-	}
-
-	for _, mr := range mrs {
-		if mr.Status.Value == gerrit.StatusNew {
-			return MRExists("there is already open merge request(s) for this registry")
-		}
-	}
-
 	_labels := map[string]string{
 		MRLabelTarget: mrTargetEditRegistry,
 	}

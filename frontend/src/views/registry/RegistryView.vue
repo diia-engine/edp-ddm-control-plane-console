@@ -23,6 +23,7 @@ const citizenCIDR = variables?.citizenCIDR;
 const adminCIDR = variables?.adminCIDR;
 const values = variables?.values;
 const externalRegs = variables?.externalRegs;
+const publicApi = variables?.publicApi;
 const branches = variables?.branches;
 const mergeRequests = variables?.mergeRequests;
 const created = variables?.created;
@@ -36,6 +37,7 @@ import $ from 'jquery';
 import axios from 'axios';
 import { getGerritURL, getImageUrl, getJenkinsURL, getStatus } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
+import PublicApiBlock from './components/PublicApiBlock.vue';
 import { defineComponent } from 'vue';
 
 export default defineComponent({
@@ -107,6 +109,19 @@ export default defineComponent({
             //todo: load data
 
             $("body").css("overflow", "hidden");
+        },
+        checkOpenedMR(e: any) {
+            if (this.mergeRequest.has) {
+                this.showOpenMRForm();
+                return true;
+            }
+
+            if (this.hasNewMergeRequests()) {
+                this.showMrError(e);
+                return true;
+            }
+
+            return false;
         },
         disabledLink(e: any) {
             e.preventDefault();
@@ -728,7 +743,7 @@ export default defineComponent({
         this.externalSystem = this.externalSystemDefaults();
         this.trembitaClient = this.trembitaClientDefaults();
     },
-    components: { MergeRequestsTable },
+    components: { MergeRequestsTable, PublicApiBlock },
 });
 </script>
 
@@ -1400,15 +1415,9 @@ export default defineComponent({
                         <a class="href-red" :href="deleteExternalSystemLink()">Видалити</a>
                     </div>
                 </div>
-
-
-
                 <!-- registry-external-system end-->
-
-
-
-
             </div>
+
             <div class="rg-info-block">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'external-access' }"
                     @click="accordion = 'external-access'">
@@ -1417,7 +1426,7 @@ export default defineComponent({
                         :class="{ 'fa-caret-up': accordion == 'external-access', 'fa-caret-down': accordion != 'external-access' }"></i>
                 </div>
                 <div class="rg-info-block-body" v-show="accordion == 'external-access'">
-                    <table class="rg-info-table rg-info-table-config" v-if="externalRegs && externalRegs.length">
+                    <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
                                 <th>Статус</th>
@@ -1426,7 +1435,7 @@ export default defineComponent({
                                 <th></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody v-if="externalRegs && externalRegs.length">
                             <tr v-for="($er, $index) in externalRegs" :key="$index">
                                 <td>
                                     <img :alt="getStatus($er.StatusRegistration)"
@@ -1468,7 +1477,7 @@ export default defineComponent({
                             </tr>
                         </tbody>
                     </table>
-                    <div class="rg-info-block-no-content" v-else>
+                    <div class="rg-info-block-no-content" v-if="!externalRegs?.length">
                         Немає реєстрів або систем, що мають доступ до цього реєстра.
                     </div>
                     <div class="link-grant-access">
@@ -1485,6 +1494,18 @@ export default defineComponent({
                 <input type="hidden" id="disable-form-value" :value="systemToDisable" name="reg-name" />
                 <input type="hidden" id="disable-form-type" :value="systemToDisableType" name="external-system-type" />
             </form>
+
+            <div class="rg-info-block">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'public-access' }"
+                    @click="accordion = 'public-access'">
+                    <span>Публічний доступ</span>
+                    <i class="fa-solid"
+                        :class="{ 'fa-caret-up': accordion == 'public-access', 'fa-caret-down': accordion != 'public-access' }"></i>
+                </div>
+                <div v-show="accordion == 'public-access'">
+                    <PublicApiBlock :publicApi="publicApi" :registry="registry.metadata.name" :checkOpenedMR="checkOpenedMR"/>
+                </div>
+            </div>
 
             <div class="rg-info-block" v-if="branches && branches.length">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'configuration' }"
@@ -1736,7 +1757,7 @@ export default defineComponent({
                     <p>
                         Ви можете надати доступ до даних цього реєстру (master) іншим реєстрам на цій платформі або
                         зовнішнім системам (clients). Для цього в мастер-реєстрі буде створено окремого користувача
-                        реєстра-клієнта, від імені якого здійснюватеметься доступ до мастер-реєстру.
+                        реєстра-клієнта, від імені якого здійснюватиметься доступ до мастер-реєстру.
                     </p>
                     <div class="er-radio">
                         <div @click="setInternalRegistryReg">

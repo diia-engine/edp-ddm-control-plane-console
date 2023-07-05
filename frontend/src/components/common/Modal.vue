@@ -123,6 +123,7 @@ export default {
   color: rgba(0, 0, 0, 0.5);
   background: none;
   border: none;
+  outline: none;
   padding: 8px 16px 8px 16px;
   cursor: pointer;
 }
@@ -138,6 +139,7 @@ export default {
   border-radius: 4px;
   color: $white-color;
   border: none;
+  outline: none;
   padding: 8px 16px 8px 16px;
   cursor: pointer;
   background: $success-color;

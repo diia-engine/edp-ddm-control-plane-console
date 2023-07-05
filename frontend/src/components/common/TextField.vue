@@ -1,43 +1,42 @@
-<script lang="ts">
+<script setup lang="ts">
 import Typography from '@/components/common/Typography.vue';
 import { getErrorMessage } from '@/utils';
 
-export default {
-  components: { Typography },
-  props: {
-    name: { readonly: true, type: String },
-    label: { readonly: true, type: String },
-    description: { type: String },
-    value: { readonly: true, type: String },
-    error: { type: String },
-    type: { default: 'text', readonly: true, type: String },
-    placeholder: { type: String },
-  },
-  methods: {
-    getErrorMessage(key: string) {
-      return getErrorMessage(key);
-    }
-  },
-  computed: {
-    inputVal: {
-      get(): string {
-        return this.value || '';
-      },
-      set(val: string): void {
-        this.$emit('update', val);
-      }
-    }
-  }
-};
+interface TextFieldProps {
+  name?: string,
+  label?: string,
+  description?: string,
+  error?: string,
+  modelValue?: any,
+  value?: HTMLInputElement['value']
+  required?: boolean
+  placeholder?: HTMLInputElement['placeholder'],
+}
 
+defineProps<TextFieldProps>();
+defineEmits(['update:modelValue']);
+</script>
+<script lang="ts">
+export default {
+  inheritAttrs: false
+};
 </script>
 
 <template>
   <div class="form-input-group" :class="{ 'error': error }">
-    <label :for="name">{{ label }}</label>
-    <input :name="name" :aria-label="name" :type="type" :placeholder="placeholder" v-model="inputVal" v-on="$attrs" />
-    <Typography v-if="error" variant="small" class="form-input-group-error-message">{{ getErrorMessage(error) }}</Typography>
-    <Typography v-if="description" variant="small" class="form-input-group-error-description">{{ description }}</Typography>
+    <label :for="name">
+      {{ label }} <b v-if="required" class="red-star">*</b>
+    </label>
+    <input
+      :name="name"
+      :aria-label="name"
+      :placeholder="placeholder"
+      v-bind="$attrs"
+      :value="modelValue ?? value"
+      @input="$emit('update:modelValue', ($event.target as any).value)"
+    />
+    <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error) }}</Typography>
+    <Typography class="form-input-group-error-description" v-if="description" variant="small">{{ description }}</Typography>
   </div>
 </template>
 

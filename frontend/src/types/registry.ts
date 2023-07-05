@@ -15,6 +15,7 @@ export interface RegistryTemplateVariables {
   platformAdministrationComponents: any;
   platformOperationalComponents: any;
   externalRegAvailableRegistriesJSON: any;
+  publicApi: any;
   admins: any;
   citizenPortalHost: any;
   officerPortalHost: any;

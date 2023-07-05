@@ -31,7 +31,7 @@ func (e ExtendedMergeRequests) RequestName() string {
 		return "Оновлення версії реєстру"
 	}
 
-	if (e.Labels[MRLabelTarget] == mrTargetEditRegistry) || (e.Labels[MRLabelTarget] == mrTargetEditTrembita) {
+	if (e.Labels[MRLabelTarget] == mrTargetEditRegistry) || (e.Labels[MRLabelTarget] == mrTargetEditTrembita) || (e.Labels[MRLabelTarget] == mrTargetPublicAPIReg) {
 		return "Редагування реєстру"
 	}
 

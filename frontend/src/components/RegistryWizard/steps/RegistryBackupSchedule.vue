@@ -162,7 +162,7 @@ function backupDeletePlaceSubmit() {
 function enabledChange () {
   beginValidation.value = false;
   cronSchedule.value = registryValues.global?.registryBackup.schedule;
-  days.value = registryValues.global?.registryBackup.expiresInDays;
+  days.value = registryValues.global?.registryBackup.expiresInDays || "";
   obcCronExpression.value = registryValues.global?.registryBackup.obc.cronExpression;
   obcBackupBucket.value = registryValues.global?.registryBackup.obc.backupBucket;
   obcEndpoint.value = registryValues.global?.registryBackup.obc.endpoint;
@@ -225,9 +225,9 @@ function backupCronExpressionChange () {
         name="cron-schedule"
         placeholder="5 4 * * *"
         description="Використовується Cron-формат."
-        :value="cronSchedule"
+        v-model="cronSchedule"
         :error="beginValidation ? errors.cronSchedule : ''"
-        @update="val => cronSchedule = val"
+        required
         @change="cronExpressionChange"
       />
     </div>
@@ -246,9 +246,9 @@ function backupCronExpressionChange () {
         name="cron-schedule-days"
         placeholder="3"
         description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
-        :value="days"
+        v-model="days"
         :error="beginValidation ? errors.days : ''"
-        @update="val => days = val"
+        required
       />
     </div>
 
@@ -260,12 +260,12 @@ function backupCronExpressionChange () {
         label="Розклад збереження резервних копій реплікацій об’єктів S3"
         name="registry-backup-obc-cron-expression"
         placeholder="30 17 * * *"
-        description="Якщо Ви бажаєте встановити розклад, що відмінний від дефолтного, будь ласка, введіть значення розкладу у Cron-форматі, або вкажіть дефолтне значення за UTC: 30 17 * * * *"
-        :value="obcCronExpression"
+        description="Якщо Ви бажаєте встановити розклад, що відмінний від дефолтного, будь ласка, введіть значення розкладу у Cron-форматі, або вкажіть дефолтне значення за UTC:"
+        v-model="obcCronExpression"
         :error="beginValidation ? errors.obcCronExpression : ''"
-        @update="val => obcCronExpression = val"
         @change="backupCronExpressionChange"
       />
+      <Typography variant="small">30 17 * * *</Typography>
     </div>
     <div v-show="registryBackupNextDates.length" class="form-group">
       <label>Наступний запуск резервного копіювання реплікацій об’єктів S3 (за UTC)</label>
