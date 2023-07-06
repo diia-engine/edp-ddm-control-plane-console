@@ -273,10 +273,12 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 	}, nil)
 	grService.On("GetProject", mock.Anything, cnf.ClusterCodebaseName).Return(&gerrit.GerritProject{
 		ObjectMeta: metav1.ObjectMeta{Name: "mock-project"},
+		Spec:       gerrit.GerritProjectSpec{Name: cnf.ClusterCodebaseName},
 	}, nil)
 
 	grService.On("GetProject", mock.Anything, "mock").Return(&gerrit.GerritProject{
 		ObjectMeta: metav1.ObjectMeta{Name: "mock-project"},
+		Spec:       gerrit.GerritProjectSpec{Name: "mock"},
 	}, nil)
 
 	mockClusterValues := cluster.Values{

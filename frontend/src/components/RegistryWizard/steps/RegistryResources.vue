@@ -353,7 +353,7 @@ export default defineComponent({
 
               <label>Змінні оточення</label>
               <div class="env-vars">
-                  <div class="env-var-line" v-for="env in cat.config.container.envVars" v-bind:key="env.value" >
+                  <div class="env-var-line" v-for="(env, index) in cat.config.container.envVars" v-bind:key="index" >
                       <input class="env-name" type="text" placeholder="Name" v-model="env.name" />
                       <input class="env-value" type="text" placeholder="Value" v-model="env.value" />
                       <button @click="removeEnvVar(cat.config.container.envVars, env)" class="remove-env-var">-</button>
