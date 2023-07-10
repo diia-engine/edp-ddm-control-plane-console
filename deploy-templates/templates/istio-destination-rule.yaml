@@ -1,0 +1,16 @@
+kind: DestinationRule
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: {{ include "controlPlaneConsole.name" . }}
+spec:
+  host: {{ include "controlPlaneConsole.name" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  subsets:
+    {{- range $it := .Values.consoleVersions }}
+    - labels:
+        app: {{ include "controlPlaneConsole.name" $ }}
+        version: {{ $it.registryVersion }}
+        {{- if $it.latest }}
+        latest: "true"
+        {{- end }}
+      name: {{ template "istio.subset.name" (dict "version" $it.registryVersion) }}
+    {{- end }}

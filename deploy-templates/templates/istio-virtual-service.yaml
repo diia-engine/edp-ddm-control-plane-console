@@ -1,0 +1,44 @@
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: {{ include "controlPlaneConsole.name" . }}
+spec:
+  hosts:
+    - {{ template "control-plane-console.hostname" $ }}
+  gateways:
+    - gateway
+  http:
+    {{ range $it := .Values.consoleVersions }}
+    - match:
+        - uri:
+            regex: '\/[^/]+\/registry\/[^/]+\/[^?]+'
+          queryParams:
+            version:
+              exact: {{ $it.registryVersion }}
+        - uri:
+            exact: '/assets/index.css'
+          queryParams:
+            version:
+              exact: {{ $it.registryVersion }}
+        - uri:
+            exact: '/assets/index.js'
+          queryParams:
+            version:
+              exact: {{ $it.registryVersion }}
+      name: version-{{ $it.registryVersion }}
+      route:
+        - destination:
+            host:  {{ $.Chart.Name }}.{{ $.Release.Namespace }}.svc.cluster.local
+            port:
+              number: 8080
+            subset: {{ template "istio.subset.name" (dict "version" $it.registryVersion) }}
+    {{- if $it.latest }}
+    - name: default-console
+      route:
+        - destination:
+            host: {{ $.Chart.Name }}.{{ $.Release.Namespace }}.svc.cluster.local
+            port:
+              number: 8080
+            subset: {{ template "istio.subset.name" (dict "version" $it.registryVersion) }}
+    {{- end }}
+    {{- end }}

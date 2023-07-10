@@ -2,7 +2,7 @@
 apiVersion: authorization.openshift.io/v1
 kind: Role
 metadata:
-  name: edp-{{ .Values.name }}-role-{{ .Values.global.edpName }}
+  name: edp-{{ include "controlPlaneConsole.name" .}}-role-{{ .Release.Namespace }}
 rules:
 - apiGroups:
   - '*'

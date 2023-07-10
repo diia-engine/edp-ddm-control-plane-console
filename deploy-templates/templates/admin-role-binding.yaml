@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ .Values.name }}-admin-role
+  name: {{ include "controlPlaneConsole.name" .}}-admin-role
   namespace: {{ .Release.Namespace }}
 subjects:
   - kind: ServiceAccount

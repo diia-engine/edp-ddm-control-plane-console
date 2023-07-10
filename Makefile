@@ -3,6 +3,7 @@ export GO111MODULE=on
 PACKAGE=ddm-admin-console/config
 
 VERSION?=$(shell git describe --tags)
+BUILD_DIR="."
 BUILD_DATE=$(shell date -u +'%Y-%m-%d %H:%M:%S')
 GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_TAG=$(shell if [ -z "`git status --porcelain`" ]; then git describe --exact-match --tags HEAD 2>/dev/null; fi)
@@ -27,7 +28,7 @@ ci:
 
 .PHONY: build
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -a -installsuffix cgo -ldflags="${LDFLAGS}" -o control-plane-console
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="${LDFLAGS}" -o ${BUILD_DIR}
 
 .PHONY: deps
 deps:

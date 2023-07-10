@@ -1,33 +1,38 @@
+basePath: ''
+cdPipelineName: platform
+cdPipelineStageName: main
 name: control-plane-console
-cdPipelineName: "platform"
-cdPipelineStageName: "main"
+
+enable_branch_provisioners: 1
+
 global:
-  platform: "openshift"
-  edpName: mdtu-ddm-edp-cicd-control-plane-dev
-basePath: ""
-projectUrlMask: "/console/project/{namespace}/overview"
-imageStreamUrlMask: "/console/project/{namespace}/browse/images/{stream}"
+  edpName: control-plane
+  platform: openshift
+
+imageStreamUrlMask: /console/project/{namespace}/browse/images/{stream}
 
 ingress:
+  path: /
   required: true
   site: control-plane-console
-  path: /
-
-operator:
-  serviceAccountName: control-plane-console
-  clusterRoleName: edp-admin-console-operator-clusterrole-mdtu-ddm-edp-cicd
-
-oauthclientName: oauth-admin-console-client
 
 keycloak:
   realm: admin
-
 keycloakIntegration:
-  enabled: true
-  realm: admin
   client:
     name: admin-console-client
     public: false
     secretName: admin-console-client
+  enabled: true
+  realm: admin
+oauthclientName: oauth-admin-console-client
 
-enable_branch_provisioners: 1
+operator:
+  clusterRoleName: edp-admin-console-operator-clusterrole-mdtu-ddm-edp-cicd
+  serviceAccountName: control-plane-console
+
+projectUrlMask: /console/project/{namespace}/overview
+
+secret:
+  sessionSecret:
+    suffix: session-secret

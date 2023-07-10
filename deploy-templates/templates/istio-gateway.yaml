@@ -1,0 +1,14 @@
+kind: Gateway
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: gateway
+spec:
+  servers:
+    - hosts:
+        - {{ include "control-plane-console.hostname" . }}
+      port:
+        name: http2
+        number: 80
+        protocol: HTTP
+  selector:
+    istio: "{{ include "istio.ingressGateway.service.name" . }}"

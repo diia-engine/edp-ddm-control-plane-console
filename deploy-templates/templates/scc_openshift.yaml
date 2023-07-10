@@ -18,7 +18,7 @@ metadata:
     "helm.sh/hook": "pre-install"
   labels:
     app: {{ .Values.operator.serviceAccountName }}
-  name: {{ .Values.operator.serviceAccountName }}-{{.Values.global.edpName}}
+  name: {{ .Values.operator.serviceAccountName }}-{{.Release.Namespace}}
 priority: 1
 readOnlyRootFilesystem: false
 requiredDropCapabilities: []
@@ -30,7 +30,7 @@ seLinuxContext:
 supplementalGroups:
   type: RunAsAny
 users:
-  - system:serviceaccount:{{.Values.global.edpName}}:{{ .Values.operator.serviceAccountName }}
+  - system:serviceaccount:{{.Release.Namespace}}:{{ .Values.operator.serviceAccountName }}
 volumes:
   - configMap
   - downwardAPI

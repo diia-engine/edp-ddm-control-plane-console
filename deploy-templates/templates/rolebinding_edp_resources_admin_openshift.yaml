@@ -5,12 +5,12 @@ metadata:
   name: edp-resources-admin
 roleRef:
   name: edp-resources-admin
-  namespace: {{.Values.global.edpName}}
+  namespace: {{.Release.Namespace}}
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.operator.serviceAccountName }}
-    namespace: {{.Values.global.edpName}}
+    namespace: {{.Release.Namespace}}
 userNames:
-  - system:serviceaccount:{{.Values.global.edpName}}:{{ .Values.operator.serviceAccountName }}
+  - system:serviceaccount:{{.Release.Namespace}}:{{ .Values.operator.serviceAccountName }}
 groupNames: []
 {{- end -}}

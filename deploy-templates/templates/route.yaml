@@ -3,15 +3,17 @@ apiVersion: route.openshift.io/v1
 metadata:
   annotations:
     meta.helm.sh/release-name: edp-install
-  name: {{ .Values.name }}
+  name: {{ include "controlPlaneConsole.name" .}}
   labels:
-    app: {{ .Values.name }}
+    app: {{ include "controlPlaneConsole.name" .}}
 spec:
   host: {{ template "control-plane-console.hostname" . }}
   to:
     kind: Service
-    name: {{ .Values.name }}
+    name: {{ include "istio.ingressGateway.service.name" . }}
     weight: 100
+  port:
+    targetPort: http2
   tls:
     termination: edge
     insecureEdgeTerminationPolicy: Redirect

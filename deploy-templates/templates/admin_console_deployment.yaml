@@ -1,29 +1,37 @@
-apiVersion: apps.openshift.io/v1
-kind: DeploymentConfig
+{{- range $it := .Values.consoleVersions }}
+---
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   labels:
-    app: {{ .Values.name }}
-  name: {{ .Values.name }}
+    app: {{ include "controlPlaneConsole.name" $ }}
+    version: {{ $it.registryVersion }}
+    {{- if $it.latest }}
+    latest: "true"
+    {{- end }}
+  name: {{ include "controlPlaneConsole.name" $ }}-{{ $it.registryVersion }}
 spec:
   replicas: 1
   revisionHistoryLimit: 10
   selector:
-    app: control-plane-console
+    matchLabels:
+      app: {{ include "controlPlaneConsole.name" $ }}
+      version: {{ $it.registryVersion }}
+      {{- if $it.latest }}
+      latest: "true"
+      {{- end }}
   strategy:
-    activeDeadlineSeconds: 21600
-    resources: {}
-    rollingParams:
-      intervalSeconds: 1
-      maxSurge: 25%
-      maxUnavailable: 25%
-      timeoutSeconds: 600
-      updatePeriodSeconds: 1
     type: Recreate
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        app: {{ .Values.name }}
+        app: {{ include "controlPlaneConsole.name" $ }}
+        version: {{ $it.registryVersion }}
+        {{- if $it.latest }}
+        latest: "true"
+        {{- end }}
+      annotations:
+        sidecar.istio.io/inject: 'true'
     spec:
       containers:
         - env:
@@ -33,23 +41,23 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
             - name: HOST
-              value: "{{ template "control-plane-console.url" . }}"
+              value: "{{ template "control-plane-console.url" $ }}"
             - name: BASE_PATH
-              value: "{{if .Values.basePath}}/{{ .Values.basePath }}{{else}}{{end}}"
+              value: "{{if $.Values.basePath}}/{{ $.Values.basePath }}{{else}}{{end}}"
             - name: EDP_ADMIN_CONSOLE_VERSION
-              value: "{{ .Values.version }}"
+              value: "{{ $.Values.version }}"
             - name: GERRIT_GLOBAL_LINK
-              value: "https://gerrit-{{ template "edp.hostnameSuffix" . }}"
+              value: "https://gerrit-{{ template "edp.hostnameSuffix" $ }}"
             - name: CLUSTER_REPO
               value: "cluster-mgmt"
             - name: GROUP_GIT_REPO
               value: "registry-group"
             - name: REGISTRY_REPO_HOST
-              value: "https://gerrit-{{ template "edp.hostnameSuffix" . }}"
+              value: "https://gerrit-{{ template "edp.hostnameSuffix" $ }}"
             - name: REGISTRY_REPO_PREFIX
               value: "registry-tenant-template-"
             - name: JENKINS_GLOBAL_LINK
-              value: "https://jenkins-{{ template "edp.hostnameSuffix" . }}"
+              value: "https://jenkins-{{ template "edp.hostnameSuffix" $ }}"
             - name: AUTH_ENABLED
               value: "true"
             - name: INTEGRATION_STRATEGIES
@@ -67,7 +75,7 @@ spec:
             - name: PERF_DATA_SOURCES
               value: "Sonar,Jenkins,GitLab"
             - name: EDP_NAME
-              value: {{ .Release.Namespace }}
+              value: {{ $.Release.Namespace }}
             - name: OC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -79,14 +87,23 @@ spec:
                   name: oauth-admin-console-client
                   key: clientId
             - name: PROJECT_MASK_URL
-              value: "{{.Values.projectUrlMask}}"
+              value: "{{$.Values.projectUrlMask}}"
             - name: IMAGE_STREAM_MASK_URL
-              value: "{{ .Values.imageStreamUrlMask }}"
+              value: "{{ $.Values.imageStreamUrlMask }}"
             - name: ENABLE_BRANCH_PROVISIONERS
-              value: "{{ .Values.enable_branch_provisioners }}"
+              value: "{{ $.Values.enable_branch_provisioners }}"
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "сontrolPlaneConsole.secret.sessionSecret.name" $ }}
+                  key: "token"
             - name: REGISTRY_DNS_MANUAL_PATH
               value: "ua/platform/1.9.5/admin/registry-management/custom-dns/cp-custom-dns-keycloak.html#external-configuration"
-          image: "{{ .Values.image.name }}:{{ .Values.image.version }}"
+            {{- if not $it.latest }}
+            - name: REGISTRY_VERSION_FILTER
+              value: "<1"
+            {{- end }}
+          image: {{ template "controlPlaneConsole.image" (dict "root" $ "stream" $it.stream "version" $it.consoleVersion) }}
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 5
@@ -96,7 +113,7 @@ spec:
             tcpSocket:
               port: 8080
             timeoutSeconds: 1
-          name: {{ .Values.name }}
+          name: {{ $.Values.name }}
           ports:
             - containerPort: 8080
               protocol: TCP
@@ -117,9 +134,6 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
-      serviceAccount: {{ .Values.operator.serviceAccountName }}
-      serviceAccountName: {{ .Values.operator.serviceAccountName }}
+      serviceAccountName: {{ $.Values.operator.serviceAccountName }}
       terminationGracePeriodSeconds: 30
-  test: false
-  triggers:
-    - type: ConfigChange
+{{- end }}

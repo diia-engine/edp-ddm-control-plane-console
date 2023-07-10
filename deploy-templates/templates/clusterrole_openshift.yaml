@@ -5,7 +5,7 @@ metadata:
     annotations:
         openshift.io/description: Role for {{ .Values.operator.serviceAccountName }}-edp service account
         openshift.io/reconcile-protect: "false"
-    name: edp-{{ .Values.name }}-clusterrole-{{ .Values.global.edpName }}
+    name: edp-{{ include "controlPlaneConsole.name" .}}-clusterrole-{{ .Release.Namespace }}
 rules:
 - apiGroups:
   - '*'

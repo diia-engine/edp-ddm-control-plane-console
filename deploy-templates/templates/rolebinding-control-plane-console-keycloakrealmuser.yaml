@@ -10,8 +10,8 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.operator.serviceAccountName }}
-    namespace: {{.Values.global.edpName}}
+    namespace: {{.Release.Namespace}}
 userNames:
-  - system:serviceaccount:{{.Values.global.edpName}}:{{ .Values.operator.serviceAccountName }}
+  - system:serviceaccount:{{.Release.Namespace}}:{{ .Values.operator.serviceAccountName }}
 groupNames: []
   {{- end -}}
