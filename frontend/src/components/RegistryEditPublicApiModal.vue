@@ -26,7 +26,12 @@ interface RegistryEditPublicApiModalProps {
 const props = defineProps<RegistryEditPublicApiModalProps>();
 const { publicApiPopupShow, publicApiValues, publicApiList, registry } = toRefs(props);
 
-const numberSchema = yup.number().transform((value) => value === null ? NaN : value).typeError('required').positive().integer();
+const numberSchema = yup.number()
+.transform((value) => value === null ? NaN : value)
+.typeError('required')
+.positive()
+.max(Number.MAX_SAFE_INTEGER, 'moreThanMaxValue')
+.integer();
 const validationSchema = yup.object({
   name: yup.string().required().min(3).max(32).matches(/^[a-z0-9]([a-z0-9-]){1,30}[a-z0-9]$/).test({
     message: 'isUnique',
@@ -40,6 +45,9 @@ const validationSchema = yup.object({
   url: yup.string().required().matches(/^[A-Za-z0-9-/]*$/i).test({
     message: 'isUnique',
     test: function (value) {
+      if (publicApiValues.value?.url === value) {
+        return true;
+      }
       return publicApiList.value?.findIndex(({ url }) => url === value) === -1;
     },
   }),
@@ -51,7 +59,7 @@ const validationSchema = yup.object({
     month: numberSchema,
     year: numberSchema,
   }).required().test({
-    message: 'required',
+    message: 'Вкажіть ліміт мінімум в одному полі',
     test: function (value) {
       return !!Object.keys(value).find((key) => {
         return value[key as keyof typeof value] !== undefined;
@@ -81,10 +89,20 @@ onUpdated(()=> {
 
 const submit = handleSubmit(() => {
   const formData = new FormData();
+  const limits = values.limits;
+  const limitsFormatted = Object.keys(limits).reduce((result, key) => {
+    if (isNaN(limits[key])) {
+      return result;
+    }
+    return {
+      ...result,
+      [key]: Number(limits[key]),
+    };
+}, {});
 
   formData.append("reg-name", values.name);
   formData.append("reg-url", values.url);
-  formData.append("reg-limits", JSON.stringify(values.limits));
+  formData.append("reg-limits", JSON.stringify(limitsFormatted));
 
   if (publicApiValues.value?.name) {
     axios.post(`/admin/registry/public-api-edit/${registry.value}`, formData, {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toRefs, computed, withDefaults } from 'vue';
 
+import { numberRegexp } from '@/constants/form';
 import FormField from '@/components/common/FormField.vue';
 import MenuList from '@/components/common/MenuList.vue';
 import Typography from '@/components/common/Typography.vue';
@@ -88,11 +89,11 @@ const onIntervalRemove = (item: { value: string }) => {
     <Typography variant="bodyText">Вкажіть ліміт мінімум для одного проміжку часу:</Typography>
     <div v-for="(interval, i) in selectedIntervals" :key="i" class="limit-block">
       <TextField
-        type="number"
         :name="interval.value"
         :style="{ width: '120px' }"
         v-model="modelValue[interval.value as keyof PublicApiLimits]"
         :error="(errors?.[interval.value as keyof typeof errors] || '')"
+        :allowed-characters="numberRegexp"
       />
       <Typography variant="bodyText" class="limit-title">{{ interval.title }}</Typography>
       <IconButton @onClick="onIntervalRemove(interval)">
