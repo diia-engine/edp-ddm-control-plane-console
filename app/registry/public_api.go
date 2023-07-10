@@ -3,6 +3,7 @@ package registry
 import (
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/gerrit"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -29,8 +30,14 @@ func (a *App) editPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 	registryName := ctx.Param("name")
 	systemName := ctx.PostForm("reg-name")
 	regURL := ctx.PostForm("reg-url")
+	regLimitsValue := ctx.PostForm("reg-limits")
+	var regLimits Limits
 	if systemName == "" {
 		return nil, errors.New("reg-name is required")
+	}
+
+	if err := json.Unmarshal([]byte(regLimitsValue), &regLimits); err != nil {
+		return nil, errors.Wrap(err, "unable to decode limits from request")
 	}
 
 	vals, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
@@ -42,6 +49,7 @@ func (a *App) editPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 	for i, v := range vals.PublicApi {
 		if v.Name == systemName {
 			vals.PublicApi[i].URL = regURL
+			vals.PublicApi[i].Limits = regLimits
 			found = true
 			break
 		}
@@ -70,9 +78,17 @@ func (a *App) editPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 
 func (a *App) addPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 	registryName := ctx.Param("name")
+	var regLimits Limits
+	regLimitsValue := ctx.PostForm("reg-limits")
+
+	if err := json.Unmarshal([]byte(regLimitsValue), &regLimits); err != nil {
+		return nil, errors.Wrap(err, "unable to decode limits from request")
+	}
+
 	publicAPI := PublicAPI{
 		Name:    ctx.PostForm("reg-name"),
 		URL:     ctx.PostForm("reg-url"),
+		Limits:  regLimits,
 		Enabled: true,
 	}
 
@@ -91,6 +107,7 @@ func (a *App) addPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 		Name:    publicAPI.Name,
 		Enabled: publicAPI.Enabled,
 		URL:     publicAPI.URL,
+		Limits:  publicAPI.Limits,
 	})
 
 	if err != nil {

@@ -110,3 +110,12 @@ export interface RegistryWizardTemplateVariables {
   smtpConfig: string
   updateBranches: any[]
 }
+
+export interface PublicApiLimits {
+  second?: string,
+  minute?: string,
+  hour?: string,
+  day?: string,
+  month?: string,
+  year?: string,
+}
