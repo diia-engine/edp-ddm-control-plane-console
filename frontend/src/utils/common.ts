@@ -1,4 +1,4 @@
-export const getStatus = (status: string): string => {
+export const getStatusTitle = (status: string): string => {
     switch (`status-${status}`) {
         case "status-active":
         case "status-SUCCESS":
@@ -11,6 +11,8 @@ export const getStatus = (status: string): string => {
             return "Помилка";
         case "status-inactive":
             return "В обробці";
+        case "status-disabled":
+            return "Заблокований";
         default: 
             return '';
     }

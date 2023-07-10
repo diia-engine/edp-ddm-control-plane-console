@@ -1,11 +1,11 @@
 import type { ExternalReg } from '@/types/registry';
 
 export const getExtStatus = (status: string, enabled: boolean) => {
+  if (!enabled) {
+    return "status-disabled";
+  }
   if (status === "") {
       return "status-active";
-  }
-  if (!enabled) {
-      return "status-disabled";
   }
   return `status-${status}`;
 };
