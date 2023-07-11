@@ -11,15 +11,15 @@ import (
 const (
 	keycloakIndex                = "keycloak"
 	RegistryCitizenIdGovUaSecret = "RegistryCitizenIdGovUaSecret"
-	citizenPortalIndex           = "citizenPortal"
+	portalsIndex                 = "portals"
 )
 
 func (a *App) prepareCitizenAuthSettings(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) error {
+	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
 	if r.RegistryCitizenAuth != "" {
 		var citizenAuthSettings struct {
 			KeycloakAuthFlowsCitizenAuthFlow
-			CitizenPortal CitizenPortal `json:"citizenPortal"`
+			Portals Portals `json:"portals"`
 		}
 		if err := json.Unmarshal([]byte(r.RegistryCitizenAuth), &citizenAuthSettings); err != nil {
 			return false, fmt.Errorf("unable to decode citizen auth settings %w", err)
@@ -39,10 +39,10 @@ func (a *App) prepareCitizenAuthSettings(ctx *gin.Context, r *registry, values *
 			Widget:          citizenAuthSettings.Widget,
 			RegistryIdGovUa: citizenAuthSettings.RegistryIdGovUa,
 		}
-		values.CitizenPortal = citizenAuthSettings.CitizenPortal
+		values.Portals.Citizen = citizenAuthSettings.Portals.Citizen
 		values.OriginalYaml[keycloakIndex] = values.Keycloak
-		values.OriginalYaml[citizenPortalIndex] = values.CitizenPortal
+		values.OriginalYaml[portalsIndex] = values.Portals
 		return true, nil
 	}
-	return nil
+	return false, nil
 }

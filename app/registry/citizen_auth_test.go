@@ -19,7 +19,7 @@ func TestPrepareEDRCheckTrue(t *testing.T) {
 		RegistryCitizenAuth: `{"edrCheck": true }`,
 	}
 
-	result := app.prepareCitizenAuthSettings(&ctx, &r, &values, secrets, &mrActions)
+	_, result := app.prepareCitizenAuthSettings(&ctx, &r, &values, secrets, &mrActions)
 
 	assert.Nil(t, result)
 	assert.Equal(t, values.Keycloak.CitizenAuthFlow.EDRCheck, true)
@@ -38,7 +38,7 @@ func TestPrepareEDRCheckFalse(t *testing.T) {
 		RegistryCitizenAuth: `{"edrCheck": false }`,
 	}
 
-	result := app.prepareCitizenAuthSettings(&ctx, &r, &values, secrets, &mrActions)
+	_, result := app.prepareCitizenAuthSettings(&ctx, &r, &values, secrets, &mrActions)
 
 	assert.Nil(t, result)
 	assert.Equal(t, values.Keycloak.CitizenAuthFlow.EDRCheck, false)

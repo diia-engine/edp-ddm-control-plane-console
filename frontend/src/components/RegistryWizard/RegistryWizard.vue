@@ -160,7 +160,7 @@ export default defineComponent({
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'recipientAuthentication'">
                     <RegistryRecipientAuth
                         :keycloak-settings="templateVariables.registryValues?.keycloak.citizenAuthFlow"
-                        :citizen-portal-settings="templateVariables.registryValues?.citizenPortal"
+                        :citizen-portal-settings="templateVariables.registryValues?.portals?.citizen"
                         ref="recipientAuthTab"
                     />
                 </div>

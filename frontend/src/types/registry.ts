@@ -43,7 +43,7 @@ export interface RegistryAdmin {
   username: string
 }
 
-export interface CitizenPortalSettings {
+export interface PortalSettings {
   signWidget: {
     copyFromAuthWidget: boolean,
     url: string,
@@ -86,7 +86,6 @@ export interface RegistryWizardTemplateVariables {
   registryData: string
   registryValues: {
     administrators: RegistryAdmin[]
-    citizenPortal: CitizenPortalSettings
     digitalDocuments: {
       maxFileSize: string
       maxTotalFileSize: string
@@ -100,7 +99,9 @@ export interface RegistryWizardTemplateVariables {
       identityProviders: any
       realms: Record<string, any>
     }
-    portals: any
+    portals: {
+      citizen: PortalSettings
+    }
     signWidget: {
       url: string
     }

@@ -23,11 +23,6 @@ type Values struct {
 	OriginalYaml     map[string]interface{}    `yaml:"-" json:"-"`
 	DigitalDocuments DigitalDocuments          `yaml:"digitalDocuments" json:"digitalDocuments"`
 	PublicApi        []PublicAPI               `yaml:"publicApi" json:"publicApi"`
-	CitizenPortal    CitizenPortal             `yaml:"citizenPortal" json:"citizenPortal"`
-}
-
-type CitizenPortal struct {
-	SignWidget CitizenSignWidget `yaml:"signWidget" json:"signWidget"`
 }
 
 type DigitalDocuments struct {
@@ -62,7 +57,8 @@ type Portals struct {
 }
 
 type Portal struct {
-	CustomDNS CustomDNS `yaml:"customDns" json:"customDns"`
+	CustomDNS  CustomDNS  `yaml:"customDns" json:"customDns"`
+	SignWidget SignWidget `yaml:"signWidget" json:"signWidget"`
 }
 
 type CustomDNS struct {
@@ -115,10 +111,17 @@ type KeycloakWidgetAuthSettings struct {
 	Height int    `yaml:"height" json:"height,omitempty"`
 }
 
+type KeycloakRegistryIdGovUaSettings struct {
+	Url          string `yaml:"url" json:"url,omitempty"`
+	ClientSecret string `yaml:"clientSecret" json:"clientSecret,omitempty"`
+	ClientId     string `yaml:"clientId" json:"clientId,omitempty"`
+}
+
 type KeycloakAuthFlowsCitizenAuthFlow struct {
-	EDRCheck bool                       `yaml:"edrCheck" json:"edrCheck"`
-	AuthType string                     `yaml:"authType" json:"authType"`
-	Widget   KeycloakWidgetAuthSettings `yaml:"widget" json:"widget"`
+	EDRCheck        bool                            `yaml:"edrCheck" json:"edrCheck"`
+	AuthType        string                          `yaml:"authType" json:"authType"`
+	Widget          KeycloakWidgetAuthSettings      `yaml:"widget" json:"widget"`
+	RegistryIdGovUa KeycloakRegistryIdGovUaSettings `yaml:"registryIdGovUa" json:"registryIdGovUa"`
 }
 
 type KeycloakRealms struct {
@@ -131,10 +134,6 @@ type KeycloakRealmsOfficerPortal struct {
 }
 
 type SignWidget struct {
-	URL string `yaml:"url" json:"url"`
-}
-
-type CitizenSignWidget struct {
 	URL                string `yaml:"url" json:"url"`
 	Height             int    `yaml:"height" json:"height"`
 	CopyFromAuthWidget bool   `yaml:"copyFromAuthWidget" json:"copyFromAuthWidget"`

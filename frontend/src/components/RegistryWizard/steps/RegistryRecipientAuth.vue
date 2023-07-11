@@ -5,7 +5,7 @@ import { getErrorMessage } from '@/utils';
 import { computed, watch, type Ref } from 'vue';
 import { useForm } from 'vee-validate';
 import * as Yup from 'yup';
-import type { CitizenAuthFlow, CitizenPortalSettings } from '@/types/registry';
+import type { CitizenAuthFlow, PortalSettings } from '@/types/registry';
 import { CitizenAuthType } from '@/types/registry';
 
 interface HTMLEvent<T extends EventTarget = HTMLElement> extends Event {
@@ -15,7 +15,9 @@ interface HTMLEvent<T extends EventTarget = HTMLElement> extends Event {
 
 
 interface OutFormValues extends CitizenAuthFlow {
-  citizenPortal: CitizenPortalSettings
+  portals: {
+    citizen: PortalSettings
+  }
 }
 
 interface FormValues {
@@ -32,10 +34,11 @@ interface FormValues {
 }
 interface RegistryRecipientAuthProps {
   keycloakSettings: CitizenAuthFlow,
-  citizenPortalSettings: CitizenPortalSettings,
+  citizenPortalSettings: PortalSettings,
 }
 const props = defineProps<RegistryRecipientAuthProps>();
 const isSecretExists = props.keycloakSettings?.registryIdGovUa?.clientSecret?.length > 0;
+const isHeightTruthy = (height: string | number | undefined): boolean => !!height && height !== '0';
 
 const validationSchema = Yup.object<FormValues>({
   authType: Yup.string()
@@ -90,13 +93,15 @@ const defaultValues: OutFormValues = {
     clientId: '',
     clientSecret: '',
   },
-  citizenPortal: {
-    signWidget: {
-      copyFromAuthWidget: false,
-      height: defaultWidget.height,
-      url: defaultWidget.url,
+  portals:{
+    citizen: {
+      signWidget: {
+        copyFromAuthWidget: false,
+        height: defaultWidget.height,
+        url: defaultWidget.url,
+      },
     },
-  }
+  },
 };
 
 const { errors, useFieldModel, validate, values, setFieldValue } = useForm<FormValues>({
@@ -109,9 +114,11 @@ const { errors, useFieldModel, validate, values, setFieldValue } = useForm<FormV
     idGovUaUrl: props.keycloakSettings?.registryIdGovUa?.url ?? defaultValues.registryIdGovUa.url,
     clientId: props.keycloakSettings?.registryIdGovUa?.clientId ?? defaultValues.registryIdGovUa.clientId,
     secret: defaultValues.registryIdGovUa.clientSecret,
-    copyFromAuthWidget: props.citizenPortalSettings?.signWidget?.copyFromAuthWidget || defaultValues.citizenPortal.signWidget.copyFromAuthWidget,
-    signWidgetHeight: props.citizenPortalSettings?.signWidget?.height ?? defaultValues.citizenPortal.signWidget.height,
-    signWidgetUrl: props.citizenPortalSettings?.signWidget?.url ?? defaultValues.citizenPortal.signWidget.url,
+    copyFromAuthWidget: props.citizenPortalSettings?.signWidget?.copyFromAuthWidget || defaultValues.portals.citizen.signWidget.copyFromAuthWidget,
+    signWidgetHeight: isHeightTruthy(props.citizenPortalSettings?.signWidget?.height)
+      ? props.citizenPortalSettings?.signWidget?.height
+      : defaultValues.portals.citizen.signWidget.height,
+    signWidgetUrl: props.citizenPortalSettings?.signWidget?.url || defaultValues.portals.citizen.signWidget.url,
   }
 });
 
@@ -174,7 +181,7 @@ watch([url, widgetHeight], () => {
     setFieldValue('signWidgetHeight', widgetHeight.value as number);
   }
 });
-const preparedValues = computed(() => ({
+const preparedValues = computed<OutFormValues>(() => ({
   edrCheck: values.edrCheckEnabled,
   authType: values.authType,
   widget: {
@@ -186,11 +193,13 @@ const preparedValues = computed(() => ({
     clientSecret: values.secret,
     url: values.idGovUaUrl,
   },
-  citizenPortal: {
-    signWidget: {
-      copyFromAuthWidget: values.copyFromAuthWidget,
-      url: values.signWidgetUrl,
-      height: values.signWidgetHeight,
+  portals: {
+    citizen: {
+      signWidget: {
+        copyFromAuthWidget: values.copyFromAuthWidget,
+        url: values.signWidgetUrl,
+        height: values.signWidgetHeight,
+      }
     }
   }
 }));
