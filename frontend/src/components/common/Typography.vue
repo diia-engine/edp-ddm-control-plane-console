@@ -1,8 +1,25 @@
 <script lang="ts">
+import { defineComponent, type PropType } from 'vue';
 
-export default {
+type Variant = 'h1' |
+   'h2' |
+   'h3' |
+   'h4' |
+   'h5' |
+   'h6' |
+   'h7' |
+   'h8' |
+   'span' |
+   'buttonText' |
+   'tiny' |
+   'small' |
+   'bodyText' |
+   'subheading';
+
+
+export default defineComponent({
   props: {
-    variant: { type: String },
+    variant: { type: Object as PropType<Variant> },
     upperCase: { type: Boolean },
     class: { type: String },
   },
@@ -34,7 +51,7 @@ export default {
     }
 
   }
-};
+});
 
 </script>
 

@@ -27,7 +27,7 @@ const gerritURL = variables?.gerritURL;
 </script>
 <script lang="ts">
 import $ from 'jquery';
-import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getStatus } from '@/utils';
+import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getStatusTitle } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
 
 export default {
@@ -127,7 +127,7 @@ export default {
                     <tbody>
                         <tr v-for="$br in branches" :key="$br.Name">
                             <td>
-                                <img :title="getStatus($br.status.value)" :alt="getStatus($br.status.value)"
+                                <img :title="getStatusTitle($br.status.value)" :alt="getStatusTitle($br.status.value)"
                                     :src="getImageUrl(`status-${$br.status.value}`)" />
                             </td>
                             <td>

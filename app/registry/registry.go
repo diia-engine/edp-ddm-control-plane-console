@@ -58,7 +58,6 @@ type registry struct {
 	CronSchedule                  string   `form:"cron-schedule"`
 	CronScheduleDays              string   `form:"cron-schedule-days"`
 	KeycloakCustomHostname        string   `form:"keycloak-custom-hostname"`
-	EDRCheckEnabled               string   `form:"edr-check-enabled"`
 	TrembitaIPList                string   `form:"trembita-ip-list"`
 	CrunchyPostgresMaxConnections string   `form:"crunchy-postgres-max-connections"`
 	CrunchyPostgresStorageSize    string   `form:"crunchy-postgres-storage-size"`
@@ -71,6 +70,7 @@ type registry struct {
 	IsRegistry194Lower            bool     `form:"-" json:"isRegistry194Lower"`
 	KeyDataChanged                string   `form:"key-data-changed"`
 	KeyVerificationChanged        string   `form:"key-verification-changed"`
+	RegistryCitizenAuth           string   `form:"registry-citizen-auth"`
 }
 
 func (r *registry) KeysRequired() bool {

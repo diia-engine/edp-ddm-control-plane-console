@@ -35,7 +35,7 @@ const mrAvailable = variables?.mrAvailable;
 <script lang="ts">
 import $ from 'jquery';
 import axios from 'axios';
-import { getGerritURL, getImageUrl, getJenkinsURL, getStatus } from '@/utils';
+import { getGerritURL, getImageUrl, getJenkinsURL, getStatusTitle } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
 import PublicApiBlock from './components/PublicApiBlock.vue';
 import { defineComponent } from 'vue';
@@ -1438,9 +1438,9 @@ export default defineComponent({
                         <tbody v-if="externalRegs && externalRegs.length">
                             <tr v-for="($er, $index) in externalRegs" :key="$index">
                                 <td>
-                                    <img :alt="getStatus($er.StatusRegistration)"
-                                        :src="getImageUrl(`status-${$er.StatusRegistration}`)"
-                                        :title="getStatus($er.StatusRegistration)" />
+                                    <img :alt="getStatusTitle($er.StatusRegistration)"
+                                        :src="getImageUrl(getExtStatus($er.StatusRegistration, $er.Enabled))"
+                                        :title="getStatusTitle(getExtStatus($er.StatusRegistration, $er.Enabled).replace('status-', ''))" />
                                 </td>
                                 <td class="ereg-name">
                                     {{ $er.Name }}
@@ -1464,7 +1464,7 @@ export default defineComponent({
                                         <a :status="inactive($er.StatusRegistration)"
                                             @click="inactive($er.StatusRegistration) ? disabledLink : disableExternalReg($er.Name, getTypeStr($er), $event)"
                                             href="#">
-                                            <img :title="$er.StatusRegistration == ' status-disabled' ? 'Розблокувати доступ' : 'Заблокувати доступ'"
+                                            <img :title="getExtStatus($er.StatusRegistration, $er.Enabled) === 'status-disabled' ? 'Розблокувати доступ' : 'Заблокувати доступ'"
                                                 alt="key" :src="getImageUrl(`lock-${getExtStatus($er.StatusRegistration, $er.Enabled)}`)" />
                                         </a>
                                         <a @click="inactive($er.StatusRegistration) ? disabledLink : removeExternalReg($er.Name, getTypeStr($er), $event)"
@@ -1530,7 +1530,7 @@ export default defineComponent({
                         <tbody>
                             <tr v-for="($br, $index) in branches" :key="$index">
                                 <td>
-                                    <img :title="getStatus($br.status.value)" :alt="getStatus($br.status.value)"
+                                    <img :title="getStatusTitle($br.status.value)" :alt="getStatusTitle($br.status.value)"
                                         :src="getImageUrl(`status-${$br.status.value}`)" />
                                 </td>
                                 <td>

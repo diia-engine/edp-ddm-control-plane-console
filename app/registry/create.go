@@ -59,7 +59,7 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareSupplierAuthConfig,
 		a.prepareBackupSchedule,
 		a.prepareKeycloakCustomHostname,
-		a.prepareEDRCheck,
+		a.prepareCitizenAuthSettings,
 		a.prepareTrembitaIPList,
 		a.prepareDigitalDocuments,
 	}
