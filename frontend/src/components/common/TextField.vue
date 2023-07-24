@@ -54,8 +54,8 @@ export default {
       :value="modelValue ?? value"
       @input="onChange(($event.target as any).value, $attrs.type as string)"
     />
-    <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error, name) }}</Typography>
-    <Typography class="form-input-group-error-description" v-if="description" variant="small">{{ description }}</Typography>
+    <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error) }}</Typography>
+    <Typography v-if="description" class="form-input-group-error-description" variant="small">{{ description }}</Typography>
     <slot></slot>
   </div>
 </template>
