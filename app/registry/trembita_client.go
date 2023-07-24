@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -106,7 +107,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 	//TODO: change path to single secret vault:secret/<registry>/trembita-registries
 	//TODO: check if keys rewrited or keep
 	if tf.TrembitaServiceAuthType == authTypeAuthToken && tf.TrembitaServiceAuthSecret != "" {
-		vaultPath := fmt.Sprintf("%s/trembita-registries", a.vaultRegistryPath(registryName))
+		vaultPath := fmt.Sprintf("%s/trembita-registries/%s-%s", a.vaultRegistryPath(registryName), tf.TrembitaClientRegitryName, time.Now().Format("20060201T150405Z"))
 		prefixedPath := fmt.Sprintf("vault:%s", vaultPath)
 
 		if tf.TrembitaServiceAuthSecret != prefixedPath {
@@ -128,7 +129,7 @@ func (a *App) setTrembitaClientRegistryData(ctx *gin.Context) (rsp router.Respon
 	values.OriginalYaml[trembitaValuesKey] = trembitaDict
 
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
+		[]string{}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
 		MRLabel{Key: MRLabelTrembitaRegsitryName, Value: tf.TrembitaClientRegitryName}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
@@ -165,7 +166,7 @@ func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Respons
 	trembitaRegistry.Protocol = tf.TrembitaClientProtocol
 
 	if tf.TrembitaServiceAuthType == authTypeAuthToken && tf.TrembitaServiceAuthSecret != "" {
-		vaultPath := fmt.Sprintf("%s/trembita-registries", a.vaultRegistryPath(registryName))
+		vaultPath := fmt.Sprintf("%s/trembita-registries/%s-%s", a.vaultRegistryPath(registryName), tf.TrembitaClientRegitryName, time.Now().Format("20060201T150405Z"))
 		prefixedPath := fmt.Sprintf("vault:%s", vaultPath)
 
 		if tf.TrembitaServiceAuthSecret != prefixedPath {
@@ -183,7 +184,7 @@ func (a *App) createTrembitaClientRegistry(ctx *gin.Context) (rsp router.Respons
 	values.Trembita.Registries[tf.TrembitaClientRegitryName] = trembitaRegistry
 	values.OriginalYaml[trembitaValuesKey] = values.Trembita
 	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit,
-		[]string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
+		[]string{}, MRLabel{Key: MRLabelTarget, Value: MRLabelTargetTrembitaRegistryUpdate},
 		MRLabel{Key: MRLabelTrembitaRegsitryName, Value: tf.TrembitaClientRegitryName}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
@@ -217,7 +218,7 @@ func (a *App) deleteTrembitaClient(ctx *gin.Context) (rsp router.Response, retEr
 
 	delete(values.Trembita.Registries, trembitaClientName)
 	values.OriginalYaml[trembitaValuesKey] = values.Trembita
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 

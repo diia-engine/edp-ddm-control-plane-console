@@ -413,6 +413,12 @@ export default defineComponent({
         },
         showDeleteTrembitaClientForm(registry: any, _type: any, e: any) {
             e.preventDefault();
+
+            if (this.mergeRequest.has) {
+                this.showOpenMRForm();
+                return;
+            }
+
             if (_type === 'platform') {
                 return;
             }
@@ -464,6 +470,12 @@ export default defineComponent({
         },
         showDeleteExternalSystemForm(registry: string, _type: string, e: any) {
             e.preventDefault();
+
+            if (this.mergeRequest.has) {
+                this.showOpenMRForm();
+                return;
+            }
+
             if (_type === 'platform') {
                 return;
             }

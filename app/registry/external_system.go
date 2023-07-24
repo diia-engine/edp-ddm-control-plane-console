@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -30,8 +31,8 @@ type RegistryExternalSystemForm struct {
 	AuthUsername        string `form:"external-system-auth-username"`
 }
 
-func externalSystemsSecretPath(vaultRegistryPath string) string {
-	return fmt.Sprintf("%s/external-systems", vaultRegistryPath)
+func externalSystemsSecretPath(vaultRegistryPath string, exRegistryName string) string {
+	return fmt.Sprintf("%s/external-systems/%s-%s", vaultRegistryPath, exRegistryName, time.Now().Format("20060201T150405Z"))
 }
 
 func externalSystemSecretPrefixedPath(originalPath string) string {
@@ -48,7 +49,7 @@ func (f RegistryExternalSystemForm) ToNestedForm(vaultRegistryPath, wiremockAddr
 	}
 
 	if f.AuthType != authTypeNoAuth {
-		es.Auth["secret"] = externalSystemSecretPrefixedPath(externalSystemsSecretPath(vaultRegistryPath))
+		es.Auth["secret"] = externalSystemSecretPrefixedPath(vaultRegistryPath)
 	}
 
 	if f.AuthType == authTypeAuthTokenBearer {
@@ -72,6 +73,11 @@ func (a *App) getBasicUsername(ctx *gin.Context) (rsp router.Response, retErr er
 		return nil, errors.New("bad request")
 	}
 
+	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get values")
+	}
+
 	cbService, err := a.Services.Codebase.ServiceForContext(router.ContextWithUserAccessToken(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("unable to init service for user context, %w", err)
@@ -81,8 +87,9 @@ func (a *App) getBasicUsername(ctx *gin.Context) (rsp router.Response, retErr er
 	if err != nil {
 		return nil, fmt.Errorf("unable to find registry, %w", err)
 	}
+	secret := values.ExternalSystems[systemRegsitryName].Auth["secret"]
 
-	dataDict, err := a.Vault.Read(externalSystemsSecretPath(a.vaultRegistryPath(registryName)))
+	dataDict, err := a.Vault.Read(secret)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load id-gov-ua secret, err: %w", err)
 	}
@@ -128,7 +135,7 @@ func (a *App) deleteExternalSystem(ctx *gin.Context) (rsp router.Response, retEr
 
 	values.OriginalYaml[externalSystemsKey] = values.ExternalSystems
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -182,8 +189,8 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 		return nil, errors.Wrap(err, "external system already exists")
 	}
 
-	extenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName),
-		strings.ReplaceAll(a.WiremockAddr, registryNamePlaceholder, registryName))
+	var secretPath = externalSystemsSecretPath(a.vaultRegistryPath(registryName), f.RegistryName)
+	extenalSystem := f.ToNestedForm(secretPath, strings.ReplaceAll(a.WiremockAddr, registryNamePlaceholder, registryName))
 	extenalSystem.Protocol = externalSystemDefaultProtocol
 	extenalSystem.Type = externalSystemDeletableType
 
@@ -196,11 +203,11 @@ func (a *App) createExternalSystemRegistry(ctx *gin.Context) (rsp router.Respons
 	valuesExternalSystemsDict[f.RegistryName] = extenalSystem
 	values.OriginalYaml[externalSystemsKey] = valuesExternalSystemsDict
 
-	if err := a.setExternalSystemRegistrySecrets(&f, registryName); err != nil {
+	if err := a.setExternalSystemRegistrySecrets(&f, secretPath); err != nil {
 		return nil, errors.Wrap(err, "unable to set external system")
 	}
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -218,9 +225,12 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 	}
 
 	var f RegistryExternalSystemForm
+
 	if err := ctx.ShouldBind(&f); err != nil {
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
+
+	var secretPath = externalSystemsSecretPath(a.vaultRegistryPath(registryName), f.RegistryName)
 
 	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
@@ -232,7 +242,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		return nil, errors.Wrap(err, "unable to get external system")
 	}
 
-	editExtenalSystem := f.ToNestedForm(a.vaultRegistryPath(registryName),
+	editExtenalSystem := f.ToNestedForm(secretPath,
 		strings.ReplaceAll(a.WiremockAddr, registryNamePlaceholder, registryName))
 	editExtenalSystem.Type = valuesExternalSystem.Type
 	editExtenalSystem.Protocol = valuesExternalSystem.Protocol
@@ -246,11 +256,11 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 	valuesExternalSystemsDict[f.RegistryName] = editExtenalSystem
 	values.OriginalYaml[externalSystemsKey] = valuesExternalSystemsDict
 
-	if err := a.setExternalSystemRegistrySecrets(&f, registryName); err != nil {
+	if err := a.setExternalSystemRegistrySecrets(&f, secretPath); err != nil {
 		return nil, errors.Wrap(err, "unable to set external system")
 	}
 
-	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}, MRLabel{Key: MRLabelApprove, Value: MRLabelApproveAuto}); err != nil {
+	if err := CreateEditMergeRequest(ctx, registryName, values.OriginalYaml, a.Gerrit, []string{}); err != nil {
 		return nil, errors.Wrap(err, "unable to create merge request")
 	}
 
@@ -258,8 +268,7 @@ func (a *App) setExternalSystemRegistryData(ctx *gin.Context) (rsp router.Respon
 		fmt.Sprintf("/admin/registry/view/%s", registryName)), nil
 }
 
-func (a *App) setExternalSystemRegistrySecrets(f *RegistryExternalSystemForm, registryName string) error {
-	secretPath := externalSystemsSecretPath(a.vaultRegistryPath(registryName))
+func (a *App) setExternalSystemRegistrySecrets(f *RegistryExternalSystemForm, secretPath string) error {
 	secretData := make(map[string]interface{})
 	prefixedPath := externalSystemSecretPrefixedPath(secretPath)
 
