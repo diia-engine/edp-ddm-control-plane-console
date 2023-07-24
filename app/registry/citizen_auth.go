@@ -21,6 +21,7 @@ func (a *App) prepareCitizenAuthSettings(ctx *gin.Context, r *registry, values *
 			KeycloakAuthFlowsCitizenAuthFlow
 			Portals Portals `json:"portals"`
 		}
+		citizenAuthSettings.Portals = values.Portals
 		if err := json.Unmarshal([]byte(r.RegistryCitizenAuth), &citizenAuthSettings); err != nil {
 			return false, fmt.Errorf("unable to decode citizen auth settings %w", err)
 		}
