@@ -12,10 +12,15 @@ interface FormFieldProps {
 
 defineProps<FormFieldProps>();
 </script>
+<script lang="ts">
+export default {
+  inheritAttrs: false
+};
+</script>
 
 <template>
   <div class="form-input-group" :class="{ 'error': error }">
-    <label :for="name" v-if="label">
+    <label :for="name">
       {{ label }} <b v-if="required" class="red-star">*</b>
     </label>
     <slot></slot>

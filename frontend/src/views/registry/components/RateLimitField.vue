@@ -87,25 +87,19 @@ const onIntervalRemove = (item: { value: string }) => {
 <template>
   <FormField :label="label" :name="name" :required="required" :error="errors?.common">
     <Typography variant="bodyText">Вкажіть ліміт мінімум для одного проміжку часу:</Typography>
-    <FormField
-      v-for="(interval, i) in selectedIntervals"
-      :key="i"
-      :error="(errors?.[interval.value as keyof typeof errors] || '')"
-      class="limit-field"
-    >
-      <div class="limit-block">
-        <TextField
-          :name="interval.value"
-          :style="{ width: '120px' }"
-          v-model="modelValue[interval.value as keyof PublicApiLimits]"
-          :allowed-characters="numberRegexp"
-        />
-        <Typography variant="bodyText" class="limit-title">{{ interval.title }}</Typography>
-        <IconButton @onClick="onIntervalRemove(interval)" class="limit-remove-icon">
-          <img src="@/assets/svg/close.svg" alt="remove limit" />
-        </IconButton>
-      </div>
-    </FormField>
+    <div v-for="(interval, i) in selectedIntervals" :key="i" class="limit-block">
+      <TextField
+        :name="interval.value"
+        :style="{ width: '120px' }"
+        v-model="modelValue[interval.value as keyof PublicApiLimits]"
+        :error="(errors?.[interval.value as keyof typeof errors] || '')"
+        :allowed-characters="numberRegexp"
+      />
+      <Typography variant="bodyText" class="limit-title">{{ interval.title }}</Typography>
+      <IconButton @onClick="onIntervalRemove(interval)">
+        <img src="@/assets/svg/close.svg" alt="remove limit" />
+      </IconButton>
+    </div>
     <MenuList :items="items" :onItemClick="onIntervalSelect" v-if="items.length" class="limit-select" />
   </FormField>
 </template>
@@ -114,17 +108,9 @@ const onIntervalRemove = (item: { value: string }) => {
 .content-text {
   margin-bottom: 24px;
 }
-
-.limit-field {
-  margin: 0;
-}
-
-.limit-remove-icon {
-  margin-top: 8px;
-}
 .limit-block {
   display: flex;
-  align-items: start;
+  align-items: top;
 }
 
 .limit-title {
