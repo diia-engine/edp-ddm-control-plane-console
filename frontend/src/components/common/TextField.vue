@@ -12,7 +12,7 @@ interface TextFieldProps {
   value?: HTMLInputElement['value']
   required?: boolean
   placeholder?: HTMLInputElement['placeholder'],
-  rootClass?: string
+  rootClass?: string,
   allowedCharacters?: string,
 }
 
@@ -51,6 +51,7 @@ export default {
       :name="name"
       :aria-label="name"
       :placeholder="placeholder"
+      v-bind="$attrs"
       :value="modelValue ?? value"
       @input="onChange(($event.target as any).value, $attrs.type as string)"
     />
