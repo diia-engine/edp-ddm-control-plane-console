@@ -96,6 +96,10 @@ function disablePublicAccessReg(registry: string, name: string, e: any) {
   });
 }
 
+function inactive(status?: string) {
+  return status === "inactive" || status === "failed";
+}
+
 </script>
 
 <template>
