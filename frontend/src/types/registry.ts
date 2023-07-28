@@ -112,10 +112,10 @@ export interface RegistryWizardTemplateVariables {
 }
 
 export interface PublicApiLimits {
-  second?: string,
-  minute?: string,
-  hour?: string,
-  day?: string,
-  month?: string,
-  year?: string,
+  second?: number,
+  minute?: number,
+  hour?: number,
+  day?: number,
+  month?: number,
+  year?: number,
 }

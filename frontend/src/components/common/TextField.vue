@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import Typography from '@/components/common/Typography.vue';
 import { getErrorMessage } from '@/utils';
-import { watch, toRefs } from 'vue';
 
 interface TextFieldProps {
   name?: string,
@@ -13,23 +12,10 @@ interface TextFieldProps {
   required?: boolean
   placeholder?: HTMLInputElement['placeholder'],
   rootClass?: string
-  allowedCharacters?: string,
 }
 
-const props = defineProps<TextFieldProps>();
+defineProps<TextFieldProps>();
 const $emit = defineEmits(['update:modelValue']);
-const { name, label, description, error, modelValue, required, placeholder, rootClass, allowedCharacters } = toRefs(props);
-
-watch(modelValue, (value) => {
-  const charactersRegexp = allowedCharacters?.value;
-  if (charactersRegexp) {
-    const match = value.match(RegExp(charactersRegexp, 'g'));
-    const matchedValue = match?.length ? match.join('') : '';
-    if (matchedValue !== value) {
-      $emit('update:modelValue', matchedValue);
-    }
-  }
-});
 
 const onChange = (value: any, type: string) => {
   const val = type === 'number' ? +value : value;
@@ -51,11 +37,12 @@ export default {
       :name="name"
       :aria-label="name"
       :placeholder="placeholder"
+      v-bind="$attrs"
       :value="modelValue ?? value"
       @input="onChange(($event.target as any).value, $attrs.type as string)"
     />
-    <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error, name) }}</Typography>
-    <Typography class="form-input-group-error-description" v-if="description" variant="small">{{ description }}</Typography>
+    <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error) }}</Typography>
+    <Typography v-if="description" class="form-input-group-error-description" variant="small">{{ description }}</Typography>
     <slot></slot>
   </div>
 </template>
