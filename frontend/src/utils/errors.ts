@@ -1,4 +1,4 @@
-export const getErrorMessage = (key: string, name?: string): string => {
+export const getErrorMessage = (key: string): string => {
   switch (key) {
     case 'required':
       return 'Поле обов’язкове для заповнення.';
@@ -6,10 +6,9 @@ export const getErrorMessage = (key: string, name?: string): string => {
       return 'Перевищено максимально допустиме значення';
     case 'isUnique':
       return 'Неунікальне значення';
+    case 'rateLimitError':
+      return 'Вкажіть ліміт мінімум в одному полі';
     default:
-      if (name && key !== `${name} is invalid`) {
-        return key;
-      }
       return 'Перевірте формат поля';
   }
 };

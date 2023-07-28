@@ -59,7 +59,7 @@ const validationSchema = yup.object({
     month: numberSchema,
     year: numberSchema,
   }).required().test({
-    message: 'Вкажіть ліміт мінімум в одному полі',
+    message: 'rateLimitError',
     test: function (value) {
       return !!Object.keys(value).find((key) => {
         return value[key as keyof typeof value] !== undefined;

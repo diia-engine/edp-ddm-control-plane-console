@@ -19,7 +19,7 @@ defineProps<FormFieldProps>();
       {{ label }} <b v-if="required" class="red-star">*</b>
     </label>
     <slot></slot>
-    <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error, name) }}</Typography>
+    <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error) }}</Typography>
     <Typography class="form-input-group-error-description" v-if="description" variant="small">{{ description }}</Typography>
   </div>
 </template>
