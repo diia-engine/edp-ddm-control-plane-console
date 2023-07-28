@@ -1,19 +1,15 @@
 <script setup lang="ts">
+import Modal from '@/components/common/Modal.vue';
+import TextField from '@/components/common/TextField.vue';
+import Typography from '@/components/common/Typography.vue';
 import * as yup from 'yup';
 import { useForm } from 'vee-validate';
 import { onUpdated, toRefs } from 'vue';
 import axios, { AxiosError } from 'axios';
 
-import RateLimitField from '@/views/registry/components/RateLimitField.vue';
-import type { PublicApiLimits } from '@/types/registry';
-import Modal from '@/components/common/Modal.vue';
-import TextField from '@/components/common/TextField.vue';
-import Typography from '@/components/common/Typography.vue';
-
 interface Data {
   name: string;
   url: string;
-  limits: PublicApiLimits;
 }
 
 interface RegistryEditPublicApiModalProps {
@@ -26,7 +22,6 @@ interface RegistryEditPublicApiModalProps {
 const props = defineProps<RegistryEditPublicApiModalProps>();
 const { publicApiPopupShow, publicApiValues, publicApiList, registry } = toRefs(props);
 
-const numberSchema = yup.number().transform((value) => value === null ? NaN : value).typeError('required').positive().integer();
 const validationSchema = yup.object({
   name: yup.string().required().min(3).max(32).matches(/^[a-z0-9]([a-z0-9-]){1,30}[a-z0-9]$/).test({
     message: 'isUnique',
@@ -41,21 +36,6 @@ const validationSchema = yup.object({
     message: 'isUnique',
     test: function (value) {
       return publicApiList.value?.findIndex(({ url }) => url === value) === -1;
-    },
-  }),
-  limits: yup.object({
-    second: numberSchema,
-    minute: numberSchema,
-    hour: numberSchema,
-    day: numberSchema,
-    month: numberSchema,
-    year: numberSchema,
-  }).required().test({
-    message: 'required',
-    test: function (value) {
-      return !!Object.keys(value).find((key) => {
-        return value[key as keyof typeof value] !== undefined;
-      });
     },
   }),
 });
@@ -74,7 +54,7 @@ onUpdated(()=> {
   if (publicApiValues?.value) {
     setValues(publicApiValues?.value);
   } else {
-    setValues({ name: '', url: '', limits: {} });
+    setValues({ name: '', url: '' });
   }
   setErrors({});
 });
@@ -84,7 +64,6 @@ const submit = handleSubmit(() => {
 
   formData.append("reg-name", values.name);
   formData.append("reg-url", values.url);
-  formData.append("reg-limits", JSON.stringify(values.limits));
 
   if (publicApiValues.value?.name) {
     axios.post(`/admin/registry/public-api-edit/${registry.value}`, formData, {
@@ -138,25 +117,8 @@ const submit = handleSubmit(() => {
         v-model="values.url"
         :error="errors?.url"
         required
-      >
-        <Typography variant="small">Наприклад: /search-laboratories-by-city2</Typography>
-      </TextField>
-
-      <RateLimitField
-        label="Ліміт кількості запитів(rate limit)"
-        name="limits"
-        v-model="values.limits"
-        :errors="{
-          second: errors?.['limits.second'],
-          minute: errors?.['limits.minute'],
-          hour: errors?.['limits.hour'],
-          day: errors?.['limits.day'],
-          month: errors?.['limits.month'],
-          year: errors?.['limits.year'],
-          common: errors?.['limits'],
-        }"
-        required
       />
+      <Typography variant="small">Наприклад: /search-laboratories-by-city</Typography>
     </form>
   </Modal>
 </template>
@@ -164,11 +126,6 @@ const submit = handleSubmit(() => {
 <style lang="scss" scoped>
 .content-text {
   margin-bottom: 24px;
-}
-.field-header {
-  font-weight: 700;
-  margin-bottom: 8px;
-  margin-top: 8px;
 }
 </style>
 

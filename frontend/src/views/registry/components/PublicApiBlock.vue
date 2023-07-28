@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import RegistryEditPublicApiModal from '@/components/RegistryEditPublicApiModal.vue';
 import RegistryDeletePublicApiModal from '@/components/RegistryDeletePublicApiModal.vue';
-import type { PublicApiLimits } from '@/types/registry';
 import { getImageUrl } from '@/utils';
 import { getExtStatus } from '@/utils/registry';
 import { toRefs, ref } from 'vue';
@@ -12,7 +11,6 @@ interface PublicApi {
   url: string;
   enabled: boolean;
   StatusRegistration: string;
-  limits: PublicApiLimits;
 }
 
 interface RegistryBackupSavePlaceModalProps {
