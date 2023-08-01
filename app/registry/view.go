@@ -45,8 +45,29 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 		return nil, fmt.Errorf("unable to get merge reqyests by project, %w", err)
 	}
 
+	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to init service for user context, %w", err)
+	}
+
+	reg, err := cbService.Get(registryName)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get registry by name: %s, %w", registryName, err)
+	}
+
+	hasUpdate, _, registryVersion, err := HasUpdate(userCtx, a.Services.Gerrit, reg, MRTargetRegistryVersionUpdate)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check for updates, %w", err)
+	}
+
+	if is, redirect := isVersionRedirect(ctx, "/admin/registry/view", reg.Name, registryVersion); is {
+		return redirect, nil
+	}
+
+	viewParams["hasUpdate"] = hasUpdate
+
 	for _, f := range a.viewRegistryProcessFunctions(mrs) {
-		if err := f(userCtx, registryName, values, viewParams); err != nil {
+		if err := f(userCtx, reg, values, viewParams); err != nil {
 			return nil, errors.Wrap(err, "error during view registry function")
 		}
 	}
@@ -57,14 +78,15 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 	}
 
 	return router.MakeHTMLResponse(200, "registry/view.html", gin.H{
-		"page":         "registry",
-		"templateArgs": string(templateArgs),
+		"page":            "registry",
+		"registryVersion": MajorVersion(registryVersion.Core().Original()),
+		"templateArgs":    string(templateArgs),
 	}), nil
 }
 
 func (a *App) viewRegistryProcessFunctions(mrs []gerrit.GerritMergeRequest) []func(ctx context.Context,
-	registryName string, values *Values, viewParams gin.H) error {
-	return []func(ctx context.Context, registryName string, values *Values, viewParams gin.H) error{
+	reg *codebase.Codebase, values *Values, viewParams gin.H) error {
+	return []func(ctx context.Context, reg *codebase.Codebase, values *Values, viewParams gin.H) error{
 		a.viewRegistryAllowedToEdit,
 		a.viewRegistryGetRegistryAndBranches,
 		a.viewRegistryGetEDPComponents,
@@ -74,14 +96,13 @@ func (a *App) viewRegistryProcessFunctions(mrs []gerrit.GerritMergeRequest) []fu
 		a.viewDNSConfig,
 		a.viewCIDRConfig,
 		a.viewAdministratorsConfig,
-		a.viewRegistryHasUpdates,
 		a.viewUpdateTrembitaRegistries,
 		a.viewGetMasterJobStatus,
 	}
 }
 
-func (a *App) viewGetMasterJobStatus(ctx context.Context, registryName string, _ *Values, viewParams gin.H) error {
-	status, _, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/MASTER/job/MASTER-Build-%s", registryName, registryName))
+func (a *App) viewGetMasterJobStatus(ctx context.Context, reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
+	status, _, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/MASTER/job/MASTER-Build-%s", reg.Name, reg.Name))
 	if err != nil {
 		return fmt.Errorf("unable to get job status, %w", err)
 	}
@@ -92,7 +113,7 @@ func (a *App) viewGetMasterJobStatus(ctx context.Context, registryName string, _
 	return nil
 }
 
-func (a *App) viewUpdateTrembitaRegistries(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+func (a *App) viewUpdateTrembitaRegistries(_ context.Context, _ *codebase.Codebase, values *Values, viewParams gin.H) error {
 	mrs, ok := viewParams["mergeRequests"]
 	if !ok {
 		return nil
@@ -119,24 +140,9 @@ func (a *App) viewUpdateTrembitaRegistries(userCtx context.Context, registryName
 	return nil
 }
 
-func (a *App) viewRegistryHasUpdates(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
-	registry, ok := viewParams["registry"]
-	if !ok {
-		return nil
-	}
-
-	hasUpdate, _, _, err := HasUpdate(userCtx, a.Services.Gerrit, registry.(*codebase.Codebase), MRTargetRegistryVersionUpdate)
-	if err != nil {
-		return errors.Wrap(err, "unable to check for updates")
-	}
-
-	viewParams["hasUpdate"] = hasUpdate
-	return nil
-}
-
 func (a *App) makeViewRegistryExternalRegistration(mrs []gerrit.GerritMergeRequest) func(userCtx context.Context,
-	registryName string, values *Values, viewParams gin.H) error {
-	return func(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+	reg *codebase.Codebase, values *Values, viewParams gin.H) error {
+	return func(userCtx context.Context, reg *codebase.Codebase, values *Values, viewParams gin.H) error {
 		eRegs, mergeRequestsForER := make([]ExternalRegistration, 0), make(map[string]struct{})
 
 		for _, mr := range mrs {
@@ -163,14 +169,14 @@ func (a *App) makeViewRegistryExternalRegistration(mrs []gerrit.GerritMergeReque
 			}
 		}
 
-		if err := a.loadKeysForExternalRegs(userCtx, registryName, eRegs); err != nil {
+		if err := a.loadKeysForExternalRegs(userCtx, reg.Name, eRegs); err != nil {
 			return errors.Wrap(err, "unable load keys for ext regs")
 		}
 
 		viewParams["externalRegs"] = eRegs
 		viewParams["values"] = values
 
-		if err := a.loadCodebasesForExternalRegistrations(registryName, eRegs, viewParams); err != nil {
+		if err := a.loadCodebasesForExternalRegistrations(reg.Name, eRegs, viewParams); err != nil {
 			return errors.Wrap(err, "unable to load codebases for external reg")
 		}
 
@@ -179,13 +185,13 @@ func (a *App) makeViewRegistryExternalRegistration(mrs []gerrit.GerritMergeReque
 }
 
 func (a *App) makeViewRegistryPublicAPI(mrs []gerrit.GerritMergeRequest) func(userCtx context.Context,
-	registryName string, values *Values, viewParams gin.H) error {
+	reg *codebase.Codebase, values *Values, viewParams gin.H) error {
 
-	return func(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+	return func(userCtx context.Context, reg *codebase.Codebase, values *Values, viewParams gin.H) error {
 		publicAPI, mergeRequestsForER := make([]PublicAPI, 0), make(map[string]struct{})
 		for _, mr := range mrs {
 			if mr.Labels[MRLabelTarget] == mrTargetPublicAPIReg {
-				_publicAPI, err := a.makeViewPublicAPIMR(mr, registryName)
+				_publicAPI, err := a.makeViewPublicAPIMR(mr, reg.Name)
 				if err != nil {
 					return fmt.Errorf("unable to get public api from MR, %w", err)
 				}
@@ -273,12 +279,12 @@ func convertExternalRegFromInterface(in interface{}) ([]ExternalRegistration, er
 	return res, nil
 }
 
-func (a *App) viewAdministratorsConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
-	viewParams["admins"] = values.Administrators
+func (a *App) viewAdministratorsConfig(_ context.Context, _ *codebase.Codebase, values *Values, viewParams gin.H) error {
+	viewParams["admins"] = values.Administrators //TODO: remove this
 	return nil
 }
 
-func (a *App) viewCIDRConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+func (a *App) viewCIDRConfig(userCtx context.Context, reg *codebase.Codebase, values *Values, viewParams gin.H) error {
 	if values.Global.WhiteListIP.AdminRoutes != "" {
 		viewParams["adminCIDR"] = strings.Split(values.Global.WhiteListIP.AdminRoutes, " ")
 	}
@@ -294,7 +300,7 @@ func (a *App) viewCIDRConfig(userCtx context.Context, registryName string, value
 	return nil
 }
 
-func (a *App) viewDNSConfig(userCtx context.Context, registryName string, values *Values, viewParams gin.H) error {
+func (a *App) viewDNSConfig(_ context.Context, _ *codebase.Codebase, values *Values, viewParams gin.H) error {
 	//TODO: refactor to values struct
 	valuesDict := values.OriginalYaml
 
@@ -323,9 +329,9 @@ func (a *App) viewDNSConfig(userCtx context.Context, registryName string, values
 }
 
 func (a *App) makeViewRegistryGetMergeRequests(mrs []gerrit.GerritMergeRequest) func(userCtx context.Context,
-	registryName string, _ *Values, viewParams gin.H) error {
+	reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
 
-	return func(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
+	return func(userCtx context.Context, reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
 		sort.Sort(gerrit.SortByCreationDesc(mrs))
 
 		emrs := make([]ExtendedMergeRequests, 0, len(mrs))
@@ -341,13 +347,13 @@ func (a *App) makeViewRegistryGetMergeRequests(mrs []gerrit.GerritMergeRequest) 
 	}
 }
 
-func (a *App) viewRegistryAllowedToEdit(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
+func (a *App) viewRegistryAllowedToEdit(userCtx context.Context, reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
 		return errors.Wrap(err, "unable to init service for user context")
 	}
 
-	allowed, err := a.Services.Codebase.CheckIsAllowedToUpdate(registryName, k8sService)
+	allowed, err := a.Services.Codebase.CheckIsAllowedToUpdate(reg.Name, k8sService)
 	if err != nil {
 		return errors.Wrap(err, "unable to check codebase creation access")
 	}
@@ -356,18 +362,13 @@ func (a *App) viewRegistryAllowedToEdit(userCtx context.Context, registryName st
 	return nil
 }
 
-func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
+func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
 		return errors.Wrap(err, "unable to init service for user context")
 	}
 
-	registry, err := cbService.Get(registryName)
-	if err != nil {
-		return errors.Wrapf(err, "unable to get registry by name: %s", registryName)
-	}
-
-	branches, err := cbService.GetBranchesByCodebase(userCtx, registry.Name)
+	branches, err := cbService.GetBranchesByCodebase(userCtx, reg.Name)
 	if err != nil {
 		return errors.Wrap(err, "unable to get registry branches")
 	}
@@ -376,11 +377,11 @@ func (a *App) viewRegistryGetRegistryAndBranches(userCtx context.Context, regist
 		return errors.Wrap(err, "unable to load branch statuses")
 	}
 
-	registry.Branches = branches
+	reg.Branches = branches
 
-	viewParams["registry"] = registry
+	viewParams["registry"] = reg
 	viewParams["branches"] = branches
-	viewParams["created"] = registry.FormattedCreatedAtTimezone(a.Config.Timezone)
+	viewParams["created"] = reg.FormattedCreatedAtTimezone(a.Config.Timezone)
 
 	return nil
 }
@@ -406,7 +407,7 @@ func (a *App) loadBranchesStatuses(ctx context.Context, branches []codebase.Code
 	return nil
 }
 
-func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, registryName string, _ *Values, viewParams gin.H) error {
+func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
 	jenkinsComponent, err := a.Services.EDPComponent.Get(userCtx, "jenkins")
 	if err != nil {
 		return errors.Wrap(err, "unable to get jenkins edp component")
@@ -417,7 +418,7 @@ func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, registryName
 		return errors.Wrap(err, "unable to get gerrit edp component")
 	}
 
-	categories, err := a.Services.EDPComponent.GetAllCategory(userCtx, registryName)
+	categories, err := a.Services.EDPComponent.GetAllCategory(userCtx, reg.Name)
 	if err != nil {
 		return errors.Wrap(err, "unable to list namespaced edp components")
 	}
@@ -431,10 +432,10 @@ func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, registryName
 	_, ok := categories[edpcomponent.RegistryOperationalZone]
 	if ok {
 		viewParams["registryOperationalComponents"] = categories[edpcomponent.RegistryOperationalZone]
-		viewParams["regisrtyAdministrationComponents"] = categories[edpcomponent.RegistryAdministrationZone]
+		viewParams["registryAdministrationComponents"] = categories[edpcomponent.RegistryAdministrationZone]
 	} else {
 		//TODO: remove this hotfix
-		if err := a.loadRegistryEDPCats(userCtx, registryName, viewParams); err != nil {
+		if err := a.loadRegistryEDPCats(userCtx, reg.Name, viewParams); err != nil {
 			return fmt.Errorf("unable to load registry edp component")
 		}
 	}
@@ -470,7 +471,7 @@ func (a *App) loadRegistryEDPCats(ctx context.Context, registryName string, view
 	}
 
 	viewParams["registryOperationalComponents"] = registryOperationalComponents
-	viewParams["regisrtyAdministrationComponents"] = registryAdministrationComponents
+	viewParams["registryAdministrationComponents"] = registryAdministrationComponents
 
 	return nil
 }

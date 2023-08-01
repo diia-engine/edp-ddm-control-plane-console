@@ -59,7 +59,7 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get registry")
 	}
 
-	hasUpdate, branches, registryVersion, err := registry.HasUpdate(userCtx, a.Services.Gerrit, cb, registry.MRTargetClusterUpdate)
+	hasUpdate, branches, _, err := registry.HasUpdate(userCtx, a.Services.Gerrit, cb, registry.MRTargetClusterUpdate)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check for updates")
 	}
@@ -73,7 +73,6 @@ func (a *App) editGet(ctx *gin.Context) (router.Response, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load values")
 	}
-	values.IsRegistry194Lower = registry.IsRegistry194Lower(registryVersion)
 
 	valuesJs, err := json.Marshal(values)
 	if err != nil {

@@ -10,7 +10,7 @@ export interface RegistryTemplateVariables {
   registry: any;
   allowedToEdit: any;
   hasUpdate: any;
-  regisrtyAdministrationComponents: any;
+  registryAdministrationComponents: any;
   registryOperationalComponents: any;
   platformAdministrationComponents: any;
   platformOperationalComponents: any;
@@ -32,6 +32,7 @@ export interface RegistryTemplateVariables {
   gerritURL: string;
   jenkinsURL: string;
   mrAvailable: string;
+  registryVersion: string;
 }
 
 export interface RegistryAdmin {

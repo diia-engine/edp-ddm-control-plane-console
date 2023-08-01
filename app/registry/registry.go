@@ -67,7 +67,6 @@ type registry struct {
 	OBCLogin                      string   `form:"registry-backup-obc-login"`
 	OBCPassword                   string   `form:"registry-backup-obc-password"`
 	DigitalDocuments              string   `form:"digital-documents"`
-	IsRegistry194Lower            bool     `form:"-" json:"isRegistry194Lower"`
 	KeyDataChanged                string   `form:"key-data-changed"`
 	KeyVerificationChanged        string   `form:"key-verification-changed"`
 	RegistryCitizenAuth           string   `form:"registry-citizen-auth"`

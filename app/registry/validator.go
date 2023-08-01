@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func registryName(fl validator.FieldLevel) bool {
+func isRegistryName(fl validator.FieldLevel) bool {
 	reg := regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?([a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 	value, ok := fl.Field().Interface().(string)
 	if !ok {
@@ -30,7 +30,7 @@ func registryAdmins(fl validator.FieldLevel) bool {
 
 func (a *App) registerCustomValidators() error {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		if err := v.RegisterValidation("registry-name", registryName); err != nil {
+		if err := v.RegisterValidation("registry-name", isRegistryName); err != nil {
 			return errors.Wrap(err, "unable to register custom validator")
 		}
 

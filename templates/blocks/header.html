@@ -9,7 +9,7 @@
     <link rel="stylesheet" type="text/css" href="/static/css/all.css" />
     <link rel="stylesheet" type="text/css" href="/static/css/jquery-ui.min.css" />
     <link rel="stylesheet" href="/static/css/index.css">
-    <link rel="stylesheet" href="/assets/index.css?v={{ .buildDate }}">
+    <link rel="stylesheet" href="/assets/index.css?v={{ .buildDate }}{{if .registryVersion}}&version={{ .registryVersion }}{{end}}">
     {{ block "css" . }}{{ end }}
     <link rel="stylesheet" href="/static/css/header_footer.css">
 </head>

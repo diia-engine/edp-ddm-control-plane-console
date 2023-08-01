@@ -42,7 +42,7 @@
                         </td>
                         <td>
                             {{if $registry.Available }}
-                                <a href="{{ $.BasePath }}/admin/registry/view/{{$registry.Codebase.Name}}">
+                                <a href="{{ $.BasePath }}/admin/registry/view/{{$registry.Codebase.Name}}{{if $registry.Codebase.Version}}?version={{ majorVersion $registry.Codebase.Version.Core.Original }}{{end}}">
                                     {{$registry.Codebase.Name}}
                                 </a>
                             {{else}}
@@ -61,7 +61,7 @@
                         <td>
                             {{if $registry.CanUpdate}}
                             {{if $registry.Available}}
-                            <a href="{{ $.BasePath }}/admin/registry/edit/{{$registry.Codebase.Name}}">
+                            <a href="{{ $.BasePath }}/admin/registry/edit/{{$registry.Codebase.Name}}{{if $registry.Codebase.Version}}?version={{ majorVersion $registry.Codebase.Version.Core.Original }}{{end}}">
                                 <img title="Редагувати" src="{{ $.BasePath }}/static/img/action-edit.png" alt="edit registry" />
                             </a>
                             {{end}}

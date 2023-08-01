@@ -22,6 +22,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/hashicorp/go-version"
+
 	"github.com/hashicorp/vault/api"
 
 	"github.com/stretchr/testify/mock"
@@ -42,9 +44,11 @@ func InitServices(cnf *config.Settings) *config.Services {
 	pms := mockPermissions.ServiceInterface{}
 	pms.On("DeleteTokenContext", mock.Anything).Return(nil)
 	pms.On("LoadUserRegistries", mock.Anything).Return(nil)
+	codebaseVersion, _ := version.NewVersion("1.9.3.34")
 	pms.On("FilterCodebases", mock.Anything, mock.Anything, mock.Anything).Return([]codebase.WithPermissions{
 		{
-			Codebase:  &codebase.Codebase{ObjectMeta: metav1.ObjectMeta{Name: "mock"}},
+			Codebase: &codebase.Codebase{ObjectMeta: metav1.ObjectMeta{Name: "mock"},
+				Spec: codebase.CodebaseSpec{BranchToCopyInDefaultBranch: "1.9.3.34", DefaultBranch: "1.9.3.34"}, Version: codebaseVersion},
 			CanUpdate: true,
 			CanDelete: true,
 		},
@@ -118,7 +122,7 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 	cbService := mockCodebase.ServiceInterface{}
 	cbService.On("GetAllByType", mock.Anything).Return([]codebase.Codebase{
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "mock"},
+			ObjectMeta: metav1.ObjectMeta{Name: "mock"}, Spec: codebase.CodebaseSpec{BranchToCopyInDefaultBranch: "1.9.3.34"},
 		},
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: "mock-branch-inactive", Annotations: map[string]string{
@@ -151,7 +155,7 @@ func initCodebaseService(cnf *config.Settings) *mockCodebase.ServiceInterface {
 		ObjectMeta: metav1.ObjectMeta{Name: "mock"},
 		Spec: codebase.CodebaseSpec{Description: &mockDescription, Repository: &codebase.Repository{
 			Url: "mock-url",
-		}, DefaultBranch: "master"},
+		}, DefaultBranch: "master", BranchToCopyInDefaultBranch: "1.9.3.34"},
 	}, nil)
 	cbService.On("GetBranchesByCodebase", mock.Anything, "mock").Return([]codebase.CodebaseBranch{
 		{

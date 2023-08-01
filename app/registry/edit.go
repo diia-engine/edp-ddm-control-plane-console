@@ -9,20 +9,22 @@ import (
 	"ddm-admin-console/service/k8s"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-version"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	MasterBranch = "master"
+	MasterBranch      = "master"
+	VersionQueryParam = "version"
 )
 
 func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retErr error) {
@@ -30,7 +32,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 
 	mrExists, err := ProjectHasOpenMR(ctx, registryName, a.Gerrit)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to check MRs exists")
+		return nil, fmt.Errorf("unable to check MRs exists, %w", err)
 	}
 
 	if mrExists {
@@ -41,15 +43,14 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 	}
 
 	userCtx := router.ContextWithUserAccessToken(ctx)
-
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to init service for user context")
+		return nil, fmt.Errorf("unable to init service for user context, %w", err)
 	}
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to init service for user context")
+		return nil, fmt.Errorf("unable to init service for user context, %w", err)
 	}
 
 	if err := a.checkUpdateAccess(registryName, k8sService); err != nil {
@@ -58,7 +59,7 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 
 	reg, err := cbService.Get(registryName)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get registry")
+		return nil, fmt.Errorf("unable to get registry, %w", err)
 	}
 
 	model := registry{KeyDeviceType: KeyDeviceTypeFile, Name: reg.Name}
@@ -68,45 +69,49 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 
 	hwINITemplateContent, err := GetINITemplateContent(a.Config.HardwareINITemplatePath)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get ini template data")
+		return nil, fmt.Errorf("unable to get ini template data, %w", err)
 	}
 
 	hasUpdate, branches, registryVersion, err := HasUpdate(userCtx, a.Services.Gerrit, reg, MRTargetRegistryVersionUpdate)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to check for updates")
+		return nil, fmt.Errorf("unable to check for updates, %w", err)
 	}
-	model.IsRegistry194Lower = IsRegistry194Lower(registryVersion)
+
+	if is, rsp := isVersionRedirect(ctx, "/admin/registry/edit", registryName, registryVersion); is {
+		return rsp, nil
+	}
 
 	dnsManual, err := a.getDNSManualURL(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get dns manual")
+		return nil, fmt.Errorf("unable to get dns manual, %w", err)
 	}
 
 	responseParams := gin.H{
-		"dnsManual":      dnsManual,
-		"registry":       reg,
-		"page":           "registry",
-		"updateBranches": branches,
-		"hasUpdate":      hasUpdate,
-		"action":         "edit",
+		"dnsManual":       dnsManual,
+		"registry":        reg,
+		"page":            "registry",
+		"updateBranches":  branches,
+		"hasUpdate":       hasUpdate,
+		"action":          "edit",
+		"registryVersion": MajorVersion(registryVersion.Core().Original()),
 	}
 
 	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get values from git")
+		return nil, fmt.Errorf("unable to get values from git, %w", err)
 	}
 
 	if err := a.loadValuesEditConfig(ctx, values, responseParams, &model); err != nil {
-		return nil, errors.Wrap(err, "unable to load edit values from config")
+		return nil, fmt.Errorf("unable to load edit values from config, %w", err)
 	}
 
-	if err := a.viewDNSConfig(ctx, registryName, values, responseParams); err != nil {
-		return nil, errors.Wrap(err, "unable to load dns config")
+	if err := a.viewDNSConfig(ctx, reg, values, responseParams); err != nil {
+		return nil, fmt.Errorf("unable to load dns config, %w", err)
 	}
 
 	templateArgs, templateErr := json.Marshal(responseParams)
 	if templateErr != nil {
-		return nil, errors.Wrap(templateErr, "unable to encode template arguments")
+		return nil, fmt.Errorf("unable to encode template arguments, %w", templateErr)
 	}
 
 	responseParams["templateArgs"] = string(templateArgs)
@@ -115,24 +120,50 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 	return router.MakeHTMLResponse(200, "registry/edit.html", responseParams), nil
 }
 
-func IsRegistry194Lower(registryVersion *version.Version) bool {
-	v, _ := version.NewVersion("1.9.4")
-	return registryVersion.LessThan(v)
+func MajorVersion(fullVersion string) string {
+	if fullVersion == "" {
+		return ""
+	}
+
+	parts := strings.Split(fullVersion, ".")
+	if len(parts) > 3 {
+		parts = parts[:len(parts)-1]
+	}
+
+	return strings.Join(parts, ".")
+}
+
+func isVersionRedirect(ctx *gin.Context, basePath, registryName string, registryVersion *version.Version) (bool, router.Response) {
+	qVersion := ctx.Query(VersionQueryParam)
+
+	if qVersion == "" {
+		return true, router.MakeRedirectResponse(http.StatusTemporaryRedirect,
+			fmt.Sprintf("%s/%s?%s=%s", basePath, registryName, VersionQueryParam,
+				MajorVersion(registryVersion.Core().Original())))
+	}
+
+	if qVersion != MajorVersion(registryVersion.Core().Original()) {
+		return true, router.MakeRedirectResponse(http.StatusTemporaryRedirect,
+			fmt.Sprintf("%s/%s?%s=%s", basePath, registryName, VersionQueryParam,
+				MajorVersion(registryVersion.Core().Original())))
+	}
+
+	return false, nil
 }
 
 func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParams gin.H, r *registry) error {
 	//TODO: refactor to values struct
 	if err := a.loadSMTPConfig(values.OriginalYaml, rspParams); err != nil {
-		return errors.Wrap(err, "unable to load smtp config")
+		return fmt.Errorf("unable to load smtp config, %w", err)
 	}
 
 	//TODO: refactor to values struct
 	if err := a.loadAdminsConfig(values.OriginalYaml, r); err != nil {
-		return errors.Wrap(err, "unable to load admins config")
+		return fmt.Errorf("unable to load admins config, %w", err)
 	}
 
 	if err := a.loadOBCConfig(values, r); err != nil {
-		return errors.Wrap(err, "unable to load obc config")
+		return fmt.Errorf("unable to load obc config, %w", err)
 	}
 
 	if err := a.loadIDGovUAClientID(values); err != nil {
@@ -156,7 +187,7 @@ func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParam
 
 	registryData, err := json.Marshal(r)
 	if err != nil {
-		return errors.Wrap(err, "unable to encode registry data")
+		return fmt.Errorf("unable to encode registry data, %w", err)
 	}
 	rspParams["registryData"] = string(registryData)
 	rspParams["registryValues"] = values
@@ -197,12 +228,12 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 
 	adminsJs, err := json.Marshal(adminsInterface)
 	if err != nil {
-		return errors.Wrap(err, "unable to marshal admins")
+		return fmt.Errorf("unable to marshal admins, %w", err)
 	}
 
 	var admins []Admin
 	if err := json.Unmarshal(adminsJs, &admins); err != nil {
-		return errors.Wrap(err, "unable tro unmarshal admins")
+		return fmt.Errorf("unable tro unmarshal admins, %w", err)
 	}
 
 	//TODO: maybe load admin password
@@ -214,7 +245,7 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 
 	adminsJs, err = json.Marshal(admins)
 	if err != nil {
-		return errors.Wrap(err, "unable to marshal admins")
+		return fmt.Errorf("unable to marshal admins, %w", err)
 	}
 
 	r.Admins = string(adminsJs)
@@ -272,7 +303,7 @@ func (a *App) loadSMTPConfig(values map[string]interface{}, rspParams gin.H) err
 	emailDict := globalDict["notifications"].(map[string]interface{})["email"].(map[string]interface{})
 	mailConfig, err := json.Marshal(emailDict)
 	if err != nil {
-		return errors.Wrap(err, "unable to encode ot JSON smtp config")
+		return fmt.Errorf("unable to encode ot JSON smtp config, %w", err)
 	}
 
 	rspParams["smtpConfig"] = string(mailConfig)
@@ -282,7 +313,7 @@ func (a *App) loadSMTPConfig(values map[string]interface{}, rspParams gin.H) err
 func (a *App) checkUpdateAccess(codebaseName string, userK8sService k8s.ServiceInterface) error {
 	allowedToUpdate, err := a.Services.Codebase.CheckIsAllowedToUpdate(codebaseName, userK8sService)
 	if err != nil {
-		return errors.Wrap(err, "unable to check create access")
+		return fmt.Errorf("unable to check create access, %w", err)
 	}
 	if !allowedToUpdate {
 		return errors.New("access denied")
@@ -295,19 +326,19 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 	userCtx := router.ContextWithUserAccessToken(ctx)
 	cbService, err := a.Services.Codebase.ServiceForContext(userCtx)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to init service for user context")
+		return nil, fmt.Errorf("unable to init service for user context, %w", err)
 	}
 
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to init service for user context")
+		return nil, fmt.Errorf("unable to init service for user context, %w", err)
 	}
 
 	registryName := ctx.Param("name")
 	//TODO: move this to middleware
 	allowed, err := cbService.CheckIsAllowedToUpdate(registryName, k8sService)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to check access")
+		return nil, fmt.Errorf("unable to check access, %w", err)
 	}
 	if !allowed {
 		return nil, errors.New("access denied")
@@ -315,7 +346,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 
 	cb, err := cbService.Get(registryName)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get registry")
+		return nil, fmt.Errorf("unable to get registry, %w", err)
 	}
 
 	r := registry{
@@ -326,11 +357,11 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 	}
 
 	if err := ctx.ShouldBind(&r); err != nil {
-		return nil, errors.Wrap(err, "unable to parse registry form")
+		return nil, fmt.Errorf("unable to parse registry form, %w", err)
 	}
 
 	if err := a.editRegistry(userCtx, ctx, &r, cb, cbService); err != nil {
-		return nil, errors.Wrap(err, "unable to edit registry")
+		return nil, fmt.Errorf("unable to edit registry, %w", err)
 	}
 
 	return router.MakeRedirectResponse(http.StatusFound,
@@ -347,7 +378,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 
 	values, err := GetValuesFromGit(r.Name, MasterBranch, a.Gerrit)
 	if err != nil {
-		return errors.Wrap(err, "unable to get values from git")
+		return fmt.Errorf("unable to get values from git, %w", err)
 	}
 
 	var (
@@ -360,7 +391,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	for _, proc := range a.createUpdateRegistryProcessors() {
 		procValuesChanged, err := proc(ginContext, r, values, vaultSecretData, &mrActions)
 		if err != nil {
-			return errors.Wrap(err, "error during registry create")
+			return fmt.Errorf("error during registry create, %w", err)
 		}
 		if procValuesChanged {
 			valuesChanged = true
@@ -373,7 +404,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 			time.Now().Format("20060201T150405Z"))),
 	}, ginContext.Request, vaultSecretData, values.OriginalYaml, repoFiles)
 	if err != nil {
-		return errors.Wrap(err, "unable to create registry keys")
+		return fmt.Errorf("unable to create registry keys, %w", err)
 	}
 
 	if keysModified {
@@ -384,18 +415,18 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 
 	if valuesChanged || len(repoFiles) > 0 || keysModified {
 		if err := CreateEditMergeRequest(ginContext, r.Name, values.OriginalYaml, a.Gerrit, mrActions); err != nil {
-			return errors.Wrap(err, "unable to create edit merge request")
+			return fmt.Errorf("unable to create edit merge request, %w", err)
 		}
 	}
 
 	if len(vaultSecretData) > 0 {
 		if err := CreateVaultSecrets(a.Vault, vaultSecretData, false); err != nil {
-			return errors.Wrap(err, "unable to create vault secrets")
+			return fmt.Errorf("unable to create vault secrets, %w", err)
 		}
 	}
 
 	if err := cbService.Update(ctx, cb); err != nil {
-		return errors.Wrap(err, "unable to update codebase")
+		return fmt.Errorf("unable to update codebase, %w", err)
 	}
 
 	return nil
@@ -404,7 +435,7 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 func MapHash(v map[string]interface{}) (string, error) {
 	bts, err := json.Marshal(v)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to encode map")
+		return "", fmt.Errorf("unable to encode map, %w", err)
 	}
 
 	hasher := sha1.New()
@@ -422,12 +453,12 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[str
 
 	valuesYaml, err := yaml.Marshal(values)
 	if err != nil {
-		return errors.Wrap(err, "unable to encode values yaml")
+		return fmt.Errorf("unable to encode values yaml, %w", err)
 	}
 
 	mrExists, err := ProjectHasOpenMR(ctx, projectName, gerritService)
 	if err != nil {
-		return errors.Wrap(err, "unable to check project MR exists")
+		return fmt.Errorf("unable to check project MR exists, %w", err)
 	}
 
 	if mrExists {
@@ -461,7 +492,7 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[str
 	}, map[string]string{
 		ValuesLocation: string(valuesYaml),
 	}); err != nil {
-		return errors.Wrap(err, "unable to create MR with new values")
+		return fmt.Errorf("unable to create MR with new values, %w", err)
 	}
 
 	return nil
@@ -470,7 +501,7 @@ func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[str
 func ProjectHasOpenMR(ctx *gin.Context, projectName string, gerritService gerrit.ServiceInterface) (bool, error) {
 	mrs, err := gerritService.GetMergeRequestByProject(ctx, projectName)
 	if err != nil {
-		return false, errors.Wrap(err, "unable to get MRs")
+		return false, fmt.Errorf("unable to get MRs, %w", err)
 	}
 
 	for _, mr := range mrs {
@@ -485,7 +516,7 @@ func ProjectHasOpenMR(ctx *gin.Context, projectName string, gerritService gerrit
 func validateAdmins(adminsLine string) ([]Admin, error) {
 	var admins []Admin
 	if err := json.Unmarshal([]byte(adminsLine), &admins); err != nil {
-		return nil, errors.Wrap(err, "unable to unmarshal admins")
+		return nil, fmt.Errorf("unable to unmarshal admins, %w", err)
 	}
 
 	validate := validator.New()

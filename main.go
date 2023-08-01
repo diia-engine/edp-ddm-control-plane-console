@@ -82,7 +82,7 @@ func main() {
 	logger.Info("init gin router")
 	gin.SetMode(cnf.GinMode)
 	r := gin.New()
-	r.SetFuncMap(template.FuncMap{"i18n": i18n})
+	r.SetFuncMap(template.FuncMap{"i18n": i18n, "majorVersion": majorVersion})
 	r.LoadHTMLGlob("templates/**/*")
 	r.Static("/static", "./static")
 	r.Static("/assets", "./frontend/dist/assets")
@@ -377,4 +377,12 @@ func initOauth(k8sConfig *rest.Config, cfg *config.Settings, r *gin.Engine, k8sS
 func i18n(word ...string) string {
 	message := strings.TrimSpace(strings.Join(word, " "))
 	return gotext.Get(message)
+}
+
+func majorVersion(word ...string) string {
+	if len(word) == 0 {
+		return ""
+	}
+
+	return registry.MajorVersion(word[0])
 }

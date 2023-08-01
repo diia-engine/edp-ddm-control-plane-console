@@ -10,7 +10,6 @@ type Values struct {
 	Admins       []Admin  `yaml:"administrators" json:"administrators"`
 	Keycloak     Keycloak `yaml:"keycloak" json:"keycloak"`
 	OriginalYaml map[string]interface{}
-	IsRegistry194Lower bool `yaml:"-" json:"isRegistry194Lower"`
 }
 
 type Velero struct {

@@ -6,10 +6,11 @@ import { getTypeStr, getExtStatus } from '@/utils/registry';
 const variables = inject('TEMPLATE_VARIABLES') as RegistryTemplateVariables;
 
 const openMergeRequests = variables?.openMergeRequests;
+const registryVersion = variables?.registryVersion;
 const registry = variables?.registry;
 const allowedToEdit = variables?.allowedToEdit;
 const hasUpdate = variables?.hasUpdate;
-const regisrtyAdministrationComponents = variables?.regisrtyAdministrationComponents;
+const registryAdministrationComponents = variables?.registryAdministrationComponents;
 const registryOperationalComponents = variables?.registryOperationalComponents;
 const platformAdministrationComponents = variables?.platformAdministrationComponents;
 const platformOperationalComponents = variables?.platformOperationalComponents;
@@ -792,7 +793,7 @@ export default defineComponent({
                             <span>Оновити</span>
                         </a>
                     </template>
-                    <a :href="`/admin/registry/edit/${registry.metadata.name}`" @click="checkForOpenMRs"
+                    <a :href="`/admin/registry/edit/${registry.metadata.name}?version=${registryVersion}`" @click="checkForOpenMRs"
                         class="registry-add">
                         <img alt="add registry" src="@/assets/img/action-edit.png" />
                         <span>Редагувати</span>
@@ -1578,14 +1579,14 @@ export default defineComponent({
 
 
         <div class="box" v-show="isActiveTab('links')">
-            <template v-if="regisrtyAdministrationComponents">
+            <template v-if="registryAdministrationComponents">
                 <div class="rg-info-block">
                     <div class="rg-info-block-header">
                         <span>Адміністративна зона реєстру</span>
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
-                            <div class="list-item" v-for="$ec in regisrtyAdministrationComponents" :key="$ec.Url">
+                            <div class="list-item" v-for="$ec in registryAdministrationComponents" :key="$ec.Url">
                                 <img :src="`data:image/svg+xml;base64,${$ec.Icon}`" :alt="`${$ec.Type} logo`"
                                     class="item-image" />
                                 <div class="item-content">
