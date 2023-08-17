@@ -2,12 +2,9 @@
 import { defineComponent } from 'vue';
 import axios from 'axios';
 import $ from 'jquery';
-import Mustache from 'mustache';
 
 export default defineComponent({
   expose: [
-    'wizardSupAuthFlowChange',
-    'loadRegistryValues',
     'removeResourcesCatFromList',
     'decodeResourcesEnvVars',
     'wizardEditSubmit',
@@ -18,7 +15,6 @@ export default defineComponent({
     'wizardTabChanged',
     'wizardEmptyValidation',
     'wizardGeneralValidation',
-    'wizardSupAuthValidation',
     'wizardDNSValidation',
     'wizardCheckPEMFiles',
     'checkObjectFieldsEmpty',
@@ -76,7 +72,6 @@ export default defineComponent({
 
     if (this.templateVariables.registryValues) {
       this.registryValues = this.templateVariables.registryValues;
-      this.loadRegistryValues();
       this.dnsPreloadDataFromValues();
     }
     if (childRefs.hasOwnProperty("registryUpdate")) {
@@ -150,21 +145,8 @@ export default defineComponent({
           cidr: { title: "Обмеження доступу", validated: true, visible: true, },
           supplierAuthentication: {
             title: "Автентифікація надавачів послуг",
-            validated: false,
-            validator: this.wizardSupAuthValidation,
-            beginValidation: false,
+            validatorRef: 'supplierAuthTab',
             visible: true,
-            dsoDefaultURL: "https://eu.iit.com.ua/sign-widget/v20200922/",
-            data: {
-              authType: "dso-officer-auth-flow",
-              url: "https://eu.iit.com.ua/sign-widget/v20200922/",
-              widgetHeight: "720",
-              clientId: "",
-              secret: "",
-            },
-            urlValidationFailed: false,
-            heightIsNotNumber: false,
-            selfRegistrationEnabled: false,
           },
           recipientAuthentication: {
             title: 'Автентифікація отримувачів послуг',
@@ -206,59 +188,6 @@ export default defineComponent({
         ...(wizardRefs.backupScheduleTab?.$refs || {}),
         ...(wizardRefs.digitalDocumentsTab?.$refs || {}),
       };
-    },
-    wizardSupAuthFlowChange() {
-      this.wizard.tabs.supplierAuthentication.validated = false;
-      this.wizard.tabs.supplierAuthentication.beginValidation = false;
-      const registryValues = this.registryValues;
-      if (this.wizard.tabs.supplierAuthentication.data.authType === "dso-officer-auth-flow") {
-        if (registryValues && registryValues.signWidget.url !== "") {
-          this.wizard.tabs.supplierAuthentication.data.url = registryValues.signWidget.url;
-        }
-        else {
-          this.wizard.tabs.supplierAuthentication.data.url = this.wizard.tabs.supplierAuthentication.dsoDefaultURL;
-        }
-        if (registryValues && registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight !== 0) {
-          this.wizard.tabs.supplierAuthentication.data.widgetHeight =
-            registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
-        }
-      }
-      else {
-        if (registryValues && registryValues.keycloak.identityProviders.idGovUa.url !== "") {
-          this.wizard.tabs.supplierAuthentication.data.url = registryValues.keycloak.identityProviders.idGovUa.url;
-        }
-        else {
-          this.wizard.tabs.supplierAuthentication.data.url = "";
-        }
-        if (registryValues && registryValues.keycloak.identityProviders.idGovUa.clientId !== "") {
-          this.wizard.tabs.supplierAuthentication.data.clientId = registryValues.keycloak.identityProviders.idGovUa.clientId;
-          this.wizard.tabs.supplierAuthentication.data.secret = "*****";
-        }
-      }
-    },
-    loadRegistryValues() {
-      try {
-        if (this.registryValues.keycloak.realms.officerPortal.browserFlow !== "") {
-          this.wizard.tabs.supplierAuthentication.data.authType = this.registryValues.keycloak.realms.officerPortal.browserFlow;
-        }
-        if (this.wizard.tabs.supplierAuthentication.data.authType === "dso-officer-auth-flow") {
-          this.wizard.tabs.supplierAuthentication.data.widgetHeight =
-            this.registryValues.keycloak.authFlows.officerAuthFlow.widgetHeight;
-          this.wizard.tabs.supplierAuthentication.data.url = this.registryValues.signWidget.url;
-        }
-        else {
-          this.wizard.tabs.supplierAuthentication.data.url =
-            this.registryValues.keycloak.identityProviders.idGovUa.url;
-          this.wizard.tabs.supplierAuthentication.data.clientId = this.registryValues.keycloak.identityProviders.idGovUa.clientId;
-          this.wizard.tabs.supplierAuthentication.data.secret = "*****";
-        }
-
-      } catch (e: any) {
-        console.log(e);
-      }
-      if (this.registryValues.keycloak.customHosts === null) {
-        this.registryValues.keycloak.customHosts = [];
-      }
     },
     wizardEditSubmit(event: any) {
       const childRefs = this.getChildrenRefs();
@@ -374,35 +303,6 @@ export default defineComponent({
             tab.validated = true;
             resolve();
           });
-      });
-    },
-    wizardSupAuthValidation(tab: any) {
-      return new Promise < void  > ((resolve) => {
-        tab.beginValidation = true;
-        tab.validated = false;
-        tab.urlValidationFailed = false;
-        tab.heightIsNotNumber = false;
-        if (!/^(http(s)?:\/\/.)[-a-zA-Z0-9@:%._+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=,]*)$/.test(this.wizard.tabs.supplierAuthentication.data.url)) {
-          tab.urlValidationFailed = true;
-          return;
-        }
-        if (this.wizard.tabs.supplierAuthentication.data.authType === "dso-officer-auth-flow") {
-          if (this.wizard.tabs.supplierAuthentication.data.widgetHeight === "") {
-            return;
-          }
-          if (!/^[0-9]+$/.test(this.wizard.tabs.supplierAuthentication.data.widgetHeight)) {
-            this.wizard.tabs.supplierAuthentication.heightIsNotNumber = true;
-            return;
-          }
-        }
-        if (this.wizard.tabs.supplierAuthentication.data.authType === "id-gov-ua-officer-redirector" &&
-          (this.wizard.tabs.supplierAuthentication.data.clientId === "" ||
-            this.wizard.tabs.supplierAuthentication.data.secret === "")) {
-          return;
-        }
-        tab.validated = true;
-        tab.beginValidation = false;
-        resolve();
       });
     },
     wizardDNSValidation(tab: any) {

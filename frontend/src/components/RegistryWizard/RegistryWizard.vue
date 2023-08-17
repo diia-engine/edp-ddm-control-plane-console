@@ -155,7 +155,11 @@ export default defineComponent({
                     <RegistryCidr ref="cidrTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'supplierAuthentication'">
-                    <RegistrySupplierAuth ref="supplierAuthTab" />
+                    <RegistrySupplierAuth
+                        :keycloak-settings="templateVariables.registryValues?.keycloak" 
+                        :sign-widget-settings="templateVariables.registryValues?.signWidget"
+                        ref="supplierAuthTab"
+                    />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'recipientAuthentication'">
                     <RegistryRecipientAuth

@@ -94,11 +94,25 @@ export interface RegistryWizardTemplateVariables {
     externalSystems: any
     global: any
     keycloak: {
-      authFlows: any
+      authFlows: {
+        officerAuthFlow: {
+          widgetHeight: number
+        }
+      }
       citizenAuthFlow: CitizenAuthFlow
       customHost: string
-      identityProviders: any
-      realms: Record<string, any>
+      identityProviders: {
+        idGovUa: {
+          clientId: string
+          url: string
+        }
+      }
+      realms: {
+        officerPortal: {
+          browserFlow: string
+          selfRegistration: boolean
+        }
+      }
     }
     portals: {
       citizen: PortalSettings
@@ -119,4 +133,9 @@ export interface PublicApiLimits {
   day?: string,
   month?: string,
   year?: string,
+}
+
+export enum OfficerAuthType {
+  widget = 'dso-officer-auth-flow',
+  registryIdGovUa = 'id-gov-ua-officer-redirector',
 }
