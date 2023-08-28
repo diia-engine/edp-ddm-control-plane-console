@@ -12,6 +12,7 @@ interface PlatformUpdateTemplateVariables {
     cidrConfig: any;
     keycloakHostname: any;
     dnsManual: string;
+    demoRegistryName: string;
 }
 const variables = inject('TEMPLATE_VARIABLES') as PlatformUpdateTemplateVariables;
 const updateBranches = variables?.updateBranches;
@@ -23,6 +24,7 @@ const backupSchedule = variables?.backupSchedule;
 const cidrConfig = variables?.cidrConfig;
 const keycloakHostname = variables?.keycloakHostname;
 const dnsManual = variables?.dnsManual;
+const demoRegistryName = variables?.demoRegistryName;
 
 </script>
 <script lang="ts">
@@ -37,6 +39,7 @@ import ClusterKeyBlock from './components/ClusterKeyBlock.vue';
 import ClusterKeycloakBlock from './components/ClusterKeycloakBlock.vue';
 import AdministratorModal from '@/components/AdministratorModal.vue';
 import CidrModal from './components/ClusterCidrModal.vue';
+import Documentation from './components/Documentation.vue';
 
 // eslint-disable-next-line no-useless-escape
 const hostnameRegex = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
@@ -51,6 +54,7 @@ export default {
         ClusterKeycloakBlock,
         AdministratorModal,
         CidrModal,
+        Documentation,
     },
     data() {
         return {
@@ -153,6 +157,9 @@ export default {
                         nextDates: [],
 
                     },
+                    documentation: {
+                        title: 'Документація', validated: false, requiredError: false, visible: true,
+                    },
                     confirmation: { title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
@@ -182,6 +189,10 @@ export default {
                     {
                         key: 'keycloakDNS',
                         title: 'Keycloak DNS'
+                    },
+                    {
+                        key: 'documentation',
+                        title: 'Документація'
                     },
                 ],
                 keycloak: {
@@ -772,7 +783,6 @@ export default {
         // eslint-disable-next-line no-prototype-builtins
         if (this.$refs.hasOwnProperty('registryValues')) {
             this.registryValues = JSON.parse((this.$refs.registryValues as any).value);
-
             this.loadRegistryValues();
             this.dnsPreloadDataFromValues();
             this.wizardCronExpressionChange();
@@ -868,6 +878,9 @@ export default {
                         @addClusterKeycloakDNS="addClusterKeycloakDNS"
                         @resetClusterKeycloakDNSForm="resetClusterKeycloakDNSForm"
                         @clusterKeycloakDNSCertSelected="clusterKeycloakDNSCertSelected" ref="clusterKeycloakRef" />
+                </div>
+                <div class="wizard-tab" v-show="clusterSettings.activeTab === 'documentation'">
+                    <documentation ref="documentationRef" :demo-registry-name="demoRegistryName" :active-tab="clusterSettings.activeTab" />
                 </div>
                 <div class="wizard-tab" v-show="clusterSettings.activeTab == 'platformUpdate'">
                     <platform-update-block :updateBranches="updateBranches" :errorsMap="errorsMap" />
