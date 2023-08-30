@@ -6,9 +6,6 @@ metadata:
   labels:
     app: {{ include "controlPlaneConsole.name" $ }}
     version: {{ $it.registryVersion }}
-    {{- if $it.latest }}
-    latest: "true"
-    {{- end }}
   name: {{ include "controlPlaneConsole.name" $ }}-{{ $it.registryVersion }}
 spec:
   replicas: 1
@@ -17,9 +14,6 @@ spec:
     matchLabels:
       app: {{ include "controlPlaneConsole.name" $ }}
       version: {{ $it.registryVersion }}
-      {{- if $it.latest }}
-      latest: "true"
-      {{- end }}
   strategy:
     type: Recreate
   template:
@@ -27,9 +21,6 @@ spec:
       labels:
         app: {{ include "controlPlaneConsole.name" $ }}
         version: {{ $it.registryVersion }}
-        {{- if $it.latest }}
-        latest: "true"
-        {{- end }}
       annotations:
         sidecar.istio.io/inject: 'true'
     spec:

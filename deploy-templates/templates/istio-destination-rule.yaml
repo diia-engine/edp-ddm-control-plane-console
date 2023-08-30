@@ -9,8 +9,5 @@ spec:
     - labels:
         app: {{ include "controlPlaneConsole.name" $ }}
         version: {{ $it.registryVersion }}
-        {{- if $it.latest }}
-        latest: "true"
-        {{- end }}
       name: {{ template "istio.subset.name" (dict "version" $it.registryVersion) }}
     {{- end }}
