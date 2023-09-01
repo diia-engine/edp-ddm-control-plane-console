@@ -2,6 +2,7 @@
 import { onMounted, toRefs, ref } from 'vue';
 import axios from 'axios';
 import Typography from '@/components/common/Typography.vue';
+import Banner from '@/components/common/Banner.vue';
 
 interface DocumentationProps {
    demoRegistryName: string;
@@ -25,6 +26,10 @@ onMounted(()=> {
         });
 });
 
+const registryChangeHandler = () => {
+    prevRegistryIsInvalid.value = false;
+};
+
 </script>
 
 <template>
@@ -35,15 +40,18 @@ onMounted(()=> {
     <form id="platform-admin" class="registry-create-form wizard-form" method="post" action="/admin/cluster/demo-registry-name">
         <div class="rc-form-group">
             <label for="demo-registry-name">Демо-реєстр</label>
-            <select v-model="registry" id="demo-registry-name" name="demo-registry-name">
+            <select v-model="registry" id="demo-registry-name" name="demo-registry-name" :onChange="registryChangeHandler">
                 <option value="">Не обрано</option>
                 <option v-for="item in registries" :key="item" :value="item">
                     {{ item }}
                 </option>
             </select>
-            <div class="documentation-invalid-registry" v-if="prevRegistryIsInvalid">
-                <Typography variant="small">{{ `Попередній реєстр («${demoRegistryName}») не знайдено.` }}</Typography>
-            </div>
+
+            <Banner
+                classes="banner"
+                :description="`Попередній реєстр («${demoRegistryName}») не знайдено.`"
+                v-if="prevRegistryIsInvalid"
+            />
         </div>
         <div class="rc-form-group">
             <button type="submit" name="submit">Підтвердити</button>
@@ -56,10 +64,8 @@ onMounted(()=> {
       margin-bottom: 24px;
     }
 
-    .documentation-invalid-registry {
+    .banner {
         margin-top: 16px;
-        padding: 16px 24px;
-        background: $warning-box-color;
     }
 
 </style>
