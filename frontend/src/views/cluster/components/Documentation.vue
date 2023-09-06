@@ -19,7 +19,7 @@ onMounted(()=> {
             registries.value = 
                 response.data?.map((registry: { Codebase: { metadata: { name: any; }; }; }) => registry.Codebase.metadata.name);
 
-            if (!registries.value.includes(demoRegistryName.value)) {
+            if (demoRegistryName.value && !registries.value.includes(demoRegistryName.value)) {
                 registry.value = "";
                 prevRegistryIsInvalid.value = true;
             }
