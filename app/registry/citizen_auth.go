@@ -3,6 +3,7 @@ package registry
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,8 @@ const (
 
 func (a *App) prepareCitizenAuthSettings(ctx *gin.Context, r *registry, values *Values,
 	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+	valuesChanged := false
+
 	if r.RegistryCitizenAuth != "" {
 		var citizenAuthSettings struct {
 			KeycloakAuthFlowsCitizenAuthFlow
@@ -31,19 +34,39 @@ func (a *App) prepareCitizenAuthSettings(ctx *gin.Context, r *registry, values *
 			secrets[vaultPath] = map[string]interface{}{
 				RegistryCitizenIdGovUaSecret: values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientSecret,
 			}
+			valuesChanged = true
 		} else {
 			citizenAuthSettings.RegistryIdGovUa.ClientSecret = values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientSecret
 		}
-		values.Keycloak.CitizenAuthFlow = KeycloakAuthFlowsCitizenAuthFlow{
+
+		newCitizenAuthFlow := KeycloakAuthFlowsCitizenAuthFlow{
 			EDRCheck:        citizenAuthSettings.EDRCheck,
 			AuthType:        citizenAuthSettings.AuthType,
 			Widget:          citizenAuthSettings.Widget,
 			RegistryIdGovUa: citizenAuthSettings.RegistryIdGovUa,
 		}
-		values.Portals.Citizen = citizenAuthSettings.Portals.Citizen
-		values.OriginalYaml[keycloakIndex] = values.Keycloak
-		values.OriginalYaml[portalsIndex] = values.Portals
-		return true, nil
+
+		if !reflect.DeepEqual(newCitizenAuthFlow, values.Keycloak.CitizenAuthFlow) {
+			values.Keycloak.CitizenAuthFlow = KeycloakAuthFlowsCitizenAuthFlow{
+				EDRCheck:        citizenAuthSettings.EDRCheck,
+				AuthType:        citizenAuthSettings.AuthType,
+				Widget:          citizenAuthSettings.Widget,
+				RegistryIdGovUa: citizenAuthSettings.RegistryIdGovUa,
+			}
+			valuesChanged = true
+		}
+
+		if !reflect.DeepEqual(values.Portals.Citizen, citizenAuthSettings.Portals.Citizen) {
+			values.Portals.Citizen = citizenAuthSettings.Portals.Citizen
+			valuesChanged = true
+		}
+
+		if valuesChanged {
+			values.OriginalYaml[keycloakIndex] = values.Keycloak
+			values.OriginalYaml[portalsIndex] = values.Portals
+			return true, nil
+		}
 	}
+
 	return false, nil
 }

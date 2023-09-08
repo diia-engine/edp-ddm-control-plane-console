@@ -81,7 +81,7 @@ func (a *App) registryBackupValuesChanged(values *Values, r *registry, cronSched
 		values.Global.RegistryBackup.Schedule != r.CronSchedule ||
 		values.Global.RegistryBackup.OBC.CronExpression != r.OBCCronExpression ||
 		values.Global.RegistryBackup.OBC.BackupBucket != r.OBCBackupBucket ||
-		values.Global.RegistryBackup.OBC.Endpoint != r.OBCEndpoint {
+		values.Global.RegistryBackup.OBC.Endpoint != r.OBCEndpoint || !values.Global.RegistryBackup.Enabled {
 		return true, nil
 	}
 
