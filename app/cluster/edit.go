@@ -116,6 +116,7 @@ func (a *App) editDataLoaders() []func(context.Context, *Values, gin.H) error {
 		a.loadCIDRConfig,
 		a.loadBackupScheduleConfig,
 		a.loadKeycloakDefaultHostname,
+		a.loadDocumentation,
 	}
 }
 

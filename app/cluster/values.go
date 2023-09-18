@@ -17,7 +17,8 @@ type Velero struct {
 }
 
 type Global struct {
-	WhiteListIP WhiteListIP `yaml:"whiteListIP" json:"whiteListIP"`
+	WhiteListIP      WhiteListIP `yaml:"whiteListIP" json:"whiteListIP"`
+	DemoRegistryName string      `json:"demoRegistryName" yaml:"demoRegistryName"`
 }
 
 type WhiteListIP struct {

@@ -5,6 +5,7 @@ import (
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	"ddm-admin-console/service/gerrit"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -42,6 +43,34 @@ func (a *App) listRegistry(ctx *gin.Context) (response router.Response, retErr e
 		"allowedToCreate": allowedToCreate,
 		"timezone":        a.Config.Timezone,
 	}), nil
+}
+
+func (a *App) getRegistries(ctx *gin.Context) (rsp router.Response, retErr error) {
+	userCtx := router.ContextWithUserAccessToken(ctx)
+	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to init service for user context")
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check codebase creation access")
+	}
+
+	cbs, err := a.Services.Codebase.GetAllByType(codebase.RegistryCodebaseType)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get codebases")
+	}
+
+	if err := LoadRegistryVersions(userCtx, a.Gerrit, cbs); err != nil {
+		return nil, errors.Wrap(err, "unable to load registry versions")
+	}
+
+	registries, err := a.Services.Perms.FilterCodebases(ctx, a.versionFilter.FilterCodebases(cbs), k8sService)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check codebase permissions")
+	}
+
+	return router.MakeJSONResponse(http.StatusOK, registries), nil
 }
 
 func LoadRegistryVersions(ctx context.Context, gerritService gerrit.ServiceInterface, cbs []codebase.Codebase) error {

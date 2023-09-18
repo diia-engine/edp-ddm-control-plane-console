@@ -9,6 +9,7 @@ func (a *App) createRoutes() {
 
 	a.router.GET("/admin/registry/overview", a.listRegistry)
 	a.router.POST("/admin/registry/overview", a.deleteRegistry)
+	a.router.GET("/admin/registries", a.getRegistries)
 
 	a.router.POST("/admin/registry/check-pem", a.validatePEMFile)
 

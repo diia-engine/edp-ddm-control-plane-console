@@ -17,6 +17,7 @@ const (
 	MRTargetClusterUpdate         = "cluster-update"
 	MRTargetClusterBackupSchedule = "cluster-backup-schedule"
 	ValuesAdminsKey               = "administrators"
+	MRTypeDemoRegistryName        = "demo-registry-name"
 )
 
 type Admin struct {
