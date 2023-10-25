@@ -3,6 +3,7 @@ package gerrit
 import (
 	"context"
 	"ddm-admin-console/service"
+	"ddm-admin-console/locale"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,12 +25,15 @@ import (
 )
 
 const (
-	//ViewTimeFormat = "02.01.2006 15:04"
-	ViewTimeFormat  = "2006-01-02 15:04:05"
 	StatusMerged    = "MERGED"
 	StatusNew       = "NEW"
 	StatusAbandoned = "ABANDONED"
 	CurrentRevision = "current"
+)
+
+var (
+	//ViewTimeFormat = "02.01.2006 15:04"
+	ViewTimeFormat  = locale.DateTimePreciseFormat()
 )
 
 type Service struct {

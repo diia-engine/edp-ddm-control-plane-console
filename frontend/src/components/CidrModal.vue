@@ -17,7 +17,7 @@ export default defineComponent({
         };
     },
     methods: {
-        createCIDR(e: any) {
+        createCIDR() {
             this.disabled = true;
             let cidrVal = String(this.editCIDR).toLowerCase();
             if (!this.isIP(cidrVal)) {
@@ -62,18 +62,18 @@ export default defineComponent({
         </div>
         <form @submit.prevent="createCIDR" id="cidr-form" method="post" action="">
             <div class="popup-body">
-                <p class="popup-error" v-cloak v-if="cidrFormatError">Перевірте формат IP-адреси</p>
+                <p class="popup-error" v-cloak v-if="cidrFormatError">{{ $t('components.cidrModal.errors.checkAddressFormat') }}</p>
                 <div class="rc-form-group">
                     <label for="cidr-value">{{ subTitle }}</label>
                     <input id="cidr-value" type="text" v-model="editCIDR" @blur="$data.editCIDR = ($event.target as any).value.trim()"/>
-                    <p v-if="maskAllowed">Допустимі символи "0-9", "/", ".". Приклад: 172.16.0.0/12.</p>
-                    <p v-if="!maskAllowed">Допустимі символи "0-9", "." Наприклад: 127.0.0.1</p>
+                    <p v-if="maskAllowed">{{ $t('components.cidrModal.text.mailMaskAllowedDescription') }}</p>
+                    <p v-if="!maskAllowed">{{ $t('components.cidrModal.text.mailMaskDisallowedDescription') }}</p>
                 </div>
             </div>
             <div class="popup-footer active">
-                <a href="#" id="cidr-cancel" class="hide-popup" @click="hideCIDRForm">відмінити</a>
+                <a href="#" id="cidr-cancel" class="hide-popup" @click="hideCIDRForm">{{ $t('actions.cancel') }}</a>
                 <button class="submit-green" value="submit" name="cidr-apply" type="submit"
-                    :disabled="disabled && !cidrFormatError">Підтвердити</button>
+                    :disabled="disabled && !cidrFormatError">{{ $t('actions.confirm') }}</button>
             </div>
         </form>
     </div>

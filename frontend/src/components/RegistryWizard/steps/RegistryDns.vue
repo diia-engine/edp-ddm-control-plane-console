@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRefs } from 'vue';
+import { toRefs, ref } from 'vue';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { useField, useForm } from 'vee-validate';
@@ -32,6 +32,10 @@ const REGEX_DNS_NAME =
   /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9/-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9/-]*[A-Za-z0-9])$/;
 const props = defineProps<RegistryDnsProps>();
 const { dnsManual, keycloakHostname, keycloakHostnames, keycloakCustomHost, portals } = toRefs(props);
+const errorsFile = ref<Record<string, boolean>>({
+  officerSsl: false,
+  citizenSsl: false,
+});
 
 
 const validationSchema = Yup.object<FormValues>({
@@ -44,7 +48,12 @@ const validationSchema = Yup.object<FormValues>({
     is: (enabled: boolean) => {
       return enabled && portals.value?.officer.customDns?.host !== officerDns.value;
     },
-    then: (schema) => schema.required(),
+    then: (schema) => schema.required().test({
+      message: 'invalidFileType',
+      test: function () {
+        return !(errorsFile.value?.officerSsl);
+      },
+    }),
     otherwise: (schema) => schema.notRequired(),
   }),
   citizenDnsEnabled: Yup.bool(),
@@ -56,12 +65,17 @@ const validationSchema = Yup.object<FormValues>({
     is: (enabled: boolean) => {
       return enabled && portals.value?.citizen.customDns?.host !== citizenDns.value;
     },
-    then: (schema) => schema.required(),
+    then: (schema) => schema.required().test({
+      message: 'invalidFileType',
+      test: function () {
+        return !(errorsFile.value?.citizenSsl);
+      },
+    }),
     otherwise: (schema) => schema.notRequired(),
   }),
 });
 
-const { errors, validate, setErrors } = useForm<FormValues>({
+const { errors, validate } = useForm<FormValues>({
   validationSchema,
   initialValues: {
     officerDnsEnabled: portals.value?.officer?.customDns?.enabled || false,
@@ -99,8 +113,12 @@ async function handleFileField(e: Event) {
         'Content-Type': 'multipart/form-data',
       },
     });
+    errorsFile.value[fileName] = false;
   } catch {
-    setErrors({ [fileName]: 'invalidFileType' });
+    errorsFile.value = {
+      ...errorsFile.value,
+      [fileName]: true,
+    };
   }
 }
 
@@ -122,14 +140,14 @@ defineExpose({
 </script>
 
 <template>
-  <Typography variant="h3" class="mb24">Налаштування DNS</Typography>
+  <Typography variant="h3" class="mb24">{{ $t('components.registryDns.title') }}</Typography>
 
   <div class="rc-form-group show-errors-span dns-inputs">
     <label for="keycloak-hostname" class="header-label">
-      Сервіс управління користувачами та ролями (Keycloak)
+      {{ $t('components.registryDns.text.userAndRoleManagementService') }}
     </label>
 
-    <div class="text-input-label label-ssl">Доменне імʼя для Keycloak</div>
+    <div class="text-input-label label-ssl">{{ $t('components.registryDns.text.domainKeycloakName') }}</div>
     <select id="keycloak-hostname" name="keycloak-custom-hostname">
       <option>{{ keycloakHostname }}</option>
       <option
@@ -144,11 +162,11 @@ defineExpose({
 
   <div class="rc-form-group show-errors-span dns-inputs">
     <Typography upperCase variant="h5" class="mb24">
-      Кабінет посадової особи
+      {{ $t('components.registryDns.text.officialOffice') }}
     </Typography>
     <ToggleSwitch
       name="officer-dns-enabled"
-      label="Використати власні значення"
+      :label="$t('components.registryDns.fields.officerDNSEnabled.label')"
       v-model="officerDnsEnabled"
       @change="handleChangeOfficerDnsEnabled"
       classes="mb24"
@@ -156,7 +174,7 @@ defineExpose({
     <template v-if="officerDnsEnabled">
       <TextField
         required
-        label="Доменне імʼя для кабінету посадової особи"
+        :label="$t('components.registryDns.fields.officerDNS.label')"
         name="officer-dns"
         v-model="officerDns"
         :error="errors?.officerDns"
@@ -164,7 +182,7 @@ defineExpose({
       <TextField
         required
         type="file"
-        label="SSL-сертифікат для кабінету чиновника (розширення .pem)"
+        :label="$t('components.registryDns.fields.officerSSL.label')"
         name="officer-ssl"
         v-model="officerSsl"
         :error="errors?.officerSsl"
@@ -178,11 +196,11 @@ defineExpose({
 
   <div class="rc-form-group show-errors-span dns-inputs">
     <Typography upperCase variant="h5" class="mb24">
-      Кабінет отримувача послуг
+      {{ $t('components.registryDns.text.serviceRecipientOffice') }}
     </Typography>
     <ToggleSwitch
       name="citizen-dns-enabled"
-      label="Використати власні значення"
+      :label="$t('components.registryDns.fields.citizenDNSEnabled.label')"
       v-model="citizenDnsEnabled"
       @change="handleChangeCitizenDnsEnabled"
       classes="mb24"
@@ -190,7 +208,7 @@ defineExpose({
     <template v-if="citizenDnsEnabled">
       <TextField
         required
-        label="Доменне імʼя для кабінету отримувача послуг"
+        :label="$t('components.registryDns.fields.citizenDNS.label')"
         name="citizen-dns"
         v-model="citizenDns"
         :error="errors?.citizenDns"
@@ -198,7 +216,7 @@ defineExpose({
       <TextField
         required
         type="file"
-        label="SSL-сертифікат для кабінету чиновника (розширення .pem)"
+        :label="$t('components.registryDns.fields.citizenSSL.label')"
         name="citizen-ssl"
         v-model="citizenSsl"
         :error="errors?.citizenSsl"
@@ -211,13 +229,12 @@ defineExpose({
   </div>
 
   <div class="yellow-banner">
-    <div class="banner-title">Увага!</div>
+    <div class="banner-title">{{ $t('components.registryDns.text.attention') }}</div>
     <div class="banner-body">
-      Необхідно виконати додаткову зовнішню конфігурацію за межами OpenShift
-      кластеру та реєстру.
+      {{ $t('components.registryDns.text.additionalExternalConfiguration') }}
       <template v-if="dnsManual">
-        Інструкція доступна
-        <a target="_blank" :href="dnsManual">за посиланням</a>.
+        {{ $t('components.registryDns.text.instructionsAreAvailable') }}
+        <a target="_blank" :href="dnsManual">{{ $t('components.registryDns.text.byLink') }}</a>.
       </template>
     </div>
   </div>

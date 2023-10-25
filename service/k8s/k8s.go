@@ -102,6 +102,15 @@ func (s *Service) GetConfigMap(ctx context.Context, name, namespace string) (*v1
 	return cm, nil
 }
 
+func (s *Service) CreateConfigMap(ctx context.Context, cm *v1.ConfigMap, namespace string) error {
+	_, err := s.clientSet.CoreV1().ConfigMaps(namespace).Create(ctx, cm, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "unable to create config map")
+	}
+
+	return nil
+}
+
 func (s *Service) GetSecretKeys(ctx context.Context, namespace, name string, keys []string) (map[string]string, error) {
 	sec, err := s.GetSecretFromNamespace(ctx, name, namespace)
 	if err != nil {

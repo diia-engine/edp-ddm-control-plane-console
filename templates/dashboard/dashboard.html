@@ -2,6 +2,7 @@
     {{template "header" .}}
 
     <div id="template-args" style="display: none;" data-args="{{ .templateArgs }}"></div>
+    <div id="env-args" style="display: none;" data-args="{{ envVars }}"></div>
     <div id="app"></div>
 
     {{template "scripts" .}}

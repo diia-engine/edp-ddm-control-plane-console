@@ -57,7 +57,7 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to list namespaced edp components")
 	}
 
-	clusterValues, err := registry.GetValuesFromGit(a.ClusterRepo, registry.MasterBranch, a.Gerrit)
+	clusterValues, err := getValuesFromGit(a.ClusterRepo, masterBranch, a.Gerrit)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get cluster values, %w", err)
 	}
@@ -104,6 +104,7 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		"cidr":             cidr,
 		"version":          a.getClusterVersion(clusterProject.Status.Branches, emrs),
 		"mergeRequests":    emrs,
+		"language":         clusterValues.Global.Language,
 	}
 
 	rspParams["platformOperationalComponents"] = categories[edpcomponent.PlatformOperationalZone]
@@ -140,7 +141,7 @@ func (a *App) getClusterVersion(gerritProjectBranches []string, mrs []ExtendedMe
 	return registryVersion.String()
 }
 
-func (a *App) displayAdmins(values *registry.Values) (string, error) {
+func (a *App) displayAdmins(values *Values) (string, error) {
 	js, err := a.getAdminsJSON(values)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get admins json")
@@ -159,34 +160,8 @@ func (a *App) displayAdmins(values *registry.Values) (string, error) {
 	return strings.Join(adminsStr, ", "), nil
 }
 
-func (a *App) displayCIDR(values *registry.Values) ([]string, error) {
-	//TODO: refactor
-	global, ok := values.OriginalYaml["global"]
-	if !ok {
-		return []string{}, nil
-	}
-
-	globalDict, ok := global.(map[string]interface{})
-	if !ok {
-		return []string{}, nil
-	}
-
-	whiteListIP, ok := globalDict["whiteListIP"]
-	if !ok {
-		return []string{}, nil
-	}
-
-	whiteListIPDict, ok := whiteListIP.(map[string]interface{})
-	if !ok {
-		return []string{}, nil
-	}
-
-	cidr, ok := whiteListIPDict["adminRoutes"]
-	if !ok {
-		return []string{}, nil
-	}
-
-	cidrStr := cidr.(string)
+func (a *App) displayCIDR(values *Values) ([]string, error) {
+	cidrStr := values.Global.WhiteListIP.AdminRoutes
 	if cidrStr == "" {
 		return []string{}, nil
 	}

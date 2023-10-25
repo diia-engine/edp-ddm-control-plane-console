@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { toRefs, ref } from 'vue';
+import axios from 'axios';
+
 import RegistryEditPublicApiModal from '@/components/RegistryEditPublicApiModal.vue';
 import RegistryDeletePublicApiModal from '@/components/RegistryDeletePublicApiModal.vue';
 import type { PublicApiLimits } from '@/types/registry';
 import { getImageUrl } from '@/utils';
 import { getExtStatus } from '@/utils/registry';
-import { toRefs, ref } from 'vue';
-import axios from 'axios';
+import i18n from '@/localization';
 
 interface PublicApi {
   name: string;
@@ -34,16 +36,16 @@ function hideModalWindow() {
 
 const getStatus = (status: string, enabled: boolean = true): string => {
   if (status === "inactive") {
-    return "В обробці";
+    return i18n.global.t('domains.registry.publicApi.inProcessing');
   }
   if (status === "failed") {
-    return "Помилка";
+    return i18n.global.t('domains.registry.publicApi.error');
   }
   if (enabled === false) {
-      return "Інтеграція не налаштована";
+      return i18n.global.t('domains.registry.publicApi.integrationIsNotConfigured');
   }
 
-  return "Інтеграція налаштована";
+  return i18n.global.t('domains.registry.publicApi.integrationIsConfigured');
 };
 
 function showPublicApiEditReg(e: any, publicApi?: PublicApi) {
@@ -66,9 +68,9 @@ function showDeletePublicAccessReg(e: any, publicApi?: PublicApi) {
 
 function getPublicApiBlockTitle(publicApi?: PublicApi) {
   if (!publicApi?.enabled) {
-    return 'Розблокувати доступ';
+    return i18n.global.t('domains.registry.publicApi.enableAccess');
   }
-  return 'Заблокувати доступ';
+  return i18n.global.t('domains.registry.publicApi.disableAccess');
 }
 
 function getActualStatus(status: string, enable: boolean) {
@@ -103,8 +105,8 @@ function disablePublicAccessReg(registry: string, name: string, e: any) {
     <table class="rg-info-table rg-info-table-config">
       <thead>
         <tr>
-          <th>Налаштовано</th>
-          <th>Назва</th>
+          <th>{{ $t('domains.registry.publicApi.configured') }}</th>
+          <th>{{ $t('domains.registry.publicApi.name') }}</th>
           <th>URL</th>
           <th></th>
         </tr>
@@ -119,7 +121,7 @@ function disablePublicAccessReg(registry: string, name: string, e: any) {
           <td>{{ publicApiItem.url }}</td>
           <td>
             <div class="rg-public-api-actions" :class="{ inactive: getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) == 'status-inactive' }">
-              <a href="#" @click.prevent="getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) !== 'status-inactive' && showPublicApiEditReg($event, publicApiItem)" title="Редагувати">
+              <a href="#" @click.prevent="getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) !== 'status-inactive' && showPublicApiEditReg($event, publicApiItem)" :title="$t('actions.edit')">
                 <i class="fa-solid fa-pen"></i>
               </a>
               <a @click.prevent="getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) !== 'status-inactive' && disablePublicAccessReg(registry, publicApiItem.name, $event)" href="#">
@@ -127,7 +129,7 @@ function disablePublicAccessReg(registry: string, name: string, e: any) {
                   alt="key" :src="getImageUrl(`lock-status-${publicApiItem.StatusRegistration ? publicApiItem.StatusRegistration : (publicApiItem.enabled ? 'active' : 'disabled')}`)" />
               </a>
               <a href="#" @click.prevent="getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled) !== 'status-inactive' && showDeletePublicAccessReg($event, publicApiItem)">
-                <img title="Видалити" alt="key" :src="getImageUrl(`disable-${getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)}`)" />
+                <img :title="$t('actions.remove')" alt="key" :src="getImageUrl(`disable-${getExtStatus(publicApiItem.StatusRegistration, publicApiItem.enabled)}`)" />
               </a>
             </div>
           </td>
@@ -135,12 +137,12 @@ function disablePublicAccessReg(registry: string, name: string, e: any) {
       </tbody>
     </table>
     <div class="rg-info-block-no-content" v-if="!publicApi.length">
-      Немає реєстрів або систем, що мають публічний доступ до даних цього реєтра.
+      {{ $t('domains.registry.publicApi.noRegistryOrSystem') }}
     </div>
     <div class="link-grant-access">
       <a class="" href="#" @click="showPublicApiEditReg($event)">
-        <img alt="Надати доступ" src="@/assets/img/plus.png" />
-        <span>Надати доступ</span>
+        <img :alt="$t('domains.registry.publicApi.grantAccess')" src="@/assets/img/plus.png" />
+        <span>{{ $t('domains.registry.publicApi.grantAccess') }}</span>
       </a>
     </div>
   </div>

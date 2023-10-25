@@ -95,7 +95,7 @@ func (a *App) ClusterGetMergeRequests(userCtx context.Context) ([]ExtendedMergeR
 	return emrs, nil
 }
 
-func (a *App) createValuesMergeRequestCtx(ctx *gin.Context, target, commitMessage string, values map[string]interface{}) error {
+func (a *App) createValuesMergeRequestCtx(ctx *gin.Context, target, commitMessage string, values *Values) error {
 	valuesValue, err := yaml.Marshal(values)
 	if err != nil {
 		return errors.Wrap(err, "unable to encode new values")
@@ -127,7 +127,7 @@ func (a *App) createValuesMergeRequest(ctx context.Context, cnf *valuesMrConfig)
 			registry.MRLabelTarget: cnf.targetLabel,
 		},
 	}, map[string]string{
-		registry.ValuesLocation: cnf.values,
+		ValuesLocation: cnf.values,
 	}); err != nil {
 		return errors.Wrap(err, "unable to create MR with new values")
 	}

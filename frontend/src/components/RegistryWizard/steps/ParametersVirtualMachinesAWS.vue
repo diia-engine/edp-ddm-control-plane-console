@@ -8,6 +8,7 @@ import Typography from '@/components/common/Typography.vue';
 import RadioGroup from '@/components/common/RadioGroup.vue';
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import type { ComputeResources } from '@/types/registry';
+import i18n from '@/localization';
 
 type ParametersVirtualMachinesAWSProps = {
   computeResources: ComputeResources
@@ -31,7 +32,7 @@ enum AWSTypePrices {
 
 const radioButtons = [
   { label: 'On-Demand Instance price', value: AWSTypePrices.INSTANCE },
-  { label: 'Вказати власну ($/година)', value: AWSTypePrices.OWN },
+  { label: i18n.global.t('components.parametersVirtualMachinesAWS.text.enterOwn'), value: AWSTypePrices.OWN },
 ];
 
 const props = defineProps<ParametersVirtualMachinesAWSProps>();
@@ -92,21 +93,21 @@ function handleAwsSpotInstance() {
 }
 
 function prepareBannerDescription(): string {
-  const bannerDescription = `Кластер OpenShift розгорнутий на інфраструктурі AWS. Докладніше про допустимі значення параметрів віртуальних машин – в системних вимогах OpenShift.`;
+  const bannerDescription = i18n.global.t('components.parametersVirtualMachinesAWS.text.openShiftClusterIsDeployed');
   if (isEditAction.value) {
     if (isPlatformAdmin.value) {
-      return `${bannerDescription} \n\n Якщо потрібно одразу застосувати зміни для параметрів віртуальних машин (тип і розмір диску), то перед зміною необхідно попередньо вимкнути реєстр.`;
+      return `${bannerDescription} \n\n ${i18n.global.t('components.parametersVirtualMachinesAWS.text.immediatelyApplyChanges')}`;
     }
-    return `${bannerDescription} \n\n В разі необхідності редагування параметрів, зверніться до адміністратора Платформи.`;
+    return `${bannerDescription} \n\n ${i18n.global.t('components.parametersVirtualMachinesAWS.text.contactPlatformAdministrator')}`;
   }
   return bannerDescription;
 }
 
 function prepareDescriptionInstanceVolumeSize(): string {
   if (isEditAction.value) {
-    return `Допустимі значення: 50 - 200 GB, але не менше від поточного (${computeResources.value?.instanceVolumeSize} GB).`;
+    return i18n.global.t('components.parametersVirtualMachinesAWS.text.validValuesNotLessCurrent', { instanceVolumeSize: computeResources.value?.instanceVolumeSize });
   }
-  return 'Допустимі значення: 50 - 200 GB.';
+  return i18n.global.t('components.parametersVirtualMachinesAWS.text.rangeOfValidSizeValues');
 }
 
 const preparedComputeResources = computed(() =>
@@ -129,7 +130,7 @@ defineExpose({
 </script>
 
 <template>
-  <Typography variant="h3" class="h3">Параметри віртуальних машин</Typography>
+  <Typography variant="h3" class="h3">{{ $t('components.parametersVirtualMachinesAWS.title') }}</Typography>
   <Banner
     classes="mb24"
     :description="prepareBannerDescription()"
@@ -143,11 +144,11 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Кількість віртуальних машин"
+      :label="$t('components.parametersVirtualMachinesAWS.fields.instanceCount.label')"
       name="instanceCount"
       v-model="instanceCount"
       :error="errors.instanceCount"
-      description="допустимі значення: 1 - 2000."
+      :description="$t('components.parametersVirtualMachinesAWS.fields.instanceCount.description')"
     >
     </TextField>
   </div>
@@ -155,24 +156,24 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Тип AWS EC2-інстансу"
+      :label="$t('components.parametersVirtualMachinesAWS.fields.awsInstanceType.label')"
       name="awsInstanceType"
       v-model="awsInstanceType"
       :error="errors.awsInstanceType"
-      description="Наприклад: r5.2xlarge, m5.xlarge, c5.4xlarge."
+      :description="$t('components.parametersVirtualMachinesAWS.fields.awsInstanceType.description')"
     >
     </TextField>
   </div>
   <ToggleSwitch
     name="awsSpotInstance"
     :disabled="disabled"
-    label="Використати AWS EC2 Spot-інстанс"
+    :label="$t('components.parametersVirtualMachinesAWS.fields.awsSpotInstance.label')"
     v-model="awsSpotInstance"
     @change="handleAwsSpotInstance"
   />
   <template v-if="showMaxPriceAWS">
     <Typography variant="bodyText" class="mt16">
-      Максимальна ціна AWS EC2-інстансу (за годину):
+      {{ $t('components.parametersVirtualMachinesAWS.text.maximumPriceAWS') }}
     </Typography>
     <RadioGroup
       name="maxPriceAWS"
@@ -195,7 +196,7 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Тип системного диску AWS EC2-інстансу"
+      :label="$t('components.parametersVirtualMachinesAWS.fields.awsInstanceVolumeType.label')"
       name="awsInstanceVolumeType"
       v-model="awsInstanceVolumeType"
       :error="errors.awsInstanceVolumeType"
@@ -206,7 +207,7 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Розмір системного диску віртуальної машини (GB)"
+      :label="$t('components.parametersVirtualMachinesAWS.fields.instanceVolumeSize.label')"
       name="instanceVolumeSize"
       v-model="instanceVolumeSize"
       :error="errors.instanceVolumeSize"

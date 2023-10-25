@@ -73,6 +73,29 @@ func (_m *ServiceInterface) GetJobStatus(ctx context.Context, jobName string) (s
 	return r0, r1, r2
 }
 
+// GetJobStatus provides a mock function with given fields: ctx, jobName
+func (_m *ServiceInterface) IsJobRunning(ctx context.Context, jobName string) (bool, error) {
+	ret := _m.Called(ctx, jobName)
+
+	var r0 bool
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, jobName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, jobName)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, jobName)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r2
+}
+
 // ServiceForContext provides a mock function with given fields: ctx
 func (_m *ServiceInterface) ServiceForContext(ctx context.Context) (jenkins.ServiceInterface, error) {
 	ret := _m.Called(ctx)

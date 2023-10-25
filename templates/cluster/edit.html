@@ -2,6 +2,7 @@
     {{template "header" .}}
 
     <div id="template-args" style="display: none;" data-args="{{ .templateArgs }}"></div>
+    <div id="env-args" style="display: none;" data-args="{{ envVars }}"></div>
     <div id="app"></div>
     
     {{template  "scripts" .}}
@@ -24,7 +25,7 @@
                 input.setCustomValidity('');
                 if (!input.validity.valid) {
                     input.scrollIntoView();
-                    input.setCustomValidity('Не може бути порожнім');
+                    input.setCustomValidity({{ i18n "errors.required" }});
                 }
             });
         });

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"ddm-admin-console/locale"
 
 	"github.com/hashicorp/go-version"
 
@@ -18,8 +19,6 @@ const (
 	Create                           Strategy       = "create"
 	Clone                            Strategy       = "clone"
 	Default                          VersioningType = "default"
-	ViewTimeFormat                                  = "02.01.2006 15:04"
-	DataTableTimeFormat                             = "2006-01-02 15:04:05"
 	BranchStatusActive                              = "active"
 	AdminsAnnotation                                = "registry-parameters/administrators"
 	RepoNotReady                                    = "NOT_READY"
@@ -27,6 +26,11 @@ const (
 	StatusAnnotationInactiveBranches                = "inactive-branches"
 	StatusAnnotationRunningJobs                     = "running-jobs"
 	StatusInactive                                  = "inactive"
+)
+
+var (
+	ViewTimeFormat      = locale.DateTimeFormat()
+	DataTableTimeFormat = locale.DateTimePreciseFormat()
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!

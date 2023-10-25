@@ -6,6 +6,7 @@ import TextField from '@/components/common/TextField.vue';
 import Banner from '@/components/common/Banner.vue';
 import Typography from '@/components/common/Typography.vue';
 import type { ComputeResources } from '@/types/registry';
+import i18n from '@/localization';
 
 type ParametersVirtualMachinesVSphereProps = {
   computeResources: ComputeResources
@@ -27,7 +28,7 @@ const disabled = !isPlatformAdmin.value && isEditAction.value;
 
 const validationSchema = Yup.object<FormValues>({
   instanceCount: Yup.number().required().max(2000).min(1),
-  instanceVolumeSize: Yup.number().required().min(computeResources.value.instanceVolumeSize || 1).max(200),
+  instanceVolumeSize: Yup.number().required().min(computeResources.value?.instanceVolumeSize || 1).max(200),
   vSphereInstanceCPUCount: Yup.number().required().min(1),
   vSphereInstanceCoresPerCPUCount: Yup.number().required().min(1),
   vSphereInstanceRAMSize: Yup.number().required().min(1),
@@ -36,11 +37,11 @@ const validationSchema = Yup.object<FormValues>({
 const { errors, validate } = useForm<FormValues>({
   validationSchema,
   initialValues: {
-    instanceCount: computeResources.value.instanceCount || 2,
-    instanceVolumeSize: computeResources.value.instanceVolumeSize || 80,
-    vSphereInstanceCPUCount: computeResources.value.vSphereInstanceCPUCount || 8,
-    vSphereInstanceCoresPerCPUCount: computeResources.value.vSphereInstanceCoresPerCPUCount || 1,
-    vSphereInstanceRAMSize: computeResources.value.vSphereInstanceRAMSize || 32768,
+    instanceCount: computeResources.value?.instanceCount || 2,
+    instanceVolumeSize: computeResources.value?.instanceVolumeSize || 80,
+    vSphereInstanceCPUCount: computeResources.value?.vSphereInstanceCPUCount || 8,
+    vSphereInstanceCoresPerCPUCount: computeResources.value?.vSphereInstanceCoresPerCPUCount || 1,
+    vSphereInstanceRAMSize: computeResources.value?.vSphereInstanceRAMSize || 32768,
   },
 });
 
@@ -67,21 +68,21 @@ function validator() {
 }
 
 function prepareBannerDescription(): string {
-  const bannerDescription = `Кластер OpenShift розгорнутий на інфраструктурі VSphere. Докладніше про допустимі значення параметрів віртуальних машин – в системних вимогах OpenShift.`;
+  const bannerDescription = i18n.global.t('components.parametersVirtualMachinesVSphere.text.openShiftClusterDeployed');
   if (isEditAction.value) {
     if (isPlatformAdmin.value) {
-      return `${bannerDescription} \n\n Якщо потрібно одразу застосувати зміни для параметрів віртуальних машин (тип і розмір диску), то перед зміною необхідно попередньо вимкнути реєстр.`;
+      return `${bannerDescription} \n\n ${i18n.global.t('components.parametersVirtualMachinesVSphere.text.immediatelyApplyChanges')}`;
     }
-    return `${bannerDescription} \n\n В разі необхідності редагування параметрів, зверніться до адміністратора Платформи.`;
+    return `${bannerDescription} \n\n ${i18n.global.t('components.parametersVirtualMachinesVSphere.text.contactPlatformAdministrator')}`;
   }
   return bannerDescription;
 }
 
 function prepareDescriptionInstanceVolumeSize(): string {
   if (isEditAction.value) {
-    return `Допустимі значення: 50 - 200 GB, але не менше від поточного (${computeResources.value.instanceVolumeSize} GB).`;
+    return i18n.global.t('components.parametersVirtualMachinesVSphere.text.rangeOfValidSizeValuesVolumeSize', { instanceVolumeSize: computeResources.value.instanceVolumeSize });
   }
-  return 'Допустимі значення: 50 - 200 GB.';
+  return i18n.global.t('components.parametersVirtualMachinesVSphere.text.rangeOfValidSizeValues');
 }
 
 const preparedComputeResources = computed(() =>
@@ -100,7 +101,7 @@ defineExpose({
 </script>
 
 <template>
-  <Typography variant="h3" class="h3">Параметри віртуальних машин</Typography>
+  <Typography variant="h3" class="h3">{{ $t('components.parametersVirtualMachinesVSphere.title') }}</Typography>
   <Banner
     classes="mb24"
     :description="prepareBannerDescription()"
@@ -114,11 +115,11 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Кількість віртуальних машин"
+      :label="$t('components.parametersVirtualMachinesVSphere.fields.instanceCount.label')"
       name="instanceCount"
       v-model="instanceCount"
       :error="errors.instanceCount"
-      description="допустимі значення: 1 - 2000."
+      :description="$t('components.parametersVirtualMachinesVSphere.fields.instanceCount.description')"
     >
     </TextField>
   </div>
@@ -126,7 +127,7 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Розмір системного диску віртуальної машини (GB)"
+      :label="$t('components.parametersVirtualMachinesVSphere.fields.instanceVolumeSize.label')"
       name="instanceVolumeSize"
       v-model="instanceVolumeSize"
       :error="errors.instanceVolumeSize"
@@ -138,7 +139,7 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Кількість vCPU віртуальної машини"
+      :label="$t('components.parametersVirtualMachinesVSphere.fields.vSphereInstanceCPUCount.label')"
       name="vSphereInstanceCPUCount"
       v-model="vSphereInstanceCPUCount"
       :error="errors.vSphereInstanceCPUCount"
@@ -149,7 +150,7 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Кількість ядер у кожного vCPU віртуальної машини"
+      :label="$t('components.parametersVirtualMachinesVSphere.fields.vSphereInstanceCoresPerCPUCount.label')"
       name="vSphereInstanceCoresPerCPUCount"
       v-model="vSphereInstanceCoresPerCPUCount"
       :error="errors.vSphereInstanceCoresPerCPUCount"
@@ -160,7 +161,7 @@ defineExpose({
     <TextField
       required
       :disabled="disabled"
-      label="Кількість RAM віртуальної машини (МіВ)"
+      :label="$t('components.parametersVirtualMachinesVSphere.fields.vSphereInstanceRAMSize.label')"
       name="vSphereInstanceRAMSize"
       v-model="vSphereInstanceRAMSize"
       :error="errors.vSphereInstanceRAMSize"

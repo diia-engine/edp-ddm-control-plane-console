@@ -42,9 +42,9 @@ function handleClick(url: string) {
     <div id="changes"></div>
     <div class="change-actions" v-if="change.status === 'NEW'">
         <a href="#" class="change-abandon" :class="{ 'disabled': disabled }"
-            @click="handleClick(`/admin/abandon-change/${changeID}`)">Відхилити</a>
+            @click="handleClick(`/admin/abandon-change/${changeID}`)">{{ $t('actions.reject') }}</a>
         <a href="#" class="change-submit" :class="{ 'disabled': disabled }"
-            @click="handleClick(`/admin/submit-change/${changeID}`)">Підтвердити</a>
+            @click="handleClick(`/admin/submit-change/${changeID}`)">{{ $t('actions.confirm') }}</a>
     </div>
 </template>
 

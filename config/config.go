@@ -70,6 +70,10 @@ type Settings struct {
 	BackupBucketAccessKeyID               string `envconfig:"ACCESS_KEY_ID" default:"accessKeyId"`
 	BackupBucketSecretAccessKey           string `envconfig:"SECRET_ACCESS_KEY" default:"secretAccessKey"`
 	RegistryTemplateName                  string `envconfig:"REGISTRY_TEMPLATE_NAME"`
+	CloudProvider                         string `envconfig:"CLOUD_PROVIDER"`
+	Region                                string `envconfig:"REGION" default:"ua"`
+	PlatformVersion                       string `envconfig:"PLATFORM_VERSION"`
+	PreviousPlatfromVersion               string `envconfig:"PREVIOUS_PLATFORM_VERSION"`
 }
 
 type Services struct {

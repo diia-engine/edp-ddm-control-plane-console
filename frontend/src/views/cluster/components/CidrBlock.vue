@@ -33,11 +33,11 @@ export default {
 </script>
 
 <template>
-    <h2>Перелік дозволених CIDR</h2>
+    <h2>{{ $t('domains.cluster.cidr.title') }}</h2>
     <form id="cluster-update-form" @submit="submit" class="registry-create-form wizard-form" method="post"
         action="/admin/cluster/cidr">
         <div class="rc-form-group">
-            <label for="admins">CIDR для адміністративних компонент</label>
+            <label for="admins">{{ $t('domains.cluster.cidr.text.cidrAdministrativeComponents') }}</label>
             <input type="hidden" id="admin-cidr" name="admin-cidr" v-model="adminCIDRValue.value" />
             <div class="advanced-admins">
                 <div v-cloak v-for="c in adminCIDR" :key="c" class="child-admin">
@@ -51,7 +51,9 @@ export default {
         </div>
 
         <div class="rc-form-group">
-            <button type="submit" name="submit" :disabled="disabled" onclick="window.localStorage.setItem('mr-scroll', 'true');">Підтвердити</button>
+            <button type="submit" name="submit" :disabled="disabled" onclick="window.localStorage.setItem('mr-scroll', 'true');">
+                {{ $t('actions.confirm') }}
+            </button>
         </div>
     </form>
 </template>

@@ -66,6 +66,11 @@ func (_m *ServiceInterface) GetConfigMap(ctx context.Context, name string, names
 	return r0, r1
 }
 
+// CreateConfigMap provides a mock function with given fields: ctx, name, namespace
+func (_m *ServiceInterface) CreateConfigMap(ctx context.Context, cm *v1.ConfigMap, namespace string) (error) {
+	return nil
+}
+
 // GetSecret provides a mock function with given fields: name
 func (_m *ServiceInterface) GetSecret(name string) (*v1.Secret, error) {
 	ret := _m.Called(name)

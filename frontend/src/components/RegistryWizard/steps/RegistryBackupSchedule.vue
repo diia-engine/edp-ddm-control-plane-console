@@ -9,6 +9,7 @@ import TextField from '@/components/common/TextField.vue';
 // @ts-ignore
 import RegistryBackupSavePlaceModal from '@/components/RegistryBackupSavePlaceModal.vue';
 import RegistryBackupDeletePlaceModal from '@/components/RegistryBackupDeletePlaceModal.vue';
+import { getFormattedDatePrecise } from '@/utils';
 
 interface RegistryEditTemplateVariables {
   templateVariables: {
@@ -177,7 +178,7 @@ function cronExpressionChange () {
     let dt = new Date();
     for (let i = 0; i < 3; i++) {
       const next = cron?.getNextDate(dt);
-      nextDates.value.push(`${next.toLocaleDateString("uk")} ${next.toLocaleTimeString("uk")}`);
+      nextDates.value.push(getFormattedDatePrecise(next?.toUTCString()));
       dt = next;
     }
   }
@@ -193,7 +194,7 @@ function backupCronExpressionChange () {
     let dt = new Date();
     for (let i = 0; i < 3; i++) {
       const next = cron?.getNextDate(dt);
-      registryBackupNextDates.value.push(`${next.toLocaleDateString("uk")} ${next.toLocaleTimeString("uk")}`);
+      registryBackupNextDates.value.push(getFormattedDatePrecise(next?.toUTCString()));
       dt = next;
     }
   }
@@ -205,26 +206,26 @@ function backupCronExpressionChange () {
 
 <template>
   <div class="form-group">
-    <Typography variant="h3">Резервне копіювання</Typography>
+    <Typography variant="h3">{{ $t('components.registryBackupSchedule.title') }}</Typography>
   </div>
-  <Typography variant="bodyText">Можливість вказати розклад створення резервних копій реєстру та термін їх зберігання.</Typography>
+  <Typography variant="bodyText">{{ $t('components.registryBackupSchedule.text.abilitySpecifySchedule') }}</Typography>
   <div class="toggle-switch backup-switch">
       <input v-model="enabled" :onChange="enabledChange" class="switch-input"
               type="checkbox" id="backup-schedule-switch-input"  name="backup-schedule-enabled" />
       <label for="backup-schedule-switch-input">Toggle</label>
-      <span>Налаштувати резервне копіювання</span>
+      <span>{{ $t('components.registryBackupSchedule.text.configureBackup') }}</span>
   </div>
 
   <div v-show="enabled">
     <div class="form-group">
-      <Typography variant="h5" upperCase>Резервне копіювання реєстру</Typography>
+      <Typography variant="h5" upperCase>{{ $t('components.registryBackupSchedule.text.backupTheRegistry') }}</Typography>
     </div>
     <div class="form-group">
       <TextField
-        label="Розклад"
+        :label="$t('components.registryBackupSchedule.fields.schedule.label')"
         name="cron-schedule"
         placeholder="5 4 * * *"
-        description="Використовується Cron-формат."
+        :description="$t('components.registryBackupSchedule.fields.schedule.description')"
         v-model="cronSchedule"
         :error="beginValidation ? errors.cronSchedule : ''"
         required
@@ -232,7 +233,7 @@ function backupCronExpressionChange () {
       />
     </div>
     <div v-show="nextDates.length" class="form-group">
-        <label>Наступні запуски резервного копіювання (за київським часом)</label>
+        <label>{{ $t('components.registryBackupSchedule.text.nextBackupStarts') }}</label>
         <ul class="cron-next-dates">
             <li v-for="date in nextDates" v-bind:key="date">
               <Typography variant="bodyText">{{ date }}</Typography>
@@ -242,10 +243,10 @@ function backupCronExpressionChange () {
 
     <div class="form-group">
       <TextField
-        label="Час зберігання (днів)"
+        :label="$t('components.registryBackupSchedule.fields.storageDays.label')"
         name="cron-schedule-days"
         placeholder="3"
-        description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+        :description="$t('components.registryBackupSchedule.fields.storageDays.description')"
         v-model="days"
         :error="beginValidation ? errors.days : ''"
         required
@@ -253,14 +254,14 @@ function backupCronExpressionChange () {
     </div>
 
     <div class="form-group">
-      <Typography variant="h5" upperCase>Резервне копіювання реплікацій об’єктів S3</Typography>
+      <Typography variant="h5" upperCase>{{ $t('components.registryBackupSchedule.text.backupObjectReplications') }}</Typography>
     </div>
     <div class="form-group">
       <TextField
-        label="Розклад збереження резервних копій реплікацій об’єктів S3"
+        :label="$t('components.registryBackupSchedule.fields.cronExpression.label')"
         name="registry-backup-obc-cron-expression"
         placeholder="30 17 * * *"
-        description="Якщо Ви бажаєте встановити розклад, що відмінний від дефолтного, будь ласка, введіть значення розкладу у Cron-форматі, або вкажіть дефолтне значення за UTC:"
+        :description="$t('components.registryBackupSchedule.fields.cronExpression.description')"
         v-model="obcCronExpression"
         :error="beginValidation ? errors.obcCronExpression : ''"
         @change="backupCronExpressionChange"
@@ -268,7 +269,7 @@ function backupCronExpressionChange () {
       <Typography variant="small">30 17 * * *</Typography>
     </div>
     <div v-show="registryBackupNextDates.length" class="form-group">
-      <label>Наступний запуск резервного копіювання реплікацій об’єктів S3 (за UTC)</label>
+      <label>{{ $t('components.registryBackupSchedule.text.replicationBackupRun') }}</label>
       <ul class="cron-next-dates">
           <li v-for="date in registryBackupNextDates" v-bind:key="date">
             <Typography variant="bodyText">{{ date }}</Typography>
@@ -277,11 +278,11 @@ function backupCronExpressionChange () {
     </div>
 
     <div>
-      <Typography variant="subheading">Місце зберігання резервних копій реплікацій об’єктів S3</Typography>
+      <Typography variant="subheading">{{ $t('components.registryBackupSchedule.text.storageLocationBackup') }}</Typography>
       <div class="rc-form-backup-obc" v-if="obcEndpoint">
         <div>
           <div class="bucket-field">
-            <Typography variant="small">Ім’я бакета</Typography>
+            <Typography variant="small">{{ $t('components.registryBackupSchedule.text.bucketName') }}</Typography>
             <Typography variant="bodyText">{{ obcBackupBucket }}</Typography>
           </div>
           <div class="endpoint-field">
@@ -306,11 +307,11 @@ function backupCronExpressionChange () {
         </div>
       </div>
       <div class="rc-form-backup-obc-empty" v-if="!obcEndpoint">
-        <Typography variant="bodyText">Використовуються значення за замовчуванням, задані при розгортанні реєстру.</Typography>
+        <Typography variant="bodyText">{{ $t('components.registryBackupSchedule.text.defaultValuesSpecifiedDeployment') }}</Typography>
         <div>
           <a href="#" @click.stop.prevent="showBackupPlaceModal" class="icon-button set-data-button">
             <img alt="edit button" src="@/assets/img/action-edit.png" />
-            <Typography variant="buttonText" upperCase>Задати власні значення</Typography>
+            <Typography variant="buttonText" upperCase>{{ $t('components.registryBackupSchedule.actions.setOwnValues') }}</Typography>
           </a>
         </div>
       </div>

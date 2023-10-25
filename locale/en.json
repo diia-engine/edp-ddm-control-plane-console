@@ -1,0 +1,1292 @@
+{
+  "actions": {
+    "refresh": "Refresh",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "reject": "Reject",
+    "give": "Apply",
+    "remove": "Remove",
+    "gotIt": "Got it",
+    "back": "Back",
+    "next": "Next",
+    "replace": "Replace",
+    "save": "Save"
+  },
+  "components": {
+    "layout": {
+      "appNameVersion": "Web interface for managing the Platform and registries. Version",
+      "actions": {
+        "back": "Back",
+        "logout": "Logout"
+      },
+      "menu": {
+        "registry": "REGISTRIES",
+        "platform": "PLATFORM MANAGEMENT"
+      }
+    },
+    "fileField": {
+      "text": {
+        "fileLoaded": "File is loaded"
+      }
+    },
+    "menuList": {
+      "actions": {
+        "addLimits": "Add limits"
+      }
+    },
+    "registryWizard": {
+      "actions": {
+        "updateRegister": "Update the registry",
+        "createRegister": "Create a registry"
+      },
+      "text": {
+        "administrators": "Administrators",
+        "advancedAdminsDescription": "Allowed characters: \"0-9\", \"a-z\", \"_\", \"-\", \"{'@'}\", \".\", \",\".",
+        "enteredSystemSignatureKeys": "Entered system signature keys and user's QES keys will be applied to the current registry settings.",
+        "enteredCertificatesVerification": "Entered CA certificates for system signature keys and QES keys verification will be applied to the current registry settings.",
+        "confirmation": "Confirmation",
+        "everythingReadyCreateRegistry": "Everything is ready for the registry creation. You can check your entered data and press \"Create registry\"."
+      }
+    },
+    "geoDataSettings": {
+      "title": "Geodata management subsystem",
+      "fields": {
+        "geoServerEnabled": {
+          "label": "Deploy the geodata management subsystem"
+        }
+      },
+      "text": {
+        "managementSubsystemDeployed": "Geodata management subsystem is deployed for the current registry.",
+        "managementSubsystemNotDeployed": "Geodata management subsystem is not deployed for the current registry.",
+        "impossibleChangeAfterCreate": "Once the registry is created, it will not be possible to change these settings."
+      }
+    },
+    "keyData": {
+      "title": "Key data",
+      "actions": {
+        "addKey": "Add a key"
+      },
+      "fields": {
+        "key6": {
+          "label": "File key (.dat extension)",
+          "subLabel": "Choose a file"
+        },
+        "issuerKey": {
+          "placeholder": "Key issuer"
+        },
+        "serialNumberKey": {
+          "placeholder": "Key serial number"
+        }
+      },
+      "text": {
+        "hardwareDataType": "crypto module IIT Griada-301",
+        "mediaType": "Bearer type",
+        "fileMedium": "File bearer",
+        "hardwareMedium": "Hardware bearer",
+        "keyType": "Key type",
+        "keyPassword": "Key password",
+        "nameOfAcsk": "AKCC name",
+        "hostOfAcsk": "AKCC host",
+        "portOfAcsk": "AKCC port",
+        "deviceSerialNumber": "Device serial number",
+        "keyPort": "Key port",
+        "keyHost": "key host",
+        "keyMask": "Key mask",
+        "configurationINI": "INI configuration",
+        "keyAcsk": "AKCC that issued the key",
+        "passwordFileKey": "File key password",
+        "listAllowedKeys": "List of allowed keys",
+        "pageDescriptionGlobal": "The Registries Platform supports the ability to apply digital signatures to registry data and subsequently verify its integrity. \n\n This feature is currently implemented only for Ukraine using libraries certified by Ukrainian data protection authorities. Implementation of these functions for other regions requires adaptation according to the legal requirements of each specific region and domain."
+      }
+    },
+    "keyVerification": {
+      "title": "Signature verification data",
+      "fields": {
+        "cert": {
+          "label": "Public CA certificates (CACertificate.p7b)",
+          "subLabel": "Select a file"
+        },
+        "json": {
+          "label": "List of CAs (.json extension)",
+          "subLabel": "Select a file"
+        }
+      },
+      "text": {
+        "pageDescriptionGlobal": "The Registries Platform supports the ability to apply digital signatures to registry data and subsequently verify its integrity. \n\n This feature is currently implemented only for Ukraine using libraries certified by Ukrainian data protection authorities. Implementation of these functions for other regions requires adaptation according to the legal requirements of each specific region and domain."
+      }
+    },
+    "parametersVirtualMachinesAWS": {
+      "title": "Parameters of virtual machines",
+      "fields": {
+        "instanceCount": {
+          "label": "Number of virtual machines",
+          "description": "Allowed values: 1 - 2000."
+        },
+        "awsInstanceType": {
+          "label": "Type of an AWS EC2-instance",
+          "description": "For example: r5.2xlarge, m5.xlarge, c5.4xlarge."
+        },
+        "awsSpotInstance": {
+          "label": "Use AWS EC2 Spot-instance"
+        },
+        "awsInstanceVolumeType": {
+          "label": "System disk type of an AWS EC2-instance"
+        },
+        "instanceVolumeSize": {
+          "label": "Size of the virtual machine's system disk (GB)"
+        }
+      },
+      "text": {
+        "enterOwn": "Specify your own ($/hour)",
+        "openShiftClusterIsDeployed": "OpenShift cluster deployed on AWS infrastructure. Learn more about valid virtual machine parameter values in OpenShift system requirements.",
+        "immediatelyApplyChanges": "If you need to immediately apply changes to the parameters of virtual machines (disk type and size), you must first disable the registry before making the change.",
+        "contactPlatformAdministrator": "If you need to edit parameters, contact the Platform administrator.",
+        "rangeOfValidSizeValuesVolumeSize": "Allowed values: 50 - 200 GB, but no less than the current one ({instanceVolumeSize} GB).",
+        "validValuesNotLessCurrent": "Allowed values: 50 - 200 GB, but no less than the current one ({instanceVolumeSize} GB).",
+        "rangeOfValidSizeValues": "Allowed values: 50 - 200 GB.",
+        "maximumPriceAWS": "Max price of an AWS EC2-instance (per hour):"
+      }
+    },
+    "parametersVirtualMachinesVSphere": {
+      "title": "Parameters of virtual machines",
+      "fields": {
+        "instanceCount": {
+          "label": "Number of virtual machines",
+          "description": "Allowed values: 1 - 2000."
+        },
+        "instanceVolumeSize": {
+          "label": "Size of the virtual machine's system disk (GB)"
+        },
+        "vSphereInstanceCPUCount": {
+          "label": "Number of vCPUs in virtual machine"
+        },
+        "vSphereInstanceCoresPerCPUCount": {
+          "label": "Number of cores per vCPU in virtual machine"
+        },
+        "vSphereInstanceRAMSize": {
+          "label": "Virtual machine RAM size (Mi)"
+        }
+      },
+      "text": {
+        "openShiftClusterDeployed": "OpenShift cluster deployed on VSphere infrastructure. Learn more about valid virtual machine parameter values in OpenShift system requirements.",
+        "immediatelyApplyChanges": "If you need to immediately apply changes to the parameters of virtual machines (disk type and size), you must first disable the registry before making the change.",
+        "contactPlatformAdministrator": "If you need to edit parameters, contact the Platform administrator.",
+        "rangeOfValidSizeValuesVolumeSize": "Allowed values: 50 - 200 GB, but no less than the current one ({instanceVolumeSize} GB).",
+        "rangeOfValidSizeValues": "Allowed values: 50 - 200 GB."
+      }
+    },
+    "registryAdminAuth": {
+      "title": "Administrative Portal",
+      "fields": {
+        "enabledAdminPortal": {
+          "label": "Deploy Administrative Portal"
+        }
+      }
+    },
+    "registryBackupSchedule": {
+      "title": "Backup",
+      "actions": {
+        "setOwnValues": "Enter custom values"
+      },
+      "fields": {
+        "schedule": {
+          "label": "Schedule",
+          "description": "Uses cron format."
+        },
+        "storageDays": {
+          "label": "Retention time (days)",
+          "description": "The value must be a positive number and cannot be less than 1 day. We recommend setting the retention time to be longer than the interval between backups."
+        },
+        "cronExpression": {
+          "label": "Backup retention schedule of S3 object replications",
+          "description": "If you want to set a schedule different from the default one, please enter the schedule value in cron format, or specify the default UTC value:"
+        }
+      },
+      "text": {
+        "abilitySpecifySchedule": "The ability to specify the schedule for creating backup copies of the registry and the time of their storage.",
+        "configureBackup": "Configure backup",
+        "backupTheRegistry": "Registry backup",
+        "nextBackupStarts": "Next backup starts (Local time)",
+        "backupObjectReplications": "S3 Object replication backups",
+        "replicationBackupRun": "Next S3 object replication backup run (UTC)",
+        "storageLocationBackup": "Backup storage location for S3 object replications",
+        "bucketName": "Bucket name",
+        "defaultValuesSpecifiedDeployment": "The default values specified during registry deployment are used."
+      }
+    },
+    "registryCidr": {
+      "title": "List of available CIDR",
+      "text": {
+        "optionalSettings": "These settings are optional.",
+        "cidrIDRForOfficialPortal": "CIDR for Officer portal",
+        "cidrIForCitizenPortal": "CIDR for Citizen portal",
+        "cidrIForAdminComponent": "CIDR for administrative components",
+        "addCIDR": "Add CIDR",
+        "addressesAndMasks": "IP addresses and masks"
+      }
+    },
+    "registryDigitalDocuments": {
+      "title": "Digital documents",
+      "actions": {
+        "moreDetails": "More details"
+      },
+      "fields": {
+        "maxFileSize": {
+          "label": "Max file size for upload, MB"
+        },
+        "maxTotalFileSize": {
+          "label": "Max total upload size for file group, MB"
+        }
+      },
+      "text": {
+        "managementOfUploadingFiles": "Management of restrictions on uploading files of digital documents to the registry by users and business processes.",
+        "administrativeRestrictionsMaximumRequest": "Administrative restrictions apply within the 100MB maximum upload request limits set at the Platform level.",
+        "maximumSizeForDownloadValidation": "Valid characters: \"0-9\", \".\". The value cannot exceed 4 characters in length.",
+        "valueFormat": "Values entered, read in MB, can be a decimal fraction with a dot as a separator.",
+        "valueLimit": "The value cannot exceed the limit set at the system level. The limit applies to files that are uploaded by users and business processes. Additional limits can be set at the level of individual file fields when modeling UI forms.",
+        "valueGroupLimit": "The value cannot exceed a limit set at the system level. The limit applies to a group of files that are uploaded by users through the UI form's file fields.",
+        "fileCannotExceedTotalSize": "The maximum file size value cannot exceed the maximum total size of the file group to be uploaded.",
+        "valueMaximumSize": "The value is used to define the “File Maximum Size” parameter in the File component in the UI form modeler.",
+        "valueGroupMaximumSize": "The value is used to define the “Maximum total size” parameter in the File component in the UI form modeler.",
+        "maximumSizeForDownload": "Maximum file size for upload",
+        "maxTotalSize": "Max. total size of the group of files to upload"
+      }
+    },
+    "registryDns": {
+      "title": "DNS Settings",
+      "fields": {
+        "officerDNSEnabled": {
+          "label": "Use custom values"
+        },
+        "officerDNS": {
+          "label": "Domain name for officer portal"
+        },
+        "officerSSL": {
+          "label": "SSL-certificate for officer portal (*.pem)"
+        },
+        "citizenDNSEnabled": {
+          "label": "Use custom values"
+        },
+        "citizenDNS": {
+          "label": "Domain name for Citizen portal"
+        },
+        "citizenSSL": {
+          "label": "SSL-certificate for Citizen portal (*.pem)"
+        }
+      },
+      "text": {
+        "userAndRoleManagementService": "User and role management service (Keycloak)",
+        "domainKeycloakName": "Domain name for Keycloak",
+        "officialOffice": "Officer portal",
+        "serviceRecipientOffice": "Citizen portal",
+        "attention": "Attention!",
+        "additionalExternalConfiguration": "Additional external configuration is required outside the OpenShift cluster and registry.",
+        "instructionsAreAvailable": "The instruction is available",
+        "byLink": "via the link"
+      }
+    },
+    "registryGeneral": {
+      "title": "General",
+      "fields": {
+        "name": {
+          "label": "Name",
+          "description": "Allowed characters are \"a-z\", \"-\". The name cannot exceed 12 characters in length."
+        },
+        "language": {
+          "label": "Interface language"
+        }
+      },
+      "text": {
+        "nameMustBeUnique": "Attention! The name must be unique and cannot be changed after the registry is created!",
+        "description": "Description",
+        "descriptionContainOfficialName": "The description may contain the official name of the registry or its purpose.",
+        "deploymentMode": "Deployment mode",
+        "impossibleChangeAfterDeploy": "Once the registry is created, it will be impossible to change the deployment mode of the registry.",
+        "templateVersion": "Template version",
+        "chooseTemplateVersion": "Choose a template version",
+        "localizationTitle": "Localization",
+        "localizationDescription": "Localization settings for the interfaces of the following registry resources:",
+        "localizationOfficerPortal": "Officer portal;",
+        "localizationCitizenPortal": "Citizen portal;",
+        "localizationAdminPortal": "Admin portal;",
+        "localizationReportsPortal": "Reports portal.",
+        "localizationWarning": "The language will be changed after applying the change request.",
+        "localizationRegionFormat": "Regional Format"
+      }
+    },
+    "registryGeneralEdit": {
+      "title": "General",
+      "text": {
+        "name": "Name",
+        "description": "Description",
+        "descriptionContainOfficialName": "The description may contain the official name of the registry or its purpose.",
+        "deploymentMode": "Deployment mode",
+        "templateVersion": "Template version"
+      }
+    },
+    "registryRecipientAuth": {
+      "title": "Citizen Portal",
+      "fields": {
+        "authURL": {
+          "label": "Link",
+          "description": "URL must start with http:// or https://"
+        },
+        "enabledCitizenPortal": {
+          "label": "Deploy Citizen Portal"
+        },
+        "authWidgetHeight": {
+          "label": "Widget height (px)"
+        },
+        "govUaURL": {
+          "label": "Link",
+          "description": "URL must start with http:// or https://"
+        },
+        "clientID": {
+          "label": "Client ID (client_id)"
+        },
+        "clientSecret": {
+          "label": "Client secret (secret)"
+        },
+        "signWidgetUrl": {
+          "label": "Link",
+          "description": "URL must start with http:// or https://"
+        },
+        "signWidgetHeight": {
+          "label": "Widget height (px)"
+        },
+        "keyName": {
+          "label": "Choose the encryption key",
+          "description": "If you need to add another encryption key, please contact the Platform administrator."
+        }
+      },
+      "text": {
+        "verificationDataEDR": "Verification of data in EDR",
+        "verificationDataKEP": "Verification of data from users' QES in EDR occurs only if the current registry is integrated with EDR through Trembita SEI SEIR.",
+        "checkPresenceActiveRecord": "Check presence of an active record in EDR for business users",
+        "authenticationType": "Authentication type",
+        "possibleToUseAuthenticationWidget": "It is possible to use a custom authentication widget or configure integration with id.gov.ua.",
+        "specifyAuthenticationType": "Specify authentication type",
+        "widget": "Widget",
+        "platformIntegration": "Platform integration with id.gov.ua",
+        "registryIntegration": "Registry integration with id.gov.ua",
+        "documentSignatureWidget": "Document signature widget",
+        "useAuthenticationWidget": "Use authentication widget settings"
+      }
+    },
+    "registryResources": {
+      "title": "Registry resources",
+      "fields": {
+        "maxPoolSize": {
+          "description": "The value should be greater than 0"
+        },
+        "enableHorizontalAutomaticScaling": {
+          "label": "Enable HPA (Horizontal Pod Autoscaling)"
+        }
+      },
+      "text": {
+        "addIndividualComponents": "You can add individual components to the registry.",
+        "applyChangesImmediately": "If you want to apply the changes immediately, you need to trigger a data model update.",
+        "horizontalAutomaticScaling": "HPA (Horizontal Pod Autoscaling)",
+        "specifyValueAndDimension": "Specify the value and dimension. For example, '100m' for CPU (milli-cores) and '400Mi' for RAM (mebibyte).",
+        "changingEnvironments": "Changing environments",
+        "addEnvironmentVariable": "Add an environment variable",
+        "selectComponent": "Select a component"
+      }
+    },
+    "registrySmtp": {
+      "title": "Mail server selection",
+      "text": {
+        "mailServer": "Mail server",
+        "platformMailServer": "Platform mail server",
+        "externalMailServer": "External mail server",
+        "settingConnectionPlatformMailServer": "Setting up connection to the platform mail server",
+        "registryAddress": "Registry mail address",
+        "configuringConnectionExternalServer": "Configuring SMTP connection to an external mail server",
+        "host": "Host",
+        "port": "Port",
+        "mailAddress": "Mail address",
+        "password": "Password"
+      }
+    },
+    "registrySupplierAuth": {
+      "title": "Officer portal",
+      "fields": {
+        "enabledOfficerPortal": {
+          "label": "Deploy Officer portal"
+        },
+        "authURL": {
+          "label": "Link",
+          "description": "URL must start with http:// or https://"
+        },
+        "widgetHeight": {
+          "label": "Widget height (px)"
+        },
+        "clientID": {
+          "label": "Client ID (client_id)"
+        },
+        "clientSecret": {
+          "label": "Client secret (secret)"
+        },
+        "keyName": {
+          "label": "Choose the encryption key",
+          "description": "If you need to add another encryption key, please contact the Platform administrator."
+        }
+      },
+      "text": {
+        "accessControl": "Access control",
+        "settingAccessUsers": "Setting access for users to the User Portal using QES of an individual.",
+        "allowAccessFromKEP": "Allow access with QES of an individual",
+        "singleIdentityDescription": "Set up the user authentication mode based solely on the values of the Tax ID and full name from the digital signature. The business entity identifier will be excluded from comparison.",
+        "singleIdentityDescriptionPopup": "Once enabled, the system will consider different types of user keys (QES) (individual, individual entrepreneur, legal representative) as identification for a single account in the system provided the Tax ID and full name match. Configured roles and access to business processes will be preserved.",
+        "singleIdentityEnabled": "Enable Single Identity",
+        "possibleUseAuthenticationWidget": "You can use your own authentication widget or configure integration with id.gov.ua.",
+        "specifyAuthenticationType": "Specify the authentication type",
+        "widget": "Widget",
+        "registryIntegration":"Registry integration with id.gov.ua",
+        "selfRegistrationUsers": "User self-registration",
+        "presenceSelfRegistrationBusiness": "Involves a pre-modeled self-registration business process in the registry.",
+        "allowSelfRegistration": "Allow self-registration",
+        "notAbleCompleteTasksSelfRegistration": "If disabled, users who have started the self-registration process will not be able to complete their tasks if they are modeled."
+      },
+      "actions": {
+        "moreDetails": "More details"
+      }
+    },
+    "registryTrembita": {
+      "title": "Trembita",
+      "text": {
+        "registryTrembitaDescription": "To enable external systems to access the registry via Trembita, specify the IP addresses of Trembita from which access to the registry's SOAP API will be allowed.",
+        "enableAPIAccess": "Enable API access via Trembita",
+        "addressesOfTrembita": "Trembita IP addresses",
+        "validNumberValues": "Valid number of values",
+        "allowAccessFromAddress": "Allow access from IP address",
+        "addressOfTrembita": "Trembita IP address"
+      }
+    },
+    "mergeRequestsTable": {
+      "actions": {
+        "review": "View",
+        "reviewInGerrit": "Review in Gerrit"
+      },
+      "table": {
+        "wait": "Please wait...",
+        "lengthMenu": "Show _MENU_ entries",
+        "zeroRecords": "No records.",
+        "info": "Records from _START_ to _END_ of _TOTAL_ records",
+        "infoEmpty": "Records 0 to 0 of 0 records",
+        "infoFiltered": "(filtered from _MAX_ records)",
+        "search": "Search:",
+        "first": "First",
+        "previous": "Previous",
+        "next": "Next",
+        "last": "Last",
+        "sortAscending": ": enable to sort columns in ascending order",
+        "sortDescending": ": enable to sort columns in descending order",
+        "date": "Date",
+        "request": "Request",
+        "operation": "Operation",
+        "status": "Status",
+        "registerUpdated": "The registry is in the process of being updated"
+      }
+    },
+    "administratorModal": {
+      "text": {
+        "administrator": "Administrator"
+      },
+      "fields": {
+        "firstName": {
+          "placeholder": "First name"
+        },
+        "surname": {
+          "placeholder": "Surname"
+        },
+        "email": {
+          "placeholder": "Email"
+        },
+        "temporaryPassword": {
+          "placeholder": "Temporary password",
+          "requirements": {
+            "header": "Password requirements:",
+            "point1": "1. Contain at least 10 symbols.",
+            "point2": "2. Contain at least one lowercase letter.",
+            "point3": "3. Contain at least one uppercase letter.",
+            "point4": "4. Contain at least one digit.",
+            "point5": "5. Contain at least one special symbol: &#64, #, $, %, ^, &, +, =.",
+            "point6": "6. Contain only latin letters.",
+            "point7": "7. Contain no whitespaces."
+          }
+        }
+      },
+      "errors": {
+        "requiredAllFields": "All fields are required",
+        "invalidEmailFormat": "Invalid email format",
+        "invalidNameFormat": "Invalid name format",
+        "adminEmailExists": "An administrator with this email already exists",
+        "invalidPasswordFormat": "Check field format"
+      }
+    },
+    "cidrModal": {
+      "text": {
+        "mailMaskAllowedDescription": "Allowed characters are \"0-9\", \"/\", \".\". Example: 172.16.0.0/12.",
+        "mailMaskDisallowedDescription": "Allowed characters are \"0-9\", \".\" For example: 127.0.0.1"
+      },
+      "errors": {
+        "checkAddressFormat": "Check the IP address format"
+      }
+    },
+    "registryBackupDeleteModal": {
+      "title": "Remove custom values for storing S3 object replication backups?",
+      "text": {
+        "valuesByDefault": "Default values will be used."
+      }
+    },
+    "registryBackupSavePlaceModal": {
+      "title": "Set custom values for storing S3 object replication backups",
+      "fields": {
+        "bucketName": {
+          "label": "Bucket name",
+          "description": "Name length must be between 3 and 63 characters. Allowed characters are \"a-z\", \"0-9\", \".\", \"-\""
+        },
+        "endpoint": {
+          "description": "For example: \"https://endpoint.com\""
+        },
+        "login": {
+          "label": "Login",
+          "description": "Provided by the service provider"
+        },
+        "password": {
+          "label": "Password",
+          "description": "Provided by the service provider"
+        }
+      }
+    },
+    "registryEditPublicApiModal": {
+      "titleEdit": "Edit \"{name}\"",
+      "titleSet": "Provide public access",
+      "fields": {
+        "name": {
+          "label": "Service request name",
+          "description": "Valid characters are \"a-z\", numbers \"0-9\", \"-\". The name cannot exceed 32 characters in length. It must start and end with letters or numbers and be unique."
+        },
+        "url": {
+          "label": "Integration point link to...",
+          "description": "Allowed characters are \"A-Z\", \"a-z\", numbers \"0-9\", \"-\", \"/\". The link must be unique.",
+          "searchConditionOption": "search query",
+          "fileOption": "file"
+        },
+        "rateLimit": {
+          "label": "Rate limit"
+        }
+      },
+      "text": {
+        "providePublicAccess": "You can provide public access to this registry's data (master). A separate client registry user will be created in the master registry to access the master registry.",
+        "publicApiValues": "Service request name",
+        "integrationPoint": "Integration point (path to the public search query)",
+        "integrationPointDescription": "Allowed characters are \"A-Z\", \"a-z\", numbers \"0-9\", \"-\", \"/\". The link must be unique.",
+        "forExample": "For example:",
+        "linkFormat": "Link format:",
+        "linkUnique": "The link must be unique."
+      }
+    },
+    "registryDeletePublicApiModal": {
+      "title": "Remove \"{publicApiName}\" from the list?",
+      "text": {
+        "grantAccessAgainLater": "You can grant access again later."
+      }
+    },
+    "keysManagement": {
+      "title": "Key management",
+      "subTitle": "List of keys used for encryption when integrating with id.gov.ua.",
+      "deprecatedKeysSyntax": "Deprecated encryption key syntax found. Add the key and configure its usage in the following registries: {registries}.",
+      "table": {
+        "fileKeysTitle": "File keys",
+        "hardwareKeysTitle": "Hardware keys",
+        "techName": "Technical name",
+        "mediaType": "Media type",
+        "acsk": "ACSK",
+        "allowedRegistries": "Allowed registries"
+      },
+      "actions": {
+        "addFileKey": "Add file key",
+        "addHardwareKey": "Add hardware key",
+        "editOsplmIni": "Edit INI configuration"
+      },
+      "modals": {
+        "addKey": {
+          "title": "Add key",
+          "fields": {
+            "fileMedia": "File",
+            "hardwareMedia": "Hardware",
+            "techKeyName": {
+              "label": "Technical key name",
+              "description": "Allowed characters: “a-z”, “0-9”, “-”. The name must have 3-40 characters and be unique."
+            },
+            "mediaType":"Media type",
+            "fileKey": {
+              "label": "File key (extension .dat)",
+              "description": "Choose a file"
+            },
+            "keyIssuer": "ACSK name that issued the key",
+            "hardKeyPassword": "Key password",
+            "fileKeyPassword": "File key password",
+            "hardKeyType": "Key type",
+            "hardKeyIssuerHost": "ACSK host",
+            "hardKeyIssuerPort": "ACSK port",
+            "hardKeySerialNumber": "Device serial number",
+            "hardKeyHost": "Key host",
+            "hardKeyPort": "Key port",
+            "hardKeyMask": "Key mask",
+            "hardKeyOsplmIni": "INI configuration"
+          }
+        },
+        "removeKey": {
+          "title": "Remove key?",
+          "text": "Remove key {key}?"
+        },
+        "cantRemoveKey": {
+          "title": "Cannot remove key",
+          "text": {
+            "firstChangeKey": "First, change the key in the corresponding registries to another one.",
+            "keyUsage": " The key {key} is used in the following registries:"
+          }
+        },
+        "editOsplmIni": {
+          "title": "Edit INI configuration",
+          "fields": {
+             "hardKeyOsplmIni": "INI configuration"
+          }
+        },
+        "editKey": {
+          "title": "Edit registries allowed for key",
+          "banner": "The key is used in the following registries - {registries}. You cannot prohibit their use until another key is selected in the registry settings.", 
+          "fields": {
+            "allowedRegistries": "Allowed for registries"
+          }
+        }
+      }
+    },
+    "registryCsp": {
+      "title": "CSP Settings",
+      "desc": "Content Security Policy (CSP) settings for the registry.",
+      "connectSrc": "Allowed sources for loading resources (connect-src)",
+      "modal": {
+        "addConnectSrcTitle": "Add allowed source",
+        "fields": {
+          "source": {
+            "label": "Source",
+            "description": "For example: \"https://example.com\" or \"'self'\". For more information, see the Content Security Policy documentation."
+          }
+        }
+      }
+    }
+  },
+  "pages": {
+    "registry": {
+      "tabs": {
+        "infoAboutRegistry": "Registry information",
+        "quickLinks": "Quick links",
+        "generalInfo": "General information"
+      },
+      "errors": {
+        "accessWithThisNameExists": "Access with the name \"{selected}\" already exists. To resolve the name conflict, recreate access to the external system with a different name, then grant access to the platform registry: \"{selected}\".",
+        "accessWithThisNameOrPlatformExists": "Access with the system or platform name \"{inputName}\" already exists, choose a different name",
+        "urlValidationDescription": "URL must start with http:// or https://",
+        "invalidFormat": "Invalid format",
+        "nameChangedAddingIntegration": "The name cannot be changed after adding integration!",
+        "externalSystemAlreadyExists": "An external system with this name already exists"
+      },
+      "table": {
+        "configured": "Configured",
+        "name": "Name",
+        "level": "Level",
+        "integrationProtocol": "Integration protocol",
+        "authenticationType": "Authentication type",
+        "systemType": "System type",
+        "status": "Status",
+        "config": "Configuration",
+        "version": "Version",
+        "buildNumber": "Build number",
+        "lastSuccessBuild": "Last successful build"
+      },
+      "actions": {
+        "addRegister": "Add registry",
+        "addExternalSystem": "Add external system",
+        "checkPassword": "Check password",
+        "disableAccess": "Disable access",
+        "enableAccess": "Enable access",
+        "cancelAccess": "Cancel access",
+        "show": "Show",
+        "hide": "Hide"
+      },
+      "text": {
+        "uploading": "Uploading...",
+        "systemic": "System",
+        "registered": "Registered",
+        "actionIsNotAvailable": "Action is not available",
+        "registryHasRequests": "The registry has unconfirmed change requests.",
+        "registry": "Registry {name}",
+        "name": "Name",
+        "description": "Description",
+        "administrators": "Administrators",
+        "createTime": "Creation time",
+        "citizenPortalHost": "DNS name for the citizen portal",
+        "officerPortalHost": "DNS name for the officer portal",
+        "mailServer": "Mail server",
+        "externalMailServer": "External mail server",
+        "platformMailServer": "Platform mail server",
+        "officerCIDR": "CIDR for the officer portal",
+        "citizenCIDR": "CIDR for the citizen portal",
+        "adminCIDR": "CIDR for administrative components",
+        "language": "Interface language",
+        "settingInteractionTrembita": "Settings for interaction with registries via Trembita",
+        "integrationIsConfigured": "Integration is configured",
+        "integrationIsNotConfigured": "Integration is not configured",
+        "systemNotAvailableForRemoval": "System not available for removal",
+        "configureTrembitaRegistry": "Configure interaction with the registry via Trembita",
+        "addTrembitaRegistry": "Add registry interaction via Trembita",
+        "settingsSHOTrembita": "Trembita settings",
+        "protocolVersion": "Protocol version",
+        "useExternalIntegrationMock": "Use external integration mock",
+        "addressTrembita": "Trembita address",
+        "settingTrembitaClient": "Trembita client settings",
+        "clientID": "Client ID",
+        "settingServiceIntegration": "Service settings for integration",
+        "serviceNameRegistry": "Registry service name",
+        "soapIntegrationProtocolSupported": "Only SOAP integration protocol is currently supported.",
+        "optionalParameter": "Optional parameter",
+        "specifyAuthenticationType": "Specify authentication type",
+        "specifyAuthorizationToken": "Specify authorization token",
+        "deleteRegistryName": "Delete \"{registryName}\"?",
+        "removeRegistryIntegrationSettings": "Remove all registry integration settings?",
+        "settingsInteractionWithOtherSystems": "Settings for interaction with other systems",
+        "configureExternalSystemInteraction": "Configure external system for interaction",
+        "addExternalSystemInteraction": "Add external system for interaction",
+        "registryNameEditableDescription": "You can configure the integration with an external system for further interaction according to the registry regulations. Network access policies will be created automatically.",
+        "nameExternalSystem": "Name of the external system",
+        "addressExternalSystem": "Address of the external system",
+        "integrationProtocolSupported": "Only REST integration protocol is currently supported.",
+        "currentlySupported": "Currently supported",
+        "specifyAuthenticationEndpoint": "Specify the partner authentication endpoint",
+        "absoluteAddressSpecified": "Specify an absolute address (https://example.ua/auth) or a relative path in relation to the address specified in the field Address of the external system (/auth)",
+        "specifyPathAccessToken": "Specify a JSON-path to retrieve the access token",
+        "login": "Login",
+        "pass": "Password",
+        "removeSystemSettings": "Remove all system integration settings?",
+        "accessPlatformRegistriesAndExternalSystems": "Access for platform registries and external systems",
+        "integrationProtocol": "Integration protocol",
+        "externalSystem": "External system",
+        "platformRegistry": "Platform registry",
+        "thereAreNoRegistriesOrSystems": "There are no registries or systems that have access to this registry.",
+        "grantAccess": "Grant access",
+        "publicAccess": "Public access",
+        "config": "Configuration",
+        "buildNumber": "Build number",
+        "lastSuccessBuild": "Last successful build",
+        "updateRequests": "Change requests",
+        "thereAreNoRequests": "There are no requests",
+        "registryAdministrationComponents": "Registry administration zone",
+        "turnedOff": "Turned off",
+        "registryOperationalComponents": "Registry operational zone",
+        "platformAdministrationComponents": "Platform administration zone",
+        "platformOperationalComponents": "Platform operational zone",
+        "updateRequest": "Change request",
+        "checkPassForSystemToShowKey": "Check password for \"{systemToShowKey}\"",
+        "doNotSharePassword": "Do not share the password with third parties.",
+        "mistake": "Error",
+        "confirmOrRejectRequests": "You currently have open change requests. Confirm or reject the changes to continue.",
+        "removeSystem": "Remove \"{systemToDelete}\" from the list?",
+        "grantAccessLater": "You can grant access again later.",
+        "grantAccessToMaster": "You can grant access to the data of this registry (master) to other registries on this platform or external systems (clients). A separate client registry user will be created in the master registry, which will be used to access the master registry.",
+        "internalRegistryPlatform": "Internal platform registry",
+        "selectRegister": "Select a registry",
+        "createdRegistryInAdvance": "If the registry is not in the list, it must be created in advance.",
+        "nameOfSystem": "System name",
+        "enterName": "Enter a name",
+        "accessPassword": "Access password",
+        "accessPasswordWillBeCreated": "An access password will be created automatically. It can be checked after configuring access to the master registry.",
+        "accessPasswordValidationDescription": "Valid characters: “a-z”, 0-9, “-”. The name cannot exceed 32 characters in length. It must start and end with Latin alphabet characters or numbers."
+      }
+    },
+    "registryCreate": {
+      "title": "Create a new registry"
+    },
+    "registryEdit": {
+      "title": "Edit \"{name}\" registry"
+    },
+    "registryList": {
+      "title": "Registries",
+      "actions": {
+        "createNew": "Create new",
+        "registryEdit": "Edit",
+        "registryDelete": "Delete",
+        "createNewRegistryConfirm": "Confirm"
+      },
+      "table": {
+        "processing": "Please wait...",
+        "lengthMenu": "Show _MENU_ entries",
+        "zeroRecords": "No records.",
+        "info": "Records from _START_ to _END_ of _TOTAL_ records",
+        "infoEmpty": "Records 0 to 0 of 0 records",
+        "infoFiltered": "(filtered from _MAX_ records)",
+        "search": "Search:",
+        "first": "First",
+        "previous": "Previous",
+        "next": "Next",
+        "last": "Last",
+        "sortAscending": ": enable to sort columns in ascending order",
+        "sortDescending": ": enable to sort columns in descending order",
+        "status": "Status",
+        "name": "Name",
+        "version": "Version",
+        "description": "Description",
+        "date": "Creation time",
+        "deletionTimestamp": "Deletion"
+      },
+      "text": {
+        "listRegistersAndStatuses": "List of registries and their statuses.",
+        "deleteName": "Delete",
+        "avoidAccidentalData": "To avoid accidental data loss, enter the name of the registry before you can delete it.",
+        "avoidAccidentalCreateGroup": "To avoid accidental data loss, enter the name of the group before you can delete it.",
+        "registryName": "Registry name",
+        "groupName": "Group name",
+        "createNewRegistry": "Create new registry",
+        "chooseVersion": "Choose version",
+        "currentVersion": "Current version. Contains the latest approved changes and new features.",
+        "previousVersion": "Previous stable version. Recommended only if necessary."
+      }
+    },
+    "registryUpdate": {
+      "title": "Update registry \"{name}\"",
+      "text": {
+        "refreshRegistry": "Update registry"
+      }
+    },
+    "clusterEdit": {
+      "title": "Platform settings",
+      "tabs": {
+        "general": "General",
+        "administrators": "Administrators",
+        "templateRegistry": "Registry template",
+        "mailRegistry": "Mail server",
+        "dataAboutKey": "Key data",
+        "resourcesRegistry": "Registry resources",
+        "cidr": "Access restriction",
+        "supplierAuthentication": "Officer portal",
+        "recipientAuthentication": "Citizen portal",
+        "backup": "Backup",
+        "documentation": "Documentation",
+        "confirmation": "Confirmation",
+        "allowedCIDR": "Allowed CIDRs",
+        "dataAboutKeyVerification": "Data for signature verification"
+      },
+      "text": {
+        "hardwareData": "Cryptomodule IIT Griada-301",
+        "platformRefresh": "Update Platform"
+      },
+      "errors": {
+        "nameExisted": "This name is already in use",
+        "certificateHasExpired": "The certificate has expired",
+        "certificateIsValid": "The certificate does not match the domain name"
+      }
+    },
+    "clusterManagement": {
+      "title": "Platform management",
+      "table": {
+        "status": "Status",
+        "config": "Configuration",
+        "version": "Version"
+      },
+      "tabs": {
+        "platformInfo": "Platform information",
+        "fastLinks": "Quick links"
+      },
+      "text": {
+        "new": "New",
+        "commonInfo": "General information",
+        "name": "Name",
+        "config": "Configuration",
+        "version": "Version",
+        "description": "Description",
+        "administrators": "Administrators",
+        "cidrValues": "CIDR for administrative components",
+        "creationTimestamp": "Creation time",
+        "requests": "Change requests",
+        "request": "Change request",
+        "adminZonePlatform": "Platform administrative zone",
+        "operationZonePlatform": "Platform operational zone",
+        "centerComponents": "Central components",
+        "language": "Interface language",
+        "turnedOff": "Turned off",
+        "Керування інфраструктурними компонентами платформи": "Management of platform's infrastructure components"
+      }
+    },
+    "dashboard": {
+      "text": {
+        "gerrit": "Gerrit is free software with a web interface integrated with the Git distributed version control system for collaborative source code inspection. Gerrit was developed by a Google developer, Sean Pearce, for the development of the Android operating system.",
+        "jenkins": "Jenkins is an open source software system in Java designed to support the process of continuous software integration. Forked in 2008 from the Hudson project owned by Oracle, its main author is Kosuke Kawaguchi. Distributed under the MIT license."
+      }
+    },
+    "login": {
+      "title": "To enter the admin panel, please authenticate.",
+      "text": {
+        "greeting": "Congratulations!",
+        "info": "In case of logging-in problems, contact the administrator."
+      },
+      "actions": {
+        "login": "Authenticate"
+      }
+    },
+    "editRegistryMRExist": {
+      "text": {
+        "registryTitle": "Edit registry",
+        "platformTitle": "Platform settings",
+        "registryMR": "Registry has unconfirmed change requests.",
+        "platformMR": "Platform has unconfirmed change requests."
+      }
+    }
+  },
+  "domains": {
+    "registry": {
+      "editMixin": {
+        "general": "General",
+        "administrators": "Administrators",
+        "mailServer": "Mail server",
+        "keyInfo": "Key data",
+        "signatureVerificationInfo": "Data for signature verification",
+        "parametersVirtualMachines": "Virtual machine parameters",
+        "registryResources": "Registry resources",
+        "accessRestrictions": "Access restrictions",
+        "supplierAuthentication": "Officer portal",
+        "recipientAuthentication": "Citizen portal",
+        "officeAdministratorRegulations": "Administrative portal",
+        "managementSubsystem": "Geodata management subsystem",
+        "digitalDocuments": "Digital documents",
+        "backup": "Backup",
+        "trembita": "Secure exchange gateway",
+        "confirmation": "Confirmation",
+        "registryCSP": "CSP"
+      },
+      "rateLimitField": {
+        "second": "per second",
+        "minute": "per minute",
+        "hour": "per hour",
+        "day": "per day",
+        "month": "per month",
+        "year": "per year",
+        "specifyLimitTimePeriod": "Enter the limit for at least one time period"
+      },
+      "publicApi": {
+        "inProcessing": "In processing",
+        "error": "Error",
+        "integrationIsNotConfigured": "Integration is not configured",
+        "integrationIsConfigured": "Integration is configured",
+        "disableAccess": "Block access",
+        "enableAccess": "Unblock access",
+        "configured": "Configured",
+        "name": "Name",
+        "noRegistryOrSystem": "There are no registries or systems with public access to this registry's data.",
+        "grantAccess": "Grant access"
+      },
+      "text": {
+        "abandoned": "Change rejected",
+        "accepted": "Change confirmed"
+      },
+      "modals": {
+        "delete": {
+          "title": "Delete",
+          "fields": {
+            "registry": {
+              "placeholder": "Registry name"
+            },
+            "group": {
+              "placeholder": "Group name"
+            }
+          },
+          "text": {
+            "deleteOneInfo": "To avoid accidental data loss, enter the registry name before you can delete it.",
+            "deleteGroupInfo": "To avoid accidental data loss, enter the group name before you can delete it."
+          },
+          "actions": {
+            "cancel": "Cancel",
+            "submit": "Delete"
+          }
+        }
+      },
+      "errors": {
+        "regNameRequired": "reg-name is required",
+        "regNameNotFound": "reg-name not found",
+        "regSystemExist": "publicAPI reg system already exists",
+        "regLimitsDecode": "unable to decode limits from request"
+      },
+      "links": {
+        "registryAdministration": {
+          "title": {
+            "Веб-інтерфейс моделювання регламенту (Admin Portal)": "Registry modelling web interface (Administrative portal).",
+            "Сервіс інспекції та зберігання змін регламенту (Gerrit).": "Registry changes inspection and storage service (Gerrit).",
+            "Сервіс розгортання регламенту (Jenkins)": "Registry deployment service (Jenkins)",
+            "API документація сервісу управління даними реєстру (Swagger)": "API documentation of the registry data management service (Swagger).",
+            "API документація сервісу управління даними реєстру (Swagger) для публічних даних": "API documentation of the registry data management service (Swagger) for public data.",
+            "Веб-інтерфейс моделювання звітів (Redash Admin)": "Web interface for report modeling (Redash Admin).",
+            "Веб-інтерфейс управління виконанням бізнес-процесів (Business Proc Adm)": "Web interface for managing the execution of business processes (business process administration).",
+            "Веб-інтерфейс управління виконанням бізнес-процесів (Business Process Administration)": "Web interface for managing the execution of business processes (business process administration).",
+            "Веб-інтерфейс перегляду даних реєстру (pgAdmin)": "Web interface for viewing registry data (pgAdmin).",
+            "Сховище артефактів реєстру (Nexus)": "Registry artefacts storage (Nexus).",
+            "Веб-інтерфейс управління гео-даними (Geo-server UI)": "Geo-data management web interface (Geo-server UI).",
+            "Веб-інтерфейс моніторингу черг повідомлень (Kafka UI)": "Web interface for message queue monitoring (Kafka UI)."
+          },
+          "description": {
+            "Клієнтський вебдодаток для адміністрування реєстрів. Інтерфейс дозволяє виконувати необхідну конфігурацію регламенту реєстру без володіння глибокими уміннями програмування.": "Client web application for registry administration. The interface allows you to perform the necessary configuration of the registry without having deep programming skills.",
+            "Програмний інструмент, що дозволяє керувати версіями компонентів та конфігурацій.": "A software tool that allows you to manage versions of components and configurations.",
+            "Програмний комплекс, що забезпечує автоматизацію в життєвому циклі розгортання регламенту Реєстру.": "A software complex that provides automation for the life cycle of the Registry Regulations deployment.",
+            "Веб-інтерфейс для перегляду API-документації Підсистеми управління даними реєстру з ціллю подальшого використання при побудові взаємодії через типові розширення-конектори у бізнес-процесах.": "Web interface for viewing the API documentation of the registry data management subsystem for further use when building interaction through typical connector extensions in business processes.",
+            "Веб-інтерфейс для перегляду API-документації Підсистеми управління даними реєстру для публічних даних з ціллю подальшого використання при побудові взаємодії з неавтентифікованими користувачами та зовнішніми системами": "Web interface for viewing the Registry Data Management Subsystem API documentation for public data for further use when building interactions with unauthenticated users and external systems.",
+            "Користувацький інтерфейс для створення та налаштування аналітичних звітів та дашбордів.": "User interface for creating and configuring analytical reports and dashboards.",
+            "Користувацький інтерфейс для перегляду стану виконання та управління бізнес-процесами реєстру.": "User interface for viewing the execution status and managing registry business processes.",
+            "Користувацький інтерфейс для перегляду даних та схеми моделі даних реєстру.": "User interface for viewing business process data and scheme of the data model.",
+            "Збереження згенерованих в реєстрі артефактів.": "Artifacts generated in the registry.",
+            "Веб-інтерфейс для перегляду черг повідомлень і повідомлень в них": "Web interface for viewing message queues and messages in them.",
+            "Користувацький інтерфейс для адміністрування гео-даних.": "Web interface for geo data administration."
+          }
+        },
+        "registryOperational": {
+          "title": {
+            "Кабінет отримувача послуг (Citizen Portal)": "Citizen Portal",
+            "Кабінет посадової особи (Officer Portal)": "Officer Portal"
+          },
+          "description": {
+            "Клієнтський веб-додаток для отримання адміністративних та інформаційних послуг громадянами.": "Web app for citizens. Allows to get administrative and information services.",
+            "Клієнтський веб-додаток для надання адміністративних та інформаційних послуг посадовою особою.": "Web app for officers. Allows to provide administrative and information services."
+          }
+        }
+      }
+    },
+    "cluster": {
+      "administrators": {
+        "title": "Platform Administrators",
+        "text": {
+          "administrators": "Administrators"
+        }
+      },
+      "backup": {
+        "title": "Backup schedule",
+        "fields": {
+          "nexusSchedule": {
+            "label": "Schedule",
+            "description": "The cron format is used."
+          },
+          "nexusTime": {
+            "label": "Storage time (days)",
+            "description": "The value can only be a positive number and not less than 1 day. It is recommended to set the storage time to be longer than the period between copy creation."
+          },
+          "controlPlaneSchedule": {
+            "label": "Schedule",
+            "description": "The cron format is used."
+          },
+          "controlPlaneTime": {
+            "label": "Storage time (days)",
+            "description": "The value can only be a positive number and not less than 1 day. It is recommended to set the storage time to be longer than the period between copy creation."
+          },
+          "managementSchedule": {
+            "label": "Schedule",
+            "description": "The cron format is used."
+          },
+          "managementTime": {
+            "label": "Storage time (days)",
+            "description": "The value can only be a positive number and not less than 1 day. It is recommended to set the storage time to be longer than the period between copy creation."
+          },
+          "monitoringSchedule": {
+            "label": "Schedule",
+            "description": "The cron format is used."
+          },
+          "monitoringTime": {
+            "label": "Storage time (days)",
+            "description": "The value can only be a positive number and not less than 1 day. It is recommended to set the storage time to be longer than the period between copy creation."
+          }
+        }
+      },
+      "cidr": {
+        "title": "List of allowed CIDRs",
+        "text": {
+          "cidrAdministrativeComponents": "CIDR for administrative components"
+        }
+      },
+      "clusterCidrModal": {
+        "text": {
+          "addCIDR": "Add CIDR",
+          "checkIPFormat": "Check the IP address format.",
+          "ipAddressesAndMasks": "IP addresses and masks",
+          "charactersForIPDescription": "Allowed characters are \"0-9\", \"/\", \".\". Example: 172.16.0.0/12."
+        }
+      },
+      "clusterKey": {
+        "text": {
+          "addedUsersKeysDescription": "Entered user's QES keys will be applied to the Platform settings.",
+          "addedUsersCertificatesDescription": "Added AKCC certificates for checking users' QES keys will be applied to the Platform settings."
+        }
+      },
+      "clusterKeycloak": {
+        "text": {
+          "setAdditionDnsForService": "Setting up additional DNS names for the user and role management service (Keycloak). For additional DNS, it is necessary to perform external configuration of records at the domain name registrar.",
+          "instructionOutsideConfig": "Instructions on external configuration",
+          "defaultDNS": "Default DNS",
+          "additionalDNS": "Additional DNS",
+          "addDNS": "Add DNS",
+          "editDNS": "Edit DNS",
+          "deleteHostname": "Delete \"{hostname}\"?",
+          "removeAdditionalDNS": "Delete additional DNS?",
+          "impossibleRemoveDNS": "Unable to remove DNS",
+          "domainIsUsedByRegistry": "The domain \"{existHostname}\" is used by one of the registries. Please change the domain in the relevant registry to another before removing this keycloak DNS.",
+          "domainNameKeycloak": "Domain name for Keycloak.",
+          "clusterSettingsHostnameDescription": "The name length cannot exceed 63 characters. Allowed characters are “a-z”, “.”, “-”, “_”.",
+          "sslCertificateForKeycloak": "SSL certificate for Keycloak (.pem extension).",
+          "uploadSSL": "Upload an SSL Certificate.",
+          "fileUploaded": "File uploaded"
+        }
+      },
+      "documentation": {
+        "title": "Documentation",
+        "text": {
+          "linkToSelectedRegistry": "The selected demo registry will be referenced in the documentation.",
+          "demoRegistry": "Demo registry",
+          "noSelected": "Not selected",
+          "previousRegistryNoFound": "The previous registry («{demoRegistryName}») is not found."
+        }
+      },
+      "general": {
+        "title": "General settings",
+        "fields": {
+          "platformName": {
+            "label": "Platform name"
+          },
+          "main": {
+            "label": "Image for a logo (*.svg)",
+            "fileNameDescription": "File uploaded"
+          },
+          "favicon": {
+            "label": "Image for favicon (32x32 px, *.png)",
+            "fileNameDescription": "File uploaded"
+          },
+          "language": {
+            "label": "Interface language"
+          }
+        },
+        "text": {
+          "localization": "Localization",
+          "banner": "Settings will be applied after submitting the change request.",
+          "platformName": "Platform name and logo",
+          "platformDescription": "Selected images are applied to the administrative control plane.",
+          "localizationDescription": "Ability to select a language for the Control Plane interface.",
+          "region": "Region format",
+          "previousRegistryNoFound": "The previous registry (\"{demoRegistryName}\") is not found."
+        }
+      },
+      "platformUpdate": {
+        "title": "Platform update",
+        "text": {
+          "updatePlatform": "Update Platform"
+        }
+      },
+      "links": {
+        "platformAdministration": {
+          "title": {
+            "Веб-інтерфейс управління кластером OpenShift (Console)": "OpenShift cluster management web interface (Console).",
+            "Сервіс інспекції та зберігання змін конфігурації (Gerrit)": "Service for viewing and storing configuration changes (Gerrit).",
+            "Сервіс розгортання конфігурації (Jenkins)": "Configuration deployment service (Jenkins).",
+            "Сховище артефактів Платформи (Control Plane Nexus)": "Platform artifact repository (Control Plane Nexus)."
+          },
+          "description": {
+            "Інтерфейс користувача, доступний із веб-браузера. Адміністратори Платформи можуть використовувати OpenShift вебконсоль для візуалізації, перегляду та керування вмістом або ресурсами OpenShift кластера, Платформи та реєстрів.": "The user interface accessible from a web browser. Platform administrators can use the OpenShift web console to visualize, view and manage the content or resources of the OpenShift Cluster, Platform and registries.",
+            "Програмний інструмент, що дозволяє керувати версіями компонентів та конфігурацій. Тісно інтегрований з розподіленою системою контролю версій Git та з допомогою цього інструменту адміністратори Платформи мають можливість переглядати всі модифікації коду та конфігурацій за допомогою веб-браузера і затверджувати або відхиляти ці зміни.": "A software tool that allows you to manage versions of components and configurations. Tightly integrated with the Git distributed version control system and with this tool, Platform administrators have the ability to view all code and configuration modifications using a web browser and approve or reject these changes.",
+            "Програмний комплекс, що забезпечує автоматизацію в життєвому циклі Платформи та Реєстрів. Виконує фактичне розгортання Реєстру, конфігурування, оновлення та безліч інших автоматизованих задач в Платформі.": "A software complex that provides automation in the life cycle of the Platform and Registries. Performs the actual deployment of the Registry, configuration, updates and many other automated tasks in the Platform.",
+            "Центральне сховище артефактів, компонентів та їх залежностей, з яких складається кожна окрема підсистема та Платформа в цілому. Збереження артефактів платформи.": "A central repository of artifacts, components and their dependencies that make up each individual subsystem and the Platform as a whole. Saving the Platform artifacts."
+          }
+        },
+        "platformOperational": {
+          "title": {
+            "Сервіс управління користувачами та ролями (Keycloak)": "Service for user and role management (Keycloak).",
+            "Веб-інтерфейс перегляду журналу подій Платформи (Kibana)": "Service for viewing Platform event logs (Kibana).",
+            "Веб-інтерфейс моніторингу Платформи (Grafana)": "Platform monitoring service (Grafana).",
+            "Веб-інтерфейс управління та моніторингу Service Mesh (Kiali)": "Interface for managing and viewing the Service Mesh (Kiali).",
+            "Веб-інтерфейс моніторингу та трасування запитів (Jaeger)": "Web-interface for request tracing (Jaeger).",
+            "Сервіс управління секретами та шифруванням (Vault)": "Secret and encryption management service (Vault)."
+          },
+          "description": {
+            "Аутентифікація та авторизація користувачів.": "Authentication and authorization of users.",
+            "Доступ та відображення логів в платформі.": "View and access platform logs.",
+            "Візуалізація та надання доступу до даних моніторингу.": "Visualise and access monitoring data.",
+            "Компонент, що забезпечує адміністраторів Платформи та реєстрів можливістю налаштовувати та аналізувати стан компонентів service-mesh Платформи та реєстрів, здійснювати моніторинг компонентів що входять в service-mesh в реальному часі та швидко виявляти проблеми в мережі.": "A component that allows you to configure, check and analyze the service-mesh of the Platform, as well as visualize the traffic inside the Platform.",
+            "Сервіс, що використовується для моніторингу запитів та аналізу несправностей розподілених систем на основі мікросервісів. Дозволяє виконати аналіз залежностей компонента, аналіз несправностей, моніторинг транзакцій та оптимізацію продуктивності роботи Платформи.": "A service used for query monitoring and fault analysis of microservices-based distributed systems. Allows you to perform component dependency analysis, fault analysis, transaction monitoring, and Platform performance optimization.",
+            "Інструмент для безпечного управління секретами та захисту доступу до конфіденційної інформації в обчислювальних середовищах.": "A tool for securely managing secrets and protecting access to confidential information in computing environments."
+          }
+        },
+        "platformCentral": {
+          "title": {
+            "Центральний сервіс управління секретами Платформи (Vault)": "A central service for managing the secrets of the Platform (Vault).",
+            "Сховище резервних копій Платформи (Minio)": "Platform backup storage (Minio)."
+          },
+          "description": {
+            "Забезпечення операції Auto unseal для підсистем управління секретами та шифруванням.": "Provision of Auto unseal operation for secret management and encryption subsystems.",
+            "S3-сумісне сховище даних, що забезпечує надійне та масштабоване сховище резервних копій Платформи та реєстрів.": "S3-compatible data storage that provides reliable and scalable storage for backup copies of the Platform and registries."
+          }
+        }
+      }
+    },
+    "changes": {
+      "statuses": {
+        "active": "Active",
+        "error": "Error",
+        "inProgress": "In progress",
+        "disabled": "Disabled"
+      },
+      "mergeRequest": {
+        "names": {
+          "updatingRegistryVersion": "Registry version update",
+          "editingRegistry": "Registry edit"
+        },
+        "actions": {
+          "disable": "Disable",
+          "enable": "Enable",
+          "creation": "Create",
+          "deletion": "Cancel",
+          "edition": "Edit",
+          "removing": "Remove",
+          "versionUpdate": "Update registry to {sourceBranch}"
+        },
+        "platformActions": {
+          "updatingAdministrators": "Platform administrators update",
+          "accessRestrictions": "Access restrictions",
+          "editingDNSKeycloak": "Edit DNS Keycloak",
+          "updatePlatform": "Update Platform to {sourceBranch}"
+        },
+        "statuses": {
+          "inProgress": "In progress",
+          "new": "New",
+          "abandoned": "Rejected",
+          "merged": "Approved"
+        }
+      }
+    }
+  },
+  "errors": {
+    "requiredField": "Required field.",
+    "fillingRequiredField": "This field is required.",
+    "required": "This field is required.",
+    "moreThanMaxValue": "Maximum allowed value exceeded.",
+    "isUnique": "Non-unique value.",
+    "rateLimitError": "Specify the limit in at least one field.",
+    "registryNameAlreadyExists": "A registry with this name already exists.",
+    "invalidFileType": "Invalid file type.",
+    "nonUniqKeyName": "A key with this name already exists.",
+    "dsKeysNotFound": "No encryption keys allowed for the registry was found, please contact the Platform administrator.",
+    "checkFormat": "Check field format.",
+    "checkFileFormat": "Check file format."
+  },
+  "apiErrors": {
+    "required": "This field is required.",
+    "cron-expression": "Not a valid cron expression.",
+    "cron-expires": "Cron expression is not valid."
+  }
+}

@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent, inject } from 'vue';
+
 import type { RegistryTemplateVariables } from '@/types/registry';
 import $ from 'jquery';
 import 'datatables.net-dt';
@@ -8,6 +9,7 @@ import Modal from '@/components/common/Modal.vue';
 import Typography from '@/components/common/Typography.vue';
 import '@/assets/datatables.custom.css';
 
+
 export default defineComponent({
   setup() {
     const variables = inject('TEMPLATE_VARIABLES') as RegistryTemplateVariables;
@@ -15,12 +17,16 @@ export default defineComponent({
     const registries = variables?.registries;
     const page = variables?.page;
     const gerritBranches = variables?.gerritBranches;
+    const platformVersion = variables?.platformVersion;
+    const previousVersion = variables?.previousVersion;
 
     return {
       allowedToCreate,
       registries,
       page,
       gerritBranches,
+      platformVersion,
+      previousVersion,
       getImageUrl,
       getFormattedDate,
       getStatusTitle,
@@ -29,7 +35,7 @@ export default defineComponent({
   data() {
     return {
       showModalCreateRegistry: false,
-      versionTemplate: '1.9.7',
+        versionTemplate: (this.platformVersion || "").toString(),
     };
   },
   components: {
@@ -97,15 +103,23 @@ export default defineComponent({
       window.location.href = `/admin/registry/create?version=${this.versionTemplate}`;
     },
     handleCreateRegistry() {
-      const isExistBranch196 = this.gerritBranches?.some(b => b.includes('1.9.6'));
-      if (isExistBranch196) {
+      if (this.gerritBranches?.some(b => b.includes(this.previousVersion))) {
         this.showModalCreateRegistry = true;
         return;
       }
       window.location.href = '/admin/registry/create';
+    },
+    getVersionDescription() {
+      if (this.versionTemplate === this.platformVersion) {
+        return this.$t('pages.registryList.text.currentVersion');
+      }
+
+      return this.$t('pages.registryList.text.previousVersion');
     }
   },
   mounted() {
+    const t = this.$t;
+
     $(function () {
       let registryName: any;
       let registryInput = $('#registry-name');
@@ -170,22 +184,22 @@ export default defineComponent({
         ],
         order: [[4, 'desc']],
         language: {
-          processing: 'Зачекайте...',
-          lengthMenu: 'Показати _MENU_ записів',
-          zeroRecords: 'Записи відсутні.',
-          info: 'Записи з _START_ по _END_ із _TOTAL_ записів',
-          infoEmpty: 'Записи з 0 по 0 із 0 записів',
-          infoFiltered: '(відфільтровано з _MAX_ записів)',
-          search: 'Пошук:',
+          processing: t('pages.registryList.table.processing'),
+          lengthMenu: t('pages.registryList.table.lengthMenu'),
+          zeroRecords: t('pages.registryList.table.zeroRecords'),
+          info: t('pages.registryList.table.info'),
+          infoEmpty: t('pages.registryList.table.infoEmpty'),
+          infoFiltered: t('pages.registryList.table.infoFiltered'),
+          search: t('pages.registryList.table.search'),
           paginate: {
-            first: 'Перша',
-            previous: 'Попередня',
-            next: 'Наступна',
-            last: 'Остання',
+            first: t('pages.registryList.table.first'),
+            previous: t('pages.registryList.table.previous'),
+            next: t('pages.registryList.table.next'),
+            last: t('pages.registryList.table.last'),
           },
           aria: {
-            sortAscending: ': активувати для сортування стовпців за зростанням',
-            sortDescending: ': активувати для сортування стовпців за спаданням',
+            sortAscending: t('pages.registryList.table.sortAscending'),
+            sortDescending: t('pages.registryList.table.sortDescending'),
           },
         },
       });
@@ -197,27 +211,22 @@ export default defineComponent({
 <template>
   <div class="registry" id="tooltip">
     <div class="registry-header">
-      <h1>Реєстри</h1>
-      <a
-        href="#"
-        class="registry-add"
-        v-if="allowedToCreate"
-        @click="handleCreateRegistry"
-      >
+      <h1>{{ $t('pages.registryList.title') }}</h1>
+      <a href="#" class="registry-add" v-if="allowedToCreate" @click="handleCreateRegistry">
         <img alt="add registry" src="@/assets/img/plus.png" />
-        <span>Створити новий</span>
+        <span>{{ $t('pages.registryList.actions.createNew') }}</span>
       </a>
     </div>
-    <div class="registry-description">Перелік реєстрів та їх статусів.</div>
+    <div class="registry-description">{{ $t('pages.registryList.text.listRegistersAndStatuses') }}</div>
     <div class="registry-table-wrap">
       <table id="registry-table" class="registry-table row-border">
         <thead>
           <tr>
-            <th>Статус</th>
-            <th>Назва</th>
-            <th>Версія</th>
-            <th>Опис</th>
-            <th>Час створення</th>
+            <th>{{ $t('pages.registryList.table.status') }}</th>
+            <th>{{ $t('pages.registryList.table.name') }}</th>
+            <th>{{ $t('pages.registryList.table.version') }}</th>
+            <th>{{ $t('pages.registryList.table.description') }}</th>
+            <th>{{ $t('pages.registryList.table.date') }}</th>
             <th></th>
             <th></th>
           </tr>
@@ -227,7 +236,7 @@ export default defineComponent({
             <td>
               <img
                 v-if="$registry.Codebase.metadata.deletionTimestamp"
-                title="Видалення"
+                :title="$t('pages.registryList.table.deletionTimestamp')"
                 src="@/assets/img/action-delete.png"
                 alt="delete registry"
               />
@@ -266,7 +275,7 @@ export default defineComponent({
                 :href="getUrl($registry, 'edit')"
               >
                 <img
-                  title="Редагувати"
+                  :title="$t('pages.registryList.actions.registryEdit')"
                   src="@/assets/img/action-edit.png"
                   alt="edit registry"
                 />
@@ -284,7 +293,7 @@ export default defineComponent({
                 :data-name="$registry.Codebase.metadata.name"
               >
                 <img
-                  title="Видалити"
+                  :title="$t('pages.registryList.actions.registryDelete')"
                   src="@/assets/img/action-delete.png"
                   alt="delete registry"
                 />
@@ -299,7 +308,7 @@ export default defineComponent({
   <div class="popup-backdrop"></div>
   <div id="delete-popup" class="popup-window">
     <div class="popup-header">
-      <p>Видалити "<span id="delete-name">business-pro</span>"?</p>
+      <p>{{ $t('pages.registryList.text.deleteName') }} "<span id="delete-name">business-pro</span>"?</p>
       <a href="#" class="popup-close hide-popup">
         <img alt="close popup window" src="@/assets/img/close.png" />
       </a>
@@ -307,12 +316,10 @@ export default defineComponent({
     <form id="delete-form" method="post" action="">
       <div class="popup-body">
         <p v-if="page === 'registry'">
-          Щоб уникнути випадкової втрати даних, введіть назву реєстру перш, ніж
-          ви зможете його видалити.
+          {{ $t('pages.registryList.text.avoidAccidentalData') }}
         </p>
         <p v-if="page === 'group'">
-          Щоб уникнути випадкової втрати даних, введіть назву групи перш, ніж ви
-          зможете її видалити.
+          {{ $t('pages.registryList.text.avoidAccidentalCreateGroup') }}
         </p>
 
         <div class="rc-form-group">
@@ -322,35 +329,35 @@ export default defineComponent({
             id="registry-name"
             name="registry-name"
             required
-            :placeholder="page === 'registry' ? 'Назва реєстру' : 'Назва групи'"
+            :placeholder="page === 'registry' ? $t('pages.registryList.text.registryName') : $t('pages.registryList.text.groupName')"
             autocomplete="off"
           />
         </div>
       </div>
       <div class="popup-footer">
-        <a href="#" id="delete-cancel" class="hide-popup">відмінити</a>
+        <a href="#" id="delete-cancel" class="hide-popup">{{ $t('actions.cancel') }}</a>
         <button value="submit" name="codebase-delete" type="submit">
-          Видалити
+          {{ $t('actions.remove') }}
         </button>
       </div>
     </form>
   </div>
   <Modal
-    title="Створити новий реєстр"
-    submitBtnText="Підтвердити"
+    :title="$t('pages.registryList.text.createNewRegistry')"
+    :submitBtnText="$t('pages.registryList.actions.createNewRegistryConfirm')"
     :show="showModalCreateRegistry"
     @close="showModalCreateRegistry = false"
     @submit="createRegistry"
   >
     <div class="rc-form-group">
-      <label>Оберіть версію</label>
+      <label>{{ $t('pages.registryList.text.chooseVersion') }}</label>
       <select v-model="versionTemplate">
-        <option>1.9.7</option>
-        <option>1.9.6</option>
+        <option>{{ platformVersion }}</option>
+        <option>{{ previousVersion }}</option>
       </select>
     </div>
     <Typography variant="bodyText" class="mt24">
-      Актуальна версія. Містить останні затверджені зміни і нові функціональні можливості.
+      {{ getVersionDescription() }}
     </Typography>
   </Modal>
 </template>
@@ -359,6 +366,7 @@ export default defineComponent({
   color: $blue-main;
   font-weight: 700;
 }
+
 .mt24 {
   margin-top: 24px;
 }

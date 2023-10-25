@@ -1,5 +1,9 @@
+<script setup lang="ts">
+import { getErrorMessage } from '@/utils';
+</script>
+
 <script lang="ts">
-import {defineComponent} from 'vue';
+import { defineComponent } from 'vue';
 
 export default defineComponent({
   props: {
@@ -62,7 +66,7 @@ export default defineComponent({
 </style>
 
 <template>
-  <div class="rc-form-group" :class="{ 'error': error !== '' }">
+  <div class="rc-form-group" :class="[$attrs.class, error && 'error']">
     <label>{{ label }}</label>
     <label v-show="!fileSelected" :for="id"
            class="rc-form-upload-block">
@@ -72,11 +76,11 @@ export default defineComponent({
     <div v-show="fileSelected" class="uploaded">
       <div>
         <i class="fa-solid fa-check"></i>
-        <span>Файл завантажено</span>
+        <span>{{ $t('components.fileField.text.fileLoaded') }}</span>
       </div>
       <a href="#" @click.stop.prevent="reset"><i class="fa-solid fa-trash"></i></a>
     </div>
-    <span v-if="error !== ''">{{ error }}</span>
-    <input :id="id" type="file" @change="selected" :name="name" ref="fileInput" :accept="accept" />
+    <span v-if="error">{{ getErrorMessage(error) }}</span>
+    <input :id="id" type="file" v-bind="$attrs" @change="selected" :name="name" ref="fileInput" :accept="accept" />
   </div>
 </template>

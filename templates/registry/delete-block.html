@@ -2,7 +2,7 @@
 <div class="popup-backdrop"></div>
 <div id="delete-popup" class="popup-window">
     <div class="popup-header">
-        <p>Видалити "<span id="delete-name">business-pro</span>"?</p>
+        <p>{{ i18n "domains.registry.modals.delete.title" }} "<span id="delete-name">business-pro</span>"?</p>
         <a href="#" class="popup-close hide-popup">
             <img alt="close popup window" src="{{.BasePath}}/static/img/close.png" />
         </a>
@@ -11,28 +11,26 @@
         <input type="hidden" name="_xsrf" value="{{ .xsrfdata }}" />
         <div class="popup-body">
             {{if eq .page "registry"}}
-            <p>Щоб уникнути випадкової втрати даних, введіть назву реєстру перш,
-                ніж ви зможете його видалити.</p>
+            <p>{{ i18n "domains.registry.modals.delete.text.deleteOneInfo" }}</p>
             {{end}}
             {{if eq .page "group"}}
-                <p>Щоб уникнути випадкової втрати даних, введіть назву групи перш,
-                    ніж ви зможете її видалити.</p>
+                <p>{{ i18n "domains.registry.modals.delete.text.deleteGroupInfo" }}</p>
             {{end}}
 
             <div class="rc-form-group">
                 <input aria-label="registry name" type="text" id="registry-name" name="registry-name" required
                         {{if eq .page "registry"}}
-                       placeholder="Назва реєстру"
+                       placeholder="{{ i18n "domains.registry.modals.delete.fields.registry.placeholder" }}"
                            {{end}}
                         {{if eq .page "group"}}
-                            placeholder="Назва групи"
+                            placeholder="{{ i18n "domains.registry.modals.delete.fields.group.placeholder" }}"
                         {{end}}
                        autocomplete="off" />
             </div>
         </div>
         <div class="popup-footer">
-            <a href="#" id="delete-cancel" class="hide-popup">відмінити</a>
-            <button value="submit" name="codebase-delete" type="submit">Видалити</button>
+            <a href="#" id="delete-cancel" class="hide-popup">{{ i18n "domains.registry.modals.delete.actions.cancel" }}</a>
+            <button value="submit" name="codebase-delete" type="submit">{{ i18n "domains.registry.modals.delete.actions.submit" }}</button>
         </div>
     </form>
 </div>

@@ -20,13 +20,13 @@ export default {
 
 <template>
   <Modal
-    title="Видалити власні значення для зберігання резервних копій реплікацій об’єктів S3?"
-    submitBtnText="Видалити"
+    :title="$t('components.registryBackupDeleteModal.title')"
+    :submitBtnText="$t('actions.remove')"
     :show="backupDeletePlacePopupShow"
     @close="hideBackupDeletePlaceModal"
     @submit="submit"
     redButton
   >
-    <Typography variant="bodyText">Будуть використані значення за замовчуванням.</Typography>
+    <Typography variant="bodyText">{{ $t('components.registryBackupDeleteModal.text.valuesByDefault') }}</Typography>
   </Modal>
 </template>

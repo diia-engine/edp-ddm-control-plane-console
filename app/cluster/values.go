@@ -1,15 +1,16 @@
 package cluster
 
-const (
-	KeycloakValuesIndex = "keycloak"
-)
+import "ddm-admin-console/app/registry"
 
 type Values struct {
-	Velero       Velero   `yaml:"velero" json:"velero"`
-	Global       Global   `yaml:"global" json:"global"`
-	Admins       []Admin  `yaml:"administrators" json:"administrators"`
-	Keycloak     Keycloak `yaml:"keycloak" json:"keycloak"`
-	OriginalYaml map[string]interface{}
+	Velero               Velero                    `yaml:"velero,omitempty" json:"velero"`
+	Global               Global                    `yaml:"global" json:"global"`
+	Admins               []Admin                   `yaml:"administrators" json:"administrators"`
+	Keycloak             Keycloak                  `yaml:"keycloak,omitempty" json:"keycloak"`
+	CdPipelineName       string                    `yaml:"cdPipelineName"`
+	CdPipelineStageName  string                    `yaml:"cdPipelineStageName"`
+	SourceCatalogVersion float32                   `yaml:"source_catalog_version"`
+	DigitalSignature     registry.DigitalSignature `yaml:"digital-signature"`
 }
 
 type Velero struct {
@@ -18,7 +19,12 @@ type Velero struct {
 
 type Global struct {
 	WhiteListIP      WhiteListIP `yaml:"whiteListIP" json:"whiteListIP"`
+	DeploymentMode   string      `yaml:"deploymentMode" json:"deploymentMode"`
 	DemoRegistryName string      `json:"demoRegistryName" yaml:"demoRegistryName"`
+	PlatformName     string      `json:"platformName" yaml:"platformName"`
+	LogosPath        string      `json:"logosPath" yaml:"logosPath"`
+	Language         string      `form:"language" json:"language"`
+	Region           string      `json:"region" yaml:"region"`
 }
 
 type WhiteListIP struct {

@@ -3,10 +3,9 @@ package git
 import (
 	"crypto/sha1"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	cssh "golang.org/x/crypto/ssh"
 )
@@ -46,10 +46,17 @@ func Make(path, user, key string) *Service {
 }
 
 func (s *Service) GenerateChangeID() (string, error) {
-	h := sha1.New()
-	if _, err := h.Write([]byte(time.Now().Format(time.RFC3339))); err != nil {
-		return "", fmt.Errorf("unable to write hash, %w", err)
+	changeID, err := uuid.NewRandom()
+	if err != nil {
+		return "", fmt.Errorf("failed to generate uuid, %w", err)
 	}
+
+	h := sha1.New()
+
+	if _, err := h.Write([]byte(changeID.String())); err != nil {
+		return "", errors.Wrap(err, "failed to write hash")
+	}
+
 	return fmt.Sprintf("I%x", h.Sum(nil)), nil
 }
 
@@ -84,11 +91,14 @@ func (s *Service) Clone(url string) error {
 		return fmt.Errorf("unable to covert bare repo to normal, %w", err)
 	}
 
-	fetchCMD := s.commandCreate("git", "--git-dir", path.Join(s.path, ".git"), "pull", "origin", "master",
-		"--unshallow", "--no-rebase")
+	fetchCMD := s.commandCreate(
+		"git",
+		"--git-dir", path.Join(s.path, ".git"), "pull", "origin", "master", "--unshallow", "--no-rebase",
+	)
+
 	fetchCMD.SetEnv(s.authEnv(keyPath))
-	bts, err := fetchCMD.CombinedOutput()
-	if err != nil && !strings.Contains(string(bts), "does not make sense") {
+
+	if bts, err := fetchCMD.CombinedOutput(); err != nil && !strings.Contains(string(bts), "does not make sense") {
 		return fmt.Errorf("unable to pull unshallow repo: %s, %w", string(bts), err)
 	}
 
@@ -99,16 +109,14 @@ func (s *Service) SetAuthor(user *User) error {
 	cmd := s.commandCreate("git", "config", "user.email", user.Email)
 	cmd.SetDir(s.path)
 
-	bts, err := cmd.CombinedOutput()
-	if err != nil {
+	if bts, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("unable to commit: %s, %w", string(bts), err)
 	}
 
 	cmd = s.commandCreate("git", "config", "user.name", user.Name)
 	cmd.SetDir(s.path)
 
-	bts, err = cmd.CombinedOutput()
-	if err != nil {
+	if bts, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("unable to commit: %s, %w", string(bts), err)
 	}
 
@@ -126,30 +134,8 @@ func (s *Service) RawCommit(u *User, message string, params ...string) error {
 	cmd := s.commandCreate("git", baseParams...)
 	cmd.SetDir(s.path)
 
-	msg, err := cmd.StrCombinedOutput()
-	if err != nil {
+	if msg, err := cmd.StrCombinedOutput(); err != nil {
 		return fmt.Errorf("unable to commit: %s, %w", msg, err)
-	}
-
-	return nil
-}
-
-func (s *Service) Commit(message string, files []string, user *User) error {
-	_, w, err := s.worktree()
-	if err != nil {
-		return fmt.Errorf("unable to get worktree, %w", err)
-	}
-
-	for _, f := range files {
-		if _, err := w.Add(f); err != nil {
-			return fmt.Errorf("unable to add file: %s, %w", f, err)
-		}
-	}
-
-	if _, err := w.Commit(message, &git.CommitOptions{
-		Author: &object.Signature{Name: user.Name, Email: user.Email, When: time.Now()},
-	}); err != nil {
-		return fmt.Errorf("unable to perform git commit, %w", err)
 	}
 
 	return nil
@@ -161,11 +147,11 @@ func (s *Service) authEnv(keyPath string) []string {
 }
 
 func (s *Service) bareToNormal(path string) error {
-	if err := os.MkdirAll(fmt.Sprintf("%s/.git", path), 0777); err != nil {
+	if err := os.MkdirAll(fmt.Sprintf("%s/.git", path), 0o777); err != nil {
 		return fmt.Errorf("unable to create .git folder, %w", err)
 	}
 
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("unable to list dir, %w", err)
 	}
@@ -223,7 +209,7 @@ func (s *Service) keyFilePath() (string, error) {
 		return "", fmt.Errorf("unable to close file, %w", err)
 	}
 
-	if err := os.Chmod(keyFilePath, 0400); err != nil {
+	if err := os.Chmod(keyFilePath, 0o400); err != nil {
 		return "", fmt.Errorf("unable to chmod ssh key file, %w", err)
 	}
 
@@ -309,8 +295,10 @@ func (s *Service) Push(remoteName string, pushParams ...string) error {
 		return fmt.Errorf("unable to init auth, %w", err)
 	}
 
-	basePushParams := []string{"--git-dir", path.Join(s.path, ".git"),
-		"push", remoteName}
+	basePushParams := []string{
+		"--git-dir", path.Join(s.path, ".git"),
+		"push", remoteName,
+	}
 	basePushParams = append(basePushParams, pushParams...)
 
 	pushCMD := s.commandCreate("git", basePushParams...)
@@ -329,7 +317,7 @@ func (s *Service) SetFileContents(filePath, contents string) error {
 
 	dir := path.Dir(filePath)
 	if _, err := os.Stat(dir); err != nil {
-		if err := os.MkdirAll(dir, 0777); err != nil {
+		if err := os.MkdirAll(dir, 0o777); err != nil {
 			return fmt.Errorf("unable to create dir, %w", err)
 		}
 	}
@@ -357,7 +345,7 @@ func (s *Service) GetFileContents(filePath string) (string, error) {
 		return "", fmt.Errorf("unable to open file: %s, %w", filePath, err)
 	}
 
-	bts, err := ioutil.ReadAll(fp)
+	bts, err := io.ReadAll(fp)
 	if err != nil {
 		return "", fmt.Errorf("unable to read file: %s, %w", filePath, err)
 	}
@@ -399,7 +387,9 @@ func (s *Service) Checkout(branch string, create bool) error {
 	}
 
 	if err := w.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branch), Create: create}); err != nil {
+		Branch: plumbing.NewBranchReferenceName(branch),
+		Create: create,
+	}); err != nil {
 		return fmt.Errorf("unable to checkout branch, %w", err)
 	}
 
@@ -428,21 +418,6 @@ func (s *Service) Add(file string) error {
 	}
 
 	return nil
-}
-
-func (s *Service) Rebase(targetBranch string, params ...string) (string, error) {
-	gitArgs := []string{"rebase", targetBranch}
-	gitArgs = append(gitArgs, params...)
-
-	cmd := s.commandCreate("git", gitArgs...)
-	cmd.SetDir(s.path)
-
-	msg, err := cmd.StrCombinedOutput()
-	if err != nil {
-		return msg, fmt.Errorf("unable to run rebase, %w", err)
-	}
-
-	return msg, nil
 }
 
 func (s *Service) worktree() (*git.Repository, *git.Worktree, error) {
@@ -478,12 +453,6 @@ func (s *Service) RemoveBranch(name string) error {
 	}
 
 	return nil
-}
-
-func ExtractMrURL(pushMessage string) string {
-	return regexp.MustCompile(
-		`https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)`).
-		FindString(pushMessage)
 }
 
 func CommitMessageWithChangeID(commitMessage, changeID string) string {

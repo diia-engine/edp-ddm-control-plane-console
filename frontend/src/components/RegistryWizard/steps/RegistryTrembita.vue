@@ -65,7 +65,7 @@ export default defineComponent({
       }
       this.cidrChanged = true;
     },
-    validator(tab: any) {
+    validator() {
       return new Promise<void>((resolve) => {
         this.requiredError = false;
 
@@ -98,17 +98,16 @@ export default defineComponent({
 
 
 <template>
-  <h2>ШБО Трембіта</h2>
-  <p>Щоб забезпечити можливість зовнішнім системам звертатись до реєстру через ШБО Трембіта, вкажіть IP-адреси ШБО
-    Трембіта, з яких буде дозволено доступ до SOAP API реєстру.</p>
+  <h2>{{ $t('components.registryTrembita.title') }}</h2>
+  <p>{{ $t('components.registryTrembita.text.registryTrembitaDescription') }}</p>
   <div class="toggle-switch">
     <input class="switch-input" type="checkbox" id="trembita-enable-input"
            v-model="enabled" @change="onEnabledChanged"/>
     <label for="trembita-enable-input">Toggle</label>
-    <span>Ввімкнути доступ до API через ШБО Трембіта</span>
+    <span>{{ $t('components.registryTrembita.text.enableAPIAccess') }}</span>
   </div>
   <div v-if="enabled" class="rc-form-group trembita-soap-ips" :class="{'error': requiredError}">
-    <label for="admins">IP-адреси ШБО Трембіта</label>
+    <label for="admins">{{ $t('components.registryTrembita.text.addressesOfTrembita') }}</label>
     <input type="hidden" id="trembita-soap-ips" name="trembita-ip-list" :value="JSON.stringify(currentCIDR)" />
     <div class="advanced-admins">
       <div v-cloak v-for="c in currentCIDR" class="child-admin" v-bind:key="c">
@@ -119,15 +118,15 @@ export default defineComponent({
       </div>
       <button type="button" @click="showCIDRForm()" :class="{'add-cidr-disabled': !addAllowed()}">+</button>
     </div>
-    <span v-if="requiredError">Поле обов'язкове для заповнення</span>
-    <p>Допустима кількість значень - {{ maxIPCount }}</p>
+    <span v-if="requiredError">{{ $t('errors.fillingRequiredField') }}</span>
+    <p>{{ $t('components.registryTrembita.text.validNumberValues') }} - {{ maxIPCount }}</p>
   </div>
 
 
   <cidr-modal
       v-model:cidr-popup-show="cidrPopupShow"
-      title="Дозволити доступ з IP-адреси"
-      sub-title="IP-адреса ШБО Трембіта"
+      :title="$t('components.registryTrembita.text.allowAccessFromAddress')"
+      :sub-title="$t('components.registryTrembita.text.addressOfTrembita')"
       :mask-allowed="false"
       @cidrAdded="onCidrAdded"
   />

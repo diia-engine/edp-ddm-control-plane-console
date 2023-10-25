@@ -1,9 +1,18 @@
+import type { LANGUAGES } from "@/constants/registry";
+import type { StoredKey } from './cluster';
+
 export interface ExternalReg {
   Enabled: boolean;
   External: boolean;
   KeyValue: string;
   Name: string;
   StatusRegistration: string;
+}
+
+export interface ClusterDigitalSignature {
+  data: unknown,
+  env: unknown,
+  keys: Record<string, StoredKey>
 }
 export interface RegistryTemplateVariables {
   openMergeRequests: boolean;
@@ -23,7 +32,11 @@ export interface RegistryTemplateVariables {
   officerCIDR: any;
   citizenCIDR: any;
   adminCIDR: any;
-  values: any;
+  values: {
+    global: Global & { notifications: any},
+    trembita: any,
+    externalSystems: any,
+  };
   externalRegs: ExternalReg[];
   branches: any;
   mergeRequests: any;
@@ -32,11 +45,14 @@ export interface RegistryTemplateVariables {
   gerritURL: string;
   jenkinsURL: string;
   mrAvailable: string;
+  createReleaseAvailable: boolean;
   registryVersion: string;
   allowedToCreate: boolean;
   registries: any;
   page: string;
   gerritBranches: string[];
+  platformVersion: string;
+  previousVersion: string;
 }
 
 export interface RegistryAdmin {
@@ -61,6 +77,7 @@ export interface PortalSettings {
 }
 export interface OfficerPortalSettings extends PortalSettings {
   individualAccessEnabled: boolean,
+  singleIdentityEnabled: boolean,
 }
 
 export enum CitizenAuthType {
@@ -80,6 +97,7 @@ export interface CitizenAuthFlow {
     url: string
     clientId: string
     clientSecret: string
+    keyName: string
   }
 }
 
@@ -103,23 +121,7 @@ export interface RegistryWizardTemplateVariables {
       maxTotalFileSize: string
     }
     externalSystems: any
-    global: {
-      registryBackup: {
-        enabled: boolean;
-        schedule: string;
-        expiresInDays: string;
-        obc: {
-          cronExpression: string;
-          backupBucket: string;
-          endpoint: string;
-        }
-      }
-      computeResources: ComputeResources,
-      deploymentMode: string,
-      registry: any,
-      excludePortals: string[],
-      geoServerEnabled: boolean,
-    }
+    global: Global,
     keycloak: {
       authFlows: {
         officerAuthFlow: {
@@ -133,6 +135,7 @@ export interface RegistryWizardTemplateVariables {
           clientId: string
           url: string
           secretKey: string
+          keyName: string
         }
       }
       realms: {
@@ -149,7 +152,12 @@ export interface RegistryWizardTemplateVariables {
     signWidget: {
       url: string
     }
-    trembita: any
+    trembita: any,
+    'digital-signature': {
+      data: unknown,
+      env: unknown,
+      keys: Record<string, StoredKey>
+    }
   }
   smtpConfig: string
   updateBranches: any[]
@@ -158,6 +166,33 @@ export interface RegistryWizardTemplateVariables {
   platformStatusType: PlatformStatusType
   isPlatformAdmin: boolean
   defaultRegistryValues: any
+  clusterValues: {
+    global: {
+      language: keyof typeof LANGUAGES
+    }
+    "digital-signature": ClusterDigitalSignature
+  },
+  clusterDigitalSignature: ClusterDigitalSignature
+}
+
+interface Global {
+    registryBackup: {
+      enabled: boolean;
+      schedule: string;
+      expiresInDays: string;
+      obc: {
+        cronExpression: string;
+        backupBucket: string;
+        endpoint: string;
+      }
+    }
+    computeResources: ComputeResources,
+    deploymentMode: string,
+    registry: any,
+    excludePortals: string[],
+    geoServerEnabled: boolean,
+    language: keyof typeof LANGUAGES,
+    connectSourceList: string[],
 }
 
 export interface PublicApiLimits {
@@ -171,7 +206,7 @@ export interface PublicApiLimits {
 
 export enum PlatformStatusType {
  AWS = 'AWS',
- VSphere = 'vSphere'
+ VSphere = 'VSphere'
 }
 
 export type ComputeResources = {
@@ -191,7 +226,7 @@ export enum OfficerAuthType {
 }
 
 export interface RegistryResource {
-  name: REGISTRY_COMPONENTS;
+  name: string;
   config: {
     istio: {
       sidecar: {
@@ -224,32 +259,12 @@ export interface RegistryResource {
         value: string;
       }>;
     };
-    hpa?: {
-      enabled: boolean;
-      maxReplicas: number;
-      minReplicas: number;
-    };
     datasource?: {
       maxPoolSize: number;
     };
     replicas?: number;
     enabled?: boolean;
   };
-}
-
-export enum REGISTRY_COMPONENTS {
-  bpms = 'bpms',
-  digitalDocumentService = 'digitalDocumentService',
-  digitalSignatureOps = 'digitalSignatureOps',
-  geoServer = 'geoServer',
-  kafkaApi = 'kafkaApi',
-  kong = 'kong',
-  redis = 'redis',
-  restApi = 'restApi',
-  sentinel = 'sentinel',
-  soapApi = 'soapApi',
-  userProcessManagement = 'userProcessManagement',
-  userTaskManagement = 'userTaskManagement',
 }
 
 export enum PORTALS {

@@ -32,11 +32,11 @@ export default {
 </script>
 
 <template>
-    <h2>Адміністратори платформи</h2>
+    <h2>{{ $t('domains.cluster.administrators.title') }}</h2>
     <form id="platform-admin" class="registry-create-form wizard-form" method="post" action="/admin/cluster/admins"
         @submit="submit">
         <div class="rc-form-group">
-            <label for="admins">Адміністратори</label>
+            <label for="admins">{{ $t('domains.cluster.administrators.text.administrators') }}</label>
             <input type="hidden" id="admins" name="admins" v-model="adminsValue" />
             <div class="advanced-admins">
                 <div v-cloak v-for="adm in admins" :key="adm.email" class="child-admin">
@@ -49,7 +49,9 @@ export default {
             </div>
         </div>
         <div class="rc-form-group">
-            <button onclick="window.localStorage.setItem('mr-scroll', 'true');" type="submit" name="submit" :disabled="disabled">Підтвердити</button>
+            <button onclick="window.localStorage.setItem('mr-scroll', 'true');" type="submit" name="submit" :disabled="disabled">
+                {{ $t('actions.confirm') }}
+            </button>
         </div>
     </form>
 </template>

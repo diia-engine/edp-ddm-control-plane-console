@@ -1,6 +1,9 @@
 package registry
 
 import (
+	"fmt"
+	"strings"
+
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	edpComponent "ddm-admin-console/service/edp_component"
@@ -11,8 +14,6 @@ import (
 	"ddm-admin-console/service/openshift"
 	"ddm-admin-console/service/permissions"
 	"ddm-admin-console/service/vault"
-	"fmt"
-	"strings"
 
 	"github.com/patrickmn/go-cache"
 
@@ -24,6 +25,7 @@ type Config struct {
 	HardwareINITemplatePath         string
 	EnableBranchProvisioners        bool
 	ClusterCodebaseName             string
+	ClusterRepo                     string
 	RegistryCodebaseLabels          string
 	Timezone                        string
 	UsersRealm                      string
@@ -42,6 +44,10 @@ type Config struct {
 	BackupBucketAccessKeyID         string
 	BackupBucketSecretAccessKey     string
 	RegistryTemplateName            string
+	CloudProvider                   string
+	CurrentVersion                  string
+	PreviousVersion                 string
+	Region                          string
 }
 
 type Services struct {
@@ -52,7 +58,7 @@ type Services struct {
 	Jenkins      jenkins.ServiceInterface
 	Keycloak     keycloak.ServiceInterface
 	Vault        vault.ServiceInterface
-	Cache        *cache.Cache //TODO: replace with interface
+	Cache        *cache.Cache // TODO: replace with interface
 	Perms        permissions.ServiceInterface
 	OpenShift    openshift.ServiceInterface
 }

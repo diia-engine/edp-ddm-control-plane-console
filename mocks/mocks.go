@@ -1,6 +1,17 @@
 package mocks
 
 import (
+	"errors"
+	"net/url"
+	"time"
+
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/vault/api"
+	"github.com/stretchr/testify/mock"
+	"golang.org/x/oauth2"
+	"gopkg.in/yaml.v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"ddm-admin-console/app/cluster"
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/config"
@@ -18,18 +29,6 @@ import (
 	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/openshift"
-	"errors"
-	"net/url"
-	"time"
-
-	"github.com/hashicorp/go-version"
-
-	"github.com/hashicorp/vault/api"
-
-	"github.com/stretchr/testify/mock"
-	"golang.org/x/oauth2"
-	"gopkg.in/yaml.v2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func InitServices(cnf *config.Settings) *config.Services {
@@ -54,8 +53,10 @@ func InitServices(cnf *config.Settings) *config.Services {
 	codebaseVersion, _ := version.NewVersion("1.9.3.34")
 	pms.On("FilterCodebases", mock.Anything, mock.Anything, mock.Anything).Return([]codebase.WithPermissions{
 		{
-			Codebase: &codebase.Codebase{ObjectMeta: metav1.ObjectMeta{Name: "mock"},
-				Spec: codebase.CodebaseSpec{BranchToCopyInDefaultBranch: "1.9.3.34", DefaultBranch: "1.9.3.34"}, Version: codebaseVersion},
+			Codebase: &codebase.Codebase{
+				ObjectMeta: metav1.ObjectMeta{Name: "mock"},
+				Spec:       codebase.CodebaseSpec{BranchToCopyInDefaultBranch: "1.9.3.34", DefaultBranch: "1.9.3.34"}, Version: codebaseVersion,
+			},
 			CanUpdate: true,
 			CanDelete: true,
 		},
@@ -113,6 +114,9 @@ func initJenkinsService() *mockJenkins.ServiceInterface {
 
 	svc.On("GetJobStatus", mock.Anything, "mock/view/MASTER/job/MASTER-Build-mock").
 		Return("FAILURE", int64(11), nil)
+
+	svc.On("IsJobRunning", mock.Anything, "mock/view/Create-release/job/Create-release-mock").
+		Return(false, nil)
 
 	return &svc
 }
@@ -215,7 +219,7 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 		panic(err)
 	}
 
-	grService.On("GetBranchContent", cnf.ClusterCodebaseName, "master",
+	grService.On("GetFileFromBranch", cnf.ClusterCodebaseName, "master",
 		url.PathEscape(registry.ValuesLocation)).Return(string(clusterValuesBts), nil)
 
 	mockRegistryValues := registry.Values{
@@ -229,7 +233,8 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 			CrunchyPostgres: registry.CrunchyPostgres{
 				CrunchyPostgresPostgresql: registry.CrunchyPostgresPostgresql{
 					CrunchyPostgresPostgresqlParameters: registry.CrunchyPostgresPostgresqlParameters{
-						MaxConnections: 150},
+						MaxConnections: 150,
+					},
 				},
 				StorageSize: "10Gi",
 			},
@@ -249,8 +254,10 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 			CustomHost: "foo.bar.com",
 		},
 		Trembita: registry.Trembita{
-			IPList: []string{"8.8.8.8", "9.9.9.9", "10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4", "10.0.0.5",
-				"10.0.0.6", "10.0.0.7"},
+			IPList: []string{
+				"8.8.8.8", "9.9.9.9", "10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4", "10.0.0.5",
+				"10.0.0.6", "10.0.0.7",
+			},
 			Registries: map[string]registry.TrembitaRegistry{
 				"test": {
 					Mock: true,
@@ -265,8 +272,8 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 		panic(err)
 	}
 
-	grService.On("GetBranchContent", "mock", "master", url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
-	grService.On("GetBranchContent", "registry-tenant-template-tpl1", "1.0",
+	grService.On("GetFileFromBranch", "mock", "master", url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
+	grService.On("GetFileFromBranch", "registry-tenant-template-tpl1", "1.0",
 		url.PathEscape(registry.ValuesLocation)).Return(string(registryValuesBts), nil)
 	grService.On("GetMergeRequestByProject", mock.Anything, cnf.ClusterCodebaseName).Return([]gerrit.GerritMergeRequest{
 		{

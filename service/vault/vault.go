@@ -15,6 +15,7 @@ type ServiceInterface interface {
 	Read(path string) (map[string]interface{}, error)
 	WriteRaw(path string, data map[string]interface{}) (*hashiVault.Secret, error)
 	Write(path string, data map[string]interface{}) (*hashiVault.Secret, error)
+	GetPropertyFromVault(path string, property string) string
 }
 
 var ErrSecretIsNil = errors.New("secret is nil")
@@ -92,4 +93,26 @@ func (s *Service) Write(path string, data map[string]interface{}) (*hashiVault.S
 
 func (s *Service) WriteRaw(path string, data map[string]interface{}) (*hashiVault.Secret, error) {
 	return s.l.Write(path, data)
+}
+func (s *Service) GetPropertyFromVault(path string, property string) string {
+	if path == "" {
+		return ""
+	}
+
+	dataDict, err := s.Read(path)
+	if err != nil {
+		return path
+	}
+
+	d, ok := dataDict[property]
+	if !ok {
+		return ""
+	}
+
+	str, ok := d.(string)
+	if !ok {
+		return ""
+	}
+
+	return str
 }

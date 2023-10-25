@@ -1,4 +1,4 @@
-FROM golang:1.17.9-alpine
+FROM golang:1.21-alpine
 
 RUN apk update && apk add ca-certificates git openssh-client
 

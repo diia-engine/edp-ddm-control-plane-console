@@ -29,13 +29,13 @@ export default {
 
 <template>
   <Modal
-    :title="`Bидалити “${publicApiName}” з переліку?`"
-    submitBtnText="Видалити"
+    :title="$t('components.registryDeletePublicApiModal.title', { publicApiName } )"
+    :submitBtnText="$t('actions.remove')"
     :show="publicApiPopupShow"
     @close="hideModalWindow"
     @submit="submit"
     redButton
   >
-    <Typography variant="bodyText">Ви зможете надати доступ знову пізніше.</Typography>
+    <Typography variant="bodyText">{{ $t('components.registryDeletePublicApiModal.text.grantAccessAgainLater') }}</Typography>
   </Modal>
 </template>

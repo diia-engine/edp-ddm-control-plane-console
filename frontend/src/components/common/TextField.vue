@@ -16,11 +16,26 @@ interface TextFieldProps {
   allowedCharacters?: string,
   avoidTrim?: boolean,
   disabled?: boolean,
+  hideErrorMessage?: boolean,
+  multiline?: boolean,
 }
 
 const props = defineProps<TextFieldProps>();
 const $emit = defineEmits(['update:modelValue']);
-const { name, label, description, error, modelValue, required, placeholder, rootClass, allowedCharacters, avoidTrim, disabled } = toRefs(props);
+const {
+  name,
+  label,
+  description,
+  error,
+  modelValue,
+  required,
+  placeholder,
+  rootClass,
+  allowedCharacters,
+  avoidTrim,
+  multiline,
+  disabled,
+} = toRefs(props);
 
 watch(modelValue, (value) => {
   const charactersRegexp = allowedCharacters?.value;
@@ -33,13 +48,19 @@ watch(modelValue, (value) => {
   }
 });
 
+const prepareValue = (value: number | string, type: string) => {
+  if (type !== 'number') {
+    return value;
+  }
+  return value === '' ? null : Number(value);
+};
+
 const onChange = (value: any, type: string) => {
   let val = value;
   if (!avoidTrim.value) {
     val = value.trim();
   }
-  val = type === 'number' ? +val : val;
-  $emit('update:modelValue', val);
+  $emit('update:modelValue', prepareValue(val, type));
 };
 </script>
 <script lang="ts">
@@ -50,10 +71,11 @@ export default {
 
 <template>
   <div class="form-input-group" :class="[ error ? 'error' : '', rootClass ? rootClass : '']">
-    <label :for="name">
+    <label :for="name" v-if="label">
       {{ label }} <b v-if="required" class="red-star">*</b>
     </label>
-    <input
+    <textarea
+      v-if="multiline"
       :disabled="disabled"
       :name="name"
       :aria-label="name"
@@ -62,7 +84,17 @@ export default {
       :value="modelValue ?? value"
       @input="onChange(($event.target as any).value, $attrs.type as string)"
     />
-    <Typography v-if="error" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error) }}</Typography>
+    <input
+      v-else
+      :disabled="disabled"
+      :name="name"
+      :aria-label="name"
+      :placeholder="placeholder"
+      v-bind="$attrs"
+      :value="modelValue ?? value"
+      @input="onChange(($event.target as any).value, $attrs.type as string)"
+    />
+    <Typography v-if="error && !hideErrorMessage" class="form-input-group-error-message" variant="small">{{ getErrorMessage(error) }}</Typography>
     <Typography v-if="description" class="form-input-group-error-description" variant="small">{{ description }}</Typography>
     <slot></slot>
   </div>

@@ -116,15 +116,15 @@ function onSubmit() {
 </script>
 
 <template>
-  <h2>Розклад резервного копіювання</h2>
+  <h2>{{ $t('domains.cluster.backup.title') }}</h2>
   <form @submit.prevent="onSubmit" id="backup-schedule-form" class="registry-create-form wizard-form">
     <h3>Nexus</h3>
     <div class="form-group">
       <TextField
-        label="Розклад"
+        :label="$t('domains.cluster.backup.fields.nexusSchedule.label')"
         name="nexus-schedule"
         placeholder="0 10 * * *"
-        description="Використовується Cron-формат."
+        :description="$t('domains.cluster.backup.fields.nexusSchedule.description')"
         v-model="NexusSchedule"
         :error="beginValidation ? errors.NexusSchedule : ''"
         required
@@ -133,10 +133,10 @@ function onSubmit() {
     </div>
     <div class="form-group">
       <TextField
-        label="Час зберігання (днів)"
+        :label="$t('domains.cluster.backup.fields.nexusTime.label')"
         name="nexus-expires-in-days"
         placeholder="5"
-        description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+        :description="$t('domains.cluster.backup.fields.nexusTime.description')"
         v-model="NexusExpiresInDays"
         :error="beginValidation ? errors.NexusExpiresInDays : ''"
         required
@@ -147,10 +147,10 @@ function onSubmit() {
     <h3>Control Plane</h3>
     <div class="form-group">
       <TextField
-        label="Розклад"
+        :label="$t('domains.cluster.backup.fields.controlPlaneSchedule.label')"
         name="control-plane-schedule"
         placeholder="0 10 * * *"
-        description="Використовується Cron-формат."
+        :description="$t('domains.cluster.backup.fields.controlPlaneSchedule.description')"
         v-model="ControlPlaneSchedule"
         :error="beginValidation ? errors.ControlPlaneSchedule : ''"
         required
@@ -159,10 +159,10 @@ function onSubmit() {
     </div>
     <div class="form-group">
       <TextField
-        label="Час зберігання (днів)"
+        :label="$t('domains.cluster.backup.fields.controlPlaneTime.label')"
         name="control-plane-expires-in-days"
         placeholder="5"
-        description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+        :description="$t('domains.cluster.backup.fields.controlPlaneTime.description')"
         v-model="ControlPlaneExpiresInDays"
         :error="beginValidation ? errors.ControlPlaneExpiresInDays : ''"
         required
@@ -173,10 +173,10 @@ function onSubmit() {
     <h3>User Management</h3>
     <div class="form-group">
       <TextField
-        label="Розклад"
+        :label="$t('domains.cluster.backup.fields.managementSchedule.label')"
         name="user-management-schedule"
         placeholder="0 10 * * *"
-        description="Використовується Cron-формат."
+        :description="$t('domains.cluster.backup.fields.managementSchedule.description')"
         v-model="UserManagementSchedule"
         :error="beginValidation ? errors.UserManagementSchedule : ''"
         required
@@ -185,10 +185,10 @@ function onSubmit() {
     </div>
     <div class="form-group">
       <TextField
-        label="Час зберігання (днів)"
+        :label="$t('domains.cluster.backup.fields.managementTime.label')"
         name="user-management-expires-in-days"
         placeholder="5"
-        description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+        :description="$t('domains.cluster.backup.fields.managementTime.description')"
         v-model="UserManagementExpiresInDays"
         :error="beginValidation ? errors.UserManagementExpiresInDays : ''"
         required
@@ -199,10 +199,10 @@ function onSubmit() {
     <h3>Monitoring</h3>
     <div class="form-group">
       <TextField
-        label="Розклад"
+        :label="$t('domains.cluster.backup.fields.monitoringSchedule.label')"
         name="monitoring-schedule"
         placeholder="0 10 * * *"
-        description="Використовується Cron-формат."
+        :description="$t('domains.cluster.backup.fields.monitoringSchedule.description')"
         v-model="MonitoringSchedule"
         :error="beginValidation ? errors.MonitoringSchedule : ''"
         required
@@ -211,10 +211,10 @@ function onSubmit() {
     </div>
     <div class="form-group">
       <TextField
-        label="Час зберігання (днів)"
+        :label="$t('domains.cluster.backup.fields.monitoringTime.label')"
         name="monitoring-expires-in-days"
         placeholder="5"
-        description="Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+        :description="$t('domains.cluster.backup.fields.monitoringTime.description')"
         v-model="MonitoringExpiresInDays"
         :error="beginValidation ? errors.MonitoringExpiresInDays : ''"
         required
@@ -223,7 +223,9 @@ function onSubmit() {
     </div>
 
     <div class="rc-form-group">
-      <button type="submit" name="submit" onclick="window.localStorage.setItem('mr-scroll', 'true');">Підтвердити</button>
+      <button type="submit" name="submit" onclick="window.localStorage.setItem('mr-scroll', 'true');">
+        {{ $t('actions.confirm') }}
+      </button>
     </div>
   </form>
 </template>

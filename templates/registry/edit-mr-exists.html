@@ -8,16 +8,16 @@
                 <a href="/admin/cluster/management" onclick="window.history.back();" class="registry-add">
             {{end}}
                 <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
-                <span>НАЗАД</span>
+                <span style="text-transform: uppercase;">{{ i18n "components.layout.actions.back" }}</span>
             </a>
         </div>
 
         {{if .registryName}}
-        <h1>Редагувати реєстр "{{.registryName}}"</h1>
-        <div class="registry-description error">Реєстр має не підтверджені запити на оновлення.</div>
+        <h1>{{ i18n "pages.editRegistryMRExist.text.registryTitle" }} "{{.registryName}}"</h1>
+        <div class="registry-description error">{{ i18n "pages.editRegistryMRExist.text.registryMR" }}</div>
         {{else}}
-            <h1>Налаштування платформи</h1>
-            <div class="registry-description error">Платформа має не підтверджені запити на оновлення.</div>
+            <h1>{{ i18n "pages.editRegistryMRExist.text.platformTitle" }}</h1>
+            <div class="registry-description error">{{ i18n "pages.editRegistryMRExist.text.platformMR" }}</div>
         {{end}}
     </div>
 {{ end }}

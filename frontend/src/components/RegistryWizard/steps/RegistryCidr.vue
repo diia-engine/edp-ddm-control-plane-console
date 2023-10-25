@@ -63,10 +63,10 @@ export default defineComponent({
 </script>
 
 <template>
-  <h2>Перелік дозволених CIDR</h2>
-  <p>Ці налаштування є необов’язковими.</p>
+  <h2>{{ $t('components.registryCidr.title') }}</h2>
+  <p>{{ $t('components.registryCidr.text.optionalSettings') }}</p>
   <div class="rc-form-group">
-      <label for="admins">CIDR для портала чиновника</label>
+      <label for="admins">{{ $t('components.registryCidr.text.cidrIDRForOfficialPortal') }}</label>
       <input type="checkbox" style="display: none;" v-model="cidrChanged" name="cidr-changed" />
 
       <input type="hidden" id="officer-cidr" name="officer-cidr" :value="JSON.stringify(officerCIDR)" />
@@ -82,7 +82,7 @@ export default defineComponent({
   </div>
 
   <div class="rc-form-group">
-      <label for="admins">CIDR для портала громадянина</label>
+      <label for="admins">{{ $t('components.registryCidr.text.cidrIForCitizenPortal') }}</label>
       <input type="hidden" id="citizen-cidr" name="citizen-cidr" :value="JSON.stringify(citizenCIDR)" />
       <div class="advanced-admins">
           <div v-cloak v-for="c in citizenCIDR" class="child-admin" v-bind:key="c">
@@ -96,7 +96,7 @@ export default defineComponent({
   </div>
 
   <div class="rc-form-group">
-      <label for="admins">CIDR для адміністративних компонент</label>
+      <label for="admins">{{ $t('components.registryCidr.text.cidrIForAdminComponent') }}</label>
       <input type="hidden" id="admin-cidr" name="admin-cidr" :value="JSON.stringify(adminCIDR)" />
       <div class="advanced-admins">
           <div v-cloak v-for="c in adminCIDR" class="child-admin" v-bind:key="c">
@@ -111,8 +111,8 @@ export default defineComponent({
 
   <cidr-modal
       v-model:cidr-popup-show="cidrPopupShow"
-      title="Додати CIDR"
-      sub-title="IP-адреси та маски"
+      :title="$t('components.registryCidr.text.addCIDR')"
+      :sub-title="$t('components.registryCidr.text.addressesAndMasks')"
       :mask-allowed="true"
      @cidrAdded="onCidrAdded"
   />

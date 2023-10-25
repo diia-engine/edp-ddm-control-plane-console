@@ -43,24 +43,26 @@ export default {
   <div class="popup-backdrop visible" v-cloak v-if="cidrPopupShow"></div>
   <div class="popup-window admin-window visible" v-cloak v-if="cidrPopupShow">
     <div class="popup-header">
-      <p>Додати CIDR</p>
+      <p>{{ $t('domains.cluster.clusterCidrModal.text.addCIDR') }}</p>
       <a href="#" @click.stop.prevent="hideCIDRForm" class="popup-close hide-popup">
         <img alt="close popup window" src="@/assets/img/close.png" />
       </a>
     </div>
     <form @submit.prevent="submit" id="cidr-form" method="post" action="">
       <div class="popup-body">
-        <p class="popup-error" v-cloak v-if="cidrFormatError">Перевірте формат IP-адреси</p>
+        <p class="popup-error" v-cloak v-if="cidrFormatError">{{ $t('domains.cluster.clusterCidrModal.text.checkIPFormat') }}</p>
         <div class="rc-form-group">
-          <label for="cidr-value">IP-адреси та маски</label>
+          <label for="cidr-value">{{ $t('domains.cluster.clusterCidrModal.text.ipAddressesAndMasks') }}</label>
           <input id="cidr-value" type="text" v-model="value" @input="updateValue" />
-          <p>Допустимі символи "0-9", "/", ".". Приклад: 172.16.0.0/12.</p>
+          <p>{{ $t('domains.cluster.clusterCidrModal.text.charactersForIPDescription') }}</p>
         </div>
       </div>
       <div class="popup-footer active">
-        <a href="#" id="cidr-cancel" class="hide-popup" @click="hideCIDRForm">відмінити</a>
+        <a href="#" id="cidr-cancel" class="hide-popup" @click="hideCIDRForm">{{ $t('actions.cancel') }}</a>
         <button value="submit" name="cidr-apply" type="submit"
-                :disabled="disabled && !cidrFormatError" onclick="window.localStorage.setItem('mr-scroll', 'true');">Підтвердити</button>
+                :disabled="disabled && !cidrFormatError" onclick="window.localStorage.setItem('mr-scroll', 'true');">
+          {{ $t('actions.confirm') }}
+        </button>
       </div>
     </form>
   </div>

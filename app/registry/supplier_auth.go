@@ -19,8 +19,8 @@ const (
 	emptyClientSecret         = ""
 )
 
-func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+func (a *App) prepareSupplierAuthConfig(_ *gin.Context, r *registry, values *Values,
+	secrets map[string]map[string]interface{}, _ *[]string) (bool, error) {
 
 	if r.SupAuthBrowserFlow == "" {
 		return false, nil
@@ -47,10 +47,11 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 		values.SignWidget.URL = r.SupAuthURL
 	} else if r.SupAuthBrowserFlow == supAuthBrowserFlowIdGovUa {
 		if !valuesChanged {
-			valuesChanged = values.Keycloak.IdentityProviders.IDGovUA.URL != r.SupAuthURL
+			valuesChanged = values.Keycloak.IdentityProviders.IDGovUA.URL != r.SupAuthURL || values.Keycloak.IdentityProviders.IDGovUA.KeyName != r.SupAuthKeyName
 		}
 
 		values.Keycloak.IdentityProviders.IDGovUA.URL = r.SupAuthURL
+		values.Keycloak.IdentityProviders.IDGovUA.KeyName = r.SupAuthKeyName
 		if r.SupAuthClientID != "" && r.SupAuthClientSecret != "" {
 			secretPath := a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", idGovUASecretPath,
 				time.Now().Format("20060201T150405Z")))
@@ -79,9 +80,14 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 
 	}
 	var RecIndividualAccessEnabledBool = r.RecIndividualAccessEnabled == "on"
+	var RecEnableSingleIdentityBool = r.RecEnableSingleIdentity == "on"
 	if values.Portals.Officer.IndividualAccessEnabled != RecIndividualAccessEnabledBool {
 		valuesChanged = true
 		values.Portals.Officer.IndividualAccessEnabled = RecIndividualAccessEnabledBool
+	}
+	if values.Portals.Officer.EnableSingleIdentity != RecEnableSingleIdentityBool {
+		valuesChanged = true
+		values.Portals.Officer.EnableSingleIdentity = RecEnableSingleIdentityBool
 	}
 
 	if !valuesChanged {

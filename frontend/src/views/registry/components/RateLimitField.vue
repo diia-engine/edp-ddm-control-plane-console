@@ -8,6 +8,7 @@ import Typography from '@/components/common/Typography.vue';
 import TextField from '@/components/common/TextField.vue';
 import IconButton from '@/components/common/IconButton.vue';
 import type { PublicApiLimits } from '@/types/registry';
+import i18n from '@/localization';
 
 interface RateLimitFieldProps {
   label: string,
@@ -35,27 +36,27 @@ const { label, name, required, modelValue, errors } = toRefs(props);
 const possibleIntervals = [
   {
     value: 'second',
-    title: 'за секунду',
+    title: i18n.global.t('domains.registry.rateLimitField.second'),
   },
   {
     value: 'minute',
-    title: 'за хвилину',
+    title: i18n.global.t('domains.registry.rateLimitField.minute'),
   },
   {
     value: 'hour',
-    title: 'за годину',
+    title: i18n.global.t('domains.registry.rateLimitField.hour'),
   },
   {
     value: 'day',
-    title: 'за добу',
+    title: i18n.global.t('domains.registry.rateLimitField.day'),
   },
   {
     value: 'month',
-    title: 'за місяць',
+    title: i18n.global.t('domains.registry.rateLimitField.month'),
   },
   {
     value: 'year',
-    title: 'за рік',
+    title: i18n.global.t('domains.registry.rateLimitField.year'),
   },
 ];
 const selectedIntervals = computed(() => possibleIntervals.filter((item) => {
@@ -86,7 +87,7 @@ const onIntervalRemove = (item: { value: string }) => {
 
 <template>
   <FormField :label="label" :name="name" :required="required" :error="errors?.common">
-    <Typography variant="bodyText">Вкажіть ліміт мінімум для одного проміжку часу:</Typography>
+    <Typography variant="bodyText">{{ $t('domains.registry.rateLimitField.specifyLimitTimePeriod') }}:</Typography>
     <FormField
       v-for="(interval, i) in selectedIntervals"
       :key="i"

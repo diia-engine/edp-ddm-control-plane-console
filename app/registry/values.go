@@ -12,6 +12,7 @@ const (
 	CrunchyPostgresIndex      = "crunchyPostgres"
 	PortalsIndex              = "portals"
 	WhiteListIPIndex          = "whiteListIP"
+	CspConnectSourcesIndex    = "connectSourceList"
 	NotificationsIndex        = "notifications"
 )
 
@@ -27,6 +28,7 @@ type Values struct {
 	DigitalDocuments DigitalDocuments          `yaml:"digitalDocuments" json:"digitalDocuments"`
 	PublicApi        []PublicAPI               `yaml:"publicApi" json:"publicApi"`
 	Griada           Griada                    `yaml:"griada" json:"griada"`
+	DigitalSignature DigitalSignature          `yaml:"digital-signature" json:"digital-signature"`
 }
 
 type Griada struct {
@@ -80,6 +82,7 @@ type OfficerPortalSettings struct {
 	CustomDNS               CustomDNS  `yaml:"customDns" json:"customDns"`
 	SignWidget              SignWidget `yaml:"signWidget" json:"signWidget"`
 	IndividualAccessEnabled bool       `yaml:"individualAccessEnabled" json:"individualAccessEnabled"`
+	EnableSingleIdentity    bool       `yaml:"singleIdentityEnabled" json:"singleIdentityEnabled"`
 }
 type CitizenPortalSettings struct {
 	CustomDNS  CustomDNS  `yaml:"customDns" json:"customDns"`
@@ -121,6 +124,7 @@ type KeycloakIdentityProvidersIDGovUA struct {
 	URL       string `yaml:"url" json:"url"`
 	SecretKey string `yaml:"secretKey" json:"secretKey"`
 	ClientID  string `yaml:"-" json:"clientId"`
+	KeyName   string `yaml:"keyName" json:"keyName"`
 }
 
 type KeycloakAuthFlows struct {
@@ -140,6 +144,7 @@ type KeycloakRegistryIdGovUaSettings struct {
 	Url          string `yaml:"url" json:"url,omitempty"`
 	ClientSecret string `yaml:"clientSecret" json:"clientSecret,omitempty"`
 	ClientId     string `yaml:"clientId" json:"clientId,omitempty"`
+	KeyName      string `yaml:"keyName" json:"keyName"`
 }
 
 type KeycloakAuthFlowsCitizenAuthFlow struct {
@@ -204,15 +209,18 @@ func (e ExternalSystem) FaStatus() string {
 }
 
 type Global struct {
-	WhiteListIP      WhiteListIP            `json:"whiteListIP" yaml:"whiteListIP"`
-	Notifications    Notifications          `json:"notifications" yaml:"notifications"`
-	RegistryBackup   RegistryBackup         `yaml:"registryBackup" json:"registryBackup"`
-	DeploymentMode   string                 `yaml:"deploymentMode" json:"deploymentMode"`
-	CrunchyPostgres  CrunchyPostgres        `yaml:"crunchyPostgres" json:"crunchyPostgres"`
-	Registry         map[string]interface{} `yaml:"registry" json:"registry"`
-	ComputeResources ComputeResources       `yaml:"computeResources" json:"computeResources"`
-	ExcludePortals   []string               `yaml:"excludePortals" json:"excludePortals"`
-	GeoServerEnabled bool                   `yaml:"geoServerEnabled" json:"geoServerEnabled"`
+	WhiteListIP       WhiteListIP            `json:"whiteListIP" yaml:"whiteListIP"`
+	Notifications     Notifications          `json:"notifications" yaml:"notifications"`
+	RegistryBackup    RegistryBackup         `yaml:"registryBackup" json:"registryBackup"`
+	DeploymentMode    string                 `yaml:"deploymentMode" json:"deploymentMode"`
+	CrunchyPostgres   CrunchyPostgres        `yaml:"crunchyPostgres" json:"crunchyPostgres"`
+	Registry          map[string]interface{} `yaml:"registry" json:"registry"`
+	ComputeResources  ComputeResources       `yaml:"computeResources" json:"computeResources"`
+	ExcludePortals    []string               `yaml:"excludePortals" json:"excludePortals"`
+	GeoServerEnabled  bool                   `yaml:"geoServerEnabled" json:"geoServerEnabled"`
+	Language          string                 `yaml:"language" json:"language"`
+	Region            string                 `yaml:"region" json:"region"`
+	CspConnectSources []string               `yaml:"connectSourceList" json:"connectSourceList"`
 }
 
 type ComputeResources struct {

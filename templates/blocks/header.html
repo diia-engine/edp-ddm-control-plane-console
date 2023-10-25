@@ -3,32 +3,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Адміністративна панель керування Платформою та реєстрами</title>
+    <title>{{ .appName }}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" type="text/css" href="/static/css/all.css" />
     <link rel="stylesheet" type="text/css" href="/static/css/jquery-ui.min.css" />
     <link rel="stylesheet" href="/static/css/index.css">
     <link rel="stylesheet" href="/assets/index.css?v={{ .buildDate }}{{if .registryVersion}}&version={{ .registryVersion }}{{end}}">
+    <link rel="icon" type="image/png" href="data:image/png;base64,{{ .logoFavicon }}">
     {{ block "css" . }}{{ end }}
     <link rel="stylesheet" href="/static/css/header_footer.css">
 </head>
 <body>
 <main>
 
-
-
 <header class="edp-header">
     <div class="logo">
-        <a href="">
-            <img src="/static/img/uk-logo.png" alt="epam">
+        <a href="" class="logo-img">
+            {{ .logoMainSVG }}
         </a>
     </div>
-    <h2>Адміністративна панель керування Платформою та реєстрами</h2>
+    <div class="logo-app-name" title="{{ .appName }}">{{ .appName }}</div>
     <div class="info-margin-right">
         {{if .username}}
             <span class="username">{{.username}}</span> |
-            <a href="/admin/logout">Вихід</a>
+            <a href="/admin/logout">{{ i18n "components.layout.actions.logout" }}</a>
         {{end}}
     </div>
 </header>
@@ -43,7 +42,7 @@
                                 <a class="nav-link pl-0" href="/admin/registry/overview">
                                     <i class="icon-dashboard"
                                        style="margin-top: 5px;background: url('/static/img/list_bullet.png') no-repeat"></i>
-                                    <span class="link-name">РЕЄСТРИ</span>
+                                    <span class="link-name">{{ i18n "components.layout.menu.registry" }}</span>
                                 </a>
                             </li>
                             {{end}}
@@ -51,7 +50,7 @@
                             <li class="nav-item {{if eq .page "cluster"}}active{{end}}" >
                                 <a class="nav-link pl-0 " href="/admin/cluster/management">
                                     <i class="icon-dashboard" style="background: url('/static/img/cluster_management.png')"></i>
-                                    <span class="link-name">КЕРУВАННЯ ПЛАТФОРМОЮ</span>
+                                    <span class="link-name">{{ i18n "components.layout.menu.platform" }}</span>
                                 </a>
                             </li>
                             {{end}}

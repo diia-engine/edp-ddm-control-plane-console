@@ -103,6 +103,13 @@ export default defineComponent({
   font-size: 16px;
   line-height: 24px;
 }
+.h2 {
+  font-family: "Oswald";
+  font-size: 18px;
+  line-height: 18px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
 .h3 {
   font-family: 'Oswald';
   font-style: normal;

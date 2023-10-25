@@ -1,18 +1,20 @@
+import i18n from "../localization";
+
 export const getStatusTitle = (status: string): string => {
     switch (`status-${status}`) {
         case "status-active":
         case "status-SUCCESS":
         case "status-ok":
-            return "Активний";
+            return i18n.global.t('domains.changes.statuses.active');
         case "status-failed":
         case "status-failure":
         case "status-FAILURE":
         case "status-ABORTED":
-            return "Помилка";
+            return i18n.global.t('domains.changes.statuses.error');
         case "status-inactive":
-            return "В обробці";
+            return i18n.global.t('domains.changes.statuses.inProgress');
         case "status-disabled":
-            return "Заблокований";
+            return i18n.global.t('domains.changes.statuses.disabled');
         default: 
             return '';
     }

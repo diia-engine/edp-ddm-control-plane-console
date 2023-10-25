@@ -29,8 +29,25 @@ export default defineComponent({
     'createAdmin',
     'changeTemplateProject',
   ],
-  inject: { templateVariables : { from: 'TEMPLATE_VARIABLES' } },
+  inject: { templateVariables : { from: 'TEMPLATE_VARIABLES' }, envVariables : { from: 'ENVIRONMENT_VARIABLES' }},
   mounted() {
+    if(this.envVariables.region === "ua") {
+      this.wizard.tabs.trembita =  {
+        title: this.$t('domains.registry.editMixin.trembita'),
+        validatorRef: 'trembitaTab',
+        visible: true,
+        disabled: true
+      };
+      this.wizard.tabs.keyVerification.validatorRef = "keyVerificationTab";
+      this.wizard.tabs.key.validatorRef = "keyDataTab";
+    }
+    this.wizard.tabs.confirmation = {
+      title: this.$t('domains.registry.editMixin.confirmation'),
+      validated: true,
+      visible: true,
+      disabled: true
+    };
+
     const childRefs = this.getChildrenRefs();
     if (childRefs.hasOwnProperty("smtpServerTypeSelected")) {
       // @ts-ignore
@@ -69,6 +86,7 @@ export default defineComponent({
     if (childRefs.hasOwnProperty("registryUpdate")) {
       this.wizard.tabs.update.visible = true;
     }
+
   },
   data() {
     return {
@@ -87,6 +105,7 @@ export default defineComponent({
       },
       requiredError: false,
       emailFormatError: false,
+      passwordFormatError: false,
       adminsLoaded: false,
       adminsError: false,
       adminExistsError: false,
@@ -103,14 +122,14 @@ export default defineComponent({
         activeTab: "general",
         tabs: {
           general: {
-            title: "Загальні",
+            title: this.$t('domains.registry.editMixin.general'),
             validated: false,
             visible: true,
             validatorRef: 'generalTab',
             disabled: false,
           },
           administrators: {
-            title: "Адміністратори",
+            title: this.$t('domains.registry.editMixin.administrators'),
             validated: false,
              requiredError: false,
             validator: this.wizardAdministratorsValidation,
@@ -118,7 +137,7 @@ export default defineComponent({
             disabled: true
           },
           mail: {
-            title: "Поштовий сервер",
+            title: this.$t('domains.registry.editMixin.mailServer'),
             validated: false,
             beginValidation: false,
             validator: this.wizardMailValidation,
@@ -126,25 +145,23 @@ export default defineComponent({
             disabled: true
           },
           key: {
-            title: "Дані про ключ",
+            title: this.$t('domains.registry.editMixin.keyInfo'),
             visible: true,
-            validatorRef: 'keyDataTab',
             disabled: true
           },
           keyVerification: {
-            title: 'Дані для перевірки підписів',
+            title: this.$t('domains.registry.editMixin.signatureVerificationInfo'),
             visible: true,
-            validatorRef: 'keyVerificationTab',
             disabled: true
           },
           parametersVirtualMachines: {
-            title: "Параметри віртуальних машин",
+            title: this.$t('domains.registry.editMixin.parametersVirtualMachines'),
             visible: true,
             validatorRef: 'parametersVirtualMachinesTab',
             disabled: true
           },
           resources: {
-            title: "Ресурси реєстру",
+            title: this.$t('domains.registry.editMixin.registryResources'),
             visible: true, 
             validatorRef: 'resourcesTab',
             disabled: true
@@ -156,54 +173,48 @@ export default defineComponent({
             validatorRef: 'dnsTab',
           },
           cidr: {
-            title: "Обмеження доступу",
+            title: this.$t('domains.registry.editMixin.accessRestrictions'),
+            validated: true,
+            visible: true,
+            disabled: true
+          },
+          csp: {
+            title: this.$t('domains.registry.editMixin.registryCSP'),
             validated: true,
             visible: true,
             disabled: true
           },
           supplierAuthentication: {
-            title: "Кабінет надавача послуг",
+            title: this.$t('domains.registry.editMixin.supplierAuthentication'),
             validatorRef: 'supplierAuthTab',
             visible: true,
             disabled: true
           },
           recipientAuthentication: {
-            title: 'Кабінет отримувача послуг',
+            title: this.$t('domains.registry.editMixin.recipientAuthentication'),
             validatorRef: 'recipientAuthTab',
             visible: true,
             disabled: true
           },
           adminAuthentication: {
-            title: 'Кабінет адміністратора регламенту',
+            title: this.$t('domains.registry.editMixin.officeAdministratorRegulations'),
             visible: true,
             disabled: true
           },
           geoDataSettings: {
-            title: 'Підсистема управління геоданими',
+            title: this.$t('domains.registry.editMixin.managementSubsystem'),
             visible: true,
             disabled: true
           },
           digitalDocuments: {
-            title: "Цифрові документи",
+            title: this.$t('domains.registry.editMixin.digitalDocuments'),
             visible: true,
             validatorRef: 'digitalDocumentsTab',
             disabled: true
           },
           backupSchedule: {
-            title: "Резервне копіювання",
+            title: this.$t('domains.registry.editMixin.backup'),
             validatorRef: 'backupScheduleTab',
-            visible: true,
-            disabled: true
-          },
-          trembita: {
-            title: "ШБО Трембіта",
-            validatorRef: 'trembitaTab',
-            visible: true,
-            disabled: true
-          },
-          confirmation: {
-            title: "Підтвердження",
-            validated: true,
             visible: true,
             disabled: true
           }
@@ -356,6 +367,7 @@ export default defineComponent({
     },
     showAdminForm() {
       this.emailFormatError = false;
+      this.passwordFormatError = false;
       this.adminExistsError = false;
       this.requiredError = false;
       this.adminPopupShow = true;
@@ -380,6 +392,7 @@ export default defineComponent({
     createAdmin() {
       this.requiredError = false;
       this.emailFormatError = false;
+      this.passwordFormatError = false;
       for (const v in this.editAdmin) {
         if (this.editAdmin[v] === "") {
           this.requiredError = true;
@@ -392,6 +405,13 @@ export default defineComponent({
         this.emailFormatError = true;
         return;
       }
+
+      if (!String(this.editAdmin.tmpPassword)
+        .match(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\S+$)[a-zA-Z0-9@#$%^&+=]{10,}$/)) {
+        this.passwordFormatError = true;
+        return;
+      }
+
       if (this.admins === null) {
         this.admins = [];
       }

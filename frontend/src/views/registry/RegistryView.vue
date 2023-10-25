@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { inject } from 'vue';
 import type { RegistryTemplateVariables } from '@/types/registry';
+import type { EnvVariables } from '@/types/common';
 import { getTypeStr, getExtStatus } from '@/utils/registry';
+import { getNamespaceMessage } from '@/localization';
 
+const envVariables = inject('ENVIRONMENT_VARIABLES') as EnvVariables;
 const variables = inject('TEMPLATE_VARIABLES') as RegistryTemplateVariables;
-
 const openMergeRequests = variables?.openMergeRequests;
 const registryVersion = variables?.registryVersion;
 const registry = variables?.registry;
@@ -31,6 +33,8 @@ const created = variables?.created;
 const gerritURL = variables?.gerritURL;
 const jenkinsURL = variables?.jenkinsURL;
 const mrAvailable = variables?.mrAvailable;
+const createReleaseAvailable = variables?.createReleaseAvailable;
+const language = variables?.values?.global?.language;
 </script>
 
 <script lang="ts">
@@ -40,6 +44,7 @@ import { getGerritURL, getImageUrl, getJenkinsURL, getStatusTitle } from '@/util
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
 import PublicApiBlock from './components/PublicApiBlock.vue';
 import { defineComponent } from 'vue';
+import { LANGUAGES } from '@/constants/registry';
 
 export default defineComponent({
     data() {
@@ -245,7 +250,7 @@ export default defineComponent({
 
             // eslint-disable-next-line no-prototype-builtins
             if (this.externalSystem.data.auth.hasOwnProperty('type') && this.externalSystem.data.auth.type === 'BASIC') {
-                this.externalSystem.usernamePlaceholder = 'Завантаження...';
+                this.externalSystem.usernamePlaceholder = this.$t('pages.registry.text.uploading');
 
                 axios.get(`/admin/registry/get-basic-username/${this.registryName}`,
                     { params: { "registry-name": this.externalSystem.registryName } })
@@ -264,11 +269,11 @@ export default defineComponent({
             let names = $(".ereg-name");
 
             if (this.internalRegistryReg) {
-                const selected = this.registrySelected;
+                const selected = this.registrySelected as unknown as boolean;
 
                 for (let i = 0; i < names.length; i++) {
                     if (($(names[i]) as any).html().trim() === selected) {
-                        this.accessGrantError = `Доступ з таким ім'ям "${selected}" вже існує. Для вирішення конфлікту імен перестворіть доступ до зовнішньої системи з іншим ім'ям, а потім надайте доступ реєстру платформи: "${selected}` as unknown as boolean;
+                        this.accessGrantError = this.$t('pages.registry.errors.accessWithThisNameExists', { selected })  as unknown as boolean;
                         e.preventDefault();
                         validationFailure = true;
                     }
@@ -279,14 +284,14 @@ export default defineComponent({
               let inputName = ($("#ex-system") as any).val().trim() as never;
 
               if (this.externalRegAvailableRegistriesNames.includes(inputName)) {
-                this.accessGrantError = `Доступ з таким ім'ям системи/або платформи "${inputName}" вже існує, оберіть інше ім'я` as unknown as boolean;
+                this.accessGrantError = this.$t('pages.registry.errors.accessWithThisNameOrPlatformExists', { inputName })  as unknown as boolean;
                 e.preventDefault();
                 validationFailure = true;
               }
 
               for (let i = 0; i < names.length; i++) {
                 if ($(names[i]).html().trim() === inputName) {
-                  this.accessGrantError = `Доступ з таким ім'ям системи/або платформи "${inputName}" вже існує, оберіть інше ім'я` as unknown as boolean;
+                  this.accessGrantError = this.$t('pages.registry.errors.accessWithThisNameOrPlatformExists', { inputName })  as unknown as boolean;
                   e.preventDefault();
                   validationFailure = true;
                 }
@@ -545,9 +550,9 @@ export default defineComponent({
         },
         getType(type: string) {
             if (type === 'platform') {
-                return "Системний";
+                return this.$t('pages.registry.text.systemic');
             }
-            return "Реєстровий";
+            return this.$t('pages.registry.text.registered');
 
         },
         getAuth(auth: any) {
@@ -605,8 +610,9 @@ export default defineComponent({
                 }
             }
 
-            if (this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
-                this.trembitaClient.data.auth['secret'] === '') {
+            if ((this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
+                this.trembitaClient.data.auth['secret'] === '') ||
+                !this.trembitaClient.registryName) {
                 e.preventDefault();
                 return;
             }
@@ -667,13 +673,13 @@ export default defineComponent({
             this.externalSystem.startValidation = true;
             this.externalSystem.urlValidationFailed = false;
 
-            if (!this.externalSystem.registryName || !this.externalSystem.data.url) {
+            if (!this.externalSystem.registryName || (!this.externalSystem.data.url && !this.externalSystem.data.mock)) {
                 e.preventDefault();
                 return;
             }
 
             // eslint-disable-next-line no-prototype-builtins
-            if (!this.isURL(this.externalSystem.data.url)) {
+            if (!this.externalSystem.data.mock && !this.isURL(this.externalSystem.data.url)) {
                 e.preventDefault();
                 this.externalSystem.urlValidationFailed = true;
                 return;
@@ -826,16 +832,16 @@ export default defineComponent({
             <input type="hidden" :value="openMergeRequests" ref="refOpenMergeRequests" />
             <div class="popup-window admin-window visible" v-cloak v-if="mergeRequest.formShow">
                 <div class="popup-header">
-                    <p>Дія недоступна</p>
+                    <p>{{ $t('pages.registry.text.actionIsNotAvailable') }}</p>
                     <a href="#" @click="hideOpenMRForm" class="popup-close hide-popup">
                         <img alt="close popup window" src="@/assets/img/close.png" />
                     </a>
                 </div>
                 <div class="popup-body">
-                    <p>Реєстр має не підтверджені запити на оновлення.</p>
+                    <p>{{ $t('pages.registry.text.registryHasRequests') }}</p>
                 </div>
                 <div class="popup-footer active">
-                    <a href="#" id="admin-cancel" class="hide-popup" @click="hideOpenMRForm">Закрити</a>
+                    <a href="#" id="admin-cancel" class="hide-popup" @click="hideOpenMRForm">{{ $t('actions.close') }}</a>
                 </div>
             </div>
         </template>
@@ -844,108 +850,113 @@ export default defineComponent({
         <div class="registry-header">
             <a href="/admin/registry/overview" onclick="window.history.back(); return false;" class="registry-add">
                 <img alt="add registry" src="@/assets/img/action-back.png" />
-                <span>НАЗАД</span>
+                <span>{{ $t('actions.back') }}</span>
             </a>
         </div>
         <div class="registry-header registry-header-view">
-            <h1>Реєстр {{ registry.metadata.name }}</h1>
+            <h1>{{ $t('pages.registry.text.registry', { name: registry.metadata.name }) }}</h1>
             <template v-if="allowedToEdit">
                 <div class="registry-view-actions">
                     <template v-if="hasUpdate">
                         <a :href="`/admin/registry/update/${registry.metadata.name}`" @click="checkForOpenMRs"
                             class="registry-add">
                             <i class="fa-solid fa-arrow-up"></i>
-                            <span>Оновити</span>
+                            <span>{{ $t('actions.refresh') }}</span>
                         </a>
                     </template>
                     <a :href="`/admin/registry/edit/${registry.metadata.name}?version=${registryVersion}`" @click="checkForOpenMRs"
                         class="registry-add">
                         <img alt="add registry" src="@/assets/img/action-edit.png" />
-                        <span>Редагувати</span>
+                        <span>{{ $t('actions.edit') }}</span>
                     </a>
                 </div>
             </template>
         </div>
         <div class="tabs">
             <div class="tab" @click="selectTab('info')" :class="{ active: isActiveTab('info') }">
-                Інформація про реєстр
+                {{ $t('pages.registry.tabs.infoAboutRegistry') }}
             </div>
             <div class="tab" @click="selectTab('links')" :class="{ active: isActiveTab('links') }">
-                Швидкі посилання
+                {{ $t('pages.registry.tabs.quickLinks') }}
             </div>
         </div>
         <div class="box" v-show="isActiveTab('info')">
             <div class="rg-info-block">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.general }"
                     @click="accordion.general = !accordion.general">
-                    <span>Загальна інформація</span>
+                    <span>{{ $t('pages.registry.tabs.generalInfo') }}</span>
 
                     <img v-if="accordion.general" src="@/assets/img/action-toggle.png" alt="toggle block" />
                     <img v-if="!accordion.general" src="@/assets/img/down.png" alt="toggle block" />
                 </div>
                 <div class="rg-info-block-body" v-show="accordion.general">
                     <div class="rg-info-line-horizontal">
-                        <span>Назва</span>
+                        <span>{{ $t('pages.registry.text.name') }}</span>
                         <span>{{ registry.metadata.name }}</span>
                     </div>
                     <div v-if="registry.spec.description" class="rg-info-line-horizontal">
-                        <span>Опис</span>
+                        <span>{{ $t('pages.registry.text.description') }}</span>
                         <span>{{ registry.spec.description }}</span>
                     </div>
                     <div v-if="admins" class="rg-info-line-horizontal">
-                        <span>Адміністратори</span>
+                        <span>{{ $t('pages.registry.text.administrators') }}</span>
                         <span class="cidr-values">
                             <div class="view-cidr" v-for="$adm in admins" :key="$adm.email">{{ $adm.email }}</div>
                         </span>
                     </div>
                     <div class="rg-info-line-horizontal">
-                        <span>Час створення</span>
+                        <span>{{ $t('pages.registry.text.createTime') }}</span>
                         <span>{{ created }}</span>
                     </div>
                     <div class="rg-info-line-horizontal" v-if="citizenPortalHost">
-                        <span>DNS ім’я для портала громадянина</span>
+                        <span>{{ $t('pages.registry.text.citizenPortalHost') }}</span>
                         <span>{{ citizenPortalHost }}</span>
                     </div>
 
                     <div class="rg-info-line-horizontal" v-if="officerPortalHost">
-                        <span>DNS ім’я для портала чиновника</span>
+                        <span>{{ $t('pages.registry.text.officerPortalHost') }}</span>
                         <span>{{ officerPortalHost }}</span>
                     </div>
                     <div class="rg-info-line-horizontal" v-if="smtpType">
-                        <span>Поштовий сервер</span>
+                        <span>{{ $t('pages.registry.text.mailServer') }}</span>
                         <span v-if="smtpType == 'external'">
-                            Зовнішній поштовий сервер
+                            {{ $t('pages.registry.text.externalMailServer') }}
                         </span>
                         <span v-else>
-                            Платформенний поштовий сервер
+                            {{ $t('pages.registry.text.platformMailServer') }}
                         </span>
-
+                    </div>
+                    <div class="rg-info-line-horizontal" v-if="language">
+                      <span>{{ $t('pages.registry.text.language') }}</span>
+                        <span>
+                          {{ LANGUAGES[language].name }}
+                        </span>
                     </div>
 
                     <div class="rg-info-line-horizontal" v-if="officerCIDR">
-                        <span>CIDR для портала чиновника</span>
+                        <span>{{ $t('pages.registry.text.officerCIDR') }}</span>
                         <span class="cidr-values">
                             <div class="view-cidr" v-for="cidr in officerCIDR" :key="cidr">{{ cidr }}</div>
                         </span>
                     </div>
                     <div class="rg-info-line-horizontal" v-if="citizenCIDR">
-                        <span>CIDR для портала громадянина</span>
+                        <span>{{ $t('pages.registry.text.citizenCIDR') }}</span>
                         <span class="cidr-values">
                             <div class="view-cidr" v-for="cidr in citizenCIDR" :key="cidr">{{ cidr }}</div>
                         </span>
                     </div>
                     <div class="rg-info-line-horizontal" v-if="adminCIDR">
-                        <span>CIDR для адміністративних компонент</span>
+                        <span>{{ $t('pages.registry.text.adminCIDR') }}</span>
                         <span class="cidr-values">
                             <div class="view-cidr" v-for="cidr in adminCIDR" :key="cidr">{{ cidr }}</div>
                         </span>
                     </div>
                 </div>
             </div>
-            <div class="rg-info-block">
+            <div v-if="envVariables.region === 'ua'" class="rg-info-block">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.trembitaClient }"
                     @click="accordion.trembitaClient = !accordion.trembitaClient">
-                    <span>налаштування взаємодії з реєстрами через Трембіту</span>
+                    <span>{{ $t('pages.registry.text.settingInteractionTrembita') }}</span>
                   <img v-if="accordion.trembitaClient" src="@/assets/img/action-toggle.png" alt="toggle block" />
                   <img v-if="!accordion.trembitaClient" src="@/assets/img/down.png" alt="toggle block" />
 
@@ -954,19 +965,19 @@ export default defineComponent({
                     <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
-                                <th>Налаштовано</th>
-                                <th>Назва</th>
-                                <th>Рівень</th>
-                                <th>Протокол інтеграції</th>
-                                <th>Тип автентифікації</th>
+                                <th>{{ $t('pages.registry.table.configured') }}</th>
+                                <th>{{ $t('pages.registry.table.name') }}</th>
+                                <th>{{ $t('pages.registry.table.level') }}</th>
+                                <th>{{ $t('pages.registry.table.integrationProtocol') }}</th>
+                                <th>{{ $t('pages.registry.table.authenticationType') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="($al, $index) in values.trembita.registries" :key="$index">
                                 <td>
-                                    <img v-if="$al.url" alt="status ok" src="@/assets/img/status-ok.png" title="Інтеграція налаштована" />
-                                    <img v-if="!$al.url" alt="status minus" src="@/assets/img/minus.png" title="Інтеграція не налаштована" />
+                                    <img v-if="$al.url" alt="status ok" src="@/assets/img/status-ok.png" :title="$t('pages.registry.text.integrationIsConfigured')" />
+                                    <img v-if="!$al.url" alt="status minus" src="@/assets/img/minus.png" :title="$t('pages.registry.text.integrationIsNotConfigured')" />
                                 </td>
                                 <td>{{ $index }}</td>
                                 <td>{{ getType($al.type) }}</td>
@@ -974,10 +985,10 @@ export default defineComponent({
                                 <td>{{ getAuth($al.auth) }}</td>
                                 <td>
                                     <div class="trembita-actions">
-                                        <a title="Редагувати" class="icon-action-pencil" href="#" @click="showTrembitaClientForm(String($index), $event)">
+                                        <a :title="$t('actions.edit')" class="icon-action-pencil" href="#" @click="showTrembitaClientForm(String($index), $event)">
                                             <img alt="pencil" src="@/assets/img/pencil.png" />
                                         </a>
-                                        <a class="icon-action-trash" :title="`${$al.type == 'platform' ? 'Система недоступна для видалення' : 'Видалити'}`"
+                                        <a class="icon-action-trash" :title="`${$al.type == 'platform' ? $t('pages.registry.text.systemNotAvailableForRemoval') : $t('actions.remove')}`"
                                             href="#" @click="showDeleteTrembitaClientForm($index, $al.type, $event)">
                                             <img alt="trash" v-if="$al.type != 'platform'" src="@/assets/img/trash.png" />
                                             <img alt="trash" v-if="$al.type == 'platform'" src="@/assets/img/trash-inactive.png" />
@@ -991,8 +1002,8 @@ export default defineComponent({
                     </table>
                     <div class="link-grant-access">
                         <a class="" href="#" @click="showTrembitaClientForm('', $event)">
-                            <img alt="Додати реєстр" src="@/assets/img/plus.png" />
-                            <span>Додати реєстр</span>
+                            <img :alt="$t('pages.registry.actions.addRegister')" src="@/assets/img/plus.png" />
+                            <span>{{ $t('pages.registry.actions.addRegister') }}</span>
                         </a>
                     </div>
 
@@ -1002,8 +1013,8 @@ export default defineComponent({
                     <div id="trembita-client-popup" class="popup-window admin-window visible scrollable-popup" v-cloak
                         v-if="trembitaClient.formShow">
                         <div class="popup-header">
-                            <p v-if="!trembitaClient.registryCreation">Налаштувати взаємодію з реєстром через Трембіту</p>
-                            <p v-if="trembitaClient.registryCreation">Додати взаємодію з реєстром через Трембіту</p>
+                            <p v-if="!trembitaClient.registryCreation">{{ $t('pages.registry.text.configureTrembitaRegistry') }}</p>
+                            <p v-if="trembitaClient.registryCreation">{{ $t('pages.registry.text.addTrembitaRegistry') }}</p>
 
                             <a href="#" @click="hideTrembitaClientForm" class="popup-close hide-popup">
                                 <img alt="close popup window" src="@/assets/img/close.png" />
@@ -1012,22 +1023,22 @@ export default defineComponent({
                         <form @submit="setTrembitaClientForm" id="trembita-client-form" method="post"
                             :action="trembitaClientFormAction()">
                             <div class="popup-body">
-                                <div class="popup-body-header">Налаштування ШБО Трембіти</div>
+                                <div class="popup-body-header">{{ $t('pages.registry.text.settingsSHOTrembita') }}</div>
 
                                 <div class="rc-form-group"
                                     :class="{ 'error': trembitaClient.data.protocolVersion == '' && trembitaClient.startValidation }">
-                                    <label>Версія протоколу</label>
+                                    <label>{{ $t('pages.registry.text.protocolVersion') }}</label>
                                     <input aria-label="" name="trembita-client-protocol-version" type="text"
                                         v-model="trembitaClient.data.protocolVersion" />
                                     <span
                                         v-if="trembitaClient.data.protocolVersion == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
                                 <div v-if="mockAvailable()" class="rc-form-group">
                                     <label class="form-checkbox-container">
-                                        Використати мок зовнішньої інтеграції
+                                        {{ $t('pages.registry.text.useExternalIntegrationMock') }}
                                         <input @change="mockChanged('trembitaClient')" v-model="trembitaClient.data.mock"
                                             type="checkbox">
                                         <span class="form-checkbox-checkmark"></span>
@@ -1036,27 +1047,28 @@ export default defineComponent({
 
                                 <div v-if="!trembitaClient.data.mock" class="rc-form-group"
                                     :class="{ 'error': (trembitaClient.data.url == '' || trembitaClient.urlValidationFailed) && trembitaClient.startValidation }">
-                                    <label>Адреса ШБО Трембіти</label>
+                                    <label>{{ $t('pages.registry.text.addressTrembita') }}</label>
                                     <input aria-label="" type="text" name="trembita-client-url"
                                         v-model="trembitaClient.data.url" />
-                                    <p>URL, повинен починатись з http:// або https://</p>
+                                    <p>{{ $t('pages.registry.errors.urlValidationDescription') }}</p>
                                     <span v-if="trembitaClient.data.url == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                     <span
-                                        v-if="trembitaClient.urlValidationFailed && trembitaClient.startValidation">Невірний
-                                        формат</span>
+                                        v-if="trembitaClient.urlValidationFailed && trembitaClient.startValidation">
+                                        {{ $t('pages.registry.errors.invalidFormat') }}
+                                    </span>
                                 </div>
 
-                                <div class="popup-body-header">Налаштування клієнта Трембіти</div>
+                                <div class="popup-body-header">{{ $t('pages.registry.text.settingTrembitaClient') }}</div>
 
                                 <div class="rc-form-group"
                                     :class="{ 'error': trembitaClient.data.userId == '' && trembitaClient.startValidation }">
-                                    <label>Ідентифікатор клієнту</label>
+                                    <label>{{ $t('pages.registry.text.clientID') }}</label>
                                     <input aria-label="" type="text" name="trembita-client-user-id"
                                         v-model="trembitaClient.data.userId" />
                                     <span v-if="trembitaClient.data.userId == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1067,7 +1079,7 @@ export default defineComponent({
                                         v-model="trembitaClient.data.client.xRoadInstance" />
                                     <span
                                         v-if="trembitaClient.data.client.xRoadInstance == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1078,7 +1090,7 @@ export default defineComponent({
                                         v-model="trembitaClient.data.client.memberClass" />
                                     <span
                                         v-if="trembitaClient.data.client.memberClass == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1089,7 +1101,7 @@ export default defineComponent({
                                         v-model="trembitaClient.data.client.memberCode" />
                                     <span
                                         v-if="trembitaClient.data.client.memberCode == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1100,35 +1112,36 @@ export default defineComponent({
                                         v-model="trembitaClient.data.client.subsystemCode" />
                                     <span
                                         v-if="trembitaClient.data.client.subsystemCode == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
-                                <div class="popup-body-header">Налаштування сервісу для інтеграції</div>
+                                <div class="popup-body-header">{{ $t('pages.registry.text.settingServiceIntegration') }}</div>
 
                                 <div class="rc-form-group"
                                     :class="{ 'error': (trembitaClient.registryName == '' || trembitaClient.registryNameExists) && trembitaClient.startValidation }">
 
-                                    <label>Службова назва реєстру</label>
+                                    <label>{{ $t('pages.registry.text.serviceNameRegistry') }}</label>
                                     <input aria-label="" type="text" name="trembita-client-regitry-name"
                                         :readonly="!trembitaClient.registryCreation"
                                         v-model="trembitaClient.registryName" />
-                                    <p v-if="trembitaClient.registryCreation">Назва не може бути змінена після додавання
-                                        інтеграції!</p>
+                                    <p v-if="trembitaClient.registryCreation">
+                                        {{ $t('pages.registry.errors.nameChangedAddingIntegration') }}
+                                    </p>
                                     <span v-if="trembitaClient.registryName == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                     <span v-if="trembitaClient.registryNameExists">
-                                        Зовнішня система з таким ім'ям вже існує
+                                        {{ $t('pages.registry.errors.externalSystemAlreadyExists') }}
                                     </span>
                                 </div>
 
 
                                 <div class="rc-form-group">
-                                    <label>Протокол інтеграції</label>
+                                    <label>{{ $t('pages.registry.text.integrationProtocol') }}</label>
                                     <input aria-label="" type="text" readonly name="trembita-client-protocol"
                                         v-model="trembitaClient.data.protocol" />
-                                    <p>Наразі підтримується лише SOAP-протокол інтеграції.</p>
+                                    <p>{{ $t('pages.registry.text.soapIntegrationProtocolSupported') }}</p>
                                 </div>
 
                                 <div class="rc-form-group"
@@ -1138,7 +1151,7 @@ export default defineComponent({
                                         v-model="trembitaClient.data.service.xRoadInstance" />
                                     <span
                                         v-if="trembitaClient.data.service.xRoadInstance == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1149,7 +1162,7 @@ export default defineComponent({
                                         v-model="trembitaClient.data.service.memberClass" />
                                     <span
                                         v-if="trembitaClient.data.service.memberClass == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1160,7 +1173,7 @@ export default defineComponent({
                                         v-model="trembitaClient.data.service.memberCode" />
                                     <span
                                         v-if="trembitaClient.data.service.memberCode == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1171,7 +1184,7 @@ export default defineComponent({
                                         v-model="trembitaClient.data.service.subsystemCode" />
                                     <span
                                         v-if="trembitaClient.data.service.subsystemCode == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1179,19 +1192,19 @@ export default defineComponent({
                                     <label>Service Code</label>
                                     <input aria-label="" type="text" name="trembita-service-service-code"
                                         v-model="trembitaClient.data.service.serviceCode" />
-                                    <p>Необов'язковий параметр</p>
+                                    <p>{{ $t('pages.registry.text.optionalParameter') }}</p>
                                 </div>
 
                                 <div v-if="!isSystemRegistry()" class="rc-form-group">
                                     <label>Service Version</label>
                                     <input aria-label="" type="text" name="trembita-service-service-version"
                                         v-model="trembitaClient.data.service.serviceVersion" />
-                                    <p>Необов'язковий параметр</p>
+                                    <p>{{ $t('pages.registry.text.optionalParameter') }}</p>
                                 </div>
 
 
                                 <div class="rc-form-group">
-                                    <label>Вкажіть тип автентифікації</label>
+                                    <label>{{ $t('pages.registry.text.specifyAuthenticationType') }}</label>
                                     <select aria-label="" name="trembita-service-auth-type"
                                         v-model="trembitaClient.data.auth.type" @change="changeTrembitaClientAuthType">
                                         <option v-if="trembitaClient.registryName == 'idp-exchange-service-registry' ||
@@ -1209,21 +1222,21 @@ export default defineComponent({
 
                                 <div class="rc-form-group" v-if="trembitaClient.data.auth.type == 'AUTH_TOKEN'"
                                     :class="{ 'error': trembitaClient.data.auth.secret == '' && trembitaClient.startValidation }">
-                                    <label>Вкажіть токен авторизації</label>
+                                    <label>{{ $t('pages.registry.text.specifyAuthorizationToken') }}</label>
                                     <input aria-label="" name="trembita-service-auth-secret"
                                         v-model="trembitaClient.data.auth.secret" :type="trembitaClient.tokenInputType"
                                         @focus="trembitaFormSecretFocus" />
                                     <span v-if="trembitaClient.data.auth.secret == '' && trembitaClient.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
                                 <div class="popup-footer active">
                                     <a href="#" id="admin-cancel" class="hide-popup"
-                                        @click="hideTrembitaClientForm">відмінити</a>
+                                        @click="hideTrembitaClientForm">{{ $t('actions.cancel') }}</a>
                                     <button value="submit" class="submit-green" name="admin-apply" type="submit">
-                                        <span v-if="!trembitaClient.registryCreation">Підтвердити</span>
-                                        <span v-if="trembitaClient.registryCreation">Додати</span>
+                                        <span v-if="!trembitaClient.registryCreation">{{ $t('actions.confirm') }}</span>
+                                        <span v-if="trembitaClient.registryCreation">{{ $t('actions.add') }}</span>
                                     </button>
 
                                 </div>
@@ -1232,17 +1245,17 @@ export default defineComponent({
                     </div>
                     <div class="popup-window admin-window visible" v-cloak v-if="trembitaClient.deleteFormShow">
                         <div class="popup-header">
-                            <p>Видалити "{{ trembitaClient.registryName }}"?</p>
+                            <p>{{ $t('pages.registry.text.deleteRegistryName', { registryName: trembitaClient.registryName }) }}</p>
                             <a href="#" @click="hideDeleteForm" class="popup-close hide-popup">
                                 <img alt="close popup window" src="@/assets/img/close.png" />
                             </a>
                         </div>
                         <div class="popup-body">
-                            <p>Видалити усі налаштування інтеграціїї з реєстром?</p>
+                            <p>{{ $t('pages.registry.text.removeRegistryIntegrationSettings') }}</p>
                         </div>
                         <div class="popup-footer active">
-                            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteForm">Відмінити</a>
-                            <a class="href-red" :href="deleteTrembitaClientLink()">Видалити</a>
+                            <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteForm">{{ $t('actions.cancel') }}</a>
+                            <a class="href-red" :href="deleteTrembitaClientLink()">{{ $t('actions.remove') }}</a>
                         </div>
                     </div>
 
@@ -1255,7 +1268,7 @@ export default defineComponent({
             <div class="rg-info-block">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.externalSystem }"
                     @click="accordion.externalSystem = !accordion.externalSystem">
-                    <span>налаштування взаємодії з іншими системами</span>
+                    <span>{{ $t('pages.registry.text.settingsInteractionWithOtherSystems') }}</span>
                   <img v-if="accordion.externalSystem" src="@/assets/img/action-toggle.png" alt="toggle block" />
                   <img v-if="!accordion.externalSystem" src="@/assets/img/down.png" alt="toggle block" />
 
@@ -1264,19 +1277,19 @@ export default defineComponent({
                     <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
-                                <th>Налаштовано</th>
-                                <th>Назва</th>
-                                <th>Рівень</th>
-                                <th>Протокол інтеграції</th>
-                                <th>Тип автентифікації</th>
+                                <th>{{ $t('pages.registry.table.configured') }}</th>
+                                <th>{{ $t('pages.registry.table.name') }}</th>
+                                <th>{{ $t('pages.registry.table.level') }}</th>
+                                <th>{{ $t('pages.registry.table.integrationProtocol') }}</th>
+                                <th>{{ $t('pages.registry.table.authenticationType') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="($al, $index) in values.externalSystems" :key="$index">
                                 <td>
-                                  <img v-if="$al.url" alt="status ok" src="@/assets/img/status-ok.png" title="Інтеграція налаштована" />
-                                  <img v-if="!$al.url" alt="status minus" src="@/assets/img/minus.png" title="Інтеграція не налаштована" />
+                                  <img v-if="$al.url" alt="status ok" src="@/assets/img/status-ok.png" :title="$t('pages.registry.text.integrationIsConfigured')" />
+                                  <img v-if="!$al.url" alt="status minus" src="@/assets/img/minus.png" :title="$t('pages.registry.text.integrationIsNotConfigured')" />
                                 </td>
                                 <td>{{ $index }}</td>
                                 <td>{{ getType($al.type) }}</td>
@@ -1284,10 +1297,10 @@ export default defineComponent({
                                 <td>{{ getAuth($al.auth) }}</td>
                                 <td>
                                     <div class="trembita-actions">
-                                        <a href="#" title="Редагувати" @click="showExternalSystemForm(String($index), $event)">
+                                        <a href="#" :title="$t('actions.edit')" @click="showExternalSystemForm(String($index), $event)">
                                           <img alt="pencil" src="@/assets/img/pencil.png" />
                                         </a>
-                                        <a :title="`${$al.type == 'platform' ? 'Система недоступна для видалення' : 'Видалити'}`"
+                                        <a :title="`${$al.type == 'platform' ? $t('pages.registry.text.systemNotAvailableForRemoval') : $t('actions.remove')}`"
                                             href="#"
                                             @click="showDeleteExternalSystemForm(String($index), String($al.type), $event)">
                                             <img alt="trash" v-if="$al.type != 'platform'" src="@/assets/img/trash.png" />
@@ -1301,8 +1314,8 @@ export default defineComponent({
                     </table>
                     <div class="link-grant-access">
                         <a style="width:270px;" class="" href="#" @click="showExternalSystemForm('', $event)">
-                            <img alt="Додати зовнішню систему" src="@/assets/img/plus.png" />
-                            <span>Додати зовнішню систему</span>
+                            <img :alt="$t('pages.registry.actions.addExternalSystem')" src="@/assets/img/plus.png" />
+                            <span>{{ $t('pages.registry.actions.addExternalSystem') }}</span>
                         </a>
                     </div>
                 </div>
@@ -1311,39 +1324,36 @@ export default defineComponent({
                 <div id="external-system-popup" class="popup-window admin-window visible scrollable-popup" v-cloak
                     v-if="externalSystem.formShow">
                     <div class="popup-header">
-                        <p v-if="!externalSystem.registryNameEditable">Налаштувати зовнішню систему для взаємодії</p>
-                        <p v-if="externalSystem.registryNameEditable">Додати зовнішню систему для взаємодії</p>
+                        <p v-if="!externalSystem.registryNameEditable">{{ $t('pages.registry.text.configureExternalSystemInteraction') }}</p>
+                        <p v-if="externalSystem.registryNameEditable">{{ $t('pages.registry.text.addExternalSystemInteraction') }}</p>
                         <a href="#" @click="hideExternalSystemForm" class="popup-close hide-popup">
                             <img alt="close popup window" src="@/assets/img/close.png" />
                         </a>
                     </div>
                     <p class="title-description" v-if="externalSystem.registryNameEditable">
-                        Ви можете налаштувати інтеграцію з зовнішньою системою для подальшої взаємодії згідно регламенту
-                        реєстру.
-                        Мережеві політики доступу будуть створені автоматично.
+                        {{ $t('pages.registry.text.registryNameEditableDescription') }}
                     </p>
                     <form @submit="setExternalSystemForm" id="external-system-form" method="post"
                         :action="externalSystemFormAction()">
                         <div class="popup-body">
                             <div class="rc-form-group"
                                 :class="{ 'error': (externalSystem.registryName == '' || externalSystem.registryNameExists) && externalSystem.startValidation }">
-                                <label>Назва зовнішньої системи</label>
+                                <label>{{ $t('pages.registry.text.nameExternalSystem') }}</label>
                                 <input aria-label="" name="external-system-registry-name" type="text"
                                     v-model="externalSystem.registryName"
                                     :readonly="!externalSystem.registryNameEditable" />
-                                <p v-if="externalSystem.registryNameEditable">Назва не може бути змінена після додавання
-                                    інтеграції!</p>
+                                <p v-if="externalSystem.registryNameEditable">{{ $t('pages.registry.errors.nameChangedAddingIntegration') }}</p>
                                 <span v-if="externalSystem.registryName == '' && externalSystem.startValidation">
-                                    Обов’язкове поле
+                                    {{ $t('errors.requiredField') }}
                                 </span>
                                 <span v-if="externalSystem.registryNameExists">
-                                    Зовнішня система з таким ім'ям вже існує
+                                    {{ $t('pages.registry.errors.externalSystemAlreadyExists') }}
                                 </span>
                             </div>
 
                             <div v-if="mockAvailable()" class="rc-form-group">
                                 <label class="form-checkbox-container">
-                                    Використати мок зовнішньої інтеграції
+                                    {{ $t('pages.registry.text.useExternalIntegrationMock') }}
                                     <input @change="mockChanged('externalSystem')" v-model="externalSystem.data.mock"
                                         type="checkbox">
                                     <span class="form-checkbox-checkmark"></span>
@@ -1351,32 +1361,32 @@ export default defineComponent({
                             </div>
 
                             <div v-if="!externalSystem.data.mock" class="rc-form-group"
-                                :class="{ 'error': (externalSystem.data.url == '' || externalSystem.urlValidationFailed) && externalSystem.startValidation }">
-                                <label>Адреса зовнішньої системи</label>
+                                :class="{ 'error': ((externalSystem.data.url == '' || externalSystem.urlValidationFailed) || externalSystem.data.mock) && externalSystem.startValidation }">
+                                <label>{{ $t('pages.registry.text.addressExternalSystem') }}</label>
                                 <input aria-label="" type="text" name="external-system-url"
                                     v-model="externalSystem.data.url" />
-                                <p>URL, повинен починатись з http:// або https://</p>
+                                <p>{{ $t('pages.registry.errors.urlValidationDescription') }}</p>
                                 <span v-if="externalSystem.data.url == '' && externalSystem.startValidation">
-                                    Обов’язкове поле
+                                    {{ $t('errors.requiredField') }}
                                 </span>
-                                <span v-if="externalSystem.urlValidationFailed && externalSystem.startValidation">Невірний
-                                    формат</span>
-
+                                <span v-if="externalSystem.urlValidationFailed && externalSystem.startValidation">
+                                    {{ $t('pages.registry.errors.invalidFormat') }}
+                                </span>
                             </div>
 
                             <div class="rc-form-group"
                                 :class="{ 'error': externalSystem.data.protocol == '' && externalSystem.startValidation }">
-                                <label>Протокол інтеграції</label>
+                                <label>{{ $t('pages.registry.text.integrationProtocol') }}</label>
                                 <input aria-label="" type="text" name="external-system-protocol"
                                     v-model="externalSystem.data.protocol" readonly />
                                 <span v-if="externalSystem.data.protocol == '' && externalSystem.startValidation">
-                                    Обов’язкове поле
+                                    {{ $t('errors.requiredField') }}
                                 </span>
-                                <p>Наразі підтримується лише REST-протокол інтеграції.</p>
+                                <p>{{ $t('pages.registry.text.integrationProtocolSupported') }}</p>
                             </div>
 
                             <div class="rc-form-group">
-                                <label>Вкажіть тип автентифікації</label>
+                                <label>{{ $t('pages.registry.text.specifyAuthenticationType') }}</label>
                                 <select aria-label="" name="external-system-auth-type"
                                     v-model="externalSystem.data.auth.type" @change="changeExternalSystemAuthType">
                                     <option v-if="externalSystem.registryName != 'diia'">NO_AUTH</option>
@@ -1386,7 +1396,7 @@ export default defineComponent({
 
                                     <option>AUTH_TOKEN+BEARER</option>
                                 </select>
-                                <p>Наразі підтримуються:
+                                <p>{{ $t('pages.registry.text.currentlySupported') }}:
                                     <template v-if="externalSystem.registryName != 'diia'">NO_AUTH, AUTH_TOKEN, BEARER,
                                         BASIC,</template>
                                     AUTH_TOKEN+BEARER
@@ -1396,26 +1406,24 @@ export default defineComponent({
                             <div class="auth-token-bearer" v-if="externalSystem.data.auth.type == 'AUTH_TOKEN+BEARER'">
                                 <div class="rc-form-group"
                                     :class="{ 'error': externalSystem.data.auth['auth-url'] == '' && externalSystem.startValidation }">
-                                    <label>Вкажіть енд-поінт автентифікації партнера</label>
+                                    <label>{{ $t('pages.registry.text.specifyAuthenticationEndpoint') }}</label>
                                     <input aria-label="" type="text" name="external-system-auth-url"
                                         v-model="externalSystem.data.auth['auth-url']" />
-                                    <p>Вказується абсолютна адреса (https://example.ua/auth) або relative path відносно
-                                        адреси,
-                                        вказаної в полі Адреса зовнішньої системи (/auth)</p>
+                                    <p>{{ $t('pages.registry.text.absoluteAddressSpecified') }}</p>
                                     <span
                                         v-if="externalSystem.data.auth['auth-url'] == '' && externalSystem.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
                                 <div class="rc-form-group"
                                     :class="{ 'error': externalSystem.data.auth['access-token-json-path'] == '' && externalSystem.startValidation }">
-                                    <label>Вкажіть json-path для отримання токена доступу</label>
+                                    <label>{{ $t('pages.registry.text.specifyPathAccessToken') }}</label>
                                     <input aria-label="" type="text" name="external-system-auth-access-token-json-path"
                                         v-model="externalSystem.data.auth['access-token-json-path']" />
                                     <span
                                         v-if="externalSystem.data.auth['access-token-json-path'] == '' && externalSystem.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
@@ -1424,47 +1432,47 @@ export default defineComponent({
                             <div class="rc-form-group"
                                 v-if="externalSystem.data.auth.type == 'AUTH_TOKEN' || externalSystem.data.auth.type == 'BEARER' || externalSystem.data.auth.type == 'AUTH_TOKEN+BEARER'"
                                 :class="{ 'error': externalSystem.data.auth.secret == '' && externalSystem.startValidation }">
-                                <label>Вкажіть токен авторизації</label>
+                                <label>{{ $t('pages.registry.text.specifyAuthorizationToken') }}</label>
                                 <input aria-label="" name="external-system-auth-secret"
                                     v-model="externalSystem.data.auth.secret" :type="externalSystem.secretInputTypes.secret"
                                     @focus="externalSystemSecretFocus('secret')" />
                                 <span v-if="externalSystem.data.auth.secret == '' && externalSystem.startValidation">
-                                    Обов’язкове поле
+                                    {{ $t('errors.requiredField') }}
                                 </span>
                             </div>
 
                             <div v-if="externalSystem.data.auth.type == 'BASIC'">
                                 <div class="rc-form-group"
                                     :class="{ 'error': externalSystem.data.auth.username == '' && externalSystem.startValidation }">
-                                    <label>Логін</label>
+                                    <label>{{ $t('pages.registry.text.login') }}</label>
                                     <input aria-label="" name="external-system-auth-username"
                                         @focus="externalSystemSecretFocus('username')"
                                         v-model="externalSystem.data.auth.username"
                                         :type="externalSystem.secretInputTypes.username"
                                         :placeholder="externalSystem.usernamePlaceholder" />
                                     <span v-if="externalSystem.data.auth.username == '' && externalSystem.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
 
                                 <div class="rc-form-group"
                                     :class="{ 'error': externalSystem.data.auth.secret == '' && externalSystem.startValidation }">
-                                    <label>Пароль</label>
+                                    <label>{{ $t('pages.registry.text.pass') }}</label>
                                     <input aria-label="" name="external-system-auth-secret"
                                         v-model="externalSystem.data.auth.secret"
                                         :type="externalSystem.secretInputTypes.secret"
                                         @focus="externalSystemSecretFocus('secret')" />
                                     <span v-if="externalSystem.data.auth.secret == '' && externalSystem.startValidation">
-                                        Обов’язкове поле
+                                        {{ $t('errors.requiredField') }}
                                     </span>
                                 </div>
                             </div>
                         </div>
                         <div class="popup-footer active">
-                            <a href="#" id="admin-cancel" class="hide-popup" @click="hideExternalSystemForm">відмінити</a>
+                            <a href="#" id="admin-cancel" class="hide-popup" @click="hideExternalSystemForm">{{ $t('actions.cancel') }}</a>
                             <button class="submit-green" value="submit" name="admin-apply" type="submit">
-                                <span v-if="!externalSystem.registryNameEditable">Підтвердити</span>
-                                <span v-if="externalSystem.registryNameEditable">Додати</span>
+                                <span v-if="!externalSystem.registryNameEditable">{{ $t('actions.confirm') }}</span>
+                                <span v-if="externalSystem.registryNameEditable">{{ $t('actions.add') }}</span>
                             </button>
                         </div>
                     </form>
@@ -1473,17 +1481,17 @@ export default defineComponent({
 
                 <div class="popup-window admin-window visible" v-cloak v-if="externalSystem.deleteFormShow">
                     <div class="popup-header">
-                        <p>Видалити "{{ externalSystem.registryName }}"?</p>
+                        <p>{{ $t('pages.registry.text.deleteRegistryName', { registryName: externalSystem.registryName }) }}</p>
                         <a href="#" @click="hideDeleteForm" class="popup-close hide-popup">
                             <img alt="close popup window" src="@/assets/img/close.png" />
                         </a>
                     </div>
                     <div class="popup-body">
-                        <p>Видалити усі налаштування інтеграції з системою?</p>
+                        <p>{{ $t('pages.registry.text.removeSystemSettings') }}</p>
                     </div>
                     <div class="popup-footer active">
-                        <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteForm">Відмінити</a>
-                        <a class="href-red" :href="deleteExternalSystemLink()">Видалити</a>
+                        <a href="#" id="admin-cancel" class="hide-popup" @click="hideDeleteForm">{{ $t('actions.cancel') }}</a>
+                        <a class="href-red" :href="deleteExternalSystemLink()">{{ $t('actions.remove') }}</a>
                     </div>
                 </div>
                 <!-- registry-external-system end-->
@@ -1492,7 +1500,7 @@ export default defineComponent({
             <div class="rg-info-block">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.externalAccess }"
                     @click="accordion.externalAccess = !accordion.externalAccess">
-                    <span>Доступ для реєстрів платформи та зовнішніх систем</span>
+                    <span>{{ $t('pages.registry.text.accessPlatformRegistriesAndExternalSystems') }}</span>
                   <img v-if="accordion.externalAccess" src="@/assets/img/action-toggle.png" alt="toggle block" />
                   <img v-if="!accordion.externalAccess" src="@/assets/img/down.png" alt="toggle block" />
 
@@ -1501,9 +1509,9 @@ export default defineComponent({
                     <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
-                                <th>Налаштовано</th>
-                                <th>Назва</th>
-                                <th>Тип системи</th>
+                                <th>{{ $t('pages.registry.table.configured') }}</th>
+                                <th>{{ $t('pages.registry.table.name') }}</th>
+                                <th>{{ $t('pages.registry.table.systemType') }}</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -1518,9 +1526,9 @@ export default defineComponent({
                                     {{ $er.Name }}
                                 </td>
                                 <td>
-                                    <span v-if="$er.External"> Зовнішня система</span>
+                                    <span v-if="$er.External">{{ $t('pages.registry.text.externalSystem') }}</span>
 
-                                    <span v-else> Реєстр платформи</span>
+                                    <span v-else>{{ $t('pages.registry.text.platformRegistry') }}</span>
 
                                 </td>
                                 <td>
@@ -1530,18 +1538,18 @@ export default defineComponent({
                                             @click="
                                                 getExtStatus($er.StatusRegistration, $er.Enabled) === 'status-active' ? showExternalKey(String($er.Name), String($er.KeyValue), $event) : disabledLink"
                                             href="#">
-                                            <img title="Перевірити пароль" alt="key"
+                                            <img :title="$t('pages.registry.actions.checkPassword')" alt="key"
                                                 :src="getImageUrl(`key-${getExtStatus($er.StatusRegistration, $er.Enabled)}`)" />
                                         </a>
                                         <a :status="inactive($er.StatusRegistration)"
                                             @click="inactive($er.StatusRegistration) ? disabledLink : disableExternalReg($er.Name, getTypeStr($er), $event)"
                                             href="#">
-                                            <img :title="getExtStatus($er.StatusRegistration, $er.Enabled) === 'status-disabled' ? 'Розблокувати доступ' : 'Заблокувати доступ'"
+                                            <img :title="getExtStatus($er.StatusRegistration, $er.Enabled) === 'status-disabled' ? $t('pages.registry.actions.enableAccess') : $t('pages.registry.actions.disableAccess')"
                                                 alt="key" :src="getImageUrl(`lock-${getExtStatus($er.StatusRegistration, $er.Enabled)}`)" />
                                         </a>
                                         <a @click="inactive($er.StatusRegistration) ? disabledLink : removeExternalReg($er.Name, getTypeStr($er), $event)"
                                             href="#">
-                                            <img title="Скасувати доступ" alt="key"
+                                            <img :title="$t('pages.registry.actions.cancelAccess')" alt="key"
                                                 :src="getImageUrl(`disable-${getExtStatus($er.StatusRegistration, $er.Enabled)}`)" />
                                         </a>
                                     </div>
@@ -1550,12 +1558,12 @@ export default defineComponent({
                         </tbody>
                     </table>
                     <div class="rg-info-block-no-content" v-if="!externalRegs?.length">
-                        Немає реєстрів або систем, що мають доступ до цього реєстра.
+                        {{ $t('pages.registry.text.thereAreNoRegistriesOrSystems') }}
                     </div>
                     <div class="link-grant-access">
                         <a class="" href="#" @click="showExternalReg">
-                            <img alt="Надати доступ" src="@/assets/img/plus.png" />
-                            <span>Надати доступ</span>
+                            <img :alt="$t('pages.registry.text.grantAccess')" src="@/assets/img/plus.png" />
+                            <span>{{ $t('pages.registry.text.grantAccess') }}</span>
                         </a>
                     </div>
                 </div>
@@ -1570,7 +1578,7 @@ export default defineComponent({
             <div class="rg-info-block">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.publicAccess }"
                     @click="accordion.publicAccess = !accordion.publicAccess">
-                    <span>Публічний доступ</span>
+                    <span>{{ $t('pages.registry.text.publicAccess') }}</span>
                   <img v-if="accordion.publicAccess" src="@/assets/img/action-toggle.png" alt="toggle block" />
                   <img v-if="!accordion.publicAccess" src="@/assets/img/down.png" alt="toggle block" />
 
@@ -1583,7 +1591,7 @@ export default defineComponent({
             <div class="rg-info-block" v-if="branches && branches.length">
                 <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.configuration }"
                     @click="accordion.configuration = !accordion.configuration">
-                    <span>Конфігурація</span>
+                    <span>{{ $t('pages.registry.text.config') }}</span>
 
                   <img v-if="accordion.configuration" src="@/assets/img/action-toggle.png" alt="toggle block" />
                   <img v-if="!accordion.configuration" src="@/assets/img/down.png" alt="toggle block" />
@@ -1592,13 +1600,13 @@ export default defineComponent({
                     <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
-                                <th>Статус</th>
-                                <th>Конфігурація</th>
+                                <th>{{ $t('pages.registry.table.status') }}</th>
+                                <th>{{ $t('pages.registry.table.config') }}</th>
                                 <th>VCS</th>
                                 <th>CI</th>
-                                <th>Версія</th>
-                                <th>Номер збірки</th>
-                                <th>Остання вдала збірка</th>
+                                <th>{{ $t('pages.registry.table.version') }}</th>
+                                <th>{{ $t('pages.registry.table.buildNumber') }}</th>
+                                <th>{{ $t('pages.registry.table.lastSuccessBuild') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1634,17 +1642,17 @@ export default defineComponent({
             <div class="rg-info-block">
                 <div id="merge-requests-header" class="rg-info-block-header" :class="{ 'border-bottom': !accordion.mergeRequests }"
                     @click="accordion.mergeRequests = !accordion.mergeRequests">
-                    <span>Запити на оновлення</span>
+                    <span>{{ $t('pages.registry.text.updateRequests') }}</span>
                   <img v-if="accordion.mergeRequests" src="@/assets/img/action-toggle.png" alt="toggle block" />
                   <img v-if="!accordion.mergeRequests" src="@/assets/img/down.png" alt="toggle block" />
 
                 </div>
                 <div id="merge-requests-body" class="rg-info-block-body mr-block-table" v-show="accordion.mergeRequests">
                     <template v-if="mergeRequests && mergeRequests.length">
-                        <MergeRequestsTable :merge-requests="mergeRequests" @onViewClick="showMrView" :mr-available="mrAvailable"></MergeRequestsTable>
+                        <MergeRequestsTable :merge-requests="mergeRequests" @onViewClick="showMrView" :mr-available="mrAvailable" :create-release-available="createReleaseAvailable"></MergeRequestsTable>
                     </template>
                     <div class="rg-info-block-no-content" v-else>
-                        Запитів немає
+                        {{ $t('pages.registry.text.thereAreNoRequests') }}
                     </div>
                 </div>
             </div>
@@ -1655,7 +1663,7 @@ export default defineComponent({
             <template v-if="registryAdministrationComponents">
                 <div class="rg-info-block">
                     <div class="rg-info-block-header">
-                        <span>Адміністративна зона реєстру</span>
+                        <span>{{ $t('pages.registry.text.registryAdministrationComponents') }}</span>
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
@@ -1665,11 +1673,11 @@ export default defineComponent({
                                   class="item-image" />
                               <div class="item-content">
                                   <a target="_blank" :href="$ec.Url" :class="{ disabled: $ec.Visible == 'false' }">
-                                      {{ $ec.Title }}
-                                      <span v-if="$ec.Visible == 'false'">(вимкнено)</span>
+                                      {{ getNamespaceMessage('domains.registry.links.registryAdministration.title', $ec.Title) }}
+                                      <span v-if="$ec.Visible == 'false'">({{ $t('pages.registry.text.turnedOff') }})</span>
                                       <img v-else src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
                                   </a>
-                                  <div class="description">{{ $ec.Description }}</div>
+                                  <div class="description">{{ getNamespaceMessage('domains.registry.links.registryAdministration.description', $ec.Description) }}</div>
                               </div>
                             </div>
                           </template>
@@ -1680,7 +1688,7 @@ export default defineComponent({
             <template v-if="registryOperationalComponents">
                 <div class="rg-info-block">
                     <div class="rg-info-block-header">
-                        <span>Операційна зона реєстру</span>
+                        <span>{{ $t('pages.registry.text.registryOperationalComponents') }}</span>
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
@@ -1690,11 +1698,11 @@ export default defineComponent({
                                   class="item-image" />
                               <div class="item-content">
                                 <a target="_blank" :href="$ec.Url" :class="{ disabled: $ec.Visible == 'false' }">
-                                    {{ $ec.Title }}
-                                    <span v-if="$ec.Visible == 'false'">(вимкнено)</span>
+                                    {{ getNamespaceMessage('domains.registry.links.registryOperational.title', $ec.Title) }}
+                                    <span v-if="$ec.Visible == 'false'">({{ $t('pages.registry.text.turnedOff') }})</span>
                                     <img v-else src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
                                 </a>
-                                <div class="description">{{ $ec.Description }}</div>
+                                <div class="description">{{ getNamespaceMessage('domains.registry.links.registryOperational.description', $ec.Description) }}</div>
                               </div>
                             </div>
                           </template>
@@ -1706,7 +1714,7 @@ export default defineComponent({
             <template v-if="platformAdministrationComponents">
                 <div class="rg-info-block">
                     <div class="rg-info-block-header">
-                        <span>Адміністративна зона платформи</span>
+                        <span>{{ $t('pages.registry.text.platformAdministrationComponents') }}</span>
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
@@ -1716,10 +1724,10 @@ export default defineComponent({
                                     class="item-image" />
                                 <div class="item-content">
                                     <a target="_blank" :href="$ec.Url">
-                                        {{ $ec.Title }}
+                                        {{ getNamespaceMessage('domains.cluster.links.platformAdministration.title', $ec.Title) }}
                                         <img src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
                                     </a>
-                                    <div class="description">{{ $ec.Description }}</div>
+                                    <div class="description">{{ getNamespaceMessage('domains.cluster.links.platformAdministration.description', $ec.Description) }}</div>
                                 </div>
                             </div>
                           </template>
@@ -1730,7 +1738,7 @@ export default defineComponent({
             <template v-if="platformOperationalComponents">
                 <div class="rg-info-block">
                     <div class="rg-info-block-header">
-                        <span>Операційна зона платформи</span>
+                        <span>{{ $t('pages.registry.text.platformOperationalComponents') }}</span>
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
@@ -1740,10 +1748,10 @@ export default defineComponent({
                                     class="item-image" />
                                 <div class="item-content">
                                     <a target="_blank" :href="$ec.Url">
-                                        {{ $ec.Title }}
+                                        {{ getNamespaceMessage('domains.cluster.links.platformOperational.title', $ec.Title) }}
                                         <img src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
                                     </a>
-                                    <div class="description">{{ $ec.Description }}</div>
+                                    <div class="description">{{ getNamespaceMessage('domains.cluster.links.platformOperational.description', $ec.Description) }}</div>
                                 </div>
                             </div>
                           </template>
@@ -1756,7 +1764,7 @@ export default defineComponent({
 
         <div style="width:80%;left:10%;height:80%;" class="popup-window admin-window visible" v-cloak v-if="mrView">
             <div class="popup-header">
-                <p>Запит на оновлення</p>
+                <p>{{ $t('pages.registry.text.updateRequest') }}</p>
                 <a href="#" @click="hideMrView" class="popup-close hide-popup">
                     <img alt="close popup window" src="@/assets/img/close.png" />
                 </a>
@@ -1768,58 +1776,58 @@ export default defineComponent({
 
         <div class="popup-window admin-window visible" v-cloak v-if="externalKey">
             <div class="popup-header">
-                <p>Перевірити пароль для "{{ systemToShowKey }}"</p>
+                <p>{{ $t('pages.registry.text.checkPassForSystemToShowKey', { systemToShowKey }) }}</p>
                 <a href="#" @click="hideExternalKey" class="popup-close hide-popup">
                     <img alt="close popup window" src="@/assets/img/close.png" />
                 </a>
             </div>
             <form method="POST" :action="`/admin/registry/external-reg-remove/${registry.metadata.name}`">
                 <div class="popup-body">
-                    Не передавайте пароль стороннім особам.
+                    {{ $t('pages.registry.text.doNotSharePassword') }}
                     <div class="er-ex-key">
                         <span id="key-value">{{ keyValue }}</span>
                         <a @click="showExternalKeyValue" href="#">
-                            <img title="Показати" v-cloak v-show="keyValue == '******'" alt="display password"
+                            <img :title="$t('pages.registry.actions.show')" v-cloak v-show="keyValue == '******'" alt="display password"
                                 src="@/assets/img/eye.png" />
-                            <img title="Приховати" v-cloak v-show="keyValue != '******'" alt="display password"
+                            <img :title="$t('pages.registry.actions.hide')" v-cloak v-show="keyValue != '******'" alt="display password"
                                 style="height:20px;margin-top:2px;" src="@/assets/img/hide-eye.png" />
                         </a>
                     </div>
                 </div>
                 <div class="popup-footer active">
-                    <a href="#" class="hide-popup" @click="hideExternalKey">закрити</a>
+                    <a href="#" class="hide-popup" @click="hideExternalKey">{{ $t('actions.close') }}</a>
                 </div>
             </form>
         </div>
 
         <div class="popup-window admin-window visible" v-cloak v-if="mrError">
             <div class="popup-header">
-                <p>Помилка</p>
+                <p>{{ $t('pages.registry.text.mistake') }}</p>
                 <a href="#" @click="hideMrError" class="popup-close hide-popup">
                     <img alt="close popup window" src="@/assets/img/close.png" />
                 </a>
             </div>
             <div class="popup-body" style="border-bottom: none;">
-                Наразі у вас є відкриті запити на оновлення. Підтвердіть або відхиліть зміни щоб продовжити.
+                {{ $t('pages.registry.text.confirmOrRejectRequests') }}
             </div>
         </div>
 
         <div class="popup-window admin-window visible" v-cloak v-if="removeExternalRegPopupShow">
             <div class="popup-header">
-                <p>Видалити "{{ systemToDelete }} " з переліку ?</p>
+                <p>{{ $t('pages.registry.text.removeSystem', { systemToDelete }) }}</p>
                 <a href="#" @click="hideRemoveExternalReg" class="popup-close hide-popup">
                     <img alt="close popup window" src="@/assets/img/close.png" />
                 </a>
             </div>
             <form method="POST" :action="`/admin/registry/external-reg-remove/${registry.metadata.name}`">
                 <div class="popup-body">
-                    Ви зможете надати доступ знову пізніше.
+                    {{ $t('pages.registry.text.grantAccessLater') }}
                 </div>
                 <input type="hidden" :value="systemToDelete" name="reg-name" />
                 <input type="hidden" id="delete-form-type" :value="systemToDeleteType" name="external-system-type" />
                 <div class="popup-footer active">
-                    <a href="#" class="hide-popup" @click="hideRemoveExternalReg">відмінити</a>
-                    <button value="submit" @click="addExternalReg" type="submit">Видалити</button>
+                    <a href="#" class="hide-popup" @click="hideRemoveExternalReg">{{ $t('actions.cancel') }}</a>
+                    <button value="submit" @click="addExternalReg" type="submit">{{ $t('actions.remove') }}</button>
                 </div>
             </form>
         </div>
@@ -1827,7 +1835,7 @@ export default defineComponent({
         <div id="external-reg-popup" class="popup-window admin-window external-reg-window visible" v-cloak
             v-if="externalRegPopupShow">
             <div class="popup-header">
-                <p>Надати доступ</p>
+                <p>{{ $t('pages.registry.text.grantAccess') }}</p>
                 <a href="#" @click="hideExternalReg" class="popup-close hide-popup">
                     <img alt="close popup window" src="@/assets/img/close.png" />
                 </a>
@@ -1837,47 +1845,41 @@ export default defineComponent({
                 <div class="popup-body">
                     <p class="popup-error" v-cloak v-if="accessGrantError">{{ accessGrantError }} </p>
 
-                    <p>
-                        Ви можете надати доступ до даних цього реєстру (master) іншим реєстрам на цій платформі або
-                        зовнішнім системам (clients). Для цього в мастер-реєстрі буде створено окремого користувача
-                        реєстра-клієнта, від імені якого здійснюватиметься доступ до мастер-реєстру.
-                    </p>
+                    <p>{{ $t('pages.registry.text.grantAccessToMaster') }}</p>
                     <div class="er-radio">
                         <div @click="setInternalRegistryReg">
                             <span class="er-radio-button" :class="{ selected: internalRegistryReg }"></span>
-                            <span class="er-radio-text">Внутрішній реєстр платформи</span>
+                            <span class="er-radio-text">{{ $t('pages.registry.text.internalRegistryPlatform') }}</span>
                         </div>
                         <div @click="setExternalSystem">
                             <span class="er-radio-button" :class="{ selected: !internalRegistryReg }"></span>
-                            <span class="er-radio-text">Зовнішня система</span>
+                            <span class="er-radio-text">{{ $t('pages.registry.text.externalSystem') }}</span>
                         </div>
                         <input type="hidden" :value="externalSystemType" name="external-system-type" />
                     </div>
                     <div v-if="internalRegistryReg" class="er-system-opts">
-                        <label for="in-registry">Оберіть реєстр</label>
+                        <label for="in-registry">{{ $t('pages.registry.text.selectRegister') }}</label>
                         <select name="reg-name" id="in-registry" v-model="registrySelected">
                             <option v-for="(reg, index) in externalRegAvailableRegistriesNames" :key="index">
                                 {{ reg }}
                             </option>
                         </select>
 
-                        <span>Якщо реєстру не має в переліку – його потрібно створити заздалегідь.</span>
+                        <span>{{ $t('pages.registry.text.createdRegistryInAdvance') }}</span>
                     </div>
                     <div v-if="!internalRegistryReg" class="er-system-opts">
-                        <label for="ex-system">Назва системи</label>
-                        <input required name="reg-name" id="ex-system" placeholder="Введіть назву" maxlength="32"
+                        <label for="ex-system">{{ $t('pages.registry.text.nameOfSystem') }}</label>
+                        <input required name="reg-name" id="ex-system" :placeholder="$t('pages.registry.text.enterName')" maxlength="32"
                             pattern="^[a-z0-9][-a-z0-9]+?[a-z0-9]$" />
-                        <span>Допустимі символи: “a-z”, 0-9, “-”. Назва не може перевищувати довжину у 32 символів.
-                            Назва повинна починатись і закінчуватися символами латинського алфавіту або цифрами.</span>
-                        <label>Пароль доступу</label>
-                        <p>Пароль буде створено автоматично. Його можна буде перевірити після налагодження доступу до
-                            мастер-реєстру.</p>
+                        <span>{{ $t('pages.registry.text.accessPasswordValidationDescription') }}</span>
+                        <label>{{ $t('pages.registry.text.accessPassword') }}</label>
+                        <p>{{ $t('pages.registry.text.accessPasswordWillBeCreated') }}</p>
                     </div>
 
                 </div>
                 <div class="popup-footer active">
-                    <a href="#" id="external-reg-cancel" class="hide-popup" @click="hideExternalReg">відмінити</a>
-                    <button value="submit" name="external-reg-apply" @click="addExternalReg" type="submit">Надати</button>
+                    <a href="#" id="external-reg-cancel" class="hide-popup" @click="hideExternalReg">{{ $t('actions.cancel') }}</a>
+                    <button value="submit" name="external-reg-apply" @click="addExternalReg" type="submit">{{ $t('actions.give') }}</button>
                 </div>
             </form>
         </div>

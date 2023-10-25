@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
 	"encoding/json"
 	"net/http"
@@ -11,13 +10,16 @@ import (
 )
 
 const (
+	ValuesLocation                = "deploy-templates/values.yaml"
 	MRTypeClusterAdmins           = "cluster-admins"
 	MRTypeClusterCIDR             = "cluster-cidr"
 	MRTypeClusterKeycloakDNS      = "cluster-keycloak-dns"
 	MRTargetClusterUpdate         = "cluster-update"
 	MRTargetClusterBackupSchedule = "cluster-backup-schedule"
 	ValuesAdminsKey               = "administrators"
+	ValueLanguageKey              = "language"
 	MRTypeDemoRegistryName        = "demo-registry-name"
+	MRTypeGeneral                 = "cluster-general"
 )
 
 type Admin struct {
@@ -49,15 +51,14 @@ func (a *App) updateAdmins(ctx *gin.Context) error {
 		return errors.Wrap(err, "unable to create admins secrets")
 	}
 
-	values, err := registry.GetValuesFromGit(a.Config.CodebaseName, registry.MasterBranch, a.Gerrit)
+	values, err := getValuesFromGit(a.Config.CodebaseName, masterBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to decode values yaml")
 	}
 
-	values.OriginalYaml[ValuesAdminsKey] = admins
+	values.Admins = admins
 
-	if err := a.createValuesMergeRequestCtx(ctx, MRTypeClusterAdmins, "update cluster admins",
-		values.OriginalYaml); err != nil {
+	if err := a.createValuesMergeRequestCtx(ctx, MRTypeClusterAdmins, "update cluster admins", values); err != nil {
 		return errors.Wrap(err, "unable to create admins merge request")
 	}
 
@@ -86,13 +87,10 @@ func (a *App) setAdminsVaultPassword(admins []Admin) error {
 	return nil
 }
 
-func (a *App) getAdminsJSON(values *registry.Values) (string, error) {
-	adminsInterface, ok := values.OriginalYaml[ValuesAdminsKey]
-	if !ok {
-		return "[]", nil
-	}
+func (a *App) getAdminsJSON(values *Values) (string, error) {
+	admins := values.Admins
 
-	bts, err := json.Marshal(adminsInterface)
+	bts, err := json.Marshal(admins)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to json encode admins")
 	}

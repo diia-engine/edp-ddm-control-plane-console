@@ -15,7 +15,7 @@ defineProps<FormFieldProps>();
         variant="text"
         :class="`button ${$attrs.class}`"
       >
-        Додати ліміти
+        {{ $t('components.menuList.actions.addLimits') }}
         <span v-if="isActive">
           <img src="@/assets/svg/toggle.svg" alt="active toggle" :style="{ transform: 'rotateX(180deg)' }"/>
         </span>

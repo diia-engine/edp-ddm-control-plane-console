@@ -7,7 +7,7 @@ export default {
     show: { type: Boolean },
     redButton: { type: Boolean },
     title: { readonly: true, type: String },
-    submitBtnText: { default: 'Підтвердити', type: String },
+    submitBtnText: { type: String },
     hasCancelBtn: { default: true, type: Boolean },
   },
   updated() {
@@ -33,7 +33,7 @@ export default {
     <div class="common-modal-backdrop" v-cloak v-if="show"></div>
 
     <div class="common-modal-window-wrapper" v-cloak v-if="show">
-      <div class="common-modal-window" v-cloak v-if="show" @click.stop.prevent>
+      <div class="common-modal-window" v-cloak v-if="show">
         <div class="common-modal-header">
             <div class="common-modal-title">
               <Typography variant="h3">{{ title }}</Typography>
@@ -48,8 +48,8 @@ export default {
         </div>
 
         <div class="common-modal-footer">
-          <button v-if="hasCancelBtn" class="common-modal-cancel" @click.stop.prevent="close">Відмінити</button>
-          <button class="submit-button" :class="redButton && 'red-button'" @click.stop.prevent="submit">{{ submitBtnText }}</button>
+          <button v-if="hasCancelBtn" class="common-modal-cancel" @click.stop.prevent="close">{{ $t('actions.cancel') }}</button>
+          <button class="submit-button" :class="redButton && 'red-button'" @click.stop.prevent="submit">{{ submitBtnText || $t('actions.confirm') }}</button>
         </div>
       </div>
     </div>

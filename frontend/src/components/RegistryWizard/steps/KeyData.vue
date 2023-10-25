@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Typography from '@/components/common/Typography.vue';
+import Banner from '@/components/common/Banner.vue';
 import FileField from '@/components/common/FileField.vue';
 import isEqual from 'lodash/isEqual';
 import cloneDeep from 'lodash/cloneDeep';
@@ -7,24 +8,27 @@ import cloneDeep from 'lodash/cloneDeep';
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import Mustache from "mustache";
+import OsplmIniEditor from '@/utils/osplmIniEditor';
 
 export default defineComponent({
   props: {
     registryAction: String,
     pageDescription: String,
+    region: String,
   },
   methods: {
     renderINITemplate() {
       const iniTemplate = document.getElementById("ini-template")?.innerHTML;
-      this.hardwareData.iniConfig = Mustache.render(iniTemplate || '', {
-        "CA_NAME": this.hardwareData.remoteCaName,
-        "CA_HOST": this.hardwareData.remoteCaHost,
-        "CA_PORT": this.hardwareData.remoteCaPort,
-        "KEY_SN": this.hardwareData.remoteSerialNumber,
-        "KEY_HOST": this.hardwareData.remoteKeyHost,
-        "KEY_ADDRESS_MASK": this.hardwareData.remoteKeyMask,
-      }).trim();
+      const iniEditor =  new OsplmIniEditor(iniTemplate || '');
+      iniEditor.addKey({
+        caHost: this.hardwareData.remoteCaHost,
+          caPort: this.hardwareData.remoteCaPort,
+          caName: '',
+          keyHost: this.hardwareData.remoteKeyHost,
+          keySn: this.hardwareData.remoteSerialNumber,
+          keyMask: this.hardwareData.remoteKeyMask,
+      });
+      this.hardwareData.iniConfig = iniEditor.toString();
     },
     removeAllowedKey(item: any) {
       const searchIdx = this.allowedKeys.indexOf(item);
@@ -80,7 +84,7 @@ export default defineComponent({
           }
 
           if (!this.key6FileSelected) {
-            this.key6Error = 'Обов’язкове поле';
+            this.key6Error = this.$t('errors.requiredField');
             validationFailed = true;
           }
         }
@@ -105,7 +109,7 @@ export default defineComponent({
       key6FileSelected: false,
       deviceType: "file",
       hardwareData: {
-        remoteType: "криптомод. ІІТ Гряда-301",
+        remoteType: this.$t('components.keyData.text.hardwareDataType'),
         remoteKeyPWD: "",
         remoteCaName: "",
         remoteCaHost: "",
@@ -174,124 +178,130 @@ export default defineComponent({
 </style>
 
 <template>
-  <h2>Дані про ключ</h2>
-  <Typography variant="bodyText" class="key-data-page-description">{{ pageDescription }}</Typography>
+  <h2>{{ $t('components.keyData.title') }}</h2>
+  <div v-if="region === 'ua'">
+    <Typography variant="bodyText" class="key-data-page-description">{{ pageDescription }}</Typography>
 
-  <input type="checkbox" style="display: none;" v-model="changed" name="key-data-changed" />
-  <div class="rc-form-group">
-    <label for="key-device-type">Тип носія</label>
-    <select v-model="deviceType" id="key-device-type"
-            name="key-device-type">
-      <option value="file">Файловий носій</option>
-      <option value="hardware">Апаратний носій</option>
-    </select>
-  </div>
-  <div class="key-type-hardware key-type-section" v-if="deviceType === 'hardware'" v-cloak>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteType === '' && beginValidation }">
-      <label for="remote-type">Тип ключа</label>
-      <input type="text" @change="hardwareDataChanged" name="remote-type" id="remote-type"
-             v-model="hardwareData.remoteType" />
-      <span v-if="hardwareData.remoteType === '' && beginValidation">Обов’язкове поле</span>
-    </div>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteKeyPWD === '' && beginValidation }">
-      <label for="remote-key-pwd">Пароль ключа</label>
-      <input @change="hardwareDataChanged" type="password" id="remote-key-pwd" name="remote-key-pwd"
-             v-model="hardwareData.remoteKeyPWD" />
-      <span v-if="hardwareData.remoteKeyPWD === '' && beginValidation">Обов’язкове поле</span>
-    </div>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteCaName === '' && beginValidation }">
-      <label for="remote-ca-name">Ім'я АЦСК</label>
-      <input @change="hardwareDataChanged" type="text" id="remote-ca-name" name="remote-ca-name"
-             v-model="hardwareData.remoteCaName" />
-      <span v-if="hardwareData.remoteCaName === '' && beginValidation">Обов’язкове поле</span>
-    </div>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteCaHost === '' && beginValidation }">
-      <label for="remote-ca-host">Хост АЦСК</label>
-      <input @change="hardwareDataChanged" type="text" id="remote-ca-host" name="remote-ca-host"
-             v-model="hardwareData.remoteCaHost" />
-      <span v-if="hardwareData.remoteCaHost === '' && beginValidation">Обов’язкове поле</span>
-    </div>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteCaPort === '' && beginValidation }">
-      <label for="remote-ca-port">Порт АЦСК</label>
-      <input @change="hardwareDataChanged" type="number" id="remote-ca-port" name="remote-ca-port"
-             v-model="hardwareData.remoteCaPort" />
-      <span v-if="hardwareData.remoteCaPort === '' && beginValidation">Обов’язкове поле</span>
-    </div>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteSerialNumber === '' && beginValidation }">
-      <label for="remote-serial-number">Серійний номер пристрою</label>
-      <input @change="hardwareDataChanged" type="text" id="remote-serial-number" name="remote-serial-number"
-             v-model="hardwareData.remoteSerialNumber" />
-      <span
-          v-if="hardwareData.remoteSerialNumber === '' && beginValidation">Обов’язкове поле</span>
-    </div>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteKeyPort === '' && beginValidation }">
-      <label for="remote-key-port">Порт ключа</label>
-      <input @change="hardwareDataChanged" type="number" id="remote-key-port" name="remote-key-port"
-             v-model="hardwareData.remoteKeyPort" />
-      <span v-if="hardwareData.remoteKeyPort === '' && beginValidation">Обов’язкове поле</span>
-    </div>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteKeyHost === '' && beginValidation }">
-      <label for="remote-key-host">Хост ключа</label>
-      <input type="text" @change="hardwareDataChanged" id="remote-key-host" name="remote-key-host"
-             v-model="hardwareData.remoteKeyHost" />
-      <span v-if="hardwareData.remoteKeyHost === '' && beginValidation">Обов’язкове поле</span>
-    </div>
-    <div class="rc-form-group"
-         :class="{ 'error': hardwareData.remoteKeyMask === '' && beginValidation }">
-      <label for="remote-key-mask">Маска ключа</label>
-      <input @change="hardwareDataChanged" type="text" id="remote-key-mask" name="remote-key-mask"
-             v-model="hardwareData.remoteKeyMask" />
-      <span v-if="hardwareData.remoteKeyMask === '' && beginValidation">Обов’язкове поле</span>
-    </div>
+    <input type="checkbox" style="display: none;" v-model="changed" name="key-data-changed" />
     <div class="rc-form-group">
-      <label for="remote-ini-config">INI конфігурація</label>
-      <textarea rows="5" id="remote-ini-config" v-model="hardwareData.iniConfig"
-                name="remote-ini-config"></textarea>
+      <label for="key-device-type">{{ $t('components.keyData.text.mediaType') }}</label>
+      <select v-model="deviceType" id="key-device-type"
+              name="key-device-type">
+        <option value="file">{{ $t('components.keyData.text.fileMedium') }}</option>
+        <option value="hardware">{{ $t('components.keyData.text.hardwareMedium') }}</option>
+      </select>
     </div>
-  </div>
-  <div class="key-type-file key-type-section" v-if="deviceType === 'file'" v-cloak>
-    <FileField label="Файловий ключ (розширення .dat)" sub-label="Обрати файл" name="key6" accept=".dat"
-               :error="key6Error" @selected="onKey6FileSelected" @reset="onKey6FileReset" id="key6-upload" />
-    <div class="rc-form-group"
-         :class="{ 'error': fileData.signKeyIssuer === '' && beginValidation }">
-      <label for="sign-key-issuer">АЦСК, що видав ключ</label>
-      <input type="text" id="sign-key-issuer" name="sign-key-issuer"
-             v-model="fileData.signKeyIssuer" />
-      <span v-if="fileData.signKeyIssuer === '' && beginValidation">Обов’язкове поле</span>
+    <div class="key-type-hardware key-type-section" v-if="deviceType === 'hardware'" v-cloak>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteType === '' && beginValidation }">
+        <label for="remote-type">{{ $t('components.keyData.text.keyType') }}</label>
+        <input type="text" @change="hardwareDataChanged" name="remote-type" id="remote-type"
+              v-model="hardwareData.remoteType" />
+        <span v-if="hardwareData.remoteType === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteKeyPWD === '' && beginValidation }">
+        <label for="remote-key-pwd">{{ $t('components.keyData.text.keyPassword') }}</label>
+        <input @change="hardwareDataChanged" type="password" id="remote-key-pwd" name="remote-key-pwd"
+              v-model="hardwareData.remoteKeyPWD" />
+        <span v-if="hardwareData.remoteKeyPWD === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteCaName === '' && beginValidation }">
+        <label for="remote-ca-name">{{ $t('components.keyData.text.nameOfAcsk') }}</label>
+        <input @change="hardwareDataChanged" type="text" id="remote-ca-name" name="remote-ca-name"
+              v-model="hardwareData.remoteCaName" />
+        <span v-if="hardwareData.remoteCaName === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteCaHost === '' && beginValidation }">
+        <label for="remote-ca-host">{{ $t('components.keyData.text.hostOfAcsk') }}</label>
+        <input @change="hardwareDataChanged" type="text" id="remote-ca-host" name="remote-ca-host"
+              v-model="hardwareData.remoteCaHost" />
+        <span v-if="hardwareData.remoteCaHost === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteCaPort === '' && beginValidation }">
+        <label for="remote-ca-port">{{ $t('components.keyData.text.portOfAcsk') }}</label>
+        <input @change="hardwareDataChanged" type="number" id="remote-ca-port" name="remote-ca-port"
+              v-model="hardwareData.remoteCaPort" />
+        <span v-if="hardwareData.remoteCaPort === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteSerialNumber === '' && beginValidation }">
+        <label for="remote-serial-number">{{ $t('components.keyData.text.deviceSerialNumber') }}</label>
+        <input @change="hardwareDataChanged" type="text" id="remote-serial-number" name="remote-serial-number"
+              v-model="hardwareData.remoteSerialNumber" />
+        <span
+            v-if="hardwareData.remoteSerialNumber === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteKeyPort === '' && beginValidation }">
+        <label for="remote-key-port">{{ $t('components.keyData.text.keyPort') }}</label>
+        <input @change="hardwareDataChanged" type="number" id="remote-key-port" name="remote-key-port"
+              v-model="hardwareData.remoteKeyPort" />
+        <span v-if="hardwareData.remoteKeyPort === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteKeyHost === '' && beginValidation }">
+        <label for="remote-key-host">{{ $t('components.keyData.text.keyHost') }}</label>
+        <input type="text" @change="hardwareDataChanged" id="remote-key-host" name="remote-key-host"
+              v-model="hardwareData.remoteKeyHost" />
+        <span v-if="hardwareData.remoteKeyHost === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': hardwareData.remoteKeyMask === '' && beginValidation }">
+        <label for="remote-key-mask">{{ $t('components.keyData.text.keyMask') }}</label>
+        <input @change="hardwareDataChanged" type="text" id="remote-key-mask" name="remote-key-mask"
+              v-model="hardwareData.remoteKeyMask" />
+        <span v-if="hardwareData.remoteKeyMask === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group">
+        <label for="remote-ini-config">{{ $t('components.keyData.text.configurationINI') }}</label>
+        <textarea rows="5" id="remote-ini-config" v-model="hardwareData.iniConfig"
+                  name="remote-ini-config"></textarea>
+      </div>
     </div>
-    <div class="rc-form-group"
-         :class="{ 'error': fileData.signKeyPWD === '' && beginValidation }">
-      <label for="sign-key-pwd">Пароль до файлового ключа</label>
-      <input type="password" id="sign-key-pwd" name="sign-key-pwd"
-             v-model="fileData.signKeyPWD" />
-      <span v-if="fileData.signKeyPWD === '' && beginValidation">Обов’язкове поле</span>
+    <div class="key-type-file key-type-section" v-if="deviceType === 'file'" v-cloak>
+      <FileField :label="$t('components.keyData.fields.key6.label')" :sub-label="$t('components.keyData.fields.key6.subLabel')" name="key6" accept=".dat"
+                :error="key6Error" @selected="onKey6FileSelected" @reset="onKey6FileReset" id="key6-upload" />
+      <div class="rc-form-group"
+          :class="{ 'error': fileData.signKeyIssuer === '' && beginValidation }">
+        <label for="sign-key-issuer">{{ $t('components.keyData.text.keyAcsk') }}</label>
+        <input type="text" id="sign-key-issuer" name="sign-key-issuer"
+              v-model="fileData.signKeyIssuer" />
+        <span v-if="fileData.signKeyIssuer === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
+      <div class="rc-form-group"
+          :class="{ 'error': fileData.signKeyPWD === '' && beginValidation }">
+        <label for="sign-key-pwd">{{ $t('components.keyData.text.passwordFileKey') }}</label>
+        <input type="password" id="sign-key-pwd" name="sign-key-pwd"
+              v-model="fileData.signKeyPWD" />
+        <span v-if="fileData.signKeyPWD === '' && beginValidation">{{ $t('errors.requiredField') }}</span>
+      </div>
     </div>
-  </div>
 
-  <div class="rc-form-group allowed-keys-body" id="allowed-keys-body">
-    <label>Перелік дозволених ключів</label>
-    <a class="add-allowed-key-btn" href="#" @click.prevent="addAllowedKey">
-      <i class="fa-solid fa-plus"></i>
-      <div>Додати ключ</div>
-    </a>
-    <div class="allowed-keys-row" v-for="(ak, index) in allowedKeys" :key="index"
-         :class="{ 'error': beginValidation && (ak.serial === '' || ak.issuer === '') }">
-      <input name="allowed-keys-issuer[]" v-model="ak.issuer"
-             class="allowed-keys-input allowed-keys-issuer" aria-label="key issuer" placeholder="Емітент ключа"
-             type="text" />
-      <input name="allowed-keys-serial[]"
-             class="allowed-keys-input allowed-keys-serial" v-model="ak.serial" aria-label="key serial"
-             placeholder="Серійний номер ключа" type="text" />
-      <button v-if="ak.removable" class="allowed-keys-remove-btn" type="button"
-              @click="removeAllowedKey(ak)">-</button>
+    <div class="rc-form-group allowed-keys-body" id="allowed-keys-body">
+      <label>{{ $t('components.keyData.text.listAllowedKeys') }}</label>
+      <a class="add-allowed-key-btn" href="#" @click.prevent="addAllowedKey">
+        <i class="fa-solid fa-plus"></i>
+        <div>{{ $t('components.keyData.actions.addKey') }}</div>
+      </a>
+      <div class="allowed-keys-row" v-for="(ak, index) in allowedKeys" :key="index"
+          :class="{ 'error': beginValidation && (ak.serial === '' || ak.issuer === '') }">
+        <input name="allowed-keys-issuer[]" v-model="ak.issuer"
+              class="allowed-keys-input allowed-keys-issuer" aria-label="key issuer" :placeholder="$t('components.keyData.fields.issuerKey.placeholder')"
+              type="text" />
+        <input name="allowed-keys-serial[]"
+              class="allowed-keys-input allowed-keys-serial" v-model="ak.serial" aria-label="key serial"
+              :placeholder="$t('components.keyData.fields.serialNumberKey.placeholder')" type="text" />
+        <button v-if="ak.removable" class="allowed-keys-remove-btn" type="button"
+                @click="removeAllowedKey(ak)">-</button>
+      </div>
     </div>
   </div>
+  <Banner
+    v-else
+    :description="$t('components.keyData.text.pageDescriptionGlobal')"
+  />
 </template>

@@ -1,18 +1,24 @@
+import i18n from "../localization";
+
 export const getErrorMessage = (key: string): string => {
   switch (key) {
     case 'required':
-      return 'Поле обов’язкове для заповнення.';
+      return i18n.global.t('errors.required');
     case 'moreThanMaxValue':
-      return 'Перевищено максимально допустиме значення';
+      return i18n.global.t('errors.moreThanMaxValue');
     case 'isUnique':
-      return 'Неунікальне значення';
+      return i18n.global.t('errors.isUnique');
     case 'rateLimitError':
-      return 'Вкажіть ліміт мінімум в одному полі';
+      return i18n.global.t('errors.rateLimitError');
     case 'registryNameAlreadyExists':
-      return 'Реєстр з такою назвою вже існує';
+      return i18n.global.t('errors.registryNameAlreadyExists');
     case 'invalidFileType':
-      return 'Невірний тип файлу';
+      return i18n.global.t('errors.invalidFileType');
+    case 'nonUniqKeyName':
+      return i18n.global.t('errors.nonUniqKeyName');
+    case 'dsKeysNotFound':
+      return i18n.global.t('errors.dsKeysNotFound');
     default:
-      return 'Перевірте формат поля';
+      return i18n.global.t('errors.checkFormat');
   }
 };

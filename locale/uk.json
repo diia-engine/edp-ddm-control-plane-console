@@ -1,0 +1,1291 @@
+{
+  "actions": {
+    "refresh": "Оновити",
+    "edit": "Редагувати",
+    "add": "Додати",
+    "close": "Закрити",
+    "confirm": "Підтвердити",
+    "cancel": "Скасувати",
+    "reject": "Відхилити",
+    "give": "Надати",
+    "remove": "Видалити",
+    "gotIt": "Зрозуміло",
+    "back": "Назад",
+    "next": "Далі",
+    "replace": "Замінити",
+    "save": "Зберегти"
+  },
+  "components": {
+    "layout": {
+      "appNameVersion": "Вебінтерфейс управління Платформою та реєстрами версії",
+      "actions": {
+        "back": "Назад",
+        "logout": "Вихід"
+      },
+      "menu": {
+        "registry": "РЕЄСТРИ",
+        "platform": "КЕРУВАННЯ ПЛАТФОРМОЮ"
+      }
+    },
+    "fileField": {
+      "text": {
+        "fileLoaded": "Файл завантажено"
+      }
+    },
+    "menuList": {
+      "actions": {
+        "addLimits": "Додати ліміти"
+      }
+    },
+    "registryWizard": {
+      "actions": {
+        "updateRegister": "Оновити реєстр",
+        "createRegister": "Створити реєстр"
+      },
+      "text": {
+        "administrators": "Адміністратори",
+        "advancedAdminsDescription": "Допустимі символи: \"0-9\", \"a-z\", \"_\", \"-\", \"{'@'}\", \".\", \",\".",
+        "enteredSystemSignatureKeys": "Внесені ключі системного підпису та КЕП користувачів будуть застосовані до налаштувань поточного реєстру.",
+        "enteredCertificatesVerification": "Внесені сертифікати АЦСК для перевірки ключів системного підпису та КЕП користувачів будуть застосовані до налаштувань поточного реєстру.",
+        "confirmation": "Підтвердження",
+        "everythingReadyCreateRegistry": "Усе готово для створення реєстру. Ви можете перевірити внесені дані або натисніть \"Створити реєстр\"."
+      }
+    },
+    "geoDataSettings": {
+      "title": "Підсистема управління геоданими",
+      "fields": {
+        "geoServerEnabled": {
+          "label":"Розгорнути підсистему управління геоданими"
+        }
+      },
+      "text": {
+        "managementSubsystemDeployed": "Підсистема управління геоданими розгорнута для цього реєстру.",
+        "managementSubsystemNotDeployed": "Підсистема управління геоданими не розгорнута для цього реєстру.",
+        "impossibleChangeAfterCreate": "Після створення реєстру змінити ці налаштування буде неможливо."
+      }
+    },
+    "keyData": {
+      "title": "Дані про ключ",
+      "actions": {
+        "addKey": "Додати ключ"
+      },
+      "fields": {
+        "key6": {
+          "label": "Файловий ключ (розширення .dat)",
+          "subLabel": "Обрати файл"
+        },
+        "issuerKey": {
+          "placeholder": "Емітент ключа"
+        },
+        "serialNumberKey": {
+          "placeholder": "Серійний номер ключа"
+        }
+      },
+      "text": {
+        "hardwareDataType": "криптомод. ІІТ Гряда-301",
+        "mediaType": "Тип носія",
+        "fileMedium": "Файловий носій",
+        "hardwareMedium": "Апаратний носій",
+        "keyType": "Тип ключа",
+        "keyPassword": "Пароль ключа",
+        "nameOfAcsk": "Ім'я АЦСК",
+        "hostOfAcsk": "Хост АЦСК",
+        "portOfAcsk": "Порт АЦСК",
+        "deviceSerialNumber": "Серійний номер пристрою",
+        "keyPort": "Порт ключа",
+        "keyHost": "Хост ключа",
+        "keyMask": "Маска ключа",
+        "configurationINI": "INI конфігурація",
+        "keyAcsk": "АЦСК, що видав ключ",
+        "passwordFileKey": "Пароль до файлового ключа",
+        "listAllowedKeys": "Перелік дозволених ключів",
+        "pageDescriptionGlobal": "Платформа Реєстрів підтримує можливості накладання цифрових підписів на дані реєстру та подальшої перевірки їх цілісності. \n\n Дана можливість наразі реалізована лише для України з використанням сертифікованих бібліотек. Реалізація  даних функцій під інші регіони потребує адаптації згідно з вимогами законодавства окремого регіону."
+      }
+    },
+    "keyVerification": {
+      "title": "Дані для перевірки підписів",
+      "fields": {
+        "cert": {
+          "label": "Публічні сертифікати АЦСК (CACertificate.p7b)",
+          "subLabel": "Обрати файл"
+        },
+        "json": {
+          "label": "Перелік АЦСК (розширення .json)",
+          "subLabel": "Обрати файл"
+        }
+      },
+      "text": {
+        "pageDescriptionGlobal": "Платформа Реєстрів підтримує можливості накладання цифрових підписів на дані реєстру та подальшої перевірки їх цілісності. \n\n Дана можливість наразі реалізована лише для України з використанням сертифікованих бібліотек. Реалізація  даних функцій під інші регіони потребує адаптації згідно з вимогами законодавства окремого регіону."
+      }
+    },
+    "parametersVirtualMachinesAWS": {
+      "title": "Параметри віртуальних машин",
+      "fields": {
+        "instanceCount": {
+          "label": "Кількість віртуальних машин",
+          "description": "Допустимі значення: 1 - 2000."
+        },
+        "awsInstanceType": {
+          "label": "Тип AWS EC2-інстансу",
+          "description": "Наприклад: r5.2xlarge, m5.xlarge, c5.4xlarge."
+        },
+        "awsSpotInstance": {
+          "label": "Використати AWS EC2 Spot-інстанс"
+        },
+        "awsInstanceVolumeType": {
+          "label": "Тип системного диска AWS EC2-інстансу"
+        },
+        "instanceVolumeSize": {
+          "label": "Розмір системного диска віртуальної машини (GB)"
+        }
+      },
+      "text": {
+        "enterOwn": "Вказати власну ($/година)",
+        "openShiftClusterIsDeployed": "Кластер OpenShift розгорнутий на інфраструктурі AWS. Докладніше про допустимі значення параметрів віртуальних машин – в системних вимогах OpenShift.",
+        "immediatelyApplyChanges": "Якщо потрібно одразу застосувати зміни для параметрів віртуальних машин (тип і розмір диска), то перед зміною необхідно попередньо вимкнути реєстр.",
+        "contactPlatformAdministrator": "В разі необхідності редагування параметрів, зверніться до адміністратора Платформи.",
+        "rangeOfValidSizeValuesVolumeSize": "Допустимі значення: 50 - 200 GB, але не менше від поточного ({instanceVolumeSize} GB).",
+        "validValuesNotLessCurrent": "Допустимі значення: 50 - 200 GB, але не менше від поточного ({instanceVolumeSize} GB).",
+        "rangeOfValidSizeValues": "Допустимі значення: 50 - 200 GB.",
+        "maximumPriceAWS": "Максимальна ціна AWS EC2-інстансу (за годину):"
+      }
+    },
+    "parametersVirtualMachinesVSphere": {
+      "title": "Параметри віртуальних машин",
+      "fields": {
+        "instanceCount": {
+          "label": "Кількість віртуальних машин",
+          "description": "Допустимі значення: 1 - 2000."
+        },
+        "instanceVolumeSize": {
+          "label": "Розмір системного диска віртуальної машини (GB)"
+        },
+        "vSphereInstanceCPUCount": {
+          "label": "Кількість vCPU віртуальної машини"
+        },
+        "vSphereInstanceCoresPerCPUCount": {
+          "label": "Кількість ядер у кожного vCPU віртуальної машини"
+        },
+        "vSphereInstanceRAMSize": {
+          "label": "Кількість RAM віртуальної машини (Мі)"
+        }
+      },
+      "text": {
+        "openShiftClusterDeployed": "Кластер OpenShift розгорнутий на інфраструктурі VSphere. Докладніше про допустимі значення параметрів віртуальних машин – в системних вимогах OpenShift.",
+        "immediatelyApplyChanges": "Якщо потрібно одразу застосувати зміни для параметрів віртуальних машин (тип і розмір диска), то перед зміною необхідно попередньо вимкнути реєстр.",
+        "contactPlatformAdministrator": "В разі необхідності редагування параметрів, зверніться до адміністратора Платформи.",
+        "rangeOfValidSizeValuesVolumeSize": "Допустимі значення: 50 - 200 GB, але не менше від поточного ({instanceVolumeSize} GB).",
+        "rangeOfValidSizeValues": "Допустимі значення: 50 - 200 GB."
+      }
+    },
+    "registryAdminAuth": {
+      "title": "Кабінет адміністратора регламенту",
+      "fields": {
+        "enabledAdminPortal": {
+          "label": "Розгорнути Кабінет адміністратора регламенту"
+        }
+      }
+    },
+    "registryBackupSchedule": {
+      "title": "Резервне копіювання",
+      "actions": {
+        "setOwnValues": "Задати власні значення"
+      },
+      "fields": {
+        "schedule": {
+          "label": "Розклад",
+          "description": "Використовується Cron-формат."
+        },
+        "storageDays": {
+          "label": "Час зберігання (днів)",
+          "description": "Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+        },
+        "cronExpression": {
+          "label": "Розклад збереження резервних копій реплікацій об'єктів S3",
+          "description": "Якщо вам потрібно налаштувати розклад, відмінний від стандартного, будь ласка, введіть значення розкладу у форматі Cron або вкажіть значення за UTC за замовчуванням:"
+        }
+      },
+      "text": {
+        "abilitySpecifySchedule": "Можливість вказати розклад створення резервних копій реєстру та термін їх зберігання.",
+        "configureBackup": "Налаштувати резервне копіювання",
+        "backupTheRegistry": "Резервне копіювання реєстру",
+        "nextBackupStarts": "Наступні запуски резервного копіювання (за київським часом)",
+        "backupObjectReplications": "Резервне копіювання реплікацій об'єктів S3",
+        "replicationBackupRun": "Наступний запуск резервного копіювання реплікацій об'єктів S3 (за UTC)",
+        "storageLocationBackup": "Місце зберігання резервних копій реплікацій об'єктів S3",
+        "bucketName": "Ім'я бакета",
+        "defaultValuesSpecifiedDeployment": "Використовуються значення за замовчуванням, задані при розгортанні реєстру."
+      }
+    },
+    "registryCidr": {
+      "title": "Перелік дозволених CIDR",
+      "text": {
+        "optionalSettings": "Ці налаштування є необов'язковими.",
+        "cidrIDRForOfficialPortal": "CIDR для Кабінету користувача",
+        "cidrIForCitizenPortal": "CIDR для Кабінету отримувача послуг",
+        "cidrIForAdminComponent": "CIDR для адміністративних компонент",
+        "addCIDR": "Додати CIDR",
+        "addressesAndMasks": "IP-адреси та маски"
+      }
+    },
+    "registryDigitalDocuments": {
+      "title": "Цифрові документи",
+      "actions": {
+        "moreDetails": "Детальніше"
+      },
+      "fields": {
+        "maxFileSize": {
+          "label": "Максимальний розмір файлу для завантаження, MB"
+        },
+        "maxTotalFileSize": {
+          "label": "Макс. сумарний розмір групи файлів для завантаження, MB"
+        }
+      },
+      "text": {
+        "managementOfUploadingFiles": "Управління обмеженнями на завантаження файлів цифрових документів до реєстру користувачами та бізнес-процесами.",
+        "administrativeRestrictionsMaximumRequest": "Адміністративні обмеження діють в рамках обмежень на максимальний розмір запита на завантаження у 100 МБ, встановленого на рівні Платформи.",
+        "maximumSizeForDownloadValidation": "Допустимі символи: “0-9”, “.”. Значення не може перевищувати довжину у 4 символи.",
+        "valueFormat": "Значення, що вводяться, зчитуються у МВ, можуть бути десятковим дробом з крапкою в якості розділового знаку.",
+        "valueLimit": "Значення не може перевищувати обмеження, встановлене на рівні системи. Обмеження застосовується до файлів, які завантажуються користувачами та бізнес-процесами. Додаткові обмеження можуть бути встановлені на рівні окремих файлових полів при моделюванні UI-форм.",
+        "valueGroupLimit": "Значення не може перевищувати обмеження, встановлене на рівні системи. Обмеження застосовується до групи файлів, які завантажуються користувачами через файлові поля UI-форми.",
+        "fileCannotExceedTotalSize": "Значення максимального розміру файлу не може перевищувати максимальний сумарний розмір групи файлів для завантаження.",
+        "valueMaximumSize": "Значення використовується для визначення параметра “File Maximum Size” в компоненті File конструктора UI-форм.",
+        "valueGroupMaximumSize": "Значення використовується для визначення параметра “Maximum total size” у компоненті File конструктора UI-форм.",
+        "maximumSizeForDownload": "Максимальний розмір файлу для завантаження",
+        "maxTotalSize": "Макс. сумарний розмір групи файлів для завантаження"
+      }
+    },
+    "registryDns": {
+      "title": "Налаштування DNS",
+      "fields": {
+        "officerDNSEnabled": {
+         "label": "Використати власні значення"
+        },
+        "officerDNS": {
+          "label": "Доменне ім'я для Кабінету посадової особи"
+        },
+        "officerSSL": {
+          "label": "SSL-сертифікат для Кабінету посадової особи (*.pem)"
+        },
+        "citizenDNSEnabled": {
+          "label": "Використати власні значення"
+        },
+        "citizenDNS": {
+          "label": "Доменне ім'я для Кабінету отримувача послуг"
+        },
+        "citizenSSL": {
+          "label": "SSL-сертифікат для Кабінету отримувача послуг (*.pem)"
+        }
+      },
+      "text": {
+        "userAndRoleManagementService": "Сервіс управління користувачами та ролями (Keycloak)",
+        "domainKeycloakName": "Доменне ім'я для Keycloak",
+        "officialOffice": "Кабінет посадової особи",
+        "serviceRecipientOffice": "Кабінет отримувача послуг",
+        "attention": "Увага!",
+        "additionalExternalConfiguration": "Необхідно виконати додаткову зовнішню конфігурацію за межами OpenShift-кластера та реєстру.",
+        "instructionsAreAvailable": "Інструкція доступна",
+        "byLink": "за посиланням"
+      }
+    },
+    "registryGeneral": {
+      "title": "Загальні",
+      "fields": {
+        "name": {
+          "label": "Назва",
+          "description": "Допустимі символи: \"a-z\", \"-\". Назва не може перевищувати довжину у 12 символів."
+        },
+        "language": {
+          "label": "Мова інтерфейсу"
+        }
+      },
+      "text": {
+        "nameMustBeUnique": "Увага! Назва повинна бути унікальною і її неможливо буде змінити після створення реєстру!",
+        "description": "Опис",
+        "descriptionContainOfficialName": "Опис може містити офіційну назву реєстру чи його призначення.",
+        "deploymentMode": "Режим розгортання",
+        "impossibleChangeAfterDeploy": "Після створення реєстру змінити режим розгортання реєстру буде неможливо.",
+        "templateVersion": "Версія шаблону",
+        "chooseTemplateVersion": "Оберіть версію шаблону",
+        "localizationTitle": "Локалізація",
+        "localizationDescription": "Налаштування локалізації інтерфейсів наступних ресурсів реєстру:",
+        "localizationOfficerPortal": "Кабінет надавача послуг;",
+        "localizationCitizenPortal": "Кабінет отримувача послуг;",
+        "localizationAdminPortal": "Кабінет адміністратора регламенту;",
+        "localizationReportsPortal": "Веб-інтерфейс моделювання звітів.",
+        "localizationWarning": "Мову буде змінено після застосування запиту на оновлення.",
+        "localizationRegionFormat": "Регіональний формат"
+      }
+    },
+    "registryGeneralEdit": {
+      "title": "Загальні",
+      "text": {
+        "name": "Назва",
+        "description": "Опис",
+        "descriptionContainOfficialName": "Опис може містити офіційну назву реєстру чи його призначення.",
+        "deploymentMode": "Режим розгортання",
+        "templateVersion": "Версія шаблону"
+      }
+    },
+    "registryRecipientAuth": {
+      "title": "Кабінет отримувача послуг",
+      "fields": {
+        "authURL": {
+          "label": "Посилання",
+          "description": "URL, повинен починатись з http:// або https://"
+        },
+        "enabledCitizenPortal": {
+          "label": "Розгорнути Кабінет отримувача послуг"
+        },
+        "authWidgetHeight": {
+          "label": "Висота віджета, px"
+        },
+        "govUaURL": {
+          "label": "Посилання",
+          "description": "URL, повинен починатись з http:// або https://"
+        },
+        "clientID": {
+          "label": "Ідентифікатор клієнта (client_id)"
+        },
+        "clientSecret": {
+          "label": "Клієнтський секрет (secret)"
+        },
+        "signWidgetUrl": {
+          "label": "Посилання",
+          "description": "URL, повинен починатись з http:// або https://"
+        },
+        "signWidgetHeight": {
+          "label": "Висота віджета, px"
+        },
+        "keyName": {
+          "label": "Оберіть ключ шифрування",
+          "description": "Якщо потрібно додати інший ключ шифрування – зверніться до адміністратора Платформи."
+        }
+      },
+      "text": {
+        "verificationDataEDR": "Перевірка даних в ЄДР",
+        "verificationDataKEP": "Перевірка даних з КЕП користувачів в ЄДР відбувається за умови налаштованої інтеграції поточного реєстру з ЄДР через ШБО Трембіта.",
+        "checkPresenceActiveRecord": "Перевіряти наявність активного запису в ЄДР для бізнес-користувачів",
+        "authenticationType": "Тип автентифікації",
+        "possibleToUseAuthenticationWidget": "Є можливість використовувати власний віджет автентифікації або налаштувати інтеграцію з id.gov.ua.",
+        "specifyAuthenticationType": "Вкажіть тип автентифікації",
+        "widget": "Віджет",
+        "platformIntegration": "Платформна інтеграція з id.gov.ua",
+        "registryIntegration": "Реєстрова інтеграція з id.gov.ua",
+        "documentSignatureWidget": "Віджет підпису документів",
+        "useAuthenticationWidget": "Використовувати налаштування віджета автентифікації"
+      }
+    },
+    "registryResources": {
+      "title": "Ресурси реєстру",
+      "fields": {
+        "maxPoolSize": {
+          "description": "Допустиме значення параметра > 0"
+        },
+        "enableHorizontalAutomaticScaling": {
+          "label": "Enable HPA (Автоматичне горизонтальне масштабування)"
+        }
+      },
+      "text": {
+        "addIndividualComponents": "Ви можете додати окремі компоненти до реєстру.",
+        "applyChangesImmediately": "Якщо потрібно одразу застосувати внесені зміни, необхідно викликати оновлення дата-моделі.",
+        "horizontalAutomaticScaling": "HPA (Автоматичне горизонтальне масштабування)",
+        "specifyValueAndDimension": "Вказуйте значення та розмірність. Наприклад, “100m” для CPU (millicores) та “400Mi” для RAM (mebibytes).",
+        "changingEnvironments": "Змінні оточення",
+        "addEnvironmentVariable": "Додати змінну оточення",
+        "selectComponent": "Оберіть компонент"
+      }
+    },
+    "registrySmtp": {
+      "title": "Вибір поштового сервера",
+      "text": {
+        "mailServer": "Поштовий сервер",
+        "platformMailServer": "Платформенний поштовий сервер",
+        "externalMailServer": "Зовнішній поштовий сервер",
+        "settingConnectionPlatformMailServer": "Налаштування підключення до платформенного поштового сервера",
+        "registryAddress": "Поштова адреса реєстру",
+        "configuringConnectionExternalServer": "Налаштування SMTP-підключення до зовнішнього поштового сервера",
+        "host": "Хост",
+        "port": "Порт",
+        "mailAddress": "Поштова адреса",
+        "password": "Пароль"
+      }
+    },
+    "registrySupplierAuth": {
+      "title": "Кабінет надавача послуг",
+      "fields": {
+        "enabledOfficerPortal": {
+          "label": "Розгорнути Кабінет надавача послуг"
+        },
+        "authURL": {
+          "label": "Посилання",
+          "description": "URL, повинен починатись з http:// або https://"
+        },
+        "widgetHeight": {
+          "label": "Висота віджета, px"
+        },
+        "clientID": {
+          "label": "Ідентифікатор клієнта (client_id)"
+          },
+        "clientSecret": {
+          "label":  "Клієнтський секрет (secret)"
+        },
+        "keyName": {
+          "label": "Оберіть ключ шифрування",
+          "description": "Якщо потрібно додати інший ключ шифрування – зверніться до адміністратора Платформи."
+        }
+      },
+      "text": {
+        "accessControl": "Управління доступом",
+        "settingAccessUsers": "Налаштування доступу користувачам до Кабінету користувача з використанням КЕП фізичної особи.",
+        "allowAccessFromKEP": "Дозволити доступ з КЕП фізичної особи",
+        "singleIdentityDescription": "Налаштувати режим автентифікації користувачів, базуючись виключно на значеннях ДРФО та повного імені з КЕП. ЄДРПОУ буде виключено з порівняння.",
+        "singleIdentityDescriptionPopup": "При увімкненні налаштування система сприйматиме різні типи ключів (КЕП) користувача (фізична особа, ФОП, представник юридичної особи) як ідентифікацію єдиного облікового запису в системі за умови збігу значень ДРФО та повного імені. При цьому будуть збережені налаштовані ролі та доступи до бізнес-процесів.",
+        "singleIdentityEnabled": "Дозволити використання єдиного облікового запису в системі",
+        "possibleUseAuthenticationWidget": "Є можливість використовувати власний віджет автентифікації або налаштувати інтеграцію з id.gov.ua.",
+        "specifyAuthenticationType": "Вкажіть тип автентифікації",
+        "widget": "Віджет",
+        "registryIntegration":"Реєстрова інтеграція з id.gov.ua",
+        "selfRegistrationUsers": "Самостійна реєстрація користувачів",
+        "presenceSelfRegistrationBusiness": "Передбачає наявність у реєстрі попередньо змодельованого бізнес-процесу самореєстрації.",
+        "allowSelfRegistration": "Дозволити самостійну реєстрацію",
+        "notAbleCompleteTasksSelfRegistration": "При вимкненні можливості, користувачі, які почали процес самореєстрації, не зможуть виконати свої задачі, якщо вони змодельовані."
+      },
+      "actions": {
+        "moreDetails": "Детальніше"
+      }
+    },
+    "registryTrembita": {
+      "title": "ШБО Трембіта",
+      "text": {
+        "registryTrembitaDescription": "Щоб забезпечити можливість зовнішнім системам звертатись до реєстру через ШБО Трембіта, вкажіть IP-адреси ШБО Трембіта, з яких буде дозволено доступ до SOAP API реєстру.",
+        "enableAPIAccess": "Ввімкнути доступ до API через ШБО Трембіта",
+        "addressesOfTrembita": "IP-адреси ШБО Трембіта",
+        "validNumberValues": "Допустима кількість значень",
+        "allowAccessFromAddress": "Дозволити доступ з IP-адреси",
+        "addressOfTrembita": "IP-адреса ШБО Трембіта"
+      }
+    },
+    "mergeRequestsTable": {
+      "actions": {
+        "review": "Переглянути",
+        "reviewInGerrit": "Переглянути в Gerrit"
+      },
+      "table": {
+        "wait": "Зачекайте...",
+        "lengthMenu": "Показати _MENU_ записів",
+        "zeroRecords": "Записи відсутні.",
+        "info": "Записи з _START_ по _END_ із _TOTAL_ записів",
+        "infoEmpty": "Записи з 0 по 0 із 0 записів",
+        "infoFiltered": "(відфільтровано з _MAX_ записів)",
+        "search": "Пошук:",
+        "first": "Перша",
+        "previous": "Попередня",
+        "next": "Наступна",
+        "last": "Остання",
+        "sortAscending": ": активувати для сортування стовпців за зростанням",
+        "sortDescending": ": активувати для сортування стовпців за спаданням",
+        "date": "Дата",
+        "request": "Запит",
+        "operation": "Операція",
+        "status": "Статус",
+        "registerUpdated": "Реєстр в процесі оновлення"
+      }
+    },
+    "administratorModal": {
+      "text": {
+        "administrator": "Адміністратор"
+      },
+      "fields": {
+        "firstName": {
+          "placeholder": "Ім'я"
+        },
+        "surname": {
+          "placeholder": "Прізвище"
+        },
+        "email": {
+          "placeholder": "Електронна пошта"
+        },
+        "temporaryPassword": {
+          "placeholder": "Тимчасовий пароль",
+          "requirements": {
+            "header": "Вимоги до паролю:",
+            "point1": "1. Містити принаймні 10 символів.",
+            "point2": "2. Мати як мінімум одну малу літеру.",
+            "point3": "3. Мати як мінімум одну велику літеру.",
+            "point4": "4. Містити принаймні одну цифру.",
+            "point5": "5. Мати принаймні один спец. символ: &#64, #, $, %, ^, &, +, =.",
+            "point6": "6. Містити лише латинські літери.",
+            "point7": "7. Не містити пробілів."
+          }
+        }
+      },
+      "errors": {
+        "requiredAllFields": "Всі поля обов'язкові для заповнення",
+        "invalidEmailFormat": "Невірний формат електронної пошти",
+        "invalidNameFormat": "Невірний формат ім'я користувача",
+        "adminEmailExists": "Адміністратор з таким email вже існує",
+        "invalidPasswordFormat": "Перевірте формат поля"
+      }
+    },
+    "cidrModal": {
+      "text": {
+        "mailMaskAllowedDescription": "Допустимі символи \"0-9\", \"/\", \".\". Приклад: 172.16.0.0/12.",
+        "mailMaskDisallowedDescription": "Допустимі символи \"0-9\", \".\" Наприклад: 127.0.0.1"
+      },
+      "errors": {
+        "checkAddressFormat": "Перевірте формат IP-адреси"
+      }
+    },
+    "registryBackupDeleteModal": {
+      "title": "Видалити власні значення для зберігання резервних копій реплікацій об’єктів S3?",
+      "text": {
+        "valuesByDefault": "Будуть використані значення за замовчуванням."
+      }
+    },
+    "registryBackupSavePlaceModal": {
+      "title": "Задати власні значення для зберігання резервних копій реплікацій об’єктів S3",
+      "fields": {
+        "bucketName": {
+          "label": "Ім’я бакета",
+          "description": "Довжина назви має бути від 3 до 63 символів. Допустимі символи “a-z”, “0-9”, “.”, “-”"
+        },
+        "endpoint": {
+          "description": "Наприклад: “https://endpoint.com”"
+        },
+        "login": {
+          "label": "Логін",
+          "description": "Надається постачальником послуги"
+        },
+        "password": {
+          "label": "Пароль",
+          "description": "Надається постачальником послуги"
+        }
+      }
+    },
+    "registryEditPublicApiModal": {
+      "titleEdit": "Редагувати “{name}”",
+      "titleSet": "Надати публічний доступ",
+      "fields": {
+        "name": {
+          "label": "Службова назва запиту",
+          "description": "Допустимі символи \"a-z\", цифри \"0-9\", \"-\". Назва не може перевищувати довжину у 32 символи. Назва повинна починатись і закінчуватись символами латинського алфавіту або цифрами та бути унікальною."
+        },
+        "url": {
+          "label": "Для точки інтеграції вказати посилання до...",
+          "description": "Допустимі символи \"A-Z\", \"a-z\", цифри \"0-9\", \"-\", \"/\". Посилання повинно бути унікальним.",
+          "searchConditionOption": "пошукового запиту",
+          "fileOption": "файлу"
+        },
+        "rateLimit": {
+          "label": "Ліміт кількості запитів(rate limit)"
+        }
+      },
+      "text": {
+        "providePublicAccess": "Ви можете надати публічний доступ до даних цього реєстру (master). Для цього в мастер-реєстрі буде створено окремого користувача реєстра-клієнта, від імені якого здійснюватиметься доступ до мастер-реєстру.",
+        "publicApiValues": "Службова назва запиту",
+        "integrationPoint": "Точка інтеграції (шлях до публічного пошукового запиту)",
+        "integrationPointDescription": "Допустимі символи \"A-Z\", \"a-z\", цифри \"0-9\", \"-\", \"/\". Посилання повинно бути унікальним.",
+        "forExample": "Наприклад:",
+        "linkFormat": "Формат посилання:",
+        "linkUnique": "Посилання повинно бути унікальнім."
+      }
+    },
+    "registryDeletePublicApiModal": {
+      "title": "Видалити “{publicApiName}” з переліку?",
+      "text": {
+        "grantAccessAgainLater": "Ви зможете надати доступ знову пізніше."
+      }
+    },
+    "keysManagement": {
+      "title": "Керування ключами",
+      "subTitle": "Перелік ключів, які використовуються для шифрування при інтеграції з id.gov.ua.",
+      "deprecatedKeysSyntax": "Знайдено застарілий синтаксис налаштування ключів шифрування. Додайте ключ та налаштуйте його використання в наступних реєстрах: {registries}.",
+      "table": {
+        "fileKeysTitle": "Файлові ключі",
+        "hardwareKeysTitle": "Апаратні ключі",
+        "techName": "Технічна назва",
+        "mediaType": "Тип носія",
+        "acsk": "АЦСК",
+        "allowedRegistries": "Дозволено для реєстрів"
+      },
+      "actions": {
+        "addFileKey": "Додати файловий ключ",
+        "addHardwareKey": "Додати апаратний ключ",
+        "editOsplmIni": "Редагувати INI конфігурацію"
+      },
+      "modals": {
+        "addKey": {
+          "title": "Додати ключ",
+          "fields": {
+            "fileMedia": "Файловий",
+            "hardwareMedia": "Апаратний",
+            "techKeyName": {
+              "label": "Технічна назва ключа",
+              "description": "Допустимі символи: “a-z”, “0-9”, “-”. Назва повинна мати 3-40 символів та бути унікальною."
+            },
+            "mediaType":"Тип носія",
+            "fileKey": {
+              "label": "Файловий ключ (розширення .dat)",
+              "description": "Обрати файл"
+            },
+            "keyIssuer": "Ім’я АЦСК, що видав ключ",
+            "hardKeyPassword": "Пароль ключа",
+            "fileKeyPassword": "Пароль до файлового ключа",
+            "hardKeyType": "Тип ключа",
+            "hardKeyIssuerHost": "Хост АЦСК",
+            "hardKeyIssuerPort": "Порт АЦСК",
+            "hardKeySerialNumber": "Серійний номер пристрою",
+            "hardKeyHost": "Хост ключа",
+            "hardKeyPort": "Порт ключа",
+            "hardKeyMask": "Маска ключа"
+          }
+        },
+        "removeKey": {
+          "title": "Видалити ключ?",
+          "text": "Видалити ключ {key}?"
+        },
+        "cantRemoveKey": {
+          "title": "Неможливо видалити ключ",
+          "text": {
+            "firstChangeKey": "Спочатку, змініть ключ у відповідних реєстрах на інший.",
+            "keyUsage": " Ключ {key} використовується в наступних реєстрах:"
+          }
+        },
+        "editOsplmIni": {
+          "title": "Редагування INI конфігурації",
+          "fields": {
+             "hardKeyOsplmIni": "INI конфігурація"
+          }
+        },
+        "editKey": {
+          "title": "Редагувати реєстри дозволені для ключа",
+          "banner": "Ключ використовується в наступних реєстрах - {registries}. Ви не можете заборонити їх використання, поки в налаштуваннях реєстру не буде обрано інший ключ.",
+          "fields": {
+            "allowedRegistries": "Дозволено для реєстрів"
+          }
+        }
+      }
+    },
+    "registryCsp": {
+      "title": "Налаштування CSP",
+      "desc": "Налаштування Політики Безпеки Контенту (CSP) для реєстру.",
+      "connectSrc": "Дозволені джерела для завантаження ресурсів (connect-src)",
+      "modal": {
+        "addConnectSrcTitle": "Додати дозволене джерело",
+        "fields": {
+          "source": {
+            "label": "Джерело",
+            "description": "Наприклад: \"https://example.com\" або \"'self'\". Для отримання додаткової інформації перегляньте документацію CSP."
+          }
+        }
+      }
+    }
+  },
+  "pages": {
+    "registry": {
+      "tabs": {
+        "infoAboutRegistry": "Інформація про реєстр",
+        "quickLinks": "Швидкі посилання",
+        "generalInfo": "Загальна інформація"
+      },
+      "errors": {
+        "accessWithThisNameExists": "Доступ з таким ім'ям \"{selected}\" вже існує. Для вирішення конфлікту імен перестворіть доступ до зовнішньої системи з іншим ім'ям, а потім надайте доступ реєстру платформи: \"{selected}\"",
+        "accessWithThisNameOrPlatformExists": "Доступ з таким ім'ям системи/або платформи \"{inputName}\" вже існує, оберіть інше ім'я",
+        "urlValidationDescription": "URL, повинен починатись з http:// або https://",
+        "invalidFormat": "Невірний формат",
+        "nameChangedAddingIntegration": "Назва не може бути змінена після додавання інтеграції!",
+        "externalSystemAlreadyExists": "Зовнішня система з таким ім'ям вже існує"
+      },
+      "table": {
+        "configured": "Налаштовано",
+        "name": "Назва",
+        "level": "Рівень",
+        "integrationProtocol": "Протокол інтеграції",
+        "authenticationType": "Тип автентифікації",
+        "systemType": "Тип системи",
+        "status": "Статус",
+        "config": "Конфігурація",
+        "version": "Версія",
+        "buildNumber": "Номер збірки",
+        "lastSuccessBuild": "Остання вдала збірка"
+      },
+      "actions": {
+        "addRegister": "Додати реєстр",
+        "addExternalSystem": "Додати зовнішню систему",
+        "checkPassword": "Перевірити пароль",
+        "disableAccess": "Заблокувати доступ",
+        "enableAccess": "Розблокувати доступ",
+        "cancelAccess": "Скасувати доступ",
+        "show": "Показати",
+        "hide": "Приховати"
+      },
+      "text": {
+        "uploading": "Завантаження...",
+        "systemic": "Системний",
+        "registered": "Реєстровий",
+        "actionIsNotAvailable": "Дія недоступна",
+        "registryHasRequests": "Реєстр має не підтверджені запити на оновлення.",
+        "registry": "Реєстр {name}",
+        "name": "Назва",
+        "description": "Опис",
+        "administrators": "Адміністратори",
+        "createTime": "Час створення",
+        "citizenPortalHost": "DNS ім’я для порталу громадянина",
+        "officerPortalHost": "DNS ім’я для порталу чиновника",
+        "mailServer": "Поштовий сервер",
+        "externalMailServer": "Зовнішній поштовий сервер",
+        "platformMailServer": "Платформенний поштовий сервер",
+        "officerCIDR": "CIDR для порталу чиновника",
+        "citizenCIDR": "CIDR для порталу громадянина",
+        "adminCIDR": "CIDR для адміністративних компонент",
+        "language": "Мова інтерфейсу",
+        "settingInteractionTrembita": "налаштування взаємодії з реєстрами через Трембіту",
+        "integrationIsConfigured": "Інтеграція налаштована",
+        "integrationIsNotConfigured": "Інтеграція не налаштована",
+        "systemNotAvailableForRemoval": "Система недоступна для видалення",
+        "configureTrembitaRegistry": "Налаштувати взаємодію з реєстром через Трембіту",
+        "addTrembitaRegistry": "Додати взаємодію з реєстром через Трембіту",
+        "settingsSHOTrembita": "Налаштування ШБО Трембіти",
+        "protocolVersion": "Версія протоколу",
+        "useExternalIntegrationMock": "Використати мок зовнішньої інтеграції",
+        "addressTrembita": "Адреса ШБО Трембіти",
+        "settingTrembitaClient": "Налаштування клієнта Трембіти",
+        "clientID": "Ідентифікатор клієнту",
+        "settingServiceIntegration": "Налаштування сервісу для інтеграції",
+        "serviceNameRegistry": "Службова назва реєстру",
+        "soapIntegrationProtocolSupported": "Наразі підтримується лише SOAP-протокол інтеграції.",
+        "optionalParameter": "Необов'язковий параметр",
+        "specifyAuthenticationType": "Вкажіть тип автентифікації",
+        "specifyAuthorizationToken": "Вкажіть токен авторизації",
+        "deleteRegistryName": "Видалити \"{registryName}\"?",
+        "removeRegistryIntegrationSettings": "Видалити усі налаштування інтеграції з реєстром?",
+        "settingsInteractionWithOtherSystems": "налаштування взаємодії з іншими системами",
+        "configureExternalSystemInteraction": "Налаштувати зовнішню систему для взаємодії",
+        "addExternalSystemInteraction": "Додати зовнішню систему для взаємодії",
+        "registryNameEditableDescription": "Ви можете налаштувати інтеграцію з зовнішньою системою для подальшої взаємодії згідно з регламентом реєстру. Мережеві політики доступу будуть створені автоматично.",
+        "nameExternalSystem": "Назва зовнішньої системи",
+        "addressExternalSystem": "Адреса зовнішньої системи",
+        "integrationProtocolSupported": "Наразі підтримується лише REST-протокол інтеграції.",
+        "currentlySupported": "Наразі підтримуються",
+        "specifyAuthenticationEndpoint": "Вкажіть енд-поінт автентифікації партнера",
+        "absoluteAddressSpecified": "Вказується абсолютна адреса (https://example.ua/auth) або relative path відносно адреси, вказаної в полі Адреса зовнішньої системи (/auth)",
+        "specifyPathAccessToken": "Вкажіть json-path для отримання токена доступу",
+        "login": "Логін",
+        "pass": "Пароль",
+        "removeSystemSettings": "Видалити усі налаштування інтеграції з системою?",
+        "accessPlatformRegistriesAndExternalSystems": "Доступ для реєстрів платформи та зовнішніх систем",
+        "integrationProtocol": "Протокол інтеграції",
+        "externalSystem": "Зовнішня система",
+        "platformRegistry": "Реєстр платформи",
+        "thereAreNoRegistriesOrSystems": "Немає реєстрів або систем, що мають доступ до цього реєстру.",
+        "grantAccess": "Надати доступ",
+        "publicAccess": "Публічний доступ",
+        "config": "Конфігурація",
+        "buildNumber": "Номер збірки",
+        "lastSuccessBuild": "Остання вдала збірка",
+        "updateRequests": "Запити на оновлення",
+        "thereAreNoRequests": "Запитів немає",
+        "registryAdministrationComponents": "Адміністративна зона реєстру",
+        "turnedOff": "Вимкнено",
+        "registryOperationalComponents": "Операційна зона реєстру",
+        "platformAdministrationComponents": "Адміністративна зона платформи",
+        "platformOperationalComponents": "Операційна зона платформи",
+        "updateRequest": "Запит на оновлення",
+        "checkPassForSystemToShowKey": "Перевірити пароль для \"{ systemToShowKey }\"",
+        "doNotSharePassword": "Не передавайте пароль стороннім особам.",
+        "mistake": "Помилка",
+        "confirmOrRejectRequests": "Наразі у вас є відкриті запити на оновлення. Підтвердіть або відхиліть зміни, щоб продовжити.",
+        "removeSystem": "Видалити \"{ systemToDelete }\" з переліку?",
+        "grantAccessLater": "Ви зможете надати доступ знову пізніше.",
+        "grantAccessToMaster": "Ви можете надати доступ до даних цього реєстру (master) іншим реєстрам на цій платформі або зовнішнім системам (clients). Для цього в мастер-реєстрі буде створено окремого користувача реєстра-клієнта, від імені якого здійснюватиметься доступ до мастер-реєстру.",
+        "internalRegistryPlatform": "Внутрішній реєстр платформи",
+        "selectRegister": "Оберіть реєстр",
+        "createdRegistryInAdvance": "Якщо реєстру не має в переліку – його потрібно створити заздалегідь.",
+        "nameOfSystem": "Назва системи",
+        "enterName": "Введіть назву",
+        "accessPassword": "Пароль доступу",
+        "accessPasswordWillBeCreated": "Пароль буде створено автоматично. Його можна буде перевірити після налагодження доступу до мастер-реєстру.",
+        "accessPasswordValidationDescription": "Допустимі символи: “a-z”, 0-9, “-”. Назва не може перевищувати довжину у 32 символів. Назва повинна починатись і закінчуватися символами латинського алфавіту або цифрами."  
+      }
+    },
+    "registryCreate": {
+      "title": "Створити новий реєстр"
+    },
+    "registryEdit": {
+      "title": "Редагувати реєстр \"{name}\""
+    },
+    "registryList": {
+      "title": "Реєстри",
+      "actions": {
+        "createNew": "Створити новий",
+        "registryEdit": "Редагувати",
+        "registryDelete": "Видалити",
+        "createNewRegistryConfirm": "Підтвердити"
+      },
+      "table": {
+        "processing": "Зачекайте...",
+        "lengthMenu": "Показати _MENU_ записів",
+        "zeroRecords": "Записи відсутні.",
+        "info": "Записи з _START_ по _END_ із _TOTAL_ записів",
+        "infoEmpty": "Записи з 0 по 0 із 0 записів",
+        "infoFiltered": "(відфільтровано з _MAX_ записів)",
+        "search": "Пошук:",
+        "first": "Перша",
+        "previous": "Попередня",
+        "next": "Наступна",
+        "last": "Остання",
+        "sortAscending": ": активувати для сортування стовпців за зростанням",
+        "sortDescending": ": активувати для сортування стовпців за спаданням",
+        "status": "Статус",
+        "name": "Назва",
+        "version": "Версія",
+        "description": "Опис",
+        "date": "Час створення",
+        "deletionTimestamp": "Видалення"
+      },
+      "text": {
+        "listRegistersAndStatuses": "Перелік реєстрів та їх статусів.",
+        "deleteName": "Видалити",
+        "avoidAccidentalData": "Щоб уникнути випадкової втрати даних, введіть назву реєстру перш, ніж ви зможете його видалити.",
+        "avoidAccidentalCreateGroup": "Щоб уникнути випадкової втрати даних, введіть назву групи перш, ніж ви зможете її видалити.",
+        "registryName": "Назва реєстру",
+        "groupName": "Назва групи",
+        "createNewRegistry": "Створити новий реєстр",
+        "chooseVersion": "Оберіть версію",
+        "currentVersion": "Актуальна версія. Містить останні затверджені зміни і нові функціональні можливості.",
+        "previousVersion": "Попередня стабільна версія. Рекомендуємо обирати лише в разі обґрунтованої необхідності."
+      }
+    },
+    "registryUpdate": {
+      "title": "Оновити реєстр \"{ name }\"",
+      "text": {
+        "refreshRegistry": "Оновити реєстр"
+      }
+    },
+    "clusterEdit": {
+      "title": "Налаштування платформи",
+      "tabs": {
+        "general": "Загальні",
+        "administrators": "Адміністратори",
+        "templateRegistry": "Шаблон реєстру",
+        "mailRegistry": "Поштовий сервер",
+        "dataAboutKey": "Дані про ключ",
+        "resourcesRegistry": "Ресурси реєстру",
+        "cidr": "Обмеження доступу",
+        "supplierAuthentication": "Кабінет надавача послуг",
+        "recipientAuthentication": "Кабінет отримувача послуг",
+        "backup": "Резервне копіювання",
+        "documentation": "Документація",
+        "confirmation": "Підтвердження",
+        "allowedCIDR": "Дозволені CIDR",
+        "dataAboutKeyVerification": "Дані для перевірки підписів"
+      },
+      "text": {
+        "hardwareData": "криптомод. ІІТ Гряда-301",
+        "platformRefresh": "Оновлення платформи"
+      },
+      "errors": {
+        "nameExisted": "Така назва вже використовується",
+        "certificateHasExpired": "Сертифікат застарілий",
+        "certificateIsValid": "Сертифікат не відповідає доменному імені"
+      }
+    },
+    "clusterManagement": {
+      "title": "Керування Платформою",
+      "table": {
+        "status": "Статус",
+        "config": "Конфігурація",
+        "version": "Версія"
+      },
+      "tabs": {
+        "platformInfo": "Інформація про платформу",
+        "fastLinks": "Швидкі посилання"
+      },
+      "text": {
+        "new": "Новий",
+        "commonInfo": "Загальна інформація",
+        "name": "Назва",
+        "config": "Конфігурація",
+        "version": "Версія",
+        "description": "Опис",
+        "administrators": "Адміністратори",
+        "cidrValues": "CIDR для адміністративних компонент",
+        "creationTimestamp": "Час створення",
+        "requests": "Запити на оновлення",
+        "request": "Запит на оновлення",
+        "adminZonePlatform": "Адміністративна зона платформи",
+        "operationZonePlatform": "Операційна зона платформи",
+        "centerComponents": "Центральні компоненти",
+        "language": "Мова інтерфейсу",
+        "turnedOff": "Вимкнено",
+        "Керування інфраструктурними компонентами платформи": "Керування інфраструктурними компонентами платформи"
+      }
+    },
+    "dashboard": {
+      "text": {
+        "gerrit": "Gerrit - вільне програмне забезпечення з Вебінтерфейсом, інтегроване з розподіленою системою контролю версій Git, призначене для спільного проведення інспекції вихідного коду. Gerrit був розроблений співробітником корпорації Google Шоном Пірсом для розробки операційної системи Android.",
+        "jenkins": "Jenkins - програмна система з відкритим вихідним кодом на Java, призначена для забезпечення процесу безперервної інтеграції програмного забезпечення. Відгалужуючись в 2008 році від проекту Hudson, що належить компанії Oracle, основним його автором - Косуке Кавагуті. Поширюється під ліцензією MIT."
+      }
+    },
+    "login": {
+      "title": "Щоб увійти до адмін панелі, будь ласка, автентифікуйтесь.",
+      "text": {
+        "greeting": "Вітаємо!",
+        "info": "У разі проблем з входом звертайтесь до адміністратора."
+      },
+      "actions": {
+        "login": "Автентифікуватись"
+      }
+    },
+    "editRegistryMRExist": {
+      "text": {
+        "registryTitle": "Редагувати реєстр",
+        "platformTitle": "Налаштування платформи",
+        "registryMR": "Реєстр має не підтверджені запити на оновлення.",
+        "platformMR": "Платформа має не підтверджені запити на оновлення."
+      }
+    }
+  },
+  "domains": {
+    "registry": {
+      "editMixin": {
+        "general": "Загальні",
+        "administrators": "Адміністратори",
+        "mailServer": "Поштовий сервер",
+        "keyInfo": "Дані про ключ",
+        "signatureVerificationInfo": "Дані для перевірки підписів",
+        "parametersVirtualMachines": "Параметри віртуальних машин",
+        "registryResources": "Ресурси реєстру",
+        "accessRestrictions": "Обмеження доступу",
+        "supplierAuthentication": "Кабінет надавача послуг",
+        "recipientAuthentication": "Кабінет отримувача послуг",
+        "officeAdministratorRegulations": "Кабінет адміністратора регламенту",
+        "managementSubsystem": "Підсистема управління геоданими",
+        "digitalDocuments": "Цифрові документи",
+        "backup": "Резервне копіювання",
+        "trembita": "ШБО Трембіта",
+        "confirmation": "Підтвердження",
+        "registryCSP": "CSP"
+      },
+      "rateLimitField": {
+        "second": "за секунду",
+        "minute": "за хвилину",
+        "hour": "за годину",
+        "day": "за добу",
+        "month": "за місяць",
+        "year": "за рік",
+        "specifyLimitTimePeriod": "Вкажіть ліміт мінімум для одного проміжку часу"
+      },
+      "publicApi": {
+        "inProcessing": "В обробці",
+        "error": "Помилка",
+        "integrationIsNotConfigured": "Інтеграція не налаштована",
+        "integrationIsConfigured": "Інтеграція налаштована",
+        "disableAccess": "Заблокувати доступ",
+        "enableAccess": "Розблокувати доступ",
+        "configured": "Налаштовано",
+        "name": "Назва",
+        "noRegistryOrSystem": "Немає реєстрів або систем, що мають публічний доступ до даних цього реєстру.",
+        "grantAccess": "Надати доступ"
+      },
+      "text": {
+        "abandoned": "Зміна відхилена",
+        "accepted": "Зміна підтверджена"
+      },
+      "modals": {
+        "delete": {
+          "title": "Видалити",
+          "fields": {
+            "registry": {
+              "placeholder": "Назва реєстру"
+            },
+            "group": {
+              "placeholder": "Назва групи"
+            }
+          },
+          "text": {
+            "deleteOneInfo": "Щоб уникнути випадкової втрати даних, введіть назву реєстру перш, ніж ви зможете його видалити.",
+            "deleteGroupInfo": "Щоб уникнути випадкової втрати даних, введіть назву групи перш, ніж ви зможете її видалити."
+          },
+          "actions": {
+            "cancel": "скасувати",
+            "submit": "Видалити"
+          }
+        }
+      },
+      "errors": {
+        "regNameRequired": "reg-name is required",
+        "regNameNotFound": "reg-name not found",
+        "regSystemExist": "publicAPI reg system already exists",
+        "regLimitsDecode": "unable to decode limits from request"
+      },
+      "links": {
+        "registryAdministration": {
+          "title": {
+            "Веб-інтерфейс моделювання регламенту (Admin Portal)": "Вебінтерфейс моделювання регламенту (Admin Portal)",
+            "Сервіс інспекції та зберігання змін регламенту (Gerrit).": "Сервіс інспекції та зберігання змін регламенту (Gerrit).",
+            "Сервіс розгортання регламенту (Jenkins)": "Сервіс розгортання регламенту (Jenkins)",
+            "API документація сервісу управління даними реєстру (Swagger)": "API документація сервісу управління даними реєстру (Swagger)",
+            "API документація сервісу управління даними реєстру (Swagger) для публічних даних": "API документація сервісу управління даними реєстру (Swagger) для публічних даних ",
+            "Веб-інтерфейс моделювання звітів (Redash Admin)": "Вебінтерфейс моделювання звітів (Redash Admin)",
+            "Веб-інтерфейс управління виконанням бізнес-процесів (Business Proc Adm)": "Вебінтерфейс управління виконанням бізнес-процесів (Business Proc Adm)",
+            "Веб-інтерфейс управління виконанням бізнес-процесів (Business Process Administration)": "Вебінтерфейс управління виконанням бізнес-процесів (Business Process Administration)",
+            "Веб-інтерфейс перегляду даних реєстру (pgAdmin)": "Вебінтерфейс перегляду даних реєстру (pgAdmin)",
+            "Сховище артефактів реєстру (Nexus)": "Сховище артефактів реєстру (Nexus)",
+            "Веб-інтерфейс управління гео-даними (Geo-server UI)": "Вебінтерфейс управління гео-даними (Geo-server UI)",
+            "Веб-інтерфейс моніторингу черг повідомлень (Kafka UI)": "Вебінтерфейс моніторингу черг повідомлень (Kafka UI)"
+          },
+          "description": {
+            "Клієнтський вебдодаток для адміністрування реєстрів. Інтерфейс дозволяє виконувати необхідну конфігурацію регламенту реєстру без володіння глибокими уміннями програмування.": "Клієнтський вебдодаток для адміністрування реєстрів. Інтерфейс дозволяє виконувати необхідну конфігурацію регламенту реєстру без володіння глибокими уміннями програмування.",
+            "Програмний інструмент, що дозволяє керувати версіями компонентів та конфігурацій.": "Програмний інструмент, що дозволяє керувати версіями компонентів та конфігурацій.",
+            "Програмний комплекс, що забезпечує автоматизацію в життєвому циклі розгортання регламенту Реєстру.": "Програмний комплекс, що забезпечує автоматизацію в життєвому циклі розгортання регламенту Реєстру.",
+            "Веб-інтерфейс для перегляду API-документації Підсистеми управління даними реєстру з ціллю подальшого використання при побудові взаємодії через типові розширення-конектори у бізнес-процесах.": "Вебінтерфейс для перегляду API-документації Підсистеми управління даними реєстру з ціллю подальшого використання при побудові взаємодії через типові розширення-конектори у бізнес-процесах.",
+            "Веб-інтерфейс для перегляду API-документації Підсистеми управління даними реєстру для публічних даних з ціллю подальшого використання при побудові взаємодії з неавтентифікованими користувачами та зовнішніми системами": "Вебінтерфейс для перегляду API-документації Підсистеми управління даними реєстру для публічних даних з ціллю подальшого використання при побудові взаємодії з неавтентифікованими користувачами та зовнішніми системами.",
+            "Користувацький інтерфейс для створення та налаштування аналітичних звітів та дашбордів.": "Користувацький інтерфейс для створення та налаштування аналітичних звітів та дашбордів.",
+            "Користувацький інтерфейс для перегляду стану виконання та управління бізнес-процесами реєстру.": "Користувацький інтерфейс для перегляду стану виконання та управління бізнес-процесами реєстру.",
+            "Користувацький інтерфейс для перегляду даних та схеми моделі даних реєстру.": "Користувацький інтерфейс для перегляду даних та схеми моделі даних реєстру.",
+            "Збереження згенерованих в реєстрі артефактів.": "Збереження згенерованих в реєстрі артефактів.",
+            "Веб-інтерфейс для перегляду черг повідомлень і повідомлень в них": "Вебінтерфейс для перегляду черг повідомлень і повідомлень в них.",
+            "Користувацький інтерфейс для адміністрування гео-даних.": "Користувацький інтерфейс для адміністрування гео-даних."
+          }
+        },
+        "registryOperational": {
+          "title": {
+            "Кабінет отримувача послуг (Citizen Portal)": "Кабінет отримувача послуг (Citizen Portal)",
+            "Кабінет посадової особи (Officer Portal)": "Кабінет посадової особи (Officer Portal)"
+          },
+          "description": {
+            "Клієнтський веб-додаток для отримання адміністративних та інформаційних послуг громадянами.": "Клієнтський веб-додаток для отримання адміністративних та інформаційних послуг громадянами.",
+            "Клієнтський веб-додаток для надання адміністративних та інформаційних послуг посадовою особою.": "Клієнтський веб-додаток для надання адміністративних та інформаційних послуг посадовою особою"
+          }
+        }
+      }
+    },
+    "cluster": {
+      "administrators": {
+        "title": "Адміністратори платформи",
+        "text": {
+          "administrators": "Адміністратори"
+        }
+      },
+      "backup": {
+        "title": "Розклад резервного копіювання",
+        "fields": {
+          "nexusSchedule": {
+            "label": "Розклад",
+            "description": "Використовується Cron-формат."
+          },
+          "nexusTime": {
+            "label": "Час зберігання (днів)",
+            "description": "Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+          },
+          "controlPlaneSchedule": {
+            "label": "Розклад",
+            "description": "Використовується Cron-формат."
+          },
+          "controlPlaneTime": {
+            "label": "Час зберігання (днів)",
+            "description": "Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+          },
+          "managementSchedule": {
+            "label": "Розклад",
+            "description": "Використовується Cron-формат."
+          },
+          "managementTime": {
+            "label": "Час зберігання (днів)",
+            "description": "Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+          },
+          "monitoringSchedule": {
+            "label": "Розклад",
+            "description": "Використовується Cron-формат."
+          },
+          "monitoringTime": {
+            "label": "Час зберігання (днів)",
+            "description": "Значення може бути тільки додатним числом та не меншим за 1 день. Рекомендуємо встановити час збереження більшим за період між створенням копій."
+          }
+        }
+      },
+      "cidr": {
+        "title": "Перелік дозволених CIDR",
+        "text": {
+          "cidrAdministrativeComponents": "CIDR для адміністративних компонент"
+        }
+      },
+      "clusterCidrModal": {
+        "text": {
+          "addCIDR": "Додати CIDR",
+          "checkIPFormat": "Перевірте формат IP-адреси",
+          "ipAddressesAndMasks": "IP-адреси та маски",
+          "charactersForIPDescription": "Допустимі символи \"0-9\", \"/\", \".\". Приклад: 172.16.0.0/12."
+        }
+      },
+      "clusterKey": {
+        "text": {
+          "addedUsersKeysDescription": "Внесені ключі КЕП користувачів будуть застосовані до налаштувань Платформи.",
+          "addedUsersCertificatesDescription": "Внесені сертифікати АЦСК для перевірки ключів КЕП користувачів будуть застосовані до налаштувань Платформи."    
+        }  
+      },
+      "clusterKeycloak": {
+        "text": {
+          "setAdditionDnsForService": "Налаштування додаткових DNS імен для сервісу управління користувачами та ролями (Keycloak). Для додаткових DNS необхідно провести зовнішню конфігурацію записів у реєстранта доменних імен.",
+          "instructionOutsideConfig": "Інструкція з зовнішньої конфігурації",
+          "defaultDNS": "DNS за замовчуванням",
+          "additionalDNS": "Додатковий DNS",
+          "addDNS": "Додати DNS",
+          "editDNS": "Редагувати DNS",
+          "deleteHostname": "Видалити \"{hostname}\"?",
+          "removeAdditionalDNS": "Видалити додатковий DNS?",
+          "impossibleRemoveDNS": "Неможливо видалити DNS",
+          "domainIsUsedByRegistry": "Домен \"{existHostname}\" використовується одним із реєстрів. Змінить домен у відповідному реєстрі на інший, перш ніж видалити цей keycloak DNS.",
+          "domainNameKeycloak": "Доменне імʼя для Keycloak",
+          "clusterSettingsHostnameDescription": "Назва не може перевищувати довжину у 63 символи. Допустимі символи “a-z”, “.”, “-”, “_”",
+          "sslCertificateForKeycloak": "SSL-сертифікат для Keycloak (розширення .pem)",
+          "uploadSSL": "Завантажити SSL-сертифікат",
+          "fileUploaded": "Файл завантажено"
+        }
+      },
+      "documentation": {
+        "title": "Документація",
+        "text": {
+          "linkToSelectedRegistry": "На обраний демо-реєстр вестимуть посилання з документації.",
+          "demoRegistry": "Демо-реєстр",
+          "noSelected": "Не обрано",
+          "previousRegistryNoFound": "Попередній реєстр («{demoRegistryName}») не знайдено."
+        }
+      },
+      "general": {
+        "title": "Загальні налаштування",
+        "fields": {
+          "platformName": {
+            "label": "Назва Платформи"
+          },
+          "main": {
+            "label": "Зображення для логотипа (*.svg)",
+            "fileNameDescription": "Файл завантажено"
+          },
+          "favicon": {
+            "label": "Зображення для favicon (32x32 px, *.png)",
+            "fileNameDescription": "Файл завантажено"
+          },
+          "language": {
+            "label": "Мова інтерфейсу"
+          }
+        },
+        "text": {
+          "localization": "Локалізація",
+          "banner": "Налаштування будуть задіяні після застосування запиту на оновлення.",
+          "platformName": "Назва та логотип Платформи",
+          "platformDescription": "Обрані зображення застосовуються до адміністративної панелі керування.",
+          "localizationDescription": "Можливість вибору мови для інтерфейсу адміністративної панелі керування кластером та реєстрами.",
+          "region": "Регіональний формат",
+          "previousRegistryNoFound": "Попередній реєстр («{demoRegistryName}») не знайдено."
+        }
+      },
+      "platformUpdate": {
+        "title": "Оновлення Платформи",
+        "text": {
+          "updatePlatform": "Оновити Платформу"
+        }
+      },
+      "links": {
+        "platformAdministration": {
+          "title": {
+            "Веб-інтерфейс управління кластером OpenShift (Console)": "Вебінтерфейс управління кластером OpenShift (Console)",
+            "Сервіс інспекції та зберігання змін конфігурації (Gerrit)": "Сервіс інспекції та зберігання змін конфігурації (Gerrit)",
+            "Сервіс розгортання конфігурації (Jenkins)": "Сервіс розгортання конфігурації (Jenkins)",
+            "Сховище артефактів Платформи (Control Plane Nexus)": "Сховище артефактів Платформи (Control Plane Nexus)"
+          },
+          "description": {
+            "Інтерфейс користувача, доступний із веб-браузера. Адміністратори Платформи можуть використовувати OpenShift вебконсоль для візуалізації, перегляду та керування вмістом або ресурсами OpenShift кластера, Платформи та реєстрів.": "Інтерфейс користувача, доступний із веб-браузера. Адміністратори Платформи можуть використовувати OpenShift вебконсоль для візуалізації, перегляду та керування вмістом або ресурсами OpenShift кластера, Платформи та реєстрів.",
+            "Програмний інструмент, що дозволяє керувати версіями компонентів та конфігурацій. Тісно інтегрований з розподіленою системою контролю версій Git та з допомогою цього інструменту адміністратори Платформи мають можливість переглядати всі модифікації коду та конфігурацій за допомогою веб-браузера і затверджувати або відхиляти ці зміни.": "Програмний інструмент, що дозволяє керувати версіями компонентів та конфігурацій. Тісно інтегрований з розподіленою системою контролю версій Git та з допомогою цього інструменту адміністратори Платформи мають можливість переглядати всі модифікації коду та конфігурацій за допомогою веб-браузера і затверджувати або відхиляти ці зміни.",
+            "Програмний комплекс, що забезпечує автоматизацію в життєвому циклі Платформи та Реєстрів. Виконує фактичне розгортання Реєстру, конфігурування, оновлення та безліч інших автоматизованих задач в Платформі.": "Програмний комплекс, що забезпечує автоматизацію в життєвому циклі Платформи та Реєстрів. Виконує фактичне розгортання Реєстру, конфігурування, оновлення та безліч інших автоматизованих задач в Платформі.",
+            "Центральне сховище артефактів, компонентів та їх залежностей, з яких складається кожна окрема підсистема та Платформа в цілому. Збереження артефактів платформи.": "Центральне сховище артефактів, компонентів та їх залежностей, з яких складається кожна окрема підсистема та Платформа в цілому. Збереження артефактів платформи."
+          }
+        },
+        "platformOperational": {
+          "title": {
+            "Сервіс управління користувачами та ролями (Keycloak)": "Сервіс управління користувачами та ролями (Keycloak)",
+            "Веб-інтерфейс перегляду журналу подій Платформи (Kibana)": "Вебінтерфейс перегляду журналу подій Платформи (Kibana)",
+            "Веб-інтерфейс моніторингу Платформи (Grafana)": "Вебінтерфейс моніторингу Платформи (Grafana)",
+            "Веб-інтерфейс управління та моніторингу Service Mesh (Kiali)": "Вебінтерфейс управління та моніторингу Service Mesh (Kiali)",
+            "Веб-інтерфейс моніторингу та трасування запитів (Jaeger)": "Вебінтерфейс моніторингу та трасування запитів (Jaeger)",
+            "Сервіс управління секретами та шифруванням (Vault)": "Сервіс управління секретами та шифруванням (Vault)"
+          },
+          "description": {
+            "Аутентифікація та авторизація користувачів.": "Аутентифікація та авторизація користувачів.",
+            "Доступ та відображення логів в платформі.": "Доступ та відображення логів в платформі.",
+            "Візуалізація та надання доступу до даних моніторингу.": "Візуалізація та надання доступу до даних моніторингу.",
+            "Компонент, що забезпечує адміністраторів Платформи та реєстрів можливістю налаштовувати та аналізувати стан компонентів service-mesh Платформи та реєстрів, здійснювати моніторинг компонентів що входять в service-mesh в реальному часі та швидко виявляти проблеми в мережі.": "Компонент, що забезпечує адміністраторів Платформи та реєстрів можливістю налаштовувати та аналізувати стан компонентів service-mesh Платформи та реєстрів, здійснювати моніторинг компонентів що входять в service-mesh в реальному часі та швидко виявляти проблеми в мережі.",
+            "Сервіс, що використовується для моніторингу запитів та аналізу несправностей розподілених систем на основі мікросервісів. Дозволяє виконати аналіз залежностей компонента, аналіз несправностей, моніторинг транзакцій та оптимізацію продуктивності роботи Платформи.": "Сервіс, що використовується для моніторингу запитів та аналізу несправностей розподілених систем на основі мікросервісів. Дозволяє виконати аналіз залежностей компонента, аналіз несправностей, моніторинг транзакцій та оптимізацію продуктивності роботи Платформи.",
+            "Інструмент для безпечного управління секретами та захисту доступу до конфіденційної інформації в обчислювальних середовищах.": "Інструмент для безпечного управління секретами та захисту доступу до конфіденційної інформації в обчислювальних середовищах."
+          }
+        },
+        "platformCentral": {
+          "title": {
+            "Центральний сервіс управління секретами Платформи (Vault)": "Центральний сервіс управління секретами Платформи (Vault)",
+            "Сховище резервних копій Платформи (Minio)": "Сховище резервних копій Платформи (Minio)"
+          },
+          "description": {
+            "Забезпечення операції Auto unseal для підсистем управління секретами та шифруванням.": "Забезпечення операції Auto unseal для підсистем управління секретами та шифруванням.",
+            "S3-сумісне сховище даних, що забезпечує надійне та масштабоване сховище резервних копій Платформи та реєстрів.": "S3-сумісне сховище даних, що забезпечує надійне та масштабоване сховище резервних копій Платформи та реєстрів."
+          }
+        }
+      }
+    },
+    "changes": {
+      "statuses": {
+        "active": "Активний",
+        "error": "Помилка",
+        "inProgress": "В обробці",
+        "disabled": "Заблокований"
+      },
+      "mergeRequest": {
+        "names": {
+          "updatingRegistryVersion": "Оновлення версії реєстру",
+          "editingRegistry": "Редагування реєстру"
+        },
+        "actions": {
+          "disable": "Заблокування",
+          "enable": "Розблокування",
+          "creation": "Створення",
+          "deletion": "Скасування",
+          "edition": "Редагування",
+          "removing": "Видалення",
+          "versionUpdate": "Оновлення реєстру до {sourceBranch}"
+        },
+        "platformActions": {
+          "updatingAdministrators": "Оновлення адміністраторів платформи",
+          "accessRestrictions": "Обмеження доступу",
+          "editingDNSKeycloak": "Редагування DNS Keycloak",
+          "updatePlatform": "Оновлення платформи до {sourceBranch}"
+        },
+        "statuses": {
+          "inProgress": "У процесі виконання",
+          "new": "Новий",
+          "abandoned": "Відхилено",
+          "merged": "Підтверджено"
+        }
+      }
+    }
+  },
+  "errors": {
+    "requiredField": "Обов’язкове поле",
+    "fillingRequiredField": "Поле обов’язкове для заповнення",
+    "required": "Поле обов’язкове для заповнення",
+    "moreThanMaxValue": "Перевищено максимально допустиме значення",
+    "isUnique": "Неунікальне значення",
+    "rateLimitError": "Вкажіть ліміт мінімум в одному полі",
+    "registryNameAlreadyExists": "Реєстр з такою назвою вже існує",
+    "invalidFileType": "Невірний тип файлу",
+    "nonUniqKeyName": "Ця назва вже використовується.",
+    "dsKeysNotFound": "Не знайдено жодного дозволеного для реєстру ключа шифрування, зверніться до адміністратора Платформи.",
+    "checkFormat": "Перевірте формат поля",
+    "checkFileFormat": "Перевірте формат файлу"
+  },
+  "apiErrors": {
+    "required": "Це поле є необхідним",
+    "cron-expression": "Не є валідним cron-виразом",
+    "cron-expires": "Cron вираз не є актуальним"
+  }
+}

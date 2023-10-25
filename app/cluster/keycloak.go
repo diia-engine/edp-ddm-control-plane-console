@@ -103,16 +103,14 @@ func (a *App) keycloakDNS(ctx *gin.Context) (router.Response, error) {
 		return nil, fmt.Errorf("unable to decode hostnames, %w", err)
 	}
 
-	values, err := a.getValuesDict(ctx)
+	values, err := getValuesFromGit(a.Config.CodebaseName, masterBranch, a.Gerrit)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load values, %w", err)
 	}
 
 	values.Keycloak.CustomHosts = hostnamesData
-	values.OriginalYaml[KeycloakValuesIndex] = values.Keycloak
 
-	if err := a.createValuesMergeRequestCtx(ctx, MRTypeClusterKeycloakDNS, "update cluster keycloak dns",
-		values.OriginalYaml); err != nil {
+	if err := a.createValuesMergeRequestCtx(ctx, MRTypeClusterKeycloakDNS, "update cluster keycloak dns", values); err != nil {
 		return nil, fmt.Errorf("unable to create mr, %w", err)
 	}
 

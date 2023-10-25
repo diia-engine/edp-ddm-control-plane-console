@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import type { EnvVariables } from '@/types/common';
+import type { LANGUAGES } from '@/constants/cluster';
 import { inject } from 'vue';
 import { parseCronExpression } from 'cron-schedule';
+import i18n from '@/localization';
 
 interface PlatformUpdateTemplateVariables {
     updateBranches: any;
@@ -13,7 +16,13 @@ interface PlatformUpdateTemplateVariables {
     keycloakHostname: any;
     dnsManual: string;
     demoRegistryName: string;
+    platformName: string;
+    logoMain: string;
+    logoFavicon: string;
+    language: string;
 }
+
+const envVariables = inject('ENVIRONMENT_VARIABLES') as EnvVariables;
 const variables = inject('TEMPLATE_VARIABLES') as PlatformUpdateTemplateVariables;
 const updateBranches = variables?.updateBranches;
 const errorsMap = variables?.errorsMap;
@@ -25,12 +34,42 @@ const cidrConfig = variables?.cidrConfig;
 const keycloakHostname = variables?.keycloakHostname;
 const dnsManual = variables?.dnsManual;
 const demoRegistryName = variables?.demoRegistryName;
+const platformName = variables?.platformName;
+const logoMain = variables?.logoMain;
+const logoFavicon = variables?.logoFavicon;
+const language: keyof typeof LANGUAGES = (variables?.language || i18n.global.locale) as keyof typeof LANGUAGES;
+
+const tabsVisibilityMap: Record<string, Record<string, boolean>> = {
+    'global': {
+        "general": true,
+        "administrators": true,
+        "backup": true,
+        "allowedCIDR": true,
+        "keysManagement": false,
+        "dataAboutKeyVerification": false,
+        "keycloakDNS": true,
+        "documentation": true,
+    },
+    'ua': {
+        "general": true,
+        "administrators": true,
+        "backup": true,
+        "allowedCIDR": true,
+        "keysManagement": true,
+        "dataAboutKeyVerification": true,
+        "keycloakDNS": true,
+        "documentation": true,
+    }
+};
+const showTabByRegion = tabsVisibilityMap[envVariables.region] ?? tabsVisibilityMap['global'];
 
 </script>
 <script lang="ts">
 import $ from 'jquery';
 import Mustache from 'mustache';
 import axios from 'axios';
+
+import GeneralBlock from './components/GeneralBlock.vue';
 import PlatformUpdateBlock from './components/PlatformUpdateBlock.vue';
 import AdministratorsBlock from './components/AdministratorsBlock.vue';
 import BackupBlock from './components/BackupBlock.vue';
@@ -43,6 +82,7 @@ import Documentation from './components/Documentation.vue';
 
 // eslint-disable-next-line no-useless-escape
 const hostnameRegex = /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
+
 export default {
     expose: ['keyFormValidation'],
     components: {
@@ -55,6 +95,7 @@ export default {
         AdministratorModal,
         CidrModal,
         Documentation,
+        GeneralBlock,
     },
     data() {
         return {
@@ -64,27 +105,27 @@ export default {
                 activeTab: 'general',
                 tabs: {
                     general: {
-                        title: 'Загальні', validated: false, registryName: '', requiredError: false, existsError: false,
+                        title: this.$t('pages.clusterEdit.tabs.general'), validated: false, registryName: '', requiredError: false, existsError: false,
                         formatError: false, validator: this.wizardGeneralValidation,
                         visible: true,
                     },
                     administrators: {
-                        title: 'Адміністратори', validated: false, requiredError: false,
+                        title: this.$t('pages.clusterEdit.tabs.administrators'), validated: false, requiredError: false,
                         validator: this.wizardAdministratorsValidation, visible: true,
                     },
                     template: {
-                        title: 'Шаблон реєстру', validated: false, registryTemplate: '', registryBranch: '',
+                        title: this.$t('pages.clusterEdit.tabs.templateRegistry'), validated: false, registryTemplate: '', registryBranch: '',
                         branches: [], projectBranches: {}, templateRequiredError: false, branchRequiredError: false,
                         validator: this.wizardTemplateValidation, visible: true,
                     },
                     mail: {
-                        title: 'Поштовий сервер', validated: false, beginValidation: false,
+                        title: this.$t('pages.clusterEdit.tabs.mailRegistry'), validated: false, beginValidation: false,
                         validator: this.wizardMailValidation, visible: true,
                     },
                     key: {
-                        title: 'Дані про ключ', validated: false, deviceType: 'file', beginValidation: false,
+                        title: this.$t('pages.clusterEdit.tabs.dataAboutKey'), validated: false, deviceType: 'file', beginValidation: false,
                         hardwareData: {
-                            remoteType: 'криптомод. ІІТ Гряда-301',
+                            remoteType: this.$t('pages.clusterEdit.text.hardwareData'),
                             remoteKeyPWD: '',
                             remoteCaName: '',
                             remoteCaHost: '',
@@ -107,7 +148,7 @@ export default {
                         changed: false,
                     },
                     resources: {
-                        title: 'Ресурси реєстру', validated: false, beginValidation: false,
+                        title: this.$t('pages.clusterEdit.tabs.resourcesRegistry'), validated: false, beginValidation: false,
                         validator: this.wizardEmptyValidation, visible: true,
                     },
                     dns: {
@@ -119,14 +160,14 @@ export default {
                         validator: this.wizardDNSValidation, visible: true,
                         preloadValues: {}
                     },
-                    cidr: { title: 'Обмеження доступу', validated: true, visible: true, validator: this.wizardEmptyValidation, },
+                    cidr: { title: this.$t('pages.clusterEdit.tabs.cidr'), validated: true, visible: true, validator: this.wizardEmptyValidation, },
                     supplierAuthentication: {
-                        title: 'Автентифікація надавачів послуг', validated: false, validator: this.wizardSupAuthValidation,
+                        title: this.$t('pages.clusterEdit.tabs.supplierAuthentication'), validated: false, validator: this.wizardSupAuthValidation,
                         beginValidation: false, visible: true,
-                        dsoDefaultURL: 'https://eu.iit.com.ua/sign-widget/v20200922/',
+                        dsoDefaultURL: 'https://eu.iit.com.ua/sign-widget/v20240301/',
                         data: {
                             authType: 'dso-officer-auth-flow',
-                            url: 'https://eu.iit.com.ua/sign-widget/v20200922/',
+                            url: 'https://eu.iit.com.ua/sign-widget/v20240301/',
                             widgetHeight: '720',
                             clientId: '',
                             secret: '',
@@ -135,7 +176,7 @@ export default {
                         heightIsNotNumber: false,
                     },
                     recipientAuthentication: {
-                        title: 'Автентифікація отримувачів послуг',
+                        title: this.$t('pages.clusterEdit.tabs.recipientAuthentication'),
                         validated: true,
                         beginValidation: false,
                         validator: this.wizardEmptyValidation,
@@ -145,7 +186,7 @@ export default {
                         }
                     },
                     backupSchedule: {
-                        title: 'Резервне копіювання', validated: false, beginValidation: false, visible: true,
+                        title: this.$t('pages.clusterEdit.tabs.backup'), validated: false, beginValidation: false, visible: true,
                         validator: this.wizardBackupScheduleValidation, enabled: false,
                         nextLaunches: false,
                         wrongCronFormat: false,
@@ -158,33 +199,37 @@ export default {
 
                     },
                     documentation: {
-                        title: 'Документація', validated: false, requiredError: false, visible: true,
+                        title: this.$t('pages.clusterEdit.tabs.documentation'), validated: false, requiredError: false, visible: true,
                     },
-                    confirmation: { title: 'Підтвердження', validated: true, visible: true, validator: this.wizardEmptyValidation, }
+                    confirmation: { title: this.$t('pages.clusterEdit.tabs.confirmation'), validated: true, visible: true, validator: this.wizardEmptyValidation, }
                 },
             },
             clusterSettings: {
-                activeTab: 'administrators',
+                activeTab: 'general',
                 tabs: [
                     {
+                        key: 'general',
+                        title: this.$t('pages.clusterEdit.tabs.general')
+                    },
+                    {
                         key: 'administrators',
-                        title: 'Адміністратори'
+                        title: this.$t('pages.clusterEdit.tabs.administrators')
                     },
                     {
                         key: 'backup',
-                        title: 'Резервне копіювання'
+                        title: this.$t('pages.clusterEdit.tabs.backup')
                     },
                     {
                         key: 'allowedCIDR',
-                        title: 'Дозволені CIDR'
+                        title: this.$t('pages.clusterEdit.tabs.allowedCIDR')
                     },
                     {
-                        key: 'dataAboutKey',
-                        title: 'Дані про ключ'
+                        key: 'keysManagement',
+                        title: this.$t('components.keysManagement.title'),
                     },
                     {
-                      key: 'dataAboutKeyVerification',
-                      title: 'Дані для перевірки підписів'
+                        key: 'dataAboutKeyVerification',
+                        title: this.$t('pages.clusterEdit.tabs.dataAboutKeyVerification')
                     },
                     {
                         key: 'keycloakDNS',
@@ -192,7 +237,7 @@ export default {
                     },
                     {
                         key: 'documentation',
-                        title: 'Документація'
+                        title: this.$t('pages.clusterEdit.tabs.documentation')
                     },
                 ],
                 keycloak: {
@@ -218,6 +263,7 @@ export default {
             requiredError: false,
             adminPopupShow: false,
             usernameFormatError: false,
+            passwordFormatError: false,
             editAdmin: {
                 firstName: "",
                 lastName: "",
@@ -241,17 +287,7 @@ export default {
             registryResources: {
                 encoded: '',
                 cat: '',
-                cats: [
-                    'kong',
-                    'bpms',
-                    'digitalSignatureOps',
-                    'userTaskManagement',
-                    'userProcessManagement',
-                    'digitalDocumentService',
-                    'restApi',
-                    'kafkaApi',
-                    'soapApi',
-                ],
+                cats: [],
                 addedCats: [],
             },
             cidrChanged: true,
@@ -361,6 +397,7 @@ export default {
         },
         showAdminForm() {
             this.emailFormatError = false;
+            this.passwordFormatError = false;
             this.adminExistsError = false;
             this.requiredError = false;
             this.adminPopupShow = true;
@@ -369,6 +406,7 @@ export default {
         createAdmin() {
             this.requiredError = false;
             this.emailFormatError = false;
+            this.passwordFormatError = false;
 
 
             for (let v in this.editAdmin) {
@@ -384,6 +422,14 @@ export default {
                     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
                 )) {
                 this.emailFormatError = true;
+                return;
+            }
+
+            if (!String(this.editAdmin.tmpPassword)
+                .match(
+                    /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\S+$)[a-zA-Z0-9@#$%^&+=]{10,}$/
+                )) {
+                this.passwordFormatError = true;
                 return;
             }
 
@@ -490,7 +536,7 @@ export default {
 
             this.registryFormSubmitted = true;
         },
-        deleteCIDR(c: any, cidr: any, value: any) {
+        deleteCIDR(c: any, cidr: any) {
             for (let v in cidr) {
                 if (cidr[v] === c) {
                     cidr.splice(v, 1);
@@ -498,7 +544,6 @@ export default {
                 }
             }
 
-            value = JSON.stringify(cidr);
             this.cidrChanged = true;
         },
         showCIDRForm(cidr: any, value: any) {
@@ -684,25 +729,25 @@ export default {
             this.clusterSettings.keycloak.pemError = '';
 
             if (this.clusterSettings.keycloak.hostname === '') {
-                this.clusterSettings.keycloak.hostnameError = 'Поле обов’язкове для заповнення';
+                this.clusterSettings.keycloak.hostnameError = this.$t('errors.fillingRequiredField');
                 return;
             }
 
             if (!hostnameRegex.test(this.clusterSettings.keycloak.hostname)) {
-                this.clusterSettings.keycloak.hostnameError = 'Перевірте формат поля';
+                this.clusterSettings.keycloak.hostnameError = this.$t('errors.checkFormat');
                 return;
             }
 
             for (let i = 0; i < (this.registryValues as any).keycloak.customHosts.length; i++) {
                 if ((this.registryValues as any).keycloak.customHosts[i].host === this.clusterSettings.keycloak.hostname &&
                     this.clusterSettings.keycloak.hostname !== this.clusterSettings.keycloak.editHostname) {
-                    this.clusterSettings.keycloak.hostnameError = 'Така назва вже використовується';
+                    this.clusterSettings.keycloak.hostnameError = this.$t('pages.clusterEdit.errors.nameExisted');
                     return;
                 }
             }
 
             if (this.clusterSettings.keycloak.fileSelected === false) {
-                this.clusterSettings.keycloak.pemError = 'Поле обов’язкове для заповнення';
+                this.clusterSettings.keycloak.pemError = this.$t('errors.fillingRequiredField');
                 return;
             }
 
@@ -752,9 +797,9 @@ export default {
         },
         localePEMError(message: string) {
             const messages: { [key: string]: string } = {
-                "found in PEM file": "Перевірте формат файла",
-                "certificate has expired or is not yet valid": "Сертифікат застарілий",
-                "certificate is valid for": "Сертифікат не відповідає доменному імені",
+                "found in PEM file": this.$t('errors.checkFileFormat'),
+                "certificate has expired or is not yet valid": this.$t('pages.clusterEdit.errors.certificateHasExpired'),
+                "certificate is valid for": this.$t('pages.clusterEdit.errors.certificateIsValid'),
             };
 
             // eslint-disable-next-line no-prototype-builtins
@@ -836,24 +881,35 @@ export default {
         <div class="registry-header">
             <a href="/admin/cluster/management" onclick="window.history.back(); return false;" class="registry-add">
                 <img alt="add registry" src="@/assets/img/action-back.png" />
-                <span>НАЗАД</span>
+                <span>{{ $t('actions.back') }}</span>
             </a>
         </div>
-        <h1>Налаштування платформи</h1>
+        <h1>{{ $t('pages.clusterEdit.title') }}</h1>
         <div class="reg-wizard">
             <div class="wizard-contents">
                 <ul>
                     <template v-for="tab in clusterSettings.tabs" :key="tab.key">
-                        <li :class="{ active: clusterSettings.activeTab == tab.key }">
+                        <li v-if="showTabByRegion[tab.key]" :class="{ active: clusterSettings.activeTab == tab.key }">
                             <a @click="selectClusterSettingsTab(tab.key, $event)" href="#">{{ tab.title }}</a>
                         </li>
                     </template>
                     <li v-if="hasUpdate" :class="{ active: clusterSettings.activeTab == 'platformUpdate' }">
-                        <a @click="selectClusterSettingsTab('platformUpdate', $event)" href="#">Оновлення платформи</a>
+                        <a @click="selectClusterSettingsTab('platformUpdate', $event)" href="#">
+                            {{ $t('pages.clusterEdit.text.platformRefresh') }}
+                        </a>
                     </li>
                 </ul>
             </div>
             <div class="wizard-body">
+                <div class="wizard-tab" v-show="clusterSettings.activeTab === 'general'">
+                    <general-block
+                        ref="generalRef"
+                        :platformName="platformName"
+                        :logoMain="logoMain"
+                        :logoFavicon="logoFavicon"
+                        :language="language"
+                    />
+                </div>
                 <div class="wizard-tab" v-show="clusterSettings.activeTab == 'administrators'">
                     <administrators-block :admins="admins" :adminsValue="adminsValue" @delete-admin="deleteAdmin"
                         @show-admin-form="showAdminForm" />
@@ -865,13 +921,14 @@ export default {
                     <cidr-block :adminCIDR="adminCIDR" :adminCIDRValue="adminCIDRValue" @delete-cidr="deleteCIDR"
                         @show-cidr-form="showCIDRForm" />
                 </div>
-                <div class="wizard-tab" v-show="clusterSettings.activeTab === 'dataAboutKey' || clusterSettings.activeTab === 'dataAboutKeyVerification'">
-                    <cluster-key-block ref="clusterKeyRef" :active-tab="clusterSettings.activeTab" />
+                <div class="wizard-tab" v-show="clusterSettings.activeTab === 'dataAboutKeyVerification' || clusterSettings.activeTab === 'keysManagement'">
+                    <cluster-key-block ref="clusterKeyRef" :active-tab="clusterSettings.activeTab" :region="envVariables.region" />
                 </div>
                 <div class="wizard-tab" v-show="clusterSettings.activeTab == 'keycloakDNS'">
                     <cluster-keycloak-block :keycloak-hostname="keycloakHostname"
                         :cluster-keycloak-d-n-s-custom-hosts="customHosts" :cluster-settings="clusterSettings"
-                        :backdrop-show="backdropShow" :dns-manual="dnsManual" @submitKeycloakDNSForm="submitKeycloakDNSForm"
+                        :backdrop-show="backdropShow" :dns-manual="dnsManual" :region="envVariables.region"
+                        @submitKeycloakDNSForm="submitKeycloakDNSForm"
                         @editClusterKeycloakDNSHost="editClusterKeycloakDNSHost"
                         @checkClusterDeleteKeycloakDNS="checkClusterDeleteKeycloakDNS"
                         @showClusterKeycloakDNSForm="showClusterKeycloakDNSForm"
@@ -884,7 +941,7 @@ export default {
                         @clusterKeycloakDNSCertSelected="clusterKeycloakDNSCertSelected" ref="clusterKeycloakRef" />
                 </div>
                 <div class="wizard-tab" v-show="clusterSettings.activeTab === 'documentation'">
-                    <documentation ref="documentationRef" :demo-registry-name="demoRegistryName" :active-tab="clusterSettings.activeTab" />
+                    <documentation ref="documentationRef" :demo-registry-name="demoRegistryName" />
                 </div>
                 <div class="wizard-tab" v-show="clusterSettings.activeTab == 'platformUpdate'">
                     <platform-update-block :updateBranches="updateBranches" :errorsMap="errorsMap" />
@@ -892,7 +949,7 @@ export default {
             </div>
         </div>
         <administrator-modal :adminPopupShow="adminPopupShow" :editAdmin="editAdmin" :requiredError="requiredError"
-            :emailFormatError="emailFormatError" :usernameFormatError="usernameFormatError"
+            :emailFormatError="emailFormatError" :usernameFormatError="usernameFormatError" :passwordFormatError="passwordFormatError"
             :adminExistsError="adminExistsError" @create-admin="createAdmin" @hide-admin-form="hideAdminForm" />
 
         <cidr-modal v-model="editCidr" :cidrPopupShow="cidrPopupShow" :cidrFormatError="cidrFormatError"

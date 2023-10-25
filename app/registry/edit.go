@@ -2,12 +2,6 @@ package registry
 
 import (
 	"context"
-	"crypto/sha1"
-	"ddm-admin-console/router"
-	"ddm-admin-console/service/codebase"
-	"ddm-admin-console/service/gerrit"
-	"ddm-admin-console/service/k8s"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,11 +9,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/go-version"
-
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/go-version"
 	"gopkg.in/yaml.v3"
+
+	"ddm-admin-console/router"
+	"ddm-admin-console/service/codebase"
+	"ddm-admin-console/service/gerrit"
+	"ddm-admin-console/service/k8s"
 )
 
 const (
@@ -86,27 +84,27 @@ func (a *App) editRegistryGet(ctx *gin.Context) (response router.Response, retEr
 		return nil, fmt.Errorf("unable to get dns manual, %w", err)
 	}
 
-	infrastructureCluster, err := a.Services.OpenShift.GetInfrastructureCluster(userCtx)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get infrastructure cluster, %w", err)
-	}
-
-	valuesFromDefaultBranch, err := a.GetValuesFromBranch(a.Config.RegistryTemplateName, registryVersion.Original())
+	valuesFromDefaultBranch, err := a.getValuesFromBranch(a.Config.RegistryTemplateName, registryVersion.Original())
 	if err != nil {
 		return nil, fmt.Errorf("unable to get template content, %w", err)
 	}
+	clusterValues, err := GetValuesFromGit(a.Config.ClusterRepo, MasterBranch, a.Services.Gerrit)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get cluster values, %w", err)
+	}
 
 	responseParams := gin.H{
-		"dnsManual":             dnsManual,
-		"registry":              reg,
-		"page":                  "registry",
-		"updateBranches":        branches,
-		"hasUpdate":             hasUpdate,
-		"action":                "edit",
-		"registryVersion":       MajorVersion(registryVersion.Core().Original()),
-		"platformStatusType":    infrastructureCluster.Status.PlatformStatus.Type,
-		"isPlatformAdmin":       ctx.GetBool(router.CanViewClusterManagementSessionKey),
-		"defaultRegistryValues": valuesFromDefaultBranch,
+		"dnsManual":               dnsManual,
+		"registry":                reg,
+		"page":                    "registry",
+		"updateBranches":          branches,
+		"hasUpdate":               hasUpdate,
+		"action":                  "edit",
+		"registryVersion":         MajorVersion(registryVersion.Core().Original()),
+		"platformStatusType":      a.Config.CloudProvider,
+		"isPlatformAdmin":         ctx.GetBool(router.CanViewClusterManagementSessionKey),
+		"defaultRegistryValues":   valuesFromDefaultBranch,
+		"clusterDigitalSignature": clusterValues.DigitalSignature,
 	}
 
 	values, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
@@ -164,35 +162,48 @@ func isVersionRedirect(ctx *gin.Context, basePath, registryName string, registry
 	return false, nil
 }
 
+// TODO: do not edit the following values by reference: values, rspParams and r.
 func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParams gin.H, r *registry) error {
-	//TODO: refactor to values struct
-	if err := a.loadSMTPConfig(values.OriginalYaml, rspParams); err != nil {
+	// TODO: refactor to values struct
+	smtpConfig, err := a.loadSMTPConfig(values.OriginalYaml)
+	if err != nil {
 		return fmt.Errorf("unable to load smtp config, %w", err)
 	}
 
-	//TODO: refactor to values struct
-	if err := a.loadAdminsConfig(values.OriginalYaml, r); err != nil {
+	rspParams["smtpConfig"] = smtpConfig
+
+	// TODO: refactor to values struct
+	admins, err := a.loadAdminsConfig(values.OriginalYaml)
+	if err != nil {
 		return fmt.Errorf("unable to load admins config, %w", err)
 	}
 
-	if err := a.loadOBCConfig(values, r); err != nil {
+	r.Admins = admins
+
+	login, password, err := a.loadOBCConfig(values)
+	if err != nil {
 		return fmt.Errorf("unable to load obc config, %w", err)
 	}
+	r.OBCLogin = login
+	r.OBCPassword = password
 
-	if err := a.loadIDGovUAClientID(values); err != nil {
-		return fmt.Errorf("unable to load secret: %w", err)
-	}
+	supClientId := a.Vault.GetPropertyFromVault(values.Keycloak.IdentityProviders.IDGovUA.SecretKey, idGovUASecretClientID)
+	values.Keycloak.IdentityProviders.IDGovUA.ClientID = supClientId
+	recClientId := a.Vault.GetPropertyFromVault(values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientId, idGovUASecretClientID)
+	values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientId = recClientId
 
 	keycloakHostname, err := LoadKeycloakDefaultHostname(ctx, a.KeycloakDefaultHostname, a.EDPComponent)
 	if err != nil {
 		return fmt.Errorf("unable to load keycloak default hostname, %w", err)
 	}
+
 	rspParams["keycloakHostname"] = keycloakHostname
 
 	keycloakHostnames, err := a.loadKeycloakHostnames()
 	if err != nil {
 		return fmt.Errorf("unable to load keycloak hostnames, %w", err)
 	}
+
 	rspParams["keycloakHostnames"] = keycloakHostnames
 	rspParams["keycloakCustomHost"] = values.Keycloak.CustomHost
 
@@ -202,54 +213,55 @@ func (a *App) loadValuesEditConfig(ctx context.Context, values *Values, rspParam
 	if err != nil {
 		return fmt.Errorf("unable to encode registry data, %w", err)
 	}
+
 	rspParams["registryData"] = string(registryData)
 	rspParams["registryValues"] = values
 
 	return nil
 }
 
-func (a *App) loadIDGovUAClientID(values *Values) error {
-	if values.Keycloak.IdentityProviders.IDGovUA.SecretKey == "" {
-		return nil
+func (a *App) getIDGovUAClientID(path string, property string) string {
+	if path == "" {
+		return ""
 	}
 
-	dataDict, err := a.Vault.Read(values.Keycloak.IdentityProviders.IDGovUA.SecretKey)
+	dataDict, err := a.Vault.Read(path)
 	if err != nil {
-		return fmt.Errorf("unable to load id-gov-ua secret, err: %w", err)
+		return path
 	}
 
-	d, ok := dataDict[idGovUASecretClientID]
+	d, ok := dataDict[property]
 	if !ok {
-		return nil
+		return ""
 	}
 
 	str, ok := d.(string)
 	if !ok {
-		return nil
+		return ""
 	}
 
-	values.Keycloak.IdentityProviders.IDGovUA.ClientID = str
-	return nil
+	return str
 }
 
-func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error {
+// TODO: find out whether we should marshal and unmarshal so many times here.
+func (a *App) loadAdminsConfig(values map[string]any) (string, error) {
 	adminsInterface, ok := values[AdministratorsValuesKey]
 	if !ok {
-		r.Admins = "[]"
-		return nil
+		return "[]", nil
 	}
 
 	adminsJs, err := json.Marshal(adminsInterface)
 	if err != nil {
-		return fmt.Errorf("unable to marshal admins, %w", err)
+		return "", fmt.Errorf("unable to marshal admins, %w", err)
 	}
 
 	var admins []Admin
+
 	if err := json.Unmarshal(adminsJs, &admins); err != nil {
-		return fmt.Errorf("unable tro unmarshal admins, %w", err)
+		return "", fmt.Errorf("unable tro unmarshal admins, %w", err)
 	}
 
-	//TODO: maybe load admin password
+	// TODO: maybe load admin password
 	for i := range admins {
 		admins[i].TmpPassword = ""
 		admins[i].PasswordVaultSecret = ""
@@ -258,69 +270,76 @@ func (a *App) loadAdminsConfig(values map[string]interface{}, r *registry) error
 
 	adminsJs, err = json.Marshal(admins)
 	if err != nil {
-		return fmt.Errorf("unable to marshal admins, %w", err)
+		return "", fmt.Errorf("unable to marshal admins, %w", err)
 	}
 
-	r.Admins = string(adminsJs)
-
-	return nil
+	return string(adminsJs), nil
 }
 
-func (a *App) loadOBCConfig(values *Values, r *registry) error {
+func (a *App) loadOBCConfig(values *Values) (string, string, error) {
 	if values.Global.RegistryBackup.OBC.Credentials == "" {
-		return nil
+		return "", "", nil
 	}
 
 	dataDict, err := a.Vault.Read(values.Global.RegistryBackup.OBC.Credentials)
 	if err != nil {
-		return fmt.Errorf("unable to load obc credential, err: %w", err)
+		return "", "", fmt.Errorf("unable to load obc credential, err: %w", err)
 	}
 
 	login, ok := dataDict[a.Config.BackupBucketAccessKeyID]
 	if !ok {
-		return nil
+		return "", "", nil
 	}
 
 	password, ok := dataDict[a.Config.BackupBucketSecretAccessKey]
 	if !ok {
-		return nil
+		return "", "", nil
 	}
 
 	loginStr, ok := login.(string)
 	if !ok {
-		return nil
+		return "", "", nil
 	}
 
 	passwordStr, ok := password.(string)
 	if !ok {
-		return nil
+		return "", "", nil
 	}
 
-	r.OBCLogin = loginStr
-	r.OBCPassword = passwordStr
-	return nil
+	return loginStr, passwordStr, nil
 }
 
-func (a *App) loadSMTPConfig(values map[string]interface{}, rspParams gin.H) error {
+func (a *App) loadSMTPConfig(values map[string]any) (string, error) {
 	global, ok := values[GlobalValuesIndex]
 	if !ok {
-		rspParams["smtpConfig"] = "{}"
-		return nil
+		return "{}", nil
 	}
 
-	globalDict := global.(map[string]interface{})
+	globalDict, ok := global.(map[string]any)
+	if !ok {
+		return "", fmt.Errorf("failed to assume globalDict type")
+	}
+
 	if _, ok := globalDict["notifications"]; !ok {
-		return nil
+		return "{}", nil
 	}
 
-	emailDict := globalDict["notifications"].(map[string]interface{})["email"].(map[string]interface{})
+	notifications, ok := globalDict["notifications"].(map[string]any)
+	if !ok {
+		return "", fmt.Errorf("failed to assume notifications type")
+	}
+
+	emailDict, ok := notifications["email"].(map[string]any)
+	if !ok {
+		return "", fmt.Errorf("failed to assume email type")
+	}
+
 	mailConfig, err := json.Marshal(emailDict)
 	if err != nil {
-		return fmt.Errorf("unable to encode ot JSON smtp config, %w", err)
+		return "", fmt.Errorf("failed to encode ot JSON smtp config, %w", err)
 	}
 
-	rspParams["smtpConfig"] = string(mailConfig)
-	return nil
+	return string(mailConfig), nil
 }
 
 func (a *App) checkUpdateAccess(codebaseName string, userK8sService k8s.ServiceInterface) error {
@@ -348,7 +367,7 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 	}
 
 	registryName := ctx.Param("name")
-	//TODO: move this to middleware
+	// TODO: move this to middleware
 	allowed, err := cbService.CheckIsAllowedToUpdate(registryName, k8sService)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check access, %w", err)
@@ -380,28 +399,32 @@ func (a *App) editRegistryPost(ctx *gin.Context) (response router.Response, retE
 		fmt.Sprintf("/admin/registry/view/%s", r.Name)), nil
 }
 
-func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *registry, cb *codebase.Codebase,
-	cbService codebase.ServiceInterface) error {
-
-	cb.Spec.Description = &r.Description
+func (a *App) editRegistry(
+	ctx context.Context,
+	ginContext *gin.Context,
+	updatedRegistry *registry,
+	cb *codebase.Codebase,
+	cbService codebase.ServiceInterface,
+) error {
+	cb.Spec.Description = &updatedRegistry.Description
 	if cb.Annotations == nil {
 		cb.Annotations = make(map[string]string)
 	}
 
-	values, err := GetValuesFromGit(r.Name, MasterBranch, a.Gerrit)
+	oldRegistry, err := GetValuesFromGit(updatedRegistry.Name, MasterBranch, a.Gerrit)
 	if err != nil {
-		return fmt.Errorf("unable to get values from git, %w", err)
+		return fmt.Errorf("unable to get oldRegistry from git, %w", err)
 	}
 
 	var (
-		vaultSecretData = make(map[string]map[string]interface{})
+		vaultSecretData = make(map[string]map[string]any)
 		mrActions       = make([]string, 0)
 		valuesChanged   = false
 		repoFiles       = make(map[string]string)
 	)
 
 	for _, proc := range a.createUpdateRegistryProcessors() {
-		procValuesChanged, err := proc(ginContext, r, values, vaultSecretData, &mrActions)
+		procValuesChanged, err := proc(ginContext, updatedRegistry, oldRegistry, vaultSecretData, &mrActions)
 		if err != nil {
 			return fmt.Errorf("error during registry create, %w", err)
 		}
@@ -410,23 +433,32 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 		}
 	}
 
-	keysModified, err := PrepareRegistryKeys(keyManagement{
-		r: r,
-		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
-			time.Now().Format("20060201T150405Z"))),
-	}, ginContext.Request, vaultSecretData, values.OriginalYaml, repoFiles)
+	keysModified, err := PrepareRegistryKeys(
+		keyManagement{
+			r: updatedRegistry,
+			vaultSecretPath: a.vaultRegistryPathKey(
+				updatedRegistry.Name,
+				fmt.Sprintf("%s-%s", KeyManagementVaultPath, time.Now().Format("20060201T150405Z")),
+			),
+		},
+		ginContext.Request,
+		vaultSecretData,
+		oldRegistry,
+		repoFiles,
+		a.Vault,
+	)
 	if err != nil {
 		return fmt.Errorf("unable to create registry keys, %w", err)
 	}
 
 	if keysModified {
-		if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
+		if err := CacheRepoFiles(a.TempFolder, updatedRegistry.Name, repoFiles, a.Cache); err != nil {
 			return fmt.Errorf("unable to cache repo file, %w", err)
 		}
 	}
 
 	if valuesChanged || len(repoFiles) > 0 || keysModified {
-		if err := CreateEditMergeRequest(ginContext, r.Name, values.OriginalYaml, a.Gerrit, mrActions); err != nil {
+		if err := CreateEditMergeRequest(ginContext, updatedRegistry.Name, oldRegistry.OriginalYaml, a.Gerrit, mrActions); err != nil {
 			return fmt.Errorf("unable to create edit merge request, %w", err)
 		}
 	}
@@ -444,25 +476,19 @@ func (a *App) editRegistry(ctx context.Context, ginContext *gin.Context, r *regi
 	return nil
 }
 
-func MapHash(v map[string]interface{}) (string, error) {
-	bts, err := json.Marshal(v)
-	if err != nil {
-		return "", fmt.Errorf("unable to encode map, %w", err)
-	}
-
-	hasher := sha1.New()
-	hasher.Write(bts)
-	return base64.URLEncoding.EncodeToString(hasher.Sum(nil)), nil
-}
-
 type MRLabel struct {
 	Key   string
 	Value string
 }
 
-func CreateEditMergeRequest(ctx *gin.Context, projectName string, values map[string]interface{},
-	gerritService gerrit.ServiceInterface, mrActions []string, labels ...MRLabel) error {
-
+func CreateEditMergeRequest(
+	ctx *gin.Context,
+	projectName string,
+	values map[string]any,
+	gerritService gerrit.ServiceInterface,
+	mrActions []string,
+	labels ...MRLabel,
+) error {
 	valuesYaml, err := yaml.Marshal(values)
 	if err != nil {
 		return fmt.Errorf("unable to encode values yaml, %w", err)

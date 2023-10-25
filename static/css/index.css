@@ -10492,17 +10492,41 @@ main {
     background-color: #222222;
 }
 
-.edp-header h2,
 .edp-header .logo {
     display: flex;
     align-items: center;
 }
 
-.edp-header h2 {
+.edp-header .logo-img{
+    height: 48px;
+    max-width: 48px;
+    color: #ffffff;
+}
+
+.edp-header .logo-img svg {
+    width: 100%;
+    height: 100%;
+    fill: #ffffff;
+    color: #ffffff;
+}
+
+.edp-header .logo-img svg path{
+    fill: #ffffff;
+    color: #ffffff;
+}
+
+.edp-header .logo-app-name {
     color: #ffffff;
     font-size: 1.28rem;
     padding-left: 0.5rem;
+    margin-right: 4rem;
     margin-left: 0.5rem;
+    line-height: 3rem;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
 }
 
 .edp-footer {

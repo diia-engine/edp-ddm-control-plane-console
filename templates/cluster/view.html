@@ -3,6 +3,7 @@
     <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/datatables.custom.css" />
     
     <div id="template-args" style="display: none;" data-args="{{ .templateArgs }}"></div>
+    <div id="env-args" style="display: none;" data-args="{{ envVars }}"></div>
     <div id="app"></div>
 
     {{template "scripts" .}}

@@ -3,6 +3,7 @@ package registry
 import (
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/gerrit"
+	"ddm-admin-console/locale"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -33,11 +34,11 @@ func (a *App) editPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 	regLimitsValue := ctx.PostForm("reg-limits")
 	var regLimits Limits
 	if systemName == "" {
-		return nil, errors.New("reg-name is required")
+		return nil, errors.New(locale.Localize("registry.errors.regNameRequired"))
 	}
 
 	if err := json.Unmarshal([]byte(regLimitsValue), &regLimits); err != nil {
-		return nil, errors.Wrap(err, "unable to decode limits from request")
+		return nil, errors.Wrap(err, locale.Localize("registry.errors.regLimitsDecode"))
 	}
 
 	vals, err := GetValuesFromGit(registryName, MasterBranch, a.Gerrit)
@@ -55,7 +56,7 @@ func (a *App) editPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 		}
 	}
 	if !found {
-		return nil, errors.New("reg-name not found")
+		return nil, errors.New(locale.Localize("registry.errors.regNameNotFound"))
 	}
 
 	vals.OriginalYaml[publicAPIValuesIndex] = vals.PublicApi
@@ -82,7 +83,7 @@ func (a *App) addPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 	regLimitsValue := ctx.PostForm("reg-limits")
 
 	if err := json.Unmarshal([]byte(regLimitsValue), &regLimits); err != nil {
-		return nil, errors.Wrap(err, "unable to decode limits from request")
+		return nil, errors.Wrap(err, locale.Localize("registry.errors.regLimitsDecode"))
 	}
 
 	publicAPI := PublicAPI{
@@ -99,7 +100,7 @@ func (a *App) addPublicAPIReg(ctx *gin.Context) (router.Response, error) {
 
 	for _, _er := range values.PublicApi {
 		if publicAPI.Name == _er.Name && _er.URL == publicAPI.URL {
-			return nil, errors.New("publicAPI reg system already exists")
+			return nil, errors.New(locale.Localize("registry.errors.regSystemExist"))
 		}
 	}
 

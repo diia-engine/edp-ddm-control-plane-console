@@ -9,7 +9,6 @@ import ToggleSwitch from '@/components/common/ToggleSwitch.vue';
 import Banner from '@/components/common/Banner.vue';
 import { jsonDiff } from '@/utils/registry';
 import type { RegistryResource } from '@/types/registry';
-import { REGISTRY_COMPONENTS } from '@/types/registry';
 import { cloneDeep } from 'lodash';
 
 interface WizardTemplateVariables {
@@ -24,18 +23,13 @@ export default defineComponent({
       encoded: '',
       category: '' as any,
       categories: [] as Array<RegistryResource>,
-      listOfCategoryNames: Object.keys(REGISTRY_COMPONENTS),
+      listOfCategoryNames: [] as Array<string>,
     });
     const crunchyPostgres = ref({
       maxConnections: '',
       storageSize: '',
     });
     const diffRegistryResourcesAndDefaultResources = ref<string[]>([]);
-    const resourcesWithoutHpa = [
-      REGISTRY_COMPONENTS.geoServer,
-      REGISTRY_COMPONENTS.redis,
-      REGISTRY_COMPONENTS.sentinel,
-    ];
     const defaultEmptyResource = {
       config: {
         istio: {
@@ -84,25 +78,6 @@ export default defineComponent({
       }),
     });
 
-    const validationSchemaWithHpa = Yup.object().shape({
-      hpa: Yup.object().shape({
-        enabled: Yup.bool(),
-        minReplicas: Yup.number().when('enabled', {
-          is: true,
-          then: (schema) => schema.required().min(1).integer(),
-        }),
-        maxReplicas: Yup.number().when('enabled', {
-          is: true,
-          then: (schema) =>
-            schema.required().min(1).integer().moreThan(Yup.ref('minReplicas')),
-        }),
-      }),
-      replicas: Yup.number().when('hpa.enabled', {
-        is: false,
-        then: (schema) => schema.required().min(1).integer(),
-      }),
-    });
-
     const validationSchema = Yup.object({
       registryResourcesForm: Yup.array().of(
         Yup.object().shape({
@@ -110,8 +85,10 @@ export default defineComponent({
           config: Yup.object().when('name', {
             is: (name: string) => {
               return (
-                name === REGISTRY_COMPONENTS.kafkaApi ||
-                name === REGISTRY_COMPONENTS.restApi
+                name === "kafkaApi" ||
+                name === "restApi" ||
+                name === "restApiExternal" ||
+                name === "restApiPublic"
               );
             },
             then: (schema) => {
@@ -121,28 +98,16 @@ export default defineComponent({
                     maxPoolSize: Yup.number().required().min(1).integer(),
                   }),
                 })
-                .concat(validationSchemaWithHpa)
                 .concat(commonValidationSchema);
             },
-            otherwise: (schema) => {
-              return schema.when('name', {
-                is: (name: REGISTRY_COMPONENTS) => {
-                  return resourcesWithoutHpa.includes(name);
-                },
-                then: (schema) =>
-                  schema
-                    .shape({
-                      replicas: Yup.number().required().min(1).integer(),
-                    })
-                    .concat(commonValidationSchema),
-                otherwise: (schema) =>
-                  schema
-                    .concat(validationSchemaWithHpa)
-                    .concat(commonValidationSchema),
-              });
-            },
-          }),
-        })
+            otherwise: (schema) =>
+              schema
+                .shape({
+                  replicas: Yup.number().required().min(1).integer(),
+                })
+                .concat(commonValidationSchema),
+            }),
+          })
       ),
     });
 
@@ -172,9 +137,7 @@ export default defineComponent({
       crunchyPostgres,
       diffRegistryResourcesAndDefaultResources,
       registryResourcesForm,
-      resourcesWithoutHpa,
       defaultEmptyResource,
-      REGISTRY_COMPONENTS,
     };
   },
   props: {
@@ -241,19 +204,11 @@ export default defineComponent({
           name: this.registryResources.category,
           config: {
             ...cloneDeep(this.defaultEmptyResource.config),
-            ...(!this.resourcesWithoutHpa.includes(
-              this.registryResources.category
-            ) && {
-              hpa: {
-                enabled: false,
-                maxReplicas: 3,
-                minReplicas: 1,
-              },
-            }),
             ...((this.registryResources.category ===
-              REGISTRY_COMPONENTS.kafkaApi ||
-              this.registryResources.category ===
-                REGISTRY_COMPONENTS.restApi) && {
+                "kafkaApi" ||
+                "restApi" ||
+                "restApiExternal" ||
+                "restApiPublic") && {
               datasource: {
                 maxPoolSize: 10,
               },
@@ -319,10 +274,15 @@ export default defineComponent({
           crunchyPostgres.postgresql?.parameters?.max_connections;
         this.crunchyPostgres.storageSize = crunchyPostgres.storageSize;
       }
+
       const data = values?.global?.registry;
 
       if (!data) {
         return;
+      }
+
+      if (!this.isEditAction) {
+        this.registryResources.listOfCategoryNames = Object.keys(data);
       }
 
       for (const i in data) {
@@ -385,6 +345,8 @@ export default defineComponent({
         const data = this.changeMaxPoolSizeToNumber(this.templateVariables.registryValues.global?.registry);
         const baseData = this.templateVariables.defaultRegistryValues?.global?.registry;
 
+        this.registryResources.listOfCategoryNames = Object.keys(data);
+
         this.cleanEmptyProperties(data);
         this.cleanEmptyProperties(baseData);
 
@@ -396,10 +358,12 @@ export default defineComponent({
     },
     showBanner(categoryName: string) {
       return (
-        this.isEditAction &&
-        (categoryName === REGISTRY_COMPONENTS.restApi ||
-          categoryName === REGISTRY_COMPONENTS.kafkaApi ||
-          categoryName === REGISTRY_COMPONENTS.soapApi)
+          this.isEditAction &&
+          (categoryName === "restApi" ||
+              categoryName === "kafkaApi" ||
+              categoryName === "restApiExternal" ||
+              categoryName === "restApiPublic" ||
+              categoryName === "soapApi")
       );
     },
     changeMaxPoolSizeToNumber(categories: Record<string, any>) {
@@ -416,11 +380,12 @@ export default defineComponent({
     this.preloadRegistryResources(this.templateVariables.registryValues);
   },
 });
+
 </script>
 <template>
-  <Typography variant="h3" class="h3">Ресурси реєстру</Typography>
+  <Typography variant="h3" class="h3">{{ $t('components.registryResources.title') }}</Typography>
   <Typography variant="bodyText">
-    Ви можете додати окремі компоненти до реєстру.
+    {{ $t('components.registryResources.text.addIndividualComponents') }}
   </Typography>
   <input type="hidden" name="resources" :value="registryResources.encoded" />
 
@@ -455,78 +420,21 @@ export default defineComponent({
       <Banner
         v-if="showBanner(cat.name)"
         classes="mb32"
-        description="Якщо потрібно одразу застосувати внесені зміни, необхідно викликати оновлення дата-моделі."
+        :description="$t('components.registryResources.text.applyChangesImmediately')"
       />
-      <template
-        v-if="
-          !resourcesWithoutHpa.includes(cat.name) &&
-          typeof cat.config?.hpa?.enabled === 'boolean'
-        "
-      >
-        <Typography variant="h5" class="upperText">
-          HPA (Автоматичне горизонтальне масштабування)
-        </Typography>
-        <ToggleSwitch
-          :name="`cat[${idx}].config.hpa.enabled`"
-          label="Enable HPA (Автоматичне горизонтальне масштабування)"
-          v-model="cat.config.hpa.enabled"
-          classes="mt24"
-        />
-        <div class="rc-form-group mt24" v-if="!cat.config?.hpa?.enabled">
-          <TextField
-            required
-            type="number"
-            label="Replicas Amount"
-            :name="`cat[${idx}].config.replicas`"
-            v-model="cat.config.replicas"
-            :error="errors[`registryResourcesForm[${idx}].config.replicas`]"
-          />
-        </div>
-        <div
-          class="rc-form-group mt24 rc-form-group-horz"
-          v-if="cat.config?.hpa?.enabled"
-        >
-          <TextField
-            required
-            type="number"
-            label="Min Replicas"
-            :name="`cat[${idx}].config.hpa.minReplicas`"
-            v-model="cat.config.hpa.minReplicas"
-            :error="
-              errors[`registryResourcesForm[${idx}].config.hpa.minReplicas`]
-            "
-            rootClass="mb0"
-          />
-          <div class="separator">–</div>
-          <TextField
-            required
-            type="number"
-            label="Max Replicas"
-            :name="`cat[${idx}].config.hpa.maxReplicas`"
-            v-model="cat.config.hpa.maxReplicas"
-            :error="
-              errors[`registryResourcesForm[${idx}].config.hpa.maxReplicas`]
-            "
-            rootClass="mb0"
-          />
-        </div>
-      </template>
-      <template v-else>
-        <TextField
-          v-if="cat.name !== REGISTRY_COMPONENTS.geoServer"
+      <TextField
+          v-if="cat.name !== 'geoServer'"
           required
           type="number"
           label="Replicas Amount"
           :name="`cat[${idx}].config.replicas`"
           v-model="cat.config.replicas"
           :error="errors[`registryResourcesForm[${idx}].config.replicas`]"
-        />
-      </template>
+      />
       <div class="rc-form-group mt32">
         <Typography variant="h5" class="upperText">Container limits</Typography>
         <Typography variant="small" class="mt16">
-          Вказуйте значення та розмірність. Наприклад, “100m” для CPU
-          (millicores) та “400Mi” для RAM (mebibytes).
+          {{ $t('components.registryResources.text.specifyValueAndDimension') }}
         </Typography>
         <div class="rc-form-group mt24 rc-form-group-horz">
           <TextField
@@ -559,7 +467,7 @@ export default defineComponent({
           />
         </div>
       </div>
-      <div class="rc-form-group mt32" v-if="cat.name !== REGISTRY_COMPONENTS.redis">
+      <div class="rc-form-group mt32" v-if="cat.name !== 'redis'">
         <Typography variant="h5" class="upperText">Istio sidecar</Typography>
         <ToggleSwitch
           :name="`cat[${idx}].config.istio.sidecar.enabled`"
@@ -603,7 +511,7 @@ export default defineComponent({
       </div>
 
       <div class="rc-form-group mt32">
-        <Typography variant="h5" class="upperText">Змінні оточення</Typography>
+        <Typography variant="h5" class="upperText">{{ $t('components.registryResources.text.changingEnvironments') }}</Typography>
         <div class="rc-form-group rc-form-group-horz mb0 mt24">
           <Typography variant="bodyText" class="env-name">Name</Typography>
           <Typography variant="bodyText" class="env-value">Value</Typography>
@@ -646,17 +554,14 @@ export default defineComponent({
             href="#"
             class="env-add-lnk"
           >
-            <Typography variant="small">+ Додати змінну оточення</Typography>
+            <Typography variant="small">+ {{ $t('components.registryResources.text.addEnvironmentVariable') }}</Typography>
           </a>
         </div>
       </div>
 
       <div
-        v-if="
-          (cat.name === REGISTRY_COMPONENTS.restApi || cat.name === REGISTRY_COMPONENTS.kafkaApi) &&
-          typeof cat.config?.datasource?.maxPoolSize === 'number'
-        "
-        class="rc-form-group mb24"
+          v-if="cat.name === 'restApi' || cat.name === 'kafkaApi' || cat.name === 'restApiExternal' || cat.name === 'restApiPublic'"
+          class="rc-form-group mb24"
       >
         <Typography variant="h5" class="upperText mb24">
           Database connection parameters
@@ -664,9 +569,9 @@ export default defineComponent({
         <TextField
           type="number"
           label="Maximum pool size"
-          description="Допустиме значення параметру > 0"
+          :description="$t('components.registryResources.fields.maxPoolSize.description')"
           :name="`cat[${idx}].config.datasource.maxPoolSize`"
-          v-model="cat.config.datasource.maxPoolSize"
+          v-model="cat.config.datasource!.maxPoolSize"
           :error="
             errors[
               `registryResourcesForm[${idx}].config.datasource.maxPoolSize`
@@ -679,7 +584,7 @@ export default defineComponent({
 
     <div class="rc-form-group res-cat-select">
       <select v-model="registryResources.category">
-        <option disabled selected value="">Оберіть компонент</option>
+        <option disabled selected value="">{{ $t('components.registryResources.text.selectComponent') }}</option>
         <option
           v-for="name in registryResources.listOfCategoryNames"
           v-bind:key="name"
@@ -691,7 +596,7 @@ export default defineComponent({
         @click.prevent="addResource"
         :class="['btn', { 'btn-active': registryResources.category }]"
       >
-        Додати
+        {{ $t('actions.add') }}
       </button>
     </div>
   </div>

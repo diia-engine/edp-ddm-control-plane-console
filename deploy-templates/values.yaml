@@ -8,6 +8,9 @@ enable_branch_provisioners: 1
 global:
   edpName: control-plane
   platform: openshift
+  language: "uk"
+  platformName: "Адміністративна панель керування Платформою та реєстрами"
+  logosPath: "configmap:platform-logos-default"
 
 imageStreamUrlMask: /console/project/{namespace}/browse/images/{stream}
 

@@ -1,6 +1,8 @@
 <script setup lang="ts">
   import { inject } from 'vue';
+
   const templateVariables = inject('TEMPLATE_VARIABLES') as RegistryWizardTemplateVariables;
+  const envVariables = inject('ENVIRONMENT_VARIABLES') as EnvVariables;
 </script>
 
 <script lang="ts">
@@ -17,13 +19,14 @@ import RegistryTrembita from './steps/RegistryTrembita.vue';
 import RegistryDigitalDocuments from './steps/RegistryDigitalDocuments.vue';
 import KeyData from './steps/KeyData.vue';
 import KeyVerification from "./steps/KeyVerification.vue";
-import RegistryGeneral from "./steps/RegistryGeneral.vue";
-import RegistryGeneralEdit from "./steps/RegistryGeneralEdit.vue";
+import { RegistryGeneralCreate, RegistryGeneralEdit } from "./steps/RegistryGeneral";
 import ParametersVirtualMachinesAWS from "./steps/ParametersVirtualMachinesAWS.vue";
 import ParametersVirtualMachinesVSphere from "./steps/ParametersVirtualMachinesVSphere.vue";
 import GeoDataSettings from "./steps/GeoDataSettings.vue";
 import RegistryAdminAuth from "./steps/RegistryAdminAuth.vue";
-import { type RegistryWizardTemplateVariables, PlatformStatusType, PORTALS } from '@/types/registry';
+import { type RegistryWizardTemplateVariables, PlatformStatusType, PORTALS} from '@/types/registry';
+import type { EnvVariables } from '@/types/common';
+import RegistryCSP from './steps/RegistryCSP.vue';
 
 export default defineComponent({
     props: {
@@ -34,6 +37,7 @@ export default defineComponent({
             pageRoot: this.$parent as any, //TODO: remove this
             templatePreloadedData: {},
             parentFormSubmitted: false,
+            gerritBranch: new URLSearchParams(window.location.search).get('version')?.toString() ?? '',
         };
     },
     components: {
@@ -41,6 +45,7 @@ export default defineComponent({
       RegistryResources,
       RegistryDns,
       RegistryCidr,
+      RegistryCSP,
       RegistrySupplierAuth,
       RegistryBackupSchedule,
       RegistryRecipientAuth,
@@ -48,7 +53,7 @@ export default defineComponent({
       KeyVerification,
       RegistryTrembita,
       RegistryDigitalDocuments,
-      RegistryGeneral,
+      RegistryGeneralCreate,
       RegistryGeneralEdit,
       ParametersVirtualMachinesAWS,
       ParametersVirtualMachinesVSphere,
@@ -63,6 +68,15 @@ export default defineComponent({
     methods: {
       onPreloadTemplateData(data: any) {
         this.templatePreloadedData = data;
+      },
+      onChooseGerritBranch(branch: string) {
+        // set short version of branch to url
+        if (branch.split('.').length >= 4) {
+          const searchParams = new URLSearchParams(window.location.search);
+          const branchShortName = branch.split('.').slice(0, 3).join('.');
+          searchParams.set("version", branchShortName);
+          window.location.search = searchParams.toString();
+        }
       },
     },
 });
@@ -82,7 +96,7 @@ export default defineComponent({
                     </li>
                 </template>
                 <li v-if="templateVariables.hasUpdate">
-                    <a :href="`/admin/registry/update/${templateVariables.registry.metadata.name}`">Оновити реєстр</a>
+                    <a :href="`/admin/registry/update/${templateVariables.registry.metadata.name}`">{{ $t('components.registryWizard.actions.updateRegister') }}</a>
                 </li>
             </ul>
         </div>
@@ -94,12 +108,14 @@ export default defineComponent({
 
                 <div v-if="pageRoot.$data.error" class="rc-global-error">{{templateVariables.error}}</div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'general'">
-                  <RegistryGeneral
+                  <RegistryGeneralCreate
                     ref="generalTab"
                     v-if="templateVariables.action === 'create'"
                     @preload-template-data="onPreloadTemplateData"
+                    @on-choose-gerrit-branch="onChooseGerritBranch"
                     :gerritBranches="templateVariables.gerritBranches"
                     :registryTemplateName="templateVariables.registryTemplateName"
+                    :language="templateVariables.clusterValues?.global?.language"
                   />
                   <RegistryGeneralEdit
                     ref="generalTab"
@@ -124,7 +140,7 @@ export default defineComponent({
                   />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'administrators'">
-                    <h2>Адміністратори</h2>
+                    <h2>{{ $t('components.registryWizard.text.administrators') }}</h2>
                     <div :class="{ error: pageRoot.$data.wizard.tabs.administrators.requiredError }"
                         class="rc-form-group administrators">
                         <input type="hidden" id="admins" name="admins" v-model="pageRoot.$data.adminsValue" :admins="pageRoot.loadAdmins(templateVariables.model?.admins)" />
@@ -139,8 +155,8 @@ export default defineComponent({
                             </div>
                             <button type="button" @click="pageRoot.showAdminForm">+</button>
                         </div>
-                        <span v-if="pageRoot.$data.wizard.tabs.administrators.requiredError">Обов’язкове поле</span>
-                        <p>Допустимі символи: "0-9", "a-z", "_", "-", "@", ".", ",".</p>
+                        <span v-if="pageRoot.$data.wizard.tabs.administrators.requiredError">{{ $t('errors.requiredField') }}</span>
+                        <p>{{ $t('components.registryWizard.text.advancedAdminsDescription') }}</p>
                     </div>
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'mail'">
@@ -149,13 +165,15 @@ export default defineComponent({
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'key'">
                     <KeyData
                       :registry-action="templateVariables.action"
-                      page-description="Внесені ключі системного підпису та КЕП користувачів будуть застосовані для налаштувань поточного реєстру."
+                      :page-description="$t('components.registryWizard.text.enteredSystemSignatureKeys')"
+                      :region="envVariables.region"
                       ref="keyDataTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'keyVerification'">
                   <KeyVerification
                       :registry-action="templateVariables.action"
-                      page-description="Внесені сертифікати АЦСК для перевірки ключів системного підпису та КЕП користувачів будуть застосовані для налаштувань поточного реєстру."
+                      :page-description="$t('components.registryWizard.text.enteredCertificatesVerification')"
+                      :region="envVariables.region"
                       ref="keyVerificationTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'resources'">
@@ -180,12 +198,18 @@ export default defineComponent({
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'cidr'">
                     <RegistryCidr ref="cidrTab" />
                 </div>
+                <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'csp'">
+                    <RegistryCSP ref="cspTab" />
+                </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'supplierAuthentication'">
                     <RegistrySupplierAuth
                         :keycloak-settings="templateVariables.registryValues?.keycloak"
                         :sign-widget-settings="templateVariables.registryValues?.signWidget"
                         :officer-portal-settings="templateVariables.registryValues?.portals?.officer"
                         :is-enabled-portal="!templateVariables.registryValues?.global.excludePortals?.includes(PORTALS.officer)"
+                        :digital-signature-keys="templateVariables?.clusterDigitalSignature?.keys || templateVariables?.clusterValues?.['digital-signature']?.keys"
+                        :region="envVariables.region"
+                        :registryName="templateVariables.registry?.metadata?.name || ''"
                         ref="supplierAuthTab"
                     />
                 </div>
@@ -194,7 +218,10 @@ export default defineComponent({
                         :keycloak-settings="templateVariables.registryValues?.keycloak.citizenAuthFlow"
                         :citizen-portal-settings="templateVariables.registryValues?.portals?.citizen"
                         :is-enabled-portal="!templateVariables.registryValues?.global.excludePortals?.includes(PORTALS.citizen)"
+                        :region="envVariables.region"
                         ref="recipientAuthTab"
+                        :digital-signature-keys="templateVariables?.clusterDigitalSignature?.keys  || templateVariables?.clusterValues?.['digital-signature']?.keys"
+                       :registryName="templateVariables.registry?.metadata?.name || ''"
                     />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'adminAuthentication'">
@@ -220,18 +247,18 @@ export default defineComponent({
                 <RegistryTrembita ref="trembitaTab" />
               </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'confirmation'">
-                    <h2>Підтвердження</h2>
-                    <p>Усе готово для створення реєстру. Ви можете перевірити внесені дані або натисніть "Створити реєстр".</p>
+                    <h2>{{ $t('components.registryWizard.text.confirmation') }}</h2>
+                    <p>{{ $t('components.registryWizard.text.everythingReadyCreateRegistry') }}</p>
                 </div>
                 <div class="wizard-buttons" :class="{ 'no-prev': pageRoot.$data.wizard.activeTab == 'general' }">
                     <template v-if="templateVariables.action === 'create'">
-                        <button class="wizard-prev" @click="pageRoot.wizardPrev" v-show="pageRoot.$data.wizard.activeTab != 'general'" type="button">Назад</button>
-                        <button class="wizard-next" @click="pageRoot.wizardNext" v-show="pageRoot.$data.wizard.activeTab != 'confirmation'" type="button">Далі</button>
-                        <button class="wizard-next" @click="pageRoot.wizardEditSubmit" v-show="pageRoot.$data.wizard.activeTab == 'confirmation'">Створити реєстр</button>
+                        <button class="wizard-prev" @click="pageRoot.wizardPrev" v-show="pageRoot.$data.wizard.activeTab != 'general'" type="button">{{ $t('actions.back') }}</button>
+                        <button class="wizard-next" @click="pageRoot.wizardNext" v-show="pageRoot.$data.wizard.activeTab != 'confirmation'" type="button">{{ $t('actions.next') }}</button>
+                        <button class="wizard-next" @click="pageRoot.wizardEditSubmit" v-show="pageRoot.$data.wizard.activeTab == 'confirmation'">{{ $t('components.registryWizard.actions.createRegister') }}</button>
                     </template>
 
                     <button v-if="templateVariables.action === 'edit'" v-show="pageRoot.$data.wizard.activeTab != 'update'" class="wizard-next" type="button"
-                            @click="pageRoot.wizardEditSubmit" :disabled="pageRoot.$data.disabled">Підтвердити</button>
+                            @click="pageRoot.wizardEditSubmit" :disabled="pageRoot.$data.disabled">{{ $t('actions.confirm') }}</button>
                 </div>
             </form>
         </div>

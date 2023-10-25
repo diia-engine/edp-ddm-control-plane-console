@@ -4,6 +4,7 @@ import (
 	"context"
 	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
+	"ddm-admin-console/locale"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -97,29 +98,20 @@ func (a *App) backupSchedule(ctx *gin.Context) (router.Response, error) {
 
 		errorsMap := make(map[string][]interface{})
 		for _, v := range validationErrors {
-			errorsMap[v.Field()] = append(errorsMap[v.Field()], v.Tag())
+			errorsMap[v.Field()] = append(errorsMap[v.Field()], locale.Localize("apiErrors." + v.Tag()))
 		}
 
 		return router.MakeJSONResponse(http.StatusUnprocessableEntity, gin.H{"errors": errorsMap}), nil
 	}
 
-	values, err := a.getValuesDict(ctx)
+	values, err := getValuesFromGit(a.Config.CodebaseName, masterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values")
 	}
 
-	valuesDict := values.OriginalYaml
+	values.Velero.Backup = bs.ToNestedStruct()
 
-	velero, ok := valuesDict[veleroValuesIndex]
-	if !ok {
-		velero = make(map[string]interface{})
-	}
-	veleroDict := velero.(map[string]interface{})
-
-	veleroDict["backup"] = bs.ToNestedStruct()
-	valuesDict[veleroValuesIndex] = veleroDict
-
-	bts, err := yaml.Marshal(valuesDict)
+	bts, err := yaml.Marshal(values)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to encode yaml")
 	}

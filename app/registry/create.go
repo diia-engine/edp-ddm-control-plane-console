@@ -2,14 +2,9 @@ package registry
 
 import (
 	"context"
-	"ddm-admin-console/router"
-	"ddm-admin-console/service/codebase"
-	edpComponent "ddm-admin-console/service/edp_component"
-	"ddm-admin-console/service/gerrit"
-	"ddm-admin-console/service/k8s"
-	"ddm-admin-console/service/vault"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -26,34 +21,52 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/strings/slices"
+
+	"ddm-admin-console/router"
+	"ddm-admin-console/service/codebase"
+	edpComponent "ddm-admin-console/service/edp_component"
+	"ddm-admin-console/service/gerrit"
+	"ddm-admin-console/service/k8s"
+	"ddm-admin-console/service/vault"
 )
 
 const (
-	AnnotationSMPTType            = "registry-parameters/smtp-type"
-	AnnotationSMPTOpts            = "registry-parameters/smtp-opts"
-	AnnotationTemplateName        = "registry-parameters/template-name"
-	AnnotationCreatorUsername     = "registry-parameters/creator-username"
-	AnnotationCreatorEmail        = "registry-parameters/creator-email"
-	AnnotationValues              = "registry-parameters/values"
-	AdministratorsValuesKey       = "administrators"
-	ResourcesValuesKey            = "registry"
-	VaultKeyCACert                = "caCertificate"
-	VaultKeyCert                  = "certificate"
-	VaultKeyPK                    = "key"
-	externalSystemsKey            = "external-systems"
-	externalSystemDefaultProtocol = "REST"
-	externalSystemDeletableType   = "registry"
-	trembitaRegistriesKey         = "registries"
-	trembitaValuesKey             = "trembita"
-	trembitaRegistriesValuesKet   = "registries"
+	AnnotationSMPTType             = "registry-parameters/smtp-type"
+	AnnotationSMPTOpts             = "registry-parameters/smtp-opts"
+	AnnotationTemplateName         = "registry-parameters/template-name"
+	AnnotationCreatorUsername      = "registry-parameters/creator-username"
+	AnnotationCreatorEmail         = "registry-parameters/creator-email"
+	AnnotationValues               = "registry-parameters/values"
+	AnnotationTemplatePushedStatus = "registry-status/template-pushed"
+	AdministratorsValuesKey        = "administrators"
+	ResourcesValuesKey             = "registry"
+	VaultKeyCACert                 = "caCertificate"
+	VaultKeyCert                   = "certificate"
+	VaultKeyPK                     = "key"
+	externalSystemsKey             = "external-systems"
+	externalSystemDefaultProtocol  = "REST"
+	externalSystemDeletableType    = "registry"
+	trembitaRegistriesKey          = "registries"
+	trembitaValuesKey              = "trembita"
+	trembitaRegistriesValuesKet    = "registries"
 )
 
-func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
-	return []func(*gin.Context, *registry, *Values,
-		map[string]map[string]interface{}, *[]string) (bool, error){
+type processorFunction func(
+	ctx *gin.Context, // TODO: it is generally a bad practise to pass the raw request down the program.
+	r *registry,
+	values *Values,
+	secrets map[string]map[string]any,
+	mrActions *[]string,
+) (
+	bool,
+	error,
+)
+
+func (a *App) createUpdateRegistryProcessors() []processorFunction {
+	return []processorFunction{
 		a.prepareDNSConfig,
 		a.prepareCIDRConfig,
+		a.prepareRegistryCspConfig,
 		a.prepareMailServerConfig,
 		a.prepareAdminsConfig,
 		a.prepareRegistryResources,
@@ -64,8 +77,7 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareTrembitaIPList,
 		a.prepareDigitalDocuments,
 		a.prepareGriada,
-		a.prepareComputeResources,
-		a.prepareExcludePortals,
+		a.prepareGlobalValuesYaml,
 	}
 }
 
@@ -75,7 +87,7 @@ func (a *App) validatePEMFile(ctx *gin.Context) (rsp router.Response, retErr err
 		return nil, errors.Wrap(err, "unable to get form file")
 	}
 
-	data, err := ioutil.ReadAll(file)
+	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to read file data")
 	}
@@ -140,9 +152,9 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		return nil, fmt.Errorf("unable to load keycloak hostnames, %w", err)
 	}
 
-	infrastructureCluster, err := a.Services.OpenShift.GetInfrastructureCluster(userCtx)
+	clusterValues, err := a.getValuesFromBranch(a.ClusterCodebaseName, MasterBranch)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get infrastructure cluster, %w", err)
+		return nil, fmt.Errorf("unable to get cluster values, %w", err)
 	}
 
 	responseParams := gin.H{
@@ -157,13 +169,14 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		"keycloakHostname":     keycloakHostname,
 		"keycloakHostnames":    keycloakHostnames,
 		"registryTemplateName": a.Config.RegistryTemplateName,
-		"platformStatusType":   infrastructureCluster.Status.PlatformStatus.Type,
+		"platformStatusType":   a.Config.CloudProvider,
 		"registryVersion":      ctx.Request.URL.Query().Get("version"),
+		"clusterValues":        clusterValues,
 	}
 
-	templateArgs, templateErr := json.Marshal(responseParams)
-	if templateErr != nil {
-		return nil, errors.Wrap(templateErr, "unable to encode template arguments")
+	templateArgs, err := json.Marshal(responseParams)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode template arguments: %w", err)
 	}
 
 	responseParams["templateArgs"] = string(templateArgs)
@@ -278,12 +291,16 @@ func (a *App) createRegistryPost(ctx *gin.Context) (response router.Response, re
 		return nil, errors.Wrap(err, "unable to init service for user context")
 	}
 
-	r := registry{Scenario: ScenarioKeyRequired}
+	r := registry{Scenario: ScenarioKeyNotRequired}
+	if a.Config.Region == "ua" {
+		r = registry{Scenario: ScenarioKeyRequired}
+	}
+
 	if err := ctx.ShouldBind(&r); err != nil {
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	if err := a.createRegistry(userCtx, ctx, &r, cbService, k8sService); err != nil {
+	if err := a.createRegistry(userCtx, ctx, &r, cbService); err != nil {
 		return nil, errors.Wrap(err, "unable to create registry")
 	}
 
@@ -302,9 +319,13 @@ func (a *App) checkCreateAccess(userK8sService k8s.ServiceInterface) error {
 	return nil
 }
 
-func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *registry,
-	cbService codebase.ServiceInterface, k8sService k8s.ServiceInterface) error {
-	_, err := cbService.Get(r.Name)
+func (a *App) createRegistry(
+	ctx context.Context,
+	ginContext *gin.Context,
+	newRegistry *registry,
+	cbService codebase.ServiceInterface,
+) error {
+	_, err := cbService.Get(newRegistry.Name)
 	if err == nil {
 		return validator.ValidationErrors([]validator.FieldError{router.MakeFieldError("Name", "registry-exists")})
 	}
@@ -312,33 +333,40 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unknown error")
 	}
 
-	values, err := GetValuesFromGit(a.Config.RegistryTemplateName, r.RegistryGitBranch, a.Gerrit)
+	registryTemplate, err := GetValuesFromGit(a.Config.RegistryTemplateName, newRegistry.RegistryGitBranch, a.Gerrit)
 	if err != nil {
-		return errors.Wrap(err, "unable to load values from template")
+		return errors.Wrap(err, "unable to load registryTemplate from template")
 	}
 
 	vaultSecretData := make(map[string]map[string]interface{})
 	mrActions := make([]string, 0)
 
 	for _, proc := range a.createUpdateRegistryProcessors() {
-		if _, err := proc(ginContext, r, values, vaultSecretData, &mrActions); err != nil {
+		if _, err := proc(ginContext, newRegistry, registryTemplate, vaultSecretData, &mrActions); err != nil {
 			return errors.Wrap(err, "error during registry create")
 		}
 	}
 
 	repoFiles := make(map[string]string)
 
-	if _, err := PrepareRegistryKeys(keyManagement{
-		r: r,
-		vaultSecretPath: a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", KeyManagementVaultPath,
-			time.Now().Format("20060201T150405Z"))),
-	}, ginContext.Request, vaultSecretData, values.OriginalYaml, repoFiles); err != nil {
+	if _, err := PrepareRegistryKeys(
+		keyManagement{
+			r: newRegistry,
+			vaultSecretPath: a.vaultRegistryPathKey(
+				newRegistry.Name,
+				fmt.Sprintf("%s-%s", KeyManagementVaultPath, time.Now().Format("20060201T150405Z")),
+			),
+		},
+		ginContext.Request,
+		vaultSecretData,
+		registryTemplate,
+		repoFiles,
+		a.Services.Vault,
+	); err != nil {
 		return errors.Wrap(err, "unable to prepare registry keys")
 	}
 
-	a.prepareValuesGlobal(r, values)
-
-	if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
+	if err := CacheRepoFiles(a.TempFolder, newRegistry.Name, repoFiles, a.Cache); err != nil {
 		return fmt.Errorf("unable to cache repo file, %w", err)
 	}
 
@@ -346,21 +374,22 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unable to create vault secrets")
 	}
 
-	if err := a.Services.Gerrit.CreateProject(ctx, r.Name); err != nil {
+	if err := a.Services.Gerrit.CreateProject(ctx, newRegistry.Name); err != nil {
 		return errors.Wrap(err, "unable to create gerrit project")
 	}
 
-	cb := a.prepareRegistryCodebase(r)
-	valuesEncoded, err := a.encodeValues(r.Name, values.OriginalYaml)
+	cb := a.prepareRegistryCodebase(newRegistry)
+	valuesEncoded, err := a.encodeValues(newRegistry.Name, registryTemplate.OriginalYaml)
 	if err != nil {
 		return errors.Wrap(err, "unable to encode values")
 	}
 
 	cb.Annotations = map[string]string{
-		AnnotationTemplateName:    a.Config.RegistryTemplateName,
-		AnnotationCreatorUsername: ginContext.GetString(router.UserNameSessionKey),
-		AnnotationCreatorEmail:    ginContext.GetString(router.UserEmailSessionKey),
-		AnnotationValues:          valuesEncoded,
+		AnnotationTemplateName:         a.Config.RegistryTemplateName,
+		AnnotationCreatorUsername:      ginContext.GetString(router.UserNameSessionKey),
+		AnnotationCreatorEmail:         ginContext.GetString(router.UserEmailSessionKey),
+		AnnotationValues:               valuesEncoded,
+		AnnotationTemplatePushedStatus: "false",
 	}
 
 	if err := cbService.Create(cb); err != nil {
@@ -426,7 +455,8 @@ func (a *App) keyManagementRegistryVaultPath(registryName string) string {
 }
 
 func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
-	_ map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+	_ map[string]map[string]interface{}, _ *[]string,
+) (bool, error) {
 	if ctx.PostForm("action") == "edit" && ctx.PostForm("cidr-changed") == "" {
 		return false, nil
 	}
@@ -455,6 +485,29 @@ func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
 	return true, nil
 }
 
+func (a *App) prepareRegistryCspConfig(ctx *gin.Context, r *registry, _values *Values,
+	_ map[string]map[string]interface{}, _ *[]string,
+) (bool, error) {
+	if ctx.PostForm("action") == "edit" && ctx.PostForm("csp-changed") == "" {
+		return false, nil
+	}
+	globalInterface, ok := _values.OriginalYaml[GlobalValuesIndex]
+	if !ok {
+		globalInterface = make(map[string]interface{})
+	}
+	globalDict := globalInterface.(map[string]interface{})
+
+	var cspSources []string
+
+	if err := json.Unmarshal([]byte(r.RegistryCsp), &cspSources); err != nil {
+		return false, errors.Wrap(err, "unable to decode csp config")
+	}
+
+	globalDict[CspConnectSourcesIndex] = cspSources
+	_values.OriginalYaml[GlobalValuesIndex] = globalDict
+	return true, nil
+}
+
 func handleCIDRCategory(cidrCategory string, categoryValue *string) error {
 	if cidrCategory == "" {
 		return nil
@@ -471,11 +524,12 @@ func handleCIDRCategory(cidrCategory string, categoryValue *string) error {
 }
 
 func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+	secrets map[string]map[string]interface{}, _ *[]string,
+) (bool, error) {
 	values := _values.OriginalYaml
-	//TODO: refactor to new values
+	// TODO: refactor to new values
 
-	//TODO: don't recreate admin secrets for existing admin
+	// TODO: don't recreate admin secrets for existing admin
 	if r.Admins != "" && r.AdminsChanged == "on" {
 		admins, err := validateAdmins(r.Admins)
 		if err != nil {
@@ -502,8 +556,9 @@ func (a *App) prepareAdminsConfig(_ *gin.Context, r *registry, _values *Values,
 }
 
 func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Values,
-	secretData map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
-	//TODO: add something to mrActions
+	secretData map[string]map[string]interface{}, _ *[]string,
+) (bool, error) {
+	// TODO: add something to mrActions
 	valuesChanged := false
 
 	if r.DNSNameOfficerEnabled == "" && _values.Portals.Officer.CustomDNS.Enabled {
@@ -523,7 +578,8 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 			pemInfo, err := DecodePEM(certData)
 			if err != nil {
 				return false, validator.ValidationErrors([]validator.FieldError{
-					router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
+					router.MakeFieldError("DNSNameOfficer", "pem-decode-error"),
+				})
 			}
 
 			secretPath := strings.ReplaceAll(a.Config.VaultOfficerSSLPath, "{registry}", r.Name)
@@ -556,7 +612,8 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 			pemInfo, err := DecodePEM(certData)
 			if err != nil {
 				return false, validator.ValidationErrors([]validator.FieldError{
-					router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
+					router.MakeFieldError("DNSNameCitizen", "pem-decode-error"),
+				})
 			}
 
 			secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
@@ -578,6 +635,7 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 
 	return valuesChanged, nil
 }
+
 func (a *App) isSmtpPasswordSet(path string) bool {
 	data, err := a.Vault.Read(path)
 	if err != nil && !errors.Is(err, vault.ErrSecretIsNil) {
@@ -594,7 +652,8 @@ func (a *App) isSmtpPasswordSet(path string) bool {
 }
 
 func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Values,
-	secretData map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+	secretData map[string]map[string]interface{}, _ *[]string,
+) (bool, error) {
 	values := _values.OriginalYaml
 
 	var email ExternalEmailSettings
@@ -622,7 +681,7 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 			vaultPath = _values.Global.Notifications.Email.VaultPath
 		}
 
-		//TODO: remove password from dict
+		// TODO: remove password from dict
 
 		port, err := strconv.ParseInt(smptOptsDict["port"], 10, 32)
 		if err != nil {
@@ -665,10 +724,12 @@ func (a *App) prepareRegistryCodebase(r *registry) *codebase.Codebase {
 	jobProvisioning := "default"
 	startVersion := "0.0.1"
 	jenkinsSlave := "gitops"
+	framework := "helm"
 	gitURL := codebase.RepoNotReady
+	gitURLPath := "/" + r.Name
 	cb := codebase.Codebase{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v2.edp.epam.com/v1alpha1",
+			APIVersion: "v2.edp.epam.com/v1",
 			Kind:       "Codebase",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -680,11 +741,13 @@ func (a *App) prepareRegistryCodebase(r *registry) *codebase.Codebase {
 			BuildTool:        "gitops",
 			Lang:             "other",
 			DefaultBranch:    r.RegistryGitBranch,
+			EmptyProject:     false,
+			Framework:        &framework,
 			Strategy:         "import",
 			DeploymentScript: "openshift-template",
 			GitServer:        "gerrit",
-			GitUrlPath:       &gitURL,
-			CiTool:           "Jenkins",
+			GitUrlPath:       &gitURLPath,
+			CiTool:           "jenkins",
 			JobProvisioning:  &jobProvisioning,
 			Versioning: codebase.Versioning{
 				StartFrom: &startVersion,
@@ -724,17 +787,4 @@ func (a *App) prepareRegistryCodebase(r *registry) *codebase.Codebase {
 func branchProvisioner(branch string) string {
 	return "default-" + strings.Replace(
 		strings.ToLower(branch), ".", "-", -1)
-}
-
-func (a *App) prepareValuesGlobal(r *registry, values *Values) {
-	globalInterface, ok := values.OriginalYaml[GlobalValuesIndex]
-	if !ok {
-		globalInterface = make(map[string]interface{})
-	}
-	globalDict := globalInterface.(map[string]interface{})
-
-	globalDict["deploymentMode"] = r.DeploymentMode
-	globalDict["geoServerEnabled"] = r.GeoServerEnabled == "on"
-
-	values.OriginalYaml[GlobalValuesIndex] = globalDict
 }

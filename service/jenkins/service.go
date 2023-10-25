@@ -106,6 +106,23 @@ func (s *Service) GetJobStatus(ctx context.Context, jobName string) (string, int
 	return lastBuild.GetResult(), lastBuild.GetBuildNumber(), nil
 }
 
+func (s *Service) IsJobRunning(ctx context.Context, jobName string) (bool, error) {
+	j, err := s.goJenkins.GetJob(ctx, jobName)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to get job")
+	}
+
+	lastBuild, err := j.GetLastBuild(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to get last build")
+	}
+
+	if _, err := lastBuild.Poll(ctx); err != nil {
+		return false, errors.Wrap(err, "unable to poll last build")
+	}
+	return lastBuild.IsRunning(ctx), nil
+}
+
 func (s *Service) CreateJobBuildRunRaw(ctx context.Context, jb *JenkinsJobBuildRun) error {
 	jb.Namespace = s.Namespace
 

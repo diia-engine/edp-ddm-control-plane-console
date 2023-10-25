@@ -51,6 +51,8 @@ func (a *App) listRegistry(ctx *gin.Context) (response router.Response, retErr e
 		"allowedToCreate": allowedToCreate,
 		"timezone":        a.Config.Timezone,
 		"gerritBranches":  gerritBranches,
+		"platformVersion": a.Config.CurrentVersion,
+		"previousVersion": a.Config.PreviousVersion,
 	}
 
 	templateArgs, templateErr := json.Marshal(responseParams)

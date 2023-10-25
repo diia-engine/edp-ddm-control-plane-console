@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/gob"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/leonelquinteros/gotext"
 	"github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -37,7 +37,9 @@ import (
 	"ddm-admin-console/config"
 	codebaseController "ddm-admin-console/controller/codebase"
 	mergeRequestController "ddm-admin-console/controller/merge_request"
+	"ddm-admin-console/locale"
 	"ddm-admin-console/mocks"
+	mockDashboard "ddm-admin-console/mocks/dashboard"
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	edpComponent "ddm-admin-console/service/edp_component"
@@ -54,6 +56,7 @@ import (
 var (
 	configPath string
 	cachePath  string
+	envVars    []byte
 )
 
 func main() {
@@ -67,6 +70,16 @@ func main() {
 	}
 
 	logger, err := getLogger(cnf.LogLevel, cnf.LogEncoding)
+	if err != nil {
+		panic(err)
+	}
+
+	envVariables := gin.H{
+		"language": os.Getenv("LANGUAGE"),
+		"region":   cnf.Region,
+	}
+
+	envVars, err = json.Marshal(envVariables)
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +98,7 @@ func main() {
 	logger.Info("init gin router")
 	gin.SetMode(cnf.GinMode)
 	r := gin.New()
-	r.SetFuncMap(template.FuncMap{"i18n": i18n, "majorVersion": majorVersion})
+	r.SetFuncMap(template.FuncMap{"i18n": locale.Localize, "majorVersion": majorVersion, "envVars": getEnvVars})
 	r.LoadHTMLGlob("templates/**/*")
 	r.Static("/static", "./static")
 	r.Static("/assets", "./frontend/dist/assets")
@@ -96,9 +109,6 @@ func main() {
 	if err := initApps(logger, cnf, r, buildInfo.Date()); err != nil {
 		panic(fmt.Sprintf("%+v", err))
 	}
-
-	logger.Info("init i18n")
-	gotext.Configure("locale", "uk_UA", "default")
 
 	logger.Info("run router on port", zap.String("port", cnf.HTTPPort))
 	if err := r.Run(fmt.Sprintf(":%s", cnf.HTTPPort)); err != nil {
@@ -135,6 +145,10 @@ func loadConfig(path string) (*config.Settings, error) {
 	}
 
 	return &cnf, nil
+}
+
+func getEnvVars() string {
+	return string(envVars)
 }
 
 func getLogger(level, encoding string) (*zap.Logger, error) {
@@ -174,7 +188,15 @@ func getLogger(level, encoding string) (*zap.Logger, error) {
 	return logger, nil
 }
 
-func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Settings, logger *zap.Logger) (*config.Services, error) {
+func initServices(
+	sch *runtime.Scheme,
+	restConf *rest.Config,
+	appConf *config.Settings,
+	logger *zap.Logger,
+) (
+	*config.Services,
+	error,
+) {
 	if appConf.Mock != "" {
 		return mocks.InitServices(appConf), nil
 	}
@@ -197,9 +219,16 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 		return nil, fmt.Errorf("unable to init k8s service, %w", err)
 	}
 
-	serviceItems.Jenkins, err = jenkins.Make(sch, restConf, serviceItems.K8S,
-		jenkins.Config{Namespace: appConf.Namespace, APIUrl: appConf.JenkinsAPIURL,
-			AdminSecretName: appConf.JenkinsAdminSecretName})
+	serviceItems.Jenkins, err = jenkins.Make(
+		sch,
+		restConf,
+		serviceItems.K8S,
+		jenkins.Config{
+			Namespace:       appConf.Namespace,
+			APIUrl:          appConf.JenkinsAPIURL,
+			AdminSecretName: appConf.JenkinsAdminSecretName,
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to init jenkins service, %w", err)
 	}
@@ -209,9 +238,15 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 		return nil, fmt.Errorf("unable to init open shift service, %w", err)
 	}
 
-	serviceItems.Gerrit, err = gerrit.Make(sch, restConf,
-		gerrit.Config{Namespace: appConf.Namespace, GerritAPIUrlTemplate: appConf.GerritAPIUrlTemplate,
-			RootGerritName: appConf.RootGerritName})
+	serviceItems.Gerrit, err = gerrit.Make(
+		sch,
+		restConf,
+		gerrit.Config{
+			Namespace:            appConf.Namespace,
+			GerritAPIUrlTemplate: appConf.GerritAPIUrlTemplate,
+			RootGerritName:       appConf.RootGerritName,
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create gerrit service, %w", err)
 	}
@@ -266,7 +301,6 @@ func initControllers(
 		Namespace:          namespace,
 		MetricsBindAddress: "0",
 	})
-
 	if err != nil {
 		return fmt.Errorf("unable to ini manager, %w", err)
 	}
@@ -297,9 +331,29 @@ func initApps(logger *zap.Logger, cnf *config.Settings, r *gin.Engine, buildTime
 		return fmt.Errorf("unable to init kube config, %w", err)
 	}
 
-	appRouter := router.Make(r, logger, buildTime)
+	appName := os.Getenv("PLATFORM_NAME")
+
+	logoFavicon, err := os.ReadFile("./static/img/logos/logoFavicon")
+	if err != nil {
+		return fmt.Errorf("unable load logos files, %w", err)
+	}
+
+	logoMain, err := os.ReadFile("./static/img/logos/logoMain")
+	if err != nil {
+		return fmt.Errorf("unable load logos files, %w", err)
+	}
+
+	decodedBytes, err := base64.StdEncoding.DecodeString(string(logoMain))
+	if err != nil {
+		return fmt.Errorf("unable decoded main logo, %w", err)
+	}
+
+	favicon := string(logoFavicon)
+	logoMainSvg := template.HTML(decodedBytes)
+	appRouter := router.Make(r, logger, buildTime, appName, logoMainSvg, favicon)
 
 	sch := runtime.NewScheme()
+
 	if err := v1.AddToScheme(sch); err != nil {
 		return fmt.Errorf("unable to add core api to scheme, %w", err)
 	}
@@ -313,23 +367,31 @@ func initApps(logger *zap.Logger, cnf *config.Settings, r *gin.Engine, buildTime
 		return fmt.Errorf("unable to init controllers, %w", err)
 	}
 
-	oa, err := initOauth(restConf, cnf, r, serviceItems.K8S)
-	if err != nil {
-		return fmt.Errorf("unable to init oauth, %w", err)
+	var oa dashboard.OAuth
+
+	if cnf.Mock != "" {
+		oa = initMockOauth(r)
+	} else {
+		oa, err = initOauth(restConf, cnf, r, serviceItems.K8S)
+		if err != nil {
+			return fmt.Errorf("unable to init oauth, %w", err)
+		}
 	}
 
-	_, err = dashboard.Make(appRouter, oa, serviceItems, cnf.ClusterCodebaseName)
-	if err != nil {
+	if _, err := dashboard.Make(appRouter, oa, serviceItems, cnf.ClusterCodebaseName); err != nil {
 		return fmt.Errorf("unable to make dashboard app, %w", err)
 	}
 
-	_, err = registry.Make(appRouter, serviceItems.RegistryServices(), cnf.RegistryConfig())
+	registryConfig, err := cnf.RegistryConfig()
 	if err != nil {
+		return fmt.Errorf("failed to parse previous version: %w", err)
+	}
+
+	if _, err := registry.Make(appRouter, serviceItems.RegistryServices(), registryConfig); err != nil {
 		return fmt.Errorf("unable to make registry app, %w", err)
 	}
 
-	_, err = cluster.Make(appRouter, serviceItems.ClusterServices(), cnf.ClusterConfig(), serviceItems.Cache)
-	if err != nil {
+	if _, err := cluster.Make(appRouter, serviceItems.ClusterServices(), cnf.ClusterConfig(), serviceItems.Cache); err != nil {
 		return fmt.Errorf("unable to init cluster app, %w", err)
 	}
 
@@ -350,46 +412,58 @@ func initKubeConfig() (*rest.Config, error) {
 	return restConfig, nil
 }
 
-func initOauth(k8sConfig *rest.Config, cfg *config.Settings, r *gin.Engine, k8sService k8s.ServiceInterface) (dashboard.OAuth, error) {
-	var oAuth dashboard.OAuth
-	if cfg.Mock != "" {
-		oAuth = mocks.OAuth()
-	} else {
-
-		transport, err := rest.TransportFor(k8sConfig)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create transport for k8s config")
-		}
-
-		oa, err := oauth.InitOauth2(
-			cfg.OCClientID,
-			cfg.OCClientSecret,
-			k8sConfig.Host,
-			cfg.Host+"/auth/callback",
-			&http.Client{Transport: transport})
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to init oauth2 client")
-		}
-
-		if !cfg.OAuthUseExternalTokenURL {
-			if err := oa.UseInternalTokenService(context.Background(), cfg.OAuthInternalTokenHost, k8sService); err != nil {
-				return nil, errors.Wrap(err, "unable to load internal oauth host")
-			}
-		}
-
-		oAuth = oa
+func initOauth(
+	k8sConfig *rest.Config,
+	cfg *config.Settings,
+	r *gin.Engine,
+	k8sService k8s.ServiceInterface,
+) (
+	*oauth.OAuth2,
+	error,
+) {
+	transport, err := rest.TransportFor(k8sConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create transport for k8s config")
 	}
 
-	gob.Register(&oauth2.Token{})
-	r.Use(oauth.MakeGinMiddleware(oAuth, router.AuthTokenSessionKey, router.AuthTokenValidSessionKey, "/admin/"))
-	r.Use(router.UserDataMiddleware)
+	oAuth, err := oauth.InitOauth2(
+		cfg.OCClientID,
+		cfg.OCClientSecret,
+		k8sConfig.Host,
+		cfg.Host+"/auth/callback",
+		&http.Client{Transport: transport},
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to init oauth2 client")
+	}
+
+	if !cfg.OAuthUseExternalTokenURL {
+		if err := oAuth.UseInternalTokenService(
+			context.Background(),
+			cfg.OAuthInternalTokenHost,
+			k8sService,
+		); err != nil {
+			return nil, errors.Wrap(err, "unable to load internal oauth host")
+		}
+	}
+
+	registerOAuthInGin(oAuth, r)
 
 	return oAuth, nil
 }
 
-func i18n(word ...string) string {
-	message := strings.TrimSpace(strings.Join(word, " "))
-	return gotext.Get(message)
+func initMockOauth(r *gin.Engine) *mockDashboard.OAuth {
+	oAuth := mocks.OAuth()
+
+	registerOAuthInGin(oAuth, r)
+
+	return oAuth
+}
+
+func registerOAuthInGin(oAuth dashboard.OAuth, r *gin.Engine) {
+	gob.Register(&oauth2.Token{})
+	r.Use(oauth.MakeGinMiddleware(oAuth, router.AuthTokenSessionKey, router.AuthTokenValidSessionKey, "/admin/"))
+	r.Use(router.UserDataMiddleware)
 }
 
 func majorVersion(word ...string) string {

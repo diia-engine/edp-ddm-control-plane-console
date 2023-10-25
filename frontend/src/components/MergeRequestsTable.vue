@@ -5,10 +5,11 @@ interface MRTableProps {
   mergeRequests: any;
   inPlatform?: boolean;
   mrAvailable?: string;
+  createReleaseAvailable?: boolean;
 }
 
 const props = defineProps<MRTableProps>();
-const { inPlatform, mergeRequests, mrAvailable } = toRefs(props);
+const { inPlatform, mergeRequests, mrAvailable, createReleaseAvailable } = toRefs(props);
 </script>
 
 <script lang="ts">
@@ -22,6 +23,7 @@ import {
   getMergeRequestName,
   getMergeRequestStatus,
   mrIsInProgress,
+  isRegistryUpdateMrOpen,
 } from '@/utils';
 
 export default {
@@ -32,6 +34,15 @@ export default {
     mrRefreshClick() {
       window.localStorage.setItem("mr-scroll", "true");
     },
+    isRegistryMrAvailable(mergeRequest: any, isUpdate: boolean) {
+      if (this.mrAvailable || mergeRequest.status.value !== 'NEW') {
+        return isUpdate ? this.createReleaseAvailable : true;
+      }
+      return false;
+    },
+    isRegistryPipeInProgress(isUpdate: boolean) {
+      return !(isUpdate ? this.mrAvailable && this.createReleaseAvailable : this.mrAvailable);
+    }
   },
   mounted() {
     $("#mr-table").DataTable({
@@ -42,22 +53,22 @@ export default {
         ],
         order: [[0, 'desc']],
         language: {
-            "processing": "Зачекайте...",
-            "lengthMenu": "Показати _MENU_ записів",
-            "zeroRecords": "Записи відсутні.",
-            "info": "Записи з _START_ по _END_ із _TOTAL_ записів",
-            "infoEmpty": "Записи з 0 по 0 із 0 записів",
-            "infoFiltered": "(відфільтровано з _MAX_ записів)",
-            "search": "Пошук:",
+            "processing": this.$t('components.mergeRequestsTable.table.wait'),
+            "lengthMenu": this.$t('components.mergeRequestsTable.table.lengthMenu'),
+            "zeroRecords": this.$t('components.mergeRequestsTable.table.zeroRecords'),
+            "info": this.$t('components.mergeRequestsTable.table.info'),
+            "infoEmpty": this.$t('components.mergeRequestsTable.table.infoEmpty'),
+            "infoFiltered": this.$t('components.mergeRequestsTable.table.infoFiltered'),
+            "search": this.$t('components.mergeRequestsTable.table.search'),
             "paginate": {
-                "first": "Перша",
-                "previous": "Попередня",
-                "next": "Наступна",
-                "last": "Остання"
+                "first": this.$t('components.mergeRequestsTable.table.first'),
+                "previous": this.$t('components.mergeRequestsTable.table.previous'),
+                "next": this.$t('components.mergeRequestsTable.table.next'),
+                "last": this.$t('components.mergeRequestsTable.table.last')
             },
             "aria": {
-                "sortAscending": ": активувати для сортування стовпців за зростанням",
-                "sortDescending": ": активувати для сортування стовпців за спаданням"
+                "sortAscending": this.$t('components.mergeRequestsTable.table.sortAscending'),
+                "sortDescending": this.$t('components.mergeRequestsTable.table.sortDescending')
             }
         }
     });
@@ -75,10 +86,10 @@ export default {
   <table class="rg-info-table rg-info-table-config" id="mr-table">
       <thead>
           <tr>
-              <th>Дата</th>
-              <th>Запит</th>
-              <th>Операція</th>
-              <th>Статус</th>
+              <th>{{ $t('components.mergeRequestsTable.table.date') }}</th>
+              <th>{{ $t('components.mergeRequestsTable.table.request') }}</th>
+              <th>{{ $t('components.mergeRequestsTable.table.operation') }}</th>
+              <th>{{ $t('components.mergeRequestsTable.table.status') }}</th>
               <th></th>
           </tr>
       </thead>
@@ -89,20 +100,20 @@ export default {
               <td>{{ inPlatform ? getMergeRequestPlatformAction($al) : getMergeRequestAction($al) }}</td>
               <td class="mr-status">
                 {{ getMergeRequestStatus($al) }}
-                <a title="Оновити" class="mr-refresh" href="" @click="mrRefreshClick" v-if="mrIsInProgress($al)"><i class="fa-solid fa-arrow-rotate-right"></i></a>
+                <a :title="$t('actions.refresh')" class="mr-refresh" href="" @click="mrRefreshClick" v-if="mrIsInProgress($al) || ((isRegistryUpdateMrOpen($al) && !createReleaseAvailable))"><i class="fa-solid fa-arrow-rotate-right"></i></a>
               </td>
               <td class="mr-actions">
-                  <i v-if="!inPlatform && !mrAvailable && $al.status.value === 'NEW'" title="Реєстр в процесі оновлення" class="fa-solid fa-lock"></i>
+                  <i v-if="!inPlatform && $al.status.value === 'NEW' && isRegistryPipeInProgress(isRegistryUpdateMrOpen($al))" :title="$t('components.mergeRequestsTable.table.registerUpdated')" class="fa-solid fa-lock"></i>
 
-                  <span v-if="$al.status.changeUrl && (inPlatform || mrAvailable || $al.status.value !== 'NEW')">
-                      <a title="Переглянути"
+                  <span v-if="$al.status.changeUrl && (inPlatform || isRegistryMrAvailable($al, isRegistryUpdateMrOpen($al)))">
+                      <a :title="$t('components.mergeRequestsTable.actions.review')"
                           @click.stop.prevent="onViewClick(`/admin/change/${$al.status.changeId}`)"
                           :href="`/admin/change/${$al.status.changeId}`">
                           <i class="fa-solid fa-eye fa-lg"></i>
                       </a>
 
                       <a :href="$al.status.changeUrl" target="_blank">
-                          <img style="vertical-align: sub;" title="Переглянути в Gerrit" alt="vcs"
+                          <img style="vertical-align: sub;" :title="$t('components.mergeRequestsTable.actions.reviewInGerrit')" alt="vcs"
                               src="@/assets/img/action-link.png" />
                       </a>
                   </span>

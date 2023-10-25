@@ -33,15 +33,17 @@ const registryChangeHandler = () => {
 </script>
 
 <template>
-    <h2>Документація</h2>
+    <h2>{{ $t('domains.cluster.documentation.title') }}</h2>
     <div class="documentation-description">
-        <Typography variant="bodyText">На обраний демо-реєстр вестимуть посилання з документації.</Typography>
+        <Typography variant="bodyText">
+            {{ $t('domains.cluster.documentation.text.linkToSelectedRegistry') }}
+        </Typography>
     </div>
     <form id="platform-admin" class="registry-create-form wizard-form" method="post" action="/admin/cluster/demo-registry-name">
         <div class="rc-form-group">
-            <label for="demo-registry-name">Демо-реєстр</label>
+            <label for="demo-registry-name">{{ $t('domains.cluster.documentation.text.demoRegistry') }}</label>
             <select v-model="registry" id="demo-registry-name" name="demo-registry-name" :onChange="registryChangeHandler">
-                <option value="">Не обрано</option>
+                <option value="">{{ $t('domains.cluster.documentation.text.noSelected') }}</option>
                 <option v-for="item in registries" :key="item" :value="item">
                     {{ item }}
                 </option>
@@ -49,12 +51,12 @@ const registryChangeHandler = () => {
 
             <Banner
                 classes="banner"
-                :description="`Попередній реєстр («${demoRegistryName}») не знайдено.`"
+                :description="$t('domains.cluster.documentation.text.previousRegistryNoFound', demoRegistryName)"
                 v-if="prevRegistryIsInvalid"
             />
         </div>
         <div class="rc-form-group">
-            <button type="submit" name="submit">Підтвердити</button>
+            <button type="submit" name="submit">{{ $t('actions.confirm') }}</button>
         </div>
     </form>
 </template>

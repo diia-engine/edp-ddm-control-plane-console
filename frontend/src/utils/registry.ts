@@ -2,6 +2,7 @@ import type { ExternalReg } from '@/types/registry';
 import transform from 'lodash/transform';
 import isEqual from 'lodash/isEqual';
 import isObject from 'lodash/isObject';
+import type { StoredKey } from '@/types/cluster';
 
 export const getExtStatus = (status: string, enabled: boolean) => {
   if (!enabled) {
@@ -32,3 +33,7 @@ export const jsonDiff = (object: any, base: any): string[] => {
 
 	return Object.keys(changes(object, base));
 };
+
+export function filterKeysByRegistry(keys:  Record<string, StoredKey>, registry: string): string[] {
+  return Object.entries(keys).filter(([, data]) => (data.allowedRegistries || []).includes(registry)).map(([key]) => key);
+}

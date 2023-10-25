@@ -15,29 +15,29 @@ const enabledGeoData = ref(false);
 </script>
 
 <template>
-  <Typography variant="h3" class="h3">Підсистема управління геоданими</Typography>
+  <Typography variant="h3" class="h3">{{ $t('components.geoDataSettings.title') }}</Typography>
   <template v-if="isEditAction">
     <div v-if="enabled" class="box">
       <img src="@/assets/img/status-active.png" />
       <Typography variant="bodyText" class="text">
-        Підсистема управління геоданими розгорнута для цього реєстра.
+        {{ $t('components.geoDataSettings.text.managementSubsystemNotDeployed') }}
       </Typography>
     </div>
     <div v-else class="box">
       <img src="@/assets/img/status-disabled.png" />
       <Typography variant="bodyText" class="text">
-        Підсистема управління геоданими не розгорнута для цього реєстра.
+        {{ $t('components.geoDataSettings.text.managementSubsystemNotDeployed') }}
       </Typography>
     </div>
   </template>
   <template v-else>
     <ToggleSwitch
       name="geoServerEnabled"
-      label="Розгорнути підсистему управління геоданими"
+      :label="$t('components.geoDataSettings.fields.geoServerEnabled.label')"
       v-model="enabledGeoData"
     />
     <Banner
-      description="Після створення реєстру змінити ці налаштування буде неможливо."
+      :description="$t('components.geoDataSettings.text.impossibleChangeAfterCreate')"
       class="banner"
     />
   </template>

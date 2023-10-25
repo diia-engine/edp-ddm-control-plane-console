@@ -128,9 +128,11 @@ func (c *Controller) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (c *Controller) reconcile(ctx context.Context, request reconcile.Request) error {
 	var instance gerritService.GerritMergeRequest
+
 	if err := c.k8sClient.Get(ctx, request.NamespacedName, &instance); err != nil {
 		if k8sErrors.IsNotFound(err) {
 			c.logger.Infow("instance not found", "Request.Namespace", request.Namespace, "Request.Name", request.Name)
+
 			return nil
 		}
 
@@ -150,6 +152,7 @@ func (c *Controller) reconcile(ctx context.Context, request reconcile.Request) e
 	if !processRequest {
 		c.logger.Infow("reconciling merge request skipped, wrong registry version",
 			"Request.Namespace", instance.Namespace, "Request.Name", instance.Name)
+
 		return nil
 	}
 
@@ -289,7 +292,6 @@ func (c *Controller) triggerJobProvisioner(
 	instance.Annotations[registry.MRAnnotationActions] = string(bts)
 	if err := c.k8sClient.Update(ctx, instance); err != nil {
 		return fmt.Errorf("unable to update MR instance, %w", err)
-
 	}
 
 	return nil
@@ -438,7 +440,7 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	if err := gitService.RawCheckout(targetBranch, false); err != nil {
 		return fmt.Errorf("unable to checkout branch, err: %w", err)
 	}
-	//backup values.yaml
+	// backup values.yaml
 	valuesBackupPath := path.Join(backupFolderPath, "backup-values.yaml")
 	projectValuesPath := path.Join(projectPath, registry.ValuesLocation)
 	if err := CopyFile(projectValuesPath, valuesBackupPath); err != nil {
@@ -448,32 +450,32 @@ func (c *Controller) prepareMergeRequest(ctx context.Context, instance *gerritSe
 	if err := gitService.RawCheckout(sourceBranch, false); err != nil {
 		return fmt.Errorf("unable to checkout, err: %w", err)
 	}
-	//backup source branch
+	// backup source branch
 	projectBackupPath, err := backupProject(backupFolderPath, projectPath, instance.Spec.ProjectName)
 	if err != nil {
 		return fmt.Errorf("unable to backup source branch, err: %w", err)
 	}
-	//checkout to target branch
+	// checkout to target branch
 	if err := gitService.RawCheckout(targetBranch, false); err != nil {
 		return fmt.Errorf("unable to checkout, err: %w", err)
 	}
-	//delete source branch
+	// delete source branch
 	if err := gitService.DeleteBranch(sourceBranch); err != nil {
 		return fmt.Errorf("unable to delete source branch, err: %w", err)
 	}
-	//recreate source branch
+	// recreate source branch
 	if err := gitService.RawCheckout(sourceBranch, true); err != nil {
 		return fmt.Errorf("unable to checkout to source branch, err: %w", err)
 	}
-	//restore source branch
+	// restore source branch
 	if err := CopyFolder(fmt.Sprintf("%s/.", projectBackupPath), fmt.Sprintf("%s/", projectPath)); err != nil {
 		return fmt.Errorf("unable to restore source branch, err: %w", err)
 	}
-	//merge values from target branch
+	// merge values from target branch
 	if err := MergeValuesFiles(valuesBackupPath, projectValuesPath); err != nil {
 		return fmt.Errorf("unable to merge values, err: %w", err)
 	}
-	//add all changes
+	// add all changes
 	if err := gitService.Add("."); err != nil {
 		return fmt.Errorf("unable to add all files, err: %w", err)
 	}

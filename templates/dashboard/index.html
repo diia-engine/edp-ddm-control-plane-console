@@ -2,10 +2,10 @@
     {{template "header" .}}
 
     <div class="main-index">
-        <h1>Вітаємо!</h1>
-        <p>Щоб увійти до адмін панелі, будь ласка, автентифікуйтесь.</p>
-        <a href="{{ .BasePath }}/admin/dashboard">Автентифікуватись</a>
-        <div>У разі проблем з входом звертайтесь до адміністратора.</div>
+        <h1>{{ i18n "pages.login.text.greeting" }}</h1>
+        <p>{{ i18n "pages.login.title" }}</p>
+        <a href="{{ .BasePath }}/admin/registry/overview">{{ i18n "pages.login.actions.login" }}</a>
+        <div>{{ i18n "pages.login.text.info" }}</div>
     </div>
 
     {{template "footer" .}}

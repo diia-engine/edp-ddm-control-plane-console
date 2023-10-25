@@ -2,21 +2,21 @@ package registry
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/codebase"
 	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"ddm-admin-console/service/jenkins"
-	"encoding/json"
-	"fmt"
-	"sort"
-	"strings"
-
-	"strconv"
-
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
@@ -84,9 +84,15 @@ func (a *App) viewRegistry(ctx *gin.Context) (router.Response, error) {
 	}), nil
 }
 
-func (a *App) viewRegistryProcessFunctions(mrs []gerrit.GerritMergeRequest) []func(ctx context.Context,
-	reg *codebase.Codebase, values *Values, viewParams gin.H) error {
-	return []func(ctx context.Context, reg *codebase.Codebase, values *Values, viewParams gin.H) error{
+func (a *App) viewRegistryProcessFunctions(
+	mrs []gerrit.GerritMergeRequest,
+) []func(
+	ctx context.Context,
+	reg *codebase.Codebase,
+	values *Values,
+	viewParams gin.H,
+) error {
+	return []func(ctx context.Context, reg *codebase.Codebase, values *Values, viewParams gin.H) error{ // TODO: this is confusing and forces the functions to have the same signature, call the functions directly.
 		a.viewRegistryAllowedToEdit,
 		a.viewRegistryGetRegistryAndBranches,
 		a.viewRegistryGetEDPComponents,
@@ -98,6 +104,7 @@ func (a *App) viewRegistryProcessFunctions(mrs []gerrit.GerritMergeRequest) []fu
 		a.viewAdministratorsConfig,
 		a.viewUpdateTrembitaRegistries,
 		a.viewGetMasterJobStatus,
+		a.viewCreateReleaseJobAvailable,
 	}
 }
 
@@ -114,6 +121,35 @@ func (a *App) viewGetMasterJobStatus(ctx context.Context, reg *codebase.Codebase
 
 	viewParams["mrAvailable"] = status == jenkins.StatusSuccess || status == jenkins.StatusNotBuild ||
 		status == jenkins.StatusAborted || status == jenkins.StatusFailure
+
+	return nil
+}
+
+func (a *App) viewCreateReleaseJobAvailable(ctx context.Context, reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
+	jobName := fmt.Sprintf("%s/view/Releases/job/Create-release-%s", reg.Name, reg.Name)
+
+	status, _, ststErr := a.Jenkins.GetJobStatus(ctx, jobName)
+	isRunning, prgErr := a.Jenkins.IsJobRunning(ctx, jobName)
+
+	handleErr := func(err error) error {
+		if err != nil {
+			if strings.Contains(err.Error(), "404") {
+				viewParams["createReleaseAvailable"] = true
+				return nil
+			}
+			return fmt.Errorf("unable to get job status, %w", err)
+		}
+		return nil
+	}
+
+	if err := handleErr(ststErr); err != nil {
+		return err
+	}
+
+	if err := handleErr(prgErr); err != nil {
+		return err
+	}
+	viewParams["createReleaseAvailable"] = status == jenkins.StatusSuccess && !isRunning
 
 	return nil
 }
@@ -152,17 +188,21 @@ func (a *App) makeViewRegistryExternalRegistration(mrs []gerrit.GerritMergeReque
 
 		for _, mr := range mrs {
 			if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value == gerrit.StatusNew {
-				eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
-					External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusInactive})
+				eRegs = append(eRegs, ExternalRegistration{
+					Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
+					External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusInactive,
+				})
 				mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
 			} else if mr.Labels[MRLabelTarget] == "external-reg" && mr.Status.Value != gerrit.StatusMerged && mr.Status.Value != gerrit.StatusAbandoned {
-				eRegs = append(eRegs, ExternalRegistration{Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
-					External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusFailed})
+				eRegs = append(eRegs, ExternalRegistration{
+					Name: mr.Annotations[mrAnnotationRegName], Enabled: true,
+					External: mr.Annotations[mrAnnotationRegType] == externalSystemTypeExternal, StatusRegistration: erStatusFailed,
+				})
 				mergeRequestsForER[mr.Annotations[mrAnnotationRegName]] = struct{}{}
 			}
 		}
 
-		//TODO: refactor to values struct
+		// TODO: refactor to values struct
 		_eRegs, err := decodeExternalRegsFromValues(values.OriginalYaml)
 		if err != nil {
 			return errors.Wrap(err, "unable to decode external regs")
@@ -191,7 +231,6 @@ func (a *App) makeViewRegistryExternalRegistration(mrs []gerrit.GerritMergeReque
 
 func (a *App) makeViewRegistryPublicAPI(mrs []gerrit.GerritMergeRequest) func(userCtx context.Context,
 	reg *codebase.Codebase, values *Values, viewParams gin.H) error {
-
 	return func(userCtx context.Context, reg *codebase.Codebase, values *Values, viewParams gin.H) error {
 		publicAPI, mergeRequestsForER := make([]PublicAPI, 0), make(map[string]struct{})
 		for _, mr := range mrs {
@@ -285,7 +324,7 @@ func convertExternalRegFromInterface(in interface{}) ([]ExternalRegistration, er
 }
 
 func (a *App) viewAdministratorsConfig(_ context.Context, _ *codebase.Codebase, values *Values, viewParams gin.H) error {
-	viewParams["admins"] = values.Administrators //TODO: remove this
+	viewParams["admins"] = values.Administrators // TODO: remove this
 	return nil
 }
 
@@ -305,8 +344,9 @@ func (a *App) viewCIDRConfig(userCtx context.Context, reg *codebase.Codebase, va
 	return nil
 }
 
+// viewDNSConfig edits the viewParams by reference. The func signature cannot be changed (yet) because it is used in the viewRegistryProcessFunctions.
 func (a *App) viewDNSConfig(_ context.Context, _ *codebase.Codebase, values *Values, viewParams gin.H) error {
-	//TODO: refactor to values struct
+	// TODO: refactor to values struct
 	valuesDict := values.OriginalYaml
 
 	portals, ok := valuesDict["portals"]
@@ -335,7 +375,6 @@ func (a *App) viewDNSConfig(_ context.Context, _ *codebase.Codebase, values *Val
 
 func (a *App) makeViewRegistryGetMergeRequests(mrs []gerrit.GerritMergeRequest) func(userCtx context.Context,
 	reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
-
 	return func(userCtx context.Context, reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
 		sort.Sort(gerrit.SortByCreationDesc(mrs))
 
@@ -439,7 +478,7 @@ func (a *App) viewRegistryGetEDPComponents(userCtx context.Context, reg *codebas
 		viewParams["registryOperationalComponents"] = categories[edpcomponent.RegistryOperationalZone]
 		viewParams["registryAdministrationComponents"] = categories[edpcomponent.RegistryAdministrationZone]
 	} else {
-		//TODO: remove this hotfix
+		// TODO: remove this hotfix
 		if err := a.loadRegistryEDPCats(userCtx, reg.Name, viewParams); err != nil {
 			return fmt.Errorf("unable to load registry edp component")
 		}

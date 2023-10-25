@@ -83,41 +83,36 @@ defineExpose({
 </script>
 
 <template>
-  <h2>Цифрові документи</h2>
-  <p>Управління обмеженнями на завантаження файлів цифрових документів до реєстру користувачами та бізнес-процесами.</p>
-  <div class="wizard-warning">Адміністративні обмеження діють в рамках обмежень на максимальний розмір запиту на
-    завантаження в 100 МБ, встановленого на рівні Платформи.</div>
+  <h2>{{ $t('components.registryDigitalDocuments.title') }}</h2>
+  <p>{{ $t('components.registryDigitalDocuments.text.managementOfUploadingFiles') }}</p>
+  <div class="wizard-warning">{{ $t('components.registryDigitalDocuments.text.administrativeRestrictionsMaximumRequest') }}</div>
   <input type="hidden" name="digital-documents" :value="preparedDigitalDocuments" />
   <div class="rc-form-group">
-    <TextField label="Максимальний розмір файлу для завантаження, MB" name="maxFileSize"
+    <TextField :label="$t('components.registryDigitalDocuments.fields.maxFileSize.label')" name="maxFileSize"
       v-model="maxFileSize" required :error="errors.maxFileSize" />
-    <p>Допустимі символи: “0-9”, “.”. Значення не може перевищувати довжину у 4 символи. <a href="#"
-        @click.stop.prevent="handleShowMaxFileSizePopUp">Детальніше</a>.</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.maximumSizeForDownloadValidation') }} <a href="#"
+        @click.stop.prevent="handleShowMaxFileSizePopUp">{{ $t('components.registryDigitalDocuments.actions.moreDetails') }}</a>.</p>
   </div>
 
   <div class="rc-form-group">
-    <TextField label="Макс. сумарний розмір групи файлів для завантаження, MB" name="maxTotalFileSize"
+    <TextField :label="$t('components.registryDigitalDocuments.fields.maxTotalFileSize.label')" name="maxTotalFileSize"
       v-model="maxTotalFileSize" required :error="errors.maxTotalFileSize" />
-    <p>Допустимі символи: “0-9”, “.”. Значення не може перевищувати довжину у 4 символи. <a href="#"
-        @click.stop.prevent="handleShowMaxTotalFileSize">Детальніше</a>.</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.maximumSizeForDownloadValidation') }} <a href="#"
+        @click.stop.prevent="handleShowMaxTotalFileSize">{{ $t('components.registryDigitalDocuments.actions.moreDetails') }}</a>.</p>
   </div>
 
-  <Modal title="Максимальний розмір файлу для завантаження" submitBtnText="Зрозуміло" :hasCancelBtn=false
+  <Modal :title="$t('components.registryDigitalDocuments.text.maximumSizeForDownload')" :submitBtnText="$t('actions.gotIt')" :hasCancelBtn=false
     :show="showMaxFileSizePopUp" @close="handleShowMaxFileSizePopUp" @submit="handleShowMaxFileSizePopUp">
-    <p>Значення, що вводяться, зчитуються в МВ, можуть бути десятковим дробом з крапкою в якості розділового знаку.</p>
-    <p>Значення не може перевищувати обмеження, встановлене на рівні системи. Обмеження застосовується до файлів, які
-      завантажуються користувачами та бізнес-процесами. Додаткові обмеження можуть бути встановлені на рівні окремих
-      файлових полей при моделюванні UI-форм.</p>
-    <p>Значення максимального розміру файлу не може перевищувати максимальний сумарний розмір групи файлів для
-      завантаження.</p>
-    <p>Значення використовується для визначення параметру “File Maximum Size” в компоненті File конструктора UI-форм.</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.valueFormat') }}</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.valueLimit') }}</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.fileCannotExceedTotalSize') }}</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.valueMaximumSize') }}</p>
   </Modal>
 
-  <Modal title="Макс. сумарний розмір групи файлів для завантаження" submitBtnText="Зрозуміло" :hasCancelBtn=false
+  <Modal :title="$t('components.registryDigitalDocuments.text.maxTotalSize')" :submitBtnText="$t('actions.gotIt')" :hasCancelBtn=false
     :show="showMaxTotalFileSizePopUp" @close="handleShowMaxTotalFileSize" @submit="handleShowMaxTotalFileSize">
-    <p>Значення, що вводяться, зчитуються в МВ, можуть бути десятковим дробом з крапкою в якості розділового знаку.</p>
-    <p>Значення не може перевищувати обмеження, встановлене на рівні системи. Обмеження застосовується до групи файлів,
-      які завантажуються користувачами через файлові поля UI-форми.</p>
-    <p>Значення використовується для визначення параметру “Maximum total size” в компоненті File конструктора UI-форм.</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.valueFormat') }}</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.valueGroupLimit') }}</p>
+    <p>{{ $t('components.registryDigitalDocuments.text.valueGroupMaximumSize') }}</p>
   </Modal>
 </template>

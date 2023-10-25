@@ -1,7 +1,6 @@
 package cluster
 
 import (
-	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
 	"encoding/json"
 	"net/http"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v3"
 )
 
 func (a *App) updateCIDRView(ctx *gin.Context) (router.Response, error) {
@@ -32,33 +30,14 @@ func (a *App) updateCIDR(ctx *gin.Context) error {
 		return nil
 	}
 
-	vals, err := a.Services.Gerrit.GetFileContents(ctx, a.Config.CodebaseName, "master", registry.ValuesLocation)
+	values, err := getValuesFromGit(a.Config.CodebaseName, masterBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to get values contents")
 	}
 
-	var valuesDict map[string]interface{}
-	if err := yaml.Unmarshal([]byte(vals), &valuesDict); err != nil {
-		return errors.Wrap(err, "unable to decode values yaml")
-	}
+	values.Global.WhiteListIP.AdminRoutes = strings.Join(cidr, " ")
 
-	globalInterface, ok := valuesDict["global"]
-	if !ok {
-		globalInterface = make(map[string]interface{})
-	}
-	globalDict := globalInterface.(map[string]interface{})
-
-	whiteListInterface, ok := globalDict["whiteListIP"]
-	if !ok {
-		whiteListInterface = make(map[string]interface{})
-	}
-	whiteListDict := whiteListInterface.(map[string]interface{})
-	whiteListDict["adminRoutes"] = strings.Join(cidr, " ")
-
-	globalDict["whiteListIP"] = whiteListDict
-	valuesDict["global"] = globalDict
-
-	if err := a.createValuesMergeRequestCtx(ctx, MRTypeClusterCIDR, "update cluster CIDR config", valuesDict); err != nil {
+	if err := a.createValuesMergeRequestCtx(ctx, MRTypeClusterCIDR, "update cluster CIDR config", values); err != nil {
 		return errors.Wrap(err, "unable to create cidr merge request")
 	}
 

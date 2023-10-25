@@ -2,16 +2,18 @@ package registry
 
 import (
 	"context"
-	edpComponent "ddm-admin-console/service/edp_component"
 	"fmt"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
+
+	edpComponent "ddm-admin-console/service/edp_component"
 )
 
 func (a *App) prepareKeycloakCustomHostname(ctx *gin.Context, r *registry, values *Values,
-	secrets map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
+	_ map[string]map[string]interface{}, _ *[]string,
+) (bool, error) {
 	keycloakDefaultHostname, err := LoadKeycloakDefaultHostname(ctx, a.KeycloakDefaultHostname, a.EDPComponent)
 	if err != nil {
 		return false, fmt.Errorf("unable to load keycloak default hostname")
@@ -51,7 +53,7 @@ func (a *App) loadKeycloakHostnames() ([]string, error) {
 }
 
 func (a *App) getClusterValues() (*ClusterValues, error) {
-	data, err := a.Gerrit.GetBranchContent(a.ClusterCodebaseName, MasterBranch, url.PathEscape(ValuesLocation))
+	data, err := a.Gerrit.GetFileFromBranch(a.ClusterCodebaseName, MasterBranch, url.PathEscape(ValuesLocation))
 	if err != nil {
 		return nil, fmt.Errorf("unable to get cluster values")
 	}

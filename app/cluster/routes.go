@@ -10,6 +10,7 @@ func (a *App) createRoutes() {
 	a.router.POST("/admin/cluster/key", a.updateKeyView)
 	a.router.POST("/admin/cluster/cidr", a.updateCIDRView)
 	a.router.POST("/admin/cluster/demo-registry-name", a.updateDemoRegistryName)
+	a.router.POST("/admin/cluster/general", a.updateGeneral)
 	a.router.POST("/admin/cluster/backup-schedule", a.backupSchedule)
 	a.router.POST("/admin/cluster/upload-pem-dns", a.uploadPEMDNS)
 	a.router.POST("/admin/cluster/add-keycloak-dns", a.keycloakDNS)

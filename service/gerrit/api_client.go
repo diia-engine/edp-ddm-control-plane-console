@@ -16,9 +16,14 @@ import (
 
 func (s *Service) initRestyClient() error {
 	var secret coreV1Api.Secret
-	if err := s.k8sClient.Get(context.Background(),
-		types.NamespacedName{Namespace: s.Namespace,
-			Name: fmt.Sprintf("%s-admin-password", s.RootGerritName)}, &secret); err != nil {
+	if err := s.k8sClient.Get(
+		context.Background(),
+		types.NamespacedName{
+			Namespace: s.Namespace,
+			Name:      fmt.Sprintf("%s-admin-password", s.RootGerritName),
+		},
+		&secret,
+	); err != nil {
 		return errors.Wrap(err, "unable to get admin secret")
 	}
 
@@ -56,7 +61,9 @@ func checkErr(rsp *resty.Response, err error) error {
 	return nil
 }
 
-func (s *Service) GetBranchContent(projectName, branch, fileLocation string) (string, error) {
+// GetFileFromBranch gets the content of a file from the HEAD revision of a certain branch.
+// The content is returned as base64 encoded string.
+func (s *Service) GetFileFromBranch(projectName, branch, fileLocation string) (string, error) {
 	content, _, err := s.GoGerritClient().Projects.GetBranchContent(projectName, branch, fileLocation)
 	if err != nil {
 		return "", fmt.Errorf("unable to get branch content: %w", err)

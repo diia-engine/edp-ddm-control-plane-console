@@ -48,12 +48,12 @@ const submit = handleSubmit((data: Data) => {
 </script>
 
 <template>
-  <Modal :show="backupPlacePopupShow" @close="hideBackupPlaceModal" @submit="submit" title="Задати власні значення для зберігання резервних копій реплікацій об’єктів S3">
+  <Modal :show="backupPlacePopupShow" @close="hideBackupPlaceModal" @submit="submit" :title="$t('components.registryBackupSavePlaceModal.title')">
     <form id="backupPlace-form">
       <TextField 
-        label="Ім’я бакета"
+        :label="$t('components.registryBackupSavePlaceModal.fields.bucketName.label')"
         name="backupBucket"
-        description="Довжина назви має бути від 3 до 63 символів. Допустимі символи “a-z”, “0-9”, “.”, “-”"
+        :description="$t('components.registryBackupSavePlaceModal.fields.bucketName.description')"
         v-model="values.backupBucket"
         :error="errors?.backupBucket"
         required
@@ -62,26 +62,26 @@ const submit = handleSubmit((data: Data) => {
       <TextField 
         label="Endpoint"
         name="endpoint"
-        description="Наприклад: “https://endpoint.com”"
+        :description="$t('components.registryBackupSavePlaceModal.fields.endpoint.description')"
         v-model="values.endpoint"
         :error="errors?.endpoint"
         required
       />
 
       <TextField 
-        label="Логін"
+        :label="$t('components.registryBackupSavePlaceModal.fields.login.label')"
         name="login"
-        description="Надається постачальником послуги"
+        :description="$t('components.registryBackupSavePlaceModal.fields.login.description')"
         v-model="values.login"
         :error="errors?.login"
         required
       />
 
       <TextField 
-        label="Пароль"
+        :label="$t('components.registryBackupSavePlaceModal.fields.password.label')"
         name="password"
         type="password"
-        description="Надається постачальником послуги"
+        :description="$t('components.registryBackupSavePlaceModal.fields.password.description')"
         v-model="values.password"
         :error="errors?.password"
         required

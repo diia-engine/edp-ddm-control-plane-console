@@ -14,14 +14,16 @@ const (
 )
 
 type registry struct {
-	Name                          string   `form:"name" binding:"required,min=3,max=12,registry-name" json:"name"`
-	Description                   string   `form:"description" valid:"max=250" json:"description"`
-	Admins                        string   `form:"admins" json:"admins"`
-	AdminsChanged                 string   `form:"admins-changed"`
-	SignKeyIssuer                 string   `form:"sign-key-issuer" binding:"required_if=KeyDeviceType file Scenario key-required"`
-	SignKeyPwd                    string   `form:"sign-key-pwd" binding:"required_if=KeyDeviceType file Scenario key-required"`
-	RegistryGitBranch             string   `form:"registry-git-branch" binding:"required"`
-	KeyDeviceType                 string   `form:"key-device-type" binding:"oneof=file hardware"`
+	Name              string `form:"name" binding:"required,min=3,max=12,registry-name" json:"name"`
+	Description       string `form:"description" valid:"max=250" json:"description"`
+	Admins            string `form:"admins" json:"admins"`
+	AdminsChanged     string `form:"admins-changed"`
+	SignKeyIssuer     string `form:"sign-key-issuer" binding:"required_if=KeyDeviceType file Scenario key-required"`
+	SignKeyPwd        string `form:"sign-key-pwd" binding:"required_if=KeyDeviceType file Scenario key-required"`
+	RegistryGitBranch string `form:"registry-git-branch" binding:"required"`
+	// TODO: validation enable. disabled after removing keyData tab. Do we still need this validations?
+	// KeyDeviceType                 string   `form:"key-device-type" binding:"omitempty,oneof=file hardware"`
+	KeyDeviceType                 string   `form:"key-device-type" binding:"omitempty,oneof=file hardware"`
 	RemoteType                    string   `form:"remote-type" binding:"required_if=KeyDeviceType hardware Scenario key-required"`
 	RemoteKeyPassword             string   `form:"remote-key-pwd" binding:"required_if=KeyDeviceType hardware Scenario key-required"`
 	RemoteCAName                  string   `form:"remote-ca-name" binding:"required_if=KeyDeviceType hardware Scenario key-required"`
@@ -46,15 +48,19 @@ type registry struct {
 	CIDRCitizen                   string   `form:"citizen-cidr"`
 	CIDRAdmin                     string   `form:"admin-cidr"`
 	CIDRChanged                   string   `form:"cidr-changed"`
+	CspChanged                    string   `form:"csp-changed"`
+	RegistryCsp                   string   `form:"registry-csp"`
 	Resources                     string   `form:"resources"`
 	SupAuthBrowserFlow            string   `form:"sup-auth-browser-flow"`
 	SupAuthURL                    string   `form:"sup-auth-url"`
 	SupAuthWidgetHeight           string   `form:"sup-auth-widget-height"`
 	SupAuthClientID               string   `form:"sup-auth-client-id"`
 	SupAuthClientSecret           string   `form:"sup-auth-client-secret"`
+	SupAuthKeyName                string   `form:"sup-auth-key-name"`
 	BackupScheduleEnabled         string   `form:"backup-schedule-enabled"`
 	SelfRegistration              string   `form:"self-registration-enabled"`
 	RecIndividualAccessEnabled    string   `form:"rec-individual-access-enabled"`
+	RecEnableSingleIdentity       string   `form:"rec-enable-single-identity"`
 	CronSchedule                  string   `form:"cron-schedule"`
 	CronScheduleDays              string   `form:"cron-schedule-days"`
 	KeycloakCustomHostname        string   `form:"keycloak-custom-hostname"`
@@ -74,6 +80,7 @@ type registry struct {
 	ComputeResources              string   `form:"compute-resources" json:"computeResources"`
 	ExcludePortals                []string `form:"excludePortals[]" json:"excludePortals"`
 	GeoServerEnabled              string   `form:"geoServerEnabled" json:"geoServerEnabled"`
+	Language                      string   `form:"language" json:"language"`
 }
 
 func (r *registry) KeysRequired() bool {

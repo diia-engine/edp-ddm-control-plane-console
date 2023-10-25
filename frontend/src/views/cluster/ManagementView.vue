@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue';
+import i18n, { getNamespaceMessage } from '@/localization';
 
 interface ManagementTemplateVariables {
     canUpdateCluster: any;
@@ -16,7 +17,9 @@ interface ManagementTemplateVariables {
     platformAdministrationComponents: any;
     platformOperationalComponents: any;
     hasUpdate: any;
+    language: keyof typeof LANGUAGES;
 }
+
 const variables = inject('TEMPLATE_VARIABLES') as ManagementTemplateVariables;
 const canUpdateCluster = variables?.canUpdateCluster;
 const codebase = variables?.codebase;
@@ -32,13 +35,16 @@ const gerritURL = variables?.gerritURL;
 const platformCentralComponents = variables?.platformCentralComponents;
 const platformAdministrationComponents = variables?.platformAdministrationComponents;
 const platformOperationalComponents = variables?.platformOperationalComponents;
+const language = variables?.language || i18n.global.locale;
 
 </script>
 <script lang="ts">
+import { defineComponent } from 'vue';
 import $ from 'jquery';
+
+import { LANGUAGES } from '@/constants/cluster';
 import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getStatusTitle } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
-import { defineComponent } from 'vue';
 
 export default defineComponent({
     data() {
@@ -59,7 +65,7 @@ export default defineComponent({
           let statuses = $(".mr-status");
           for (let i = 0; i < statuses.length; i++) {
             const statusHtml = $(statuses[i]).html().trim();
-            if (statusHtml === "Новий" || statusHtml.indexOf('mr-refresh') !== -1) {
+            if (statusHtml === this.$t('pages.clusterManagement.text.new') || statusHtml.indexOf('mr-refresh') !== -1) {
               return true;
             }
           }
@@ -116,71 +122,77 @@ export default defineComponent({
 <template>
     <div class="registry cluster" id="registry-view">
         <div class="registry-header registry-header-view cluster">
-            <h1>Керування Платформою</h1>
+            <h1>{{ $t('pages.clusterManagement.title') }}</h1>
           <div class="registry-view-actions">
             <template v-if="hasUpdate">
               <a :href="`/admin/cluster/edit#upgrade`"
                  class="registry-add">
                 <i class="fa-solid fa-arrow-up"></i>
-                <span>Оновити</span>
+                <span>{{ $t('actions.refresh') }}</span>
               </a>
             </template>
             <a v-if="canUpdateCluster" href="/admin/cluster/edit" class="registry-add">
                 <img alt="add registry" src="@/assets/img/action-edit.png" />
-                <span>Редагувати</span>
+                <span>{{ $t('actions.edit') }}</span>
             </a>
           </div>
         </div>
         <div class="tabs">
           <div class="tab" @click="selectTab('info')" :class="{ active: isActiveTab('info') }">
-            Інформація про платформу
+            {{ $t('pages.clusterManagement.tabs.platformInfo') }}
           </div>
           <div class="tab" @click="selectTab('links')" :class="{ active: isActiveTab('links') }">
-            Швидкі посилання
+            {{ $t('pages.clusterManagement.tabs.fastLinks') }}
           </div>
         </div>
 
         <div class="box" v-show="isActiveTab('info')">
           <div class="rg-info-block">
               <div class="rg-info-block-header" @click="accordion.general = !accordion.general">
-                  <span>Загальна інформація</span>
+                  <span>{{ $t('pages.clusterManagement.text.commonInfo') }}</span>
                   <img v-if="accordion.general" src="@/assets/img/action-toggle.png" alt="toggle block" />
                   <img v-if="!accordion.general" src="@/assets/img/down.png" alt="toggle block" />
               </div>
               <div class="rg-info-block-body" v-show="accordion.general">
                   <div class="rg-info-line-horizontal">
-                      <span>Назва</span>
+                      <span>{{ $t('pages.clusterManagement.text.name') }}</span>
                       <span>{{ codebase.metadata.name }}</span>
                   </div>
                   <div class="rg-info-line-horizontal">
-                      <span>Версія</span>
+                      <span>{{ $t('pages.clusterManagement.text.version') }}</span>
                       <span>{{ version }}</span>
                   </div>
                   <div class="rg-info-line-horizontal">
-                      <span>Опис</span>
-                      <span>{{ codebase.spec.description }}</span>
+                      <span>{{ $t('pages.clusterManagement.text.description') }}</span>
+                      <span>{{ getNamespaceMessage('pages.clusterManagement.text', codebase.spec.description) }}</span>
                   </div>
                   <div v-if="admins" class="rg-info-line-horizontal">
-                      <span>Адміністратори</span>
+                      <span>{{ $t('pages.clusterManagement.text.administrators') }}</span>
                       <span>{{ admins }}</span>
                   </div>
                   <div v-if="cidr" class="rg-info-line-horizontal">
-                      <span>CIDR для адміністративних компонент</span>
+                      <span>{{ $t('pages.clusterManagement.text.cidrValues') }}</span>
                       <span class="cidr-values">
                           <div v-for="(value, index) in cidr" :key="index" class="view-cidr">{{ value }}</div>
                       </span>
                   </div>
 
                   <div class="rg-info-line-horizontal">
-                      <span>Час створення</span>
+                      <span>{{ $t('pages.clusterManagement.text.creationTimestamp') }}</span>
                       <span>{{ getFormattedDate(codebase.metadata.creationTimestamp) }}</span>
+                  </div>
+                  <div class="rg-info-line-horizontal" v-if="language">
+                      <span>{{ $t('pages.clusterManagement.text.language') }}</span>
+                      <span>
+                        {{ LANGUAGES[language].name }}
+                      </span>
                   </div>
               </div>
           </div>
 
           <div v-if="branches.length" class="rg-info-block">
               <div class="rg-info-block-header" @click="accordion.configuration = !accordion.configuration">
-                  <span>Конфігурація</span>
+                  <span>{{ $t('pages.clusterManagement.text.config') }}</span>
                 <img v-if="accordion.configuration" src="@/assets/img/action-toggle.png" alt="toggle block" />
                 <img v-if="!accordion.configuration" src="@/assets/img/down.png" alt="toggle block" />
 
@@ -189,11 +201,11 @@ export default defineComponent({
                   <table class="rg-info-table rg-info-table-config">
                       <thead>
                           <tr>
-                              <th>Статус</th>
-                              <th>Конфігурація</th>
+                              <th>{{ $t('pages.clusterManagement.table.status') }}</th>
+                              <th>{{ $t('pages.clusterManagement.table.config') }}</th>
                               <th>VCS</th>
                               <th>CI</th>
-                              <th>Версія</th>
+                              <th>{{ $t('pages.clusterManagement.table.version') }}</th>
                           </tr>
                       </thead>
                       <tbody>
@@ -225,7 +237,7 @@ export default defineComponent({
 
           <div v-if="mergeRequests.length" class="rg-info-block">
               <div class="rg-info-block-header" @click="accordion.mergeRequests = !accordion.mergeRequests">
-                  <span>Запити на оновлення</span>
+                  <span>{{ $t('pages.clusterManagement.text.requests') }}</span>
                 <img v-if="accordion.mergeRequests" src="@/assets/img/action-toggle.png" alt="toggle block" />
                 <img v-if="!accordion.mergeRequests" src="@/assets/img/down.png" alt="toggle block" />
 
@@ -251,7 +263,7 @@ export default defineComponent({
 
           <div style="width:80%;left:10%;height:80%;" class="popup-window admin-window visible" v-cloak v-if="mrView">
               <div class="popup-header">
-                  <p>Запит на оновлення</p>
+                  <p>{{ $t('pages.clusterManagement.text.request') }}</p>
                   <a href="#" @click.stop.prevent="hideMrView" class="popup-close hide-popup">
                       <img alt="close popup window" src="@/assets/img/close.png" />
                   </a>
@@ -266,7 +278,7 @@ export default defineComponent({
           <template v-if="platformAdministrationComponents">
             <div class="rg-info-block">
               <div class="rg-info-block-header">
-                <span>Адміністративна зона платформи</span>
+                <span>{{ $t('pages.clusterManagement.text.adminZonePlatform') }}</span>
               </div>
               <div class="rg-info-block-body mr-block-table">
                 <div class="dashboard-panel registry-dashboard-panel">
@@ -276,10 +288,10 @@ export default defineComponent({
                            class="item-image" />
                       <div class="item-content">
                         <a target="_blank" :href="$ec.Url">
-                          {{ $ec.Title }}
+                          {{ getNamespaceMessage('domains.cluster.links.platformAdministration.title', $ec.Title) }}
                           <img src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
                         </a>
-                        <div class="description">{{ $ec.Description }}</div>
+                        <div class="description">{{ getNamespaceMessage('domains.cluster.links.platformAdministration.description', $ec.Description) }}</div>
                       </div>
                     </div>
                   </template>
@@ -290,7 +302,7 @@ export default defineComponent({
           <template v-if="platformOperationalComponents">
             <div class="rg-info-block">
               <div class="rg-info-block-header">
-                <span>Операційна зона платформи</span>
+                <span>{{ $t('pages.clusterManagement.text.operationZonePlatform') }}</span>
               </div>
               <div class="rg-info-block-body mr-block-table">
                 <div class="dashboard-panel registry-dashboard-panel">
@@ -300,10 +312,10 @@ export default defineComponent({
                            class="item-image" />
                       <div class="item-content">
                         <a target="_blank" :href="$ec.Url">
-                          {{ $ec.Title }}
+                          {{ getNamespaceMessage('domains.cluster.links.platformOperational.title', $ec.Title) }}
                           <img src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
                         </a>
-                        <div class="description">{{ $ec.Description }}</div>
+                        <div class="description">{{ getNamespaceMessage('domains.cluster.links.platformOperational.description', $ec.Description) }}</div>
                       </div>
                     </div>
                   </template>
@@ -314,7 +326,7 @@ export default defineComponent({
           <template v-if="platformCentralComponents">
             <div class="rg-info-block">
               <div class="rg-info-block-header">
-                <span>Центральні компоненти</span>
+                <span>{{ $t('pages.clusterManagement.text.centerComponents') }}</span>
               </div>
               <div class="rg-info-block-body mr-block-table">
                 <div class="dashboard-panel registry-dashboard-panel">
@@ -324,11 +336,11 @@ export default defineComponent({
                            class="item-image" />
                       <div class="item-content">
                         <a target="_blank" :href="$ec.Url" :class="{ disabled: $ec.Visible == 'false' }">
-                          {{ $ec.Title }}
-                          <span v-if="$ec.Visible == 'false'">(вимкнено)</span>
+                          {{ getNamespaceMessage('domains.cluster.links.platformCentral.title', $ec.Title) }}
+                          <span v-if="$ec.Visible == 'false'">({{ $t('pages.clusterManagement.text.turnedOff') }})</span>
                           <img v-else src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
                         </a>
-                        <div class="description">{{ $ec.Description }}</div>
+                        <div class="description">{{ getNamespaceMessage('domains.cluster.links.platformCentral.description', $ec.Description) }}</div>
                       </div>
                     </div>
                   </template>

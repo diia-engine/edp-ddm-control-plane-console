@@ -15,4 +15,5 @@ type ServiceInterface interface {
 	GetSecretKey(ctx context.Context, namespace, name, key string) (string, error)
 	GetSecretKeys(ctx context.Context, namespace, name string, keys []string) (map[string]string, error)
 	GetConfigMap(ctx context.Context, name, namespace string) (*v1.ConfigMap, error)
+	CreateConfigMap(ctx context.Context, cm *v1.ConfigMap, namespace string) error
 }

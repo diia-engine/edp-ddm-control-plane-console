@@ -16,10 +16,10 @@ export default defineComponent({
       <div class="registry-header">
             <a href="/admin/registry/overview" onclick="window.history.back(); return false;" class="registry-add">
                 <img alt="add registry" src="@/assets/img/action-back.png" />
-                <span>НАЗАД</span>
+                <span>{{ $t('actions.back') }}</span>
             </a>
         </div>
-        <h1>Створити новий реєстр</h1>
+        <h1>{{ $t('pages.registryCreate.title') }}</h1>
 
         <RegistryWizard ref="wizard" :form-submitted="registryFormSubmitted" />
 
@@ -28,6 +28,7 @@ export default defineComponent({
           :editAdmin="editAdmin"
           :requiredError="requiredError"
           :emailFormatError="emailFormatError"
+          :passwordFormatError="passwordFormatError"
           :adminExistsError="adminExistsError"
           @create-admin="createAdmin"
           @hide-admin-form="hideAdminForm"

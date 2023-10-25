@@ -1,4 +1,4 @@
-
+import i18n from "../localization";
 
 export const getMergeRequestName = (mergeRequest: any): string => {
     const { metadata } = mergeRequest;
@@ -8,7 +8,7 @@ export const getMergeRequestName = (mergeRequest: any): string => {
     }
 
     if (target == "registry-version-update") {
-        return "Оновлення версії реєстру";
+        return i18n.global.t('domains.changes.mergeRequest.names.updatingRegistryVersion');
     }
 
     if (target == "publicAPI-reg") {
@@ -16,10 +16,16 @@ export const getMergeRequestName = (mergeRequest: any): string => {
     }
 
     if (target == "edit-registry" || target == "trembita-registry-update") {
-        return "Редагування реєстру";
+        return i18n.global.t('domains.changes.mergeRequest.names.editingRegistry');
     }
 
     return metadata.name;
+};
+
+export const isRegistryUpdateMrOpen = (mergeRequest: any): boolean => {
+    const { metadata } = mergeRequest;
+    const target = metadata?.labels?.["console/target"];
+    return mergeRequest.status.value === "NEW" && target == "registry-version-update";
 };
 
 export const getMergeRequestAction = (mergeRequest: any): string => {
@@ -30,13 +36,13 @@ export const getMergeRequestAction = (mergeRequest: any): string => {
         if (res) {
             switch (`mre-action-${res}`) {
                 case "mre-action-disable":
-                    return "Заблокування";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.disable');
                 case "mre-action-enable":
-                    return "Розблокування";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.enable');
                 case "mre-action-creation":
-                    return "Створення";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.creation');
                 case "mre-action-deletion":
-                    return "Скасування";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.deletion');
             }
         }
     }
@@ -46,15 +52,15 @@ export const getMergeRequestAction = (mergeRequest: any): string => {
         if (res) {
             switch (res) {
                 case "edition":
-                    return "Редагування";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.edition');
                 case "disable":
-                    return "Заблокування";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.disable');
                 case "enable":
-                    return "Розблокування";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.enable');
                 case "creation":
-                    return "Створення";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.creation');
                 case "deletion":
-                    return "Видалення";
+                    return i18n.global.t('domains.changes.mergeRequest.actions.removing');
             }
         }
     }
@@ -65,7 +71,7 @@ export const getMergeRequestAction = (mergeRequest: any): string => {
             sourceBranch = metadata.labels["console/source-branch"];
         }
 
-        return `Оновлення реєстру до ${sourceBranch}`;
+        return i18n.global.t('domains.changes.mergeRequest.actions.versionUpdate', { sourceBranch });
     }
 
     return "-";
@@ -76,16 +82,16 @@ export const getMergeRequestPlatformAction = (mergeRequest: any): string => {
     const target = metadata?.labels?.["console/target"];
 
 	if (target === "cluster-admins") {
-		return "Оновлення адміністраторів платформи";
+		return i18n.global.t('domains.changes.mergeRequest.platformActions.updatingAdministrators');
 	}
 
     if (target === "cluster-cidr") {
-		return "Обмеження доступу";
+		return i18n.global.t('domains.changes.mergeRequest.platformActions.accessRestrictions');
 	}
   
 
     if (target === "cluster-keycloak-dns") {
-		return "Редагування DNS Keycloak";
+		return i18n.global.t('domains.changes.mergeRequest.platformActions.editingDNSKeycloak');
 	}
 
 	let sourceBranch = mergeRequest.spec.sourceBranch;
@@ -94,7 +100,7 @@ export const getMergeRequestPlatformAction = (mergeRequest: any): string => {
 	}
 
 	if (target == "cluster-update") {
-		return `Оновлення платформи до ${sourceBranch}`;
+		return i18n.global.t('domains.changes.mergeRequest.platformActions.updatePlatform', { sourceBranch });
 	}
 
 	return "-";
@@ -108,7 +114,7 @@ export const mrIsInProgress = (mergeRequest: any) => {
 
 export const getMergeRequestStatus = (mergeRequest: any) => {
     if (mrIsInProgress(mergeRequest)) {
-        return "У процесі виконання";
+        return i18n.global.t('domains.changes.mergeRequest.statuses.inProgress');
     }
 
     if (mergeRequest.status.value === "") {
@@ -117,10 +123,10 @@ export const getMergeRequestStatus = (mergeRequest: any) => {
 
     switch (mergeRequest.status.value) {
         case "NEW":
-            return "Новий";
+            return i18n.global.t('domains.changes.mergeRequest.statuses.new');
         case "ABANDONED":
-            return "Відхилено";
+            return i18n.global.t('domains.changes.mergeRequest.statuses.abandoned');
         case "MERGED":
-            return "Підтверджено";
+            return i18n.global.t('domains.changes.mergeRequest.statuses.merged');
     }
 };

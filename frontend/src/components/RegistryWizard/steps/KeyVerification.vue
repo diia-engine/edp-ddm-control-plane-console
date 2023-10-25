@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Typography from '@/components/common/Typography.vue';
 import FileField from '@/components/common/FileField.vue';
+import Banner from '@/components/common/Banner.vue';
 </script>
 
 <script lang="ts">
@@ -10,6 +11,7 @@ export default defineComponent({
   props: {
     registryAction: String,
     pageDescription: String,
+    region: String,
   },
   methods: {
     validator() {
@@ -26,12 +28,12 @@ export default defineComponent({
         let validationFailed = false;
 
         if (!this.caCertSelected) {
-          this.caCertError = 'Обов’язкове поле';
+          this.caCertError = this.$t('errors.requiredField');
           validationFailed = true;
         }
 
         if (!this.caJSONSelected) {
-          this.caJSONError = 'Обов’язкове поле';
+          this.caJSONError = this.$t('errors.requiredField');
           validationFailed = true;
         }
 
@@ -85,14 +87,20 @@ export default defineComponent({
 </style>
 
 <template>
-  <h2>Дані для перевірки підписів</h2>
-  <Typography variant="bodyText" class="key-sign-page-description">{{ pageDescription }}</Typography>
+  <h2>{{ $t('components.keyVerification.title') }}</h2>
+  <div v-if="region === 'ua'">
+    <Typography variant="bodyText" class="key-sign-page-description">{{ pageDescription }}</Typography>
 
-  <input type="checkbox" style="display: none;" v-model="changed" name="key-verification-changed" />
+    <input type="checkbox" style="display: none;" v-model="changed" name="key-verification-changed" />
 
-  <FileField label="Публічні сертифікати АЦСК (CACertificate.p7b)" sub-label="Обрати файл" name="ca-cert" accept=".p7b"
-             :error="caCertError" @selected="onCACertFileSelected" @reset="onCACertFileReset" id="ca-cert-upload" />
+    <FileField :label="$t('components.keyVerification.fields.cert.label')" :sub-label="$t('components.keyVerification.fields.cert.subLabel')" name="ca-cert" accept=".p7b"
+              :error="caCertError" @selected="onCACertFileSelected" @reset="onCACertFileReset" id="ca-cert-upload" />
 
-  <FileField label="Перелік АЦСК (розширення .json)" sub-label="Обрати файл" name="ca-json" accept=".json"
-             :error="caJSONError" @selected="onCAJSONFileSelected" @reset="onCAJSONFileReset" id="ca-json-upload" />
+    <FileField :label="$t('components.keyVerification.fields.json.label')" :sub-label="$t('components.keyVerification.fields.json.subLabel')" name="ca-json" accept=".json"
+              :error="caJSONError" @selected="onCAJSONFileSelected" @reset="onCAJSONFileReset" id="ca-json-upload" />
+  </div>
+  <Banner
+    v-else
+    :description="$t('components.keyVerification.text.pageDescriptionGlobal')"
+  />
 </template>

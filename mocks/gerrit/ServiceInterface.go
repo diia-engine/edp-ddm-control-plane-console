@@ -4,6 +4,7 @@ package mocks
 
 import (
 	context "context"
+
 	gerrit "ddm-admin-console/service/gerrit"
 
 	go_gerrit "github.com/andygrunwald/go-gerrit"
@@ -72,8 +73,8 @@ func (_m *ServiceInterface) CreateProject(ctx context.Context, name string) erro
 	return r0
 }
 
-// GetBranchContent provides a mock function with given fields: projectName, branch, fileLocation
-func (_m *ServiceInterface) GetBranchContent(projectName string, branch string, fileLocation string) (string, error) {
+// GetFileFromBranch provides a mock function with given fields: projectName, branch, fileLocation
+func (_m *ServiceInterface) GetFileFromBranch(projectName string, branch string, fileLocation string) (string, error) {
 	ret := _m.Called(projectName, branch, fileLocation)
 
 	var r0 string

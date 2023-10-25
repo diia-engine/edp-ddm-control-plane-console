@@ -18,11 +18,11 @@ function handleEnabledPortalChange(enabled: boolean) {
 </script>
 
 <template>
-  <Typography variant="h3" class="h3">Кабінет адміністратора регламенту</Typography>
+  <Typography variant="h3" class="h3">{{ $t('components.registryAdminAuth.title') }}</Typography>
   <input type="hidden" name="excludePortals[]" :value="portal"/>
   <ToggleSwitch
     name="enabledAdminPortal"
-    label="Розгорнути Кабінет адміністратора регламенту"
+    :label="$t('components.registryAdminAuth.fields.enabledAdminPortal.label')"
     v-model="isEnabledPortal"
     @change="handleEnabledPortalChange"
   />

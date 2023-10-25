@@ -21,52 +21,52 @@ export default defineComponent({
 </script>
 
 <template>
-  <h2>Вибір поштового серверу</h2>
+  <h2>{{ $t('components.registrySmtp.title') }}</h2>
   <div class="rc-form-group">
-      <label for="smtp-server-type">Поштовий сервер</label>
+      <label for="smtp-server-type">{{ $t('components.registrySmtp.text.mailServer') }}</label>
       <input type="hidden" ref="smtpServerTypeSelected" :value="templateVariables.model?.MailServerType" />
       <input type="hidden" ref="smtpEditConfig" :value="templateVariables.smtpConfig" />
       <select v-model="pageRoot.$data.smtpServerType" id="smtp-server-type" name="smtp-server-type">
           <option :selected="templateVariables.model?.MailServerType === 'platform-mail-server'"
-                  value="platform-mail-server">Платформенний поштовий сервер</option>
+                  value="platform-mail-server">{{ $t('components.registrySmtp.text.platformMailServer') }}</option>
           <option :selected="templateVariables.model?.MailServerType === 'external-mail-server'"
-                  value="external-mail-server">Зовнішній поштовий сервер</option>
+                  value="external-mail-server">{{ $t('components.registrySmtp.text.externalMailServer') }}</option>
       </select>
   </div>
 
   <div v-cloak v-if="pageRoot.$data.smtpServerType == 'platform-mail-server'">
-      <p>Налаштування підключення до платформенного поштового серверу</p>
+      <p>{{ $t('components.registrySmtp.text.settingConnectionPlatformMailServer') }}</p>
       <div class="rc-form-group">
-          <label for="ms-opts">Поштова адреса реєстру</label>
+          <label for="ms-opts">{{ $t('components.registrySmtp.text.registryAddress') }}</label>
           <input readonly type="text" id="ms-opts" name="mail-server-opts"
                   value="<registry_name>@<registry.platform-domain>" />
       </div>
   </div>
 
   <div v-cloak v-if="pageRoot.$data.smtpServerType == 'external-mail-server'">
-      <p>Налаштування SMTP-підключення до зовнішнього поштового серверу</p>
+      <p>{{ $t('components.registrySmtp.text.configuringConnectionExternalServer') }}</p>
       <input type="hidden" name="mail-server-opts" :value="pageRoot.$data.mailServerOpts" />
       <div class="rc-form-group" :class="{'error': pageRoot.$data.externalSMTPOpts.host == '' && pageRoot.$data.wizard.tabs.mail.beginValidation}">
-          <label for="smtp-host">Хост</label>
+          <label for="smtp-host">{{ $t('components.registrySmtp.text.host') }}</label>
           <input v-model="pageRoot.$data.externalSMTPOpts.host" id="smtp-host" />
-          <span v-if="pageRoot.$data.externalSMTPOpts.host == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
+          <span v-if="pageRoot.$data.externalSMTPOpts.host == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">{{ $t('errors.requiredField') }}</span>
       </div>
       <div class="rc-form-group" :class="{'error': pageRoot.$data.externalSMTPOpts.port == '' && pageRoot.$data.wizard.tabs.mail.beginValidation}">
-          <label for="smtp-port">Порт</label>
+          <label for="smtp-port">{{ $t('components.registrySmtp.text.port') }}</label>
           <input id="smtp-port" v-model="pageRoot.$data.externalSMTPOpts.port" />
-          <span v-if="pageRoot.$data.externalSMTPOpts.port == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
+          <span v-if="pageRoot.$data.externalSMTPOpts.port == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">{{ $t('errors.requiredField') }}</span>
       </div>
       <div class="rc-form-group"
             :class="{'error': pageRoot.$data.externalSMTPOpts.address == '' && pageRoot.$data.wizard.tabs.mail.beginValidation}">
-          <label for="smtp-address">Поштова адреса</label>
+          <label for="smtp-address">{{ $t('components.registrySmtp.text.mailAddress') }}</label>
           <input id="smtp-address" v-model="pageRoot.$data.externalSMTPOpts.address" />
-          <span v-if="pageRoot.$data.externalSMTPOpts.address == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
+          <span v-if="pageRoot.$data.externalSMTPOpts.address == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">{{ $t('errors.requiredField') }}</span>
       </div>
       <div class="rc-form-group"
             :class="{'error': pageRoot.$data.externalSMTPOpts.password == '' && pageRoot.$data.wizard.tabs.mail.beginValidation}">
-          <label for="smtp-password">Пароль</label>
+          <label for="smtp-password">{{ $t('components.registrySmtp.text.password') }}</label>
           <input placeholder="******" type="password" id="smtp-password" v-model="pageRoot.$data.externalSMTPOpts.password" />
-          <span v-if="pageRoot.$data.externalSMTPOpts.password == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
+          <span v-if="pageRoot.$data.externalSMTPOpts.password == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">{{ $t('errors.requiredField') }}</span>
       </div>
   </div>
   <br />

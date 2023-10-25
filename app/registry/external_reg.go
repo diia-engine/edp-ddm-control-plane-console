@@ -13,6 +13,7 @@ import (
 
 	"ddm-admin-console/router"
 	"ddm-admin-console/service/gerrit"
+	"os"
 )
 
 const (
@@ -107,28 +108,39 @@ func (a *App) addExternalReg(ctx *gin.Context) (router.Response, error) {
 }
 
 func GetValuesFromGit(projectName, branch string, gerritService gerrit.ServiceInterface) (*Values, error) {
-	content, err := gerritService.GetBranchContent(projectName, branch, url.PathEscape(ValuesLocation))
+	content, err := gerritService.GetFileFromBranch(projectName, branch, url.PathEscape(ValuesLocation))
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get values yaml")
+		return nil, fmt.Errorf("failed to get the values file from the branch: %w", err)
 	}
 
 	valuesBytes := []byte(content)
+	valuesDict := make(map[string]any)
 
-	var valuesDict map[string]interface{}
 	if err := yaml.Unmarshal(valuesBytes, &valuesDict); err != nil {
-		return nil, errors.Wrap(err, "unable to decode values yaml")
-	}
-	if valuesDict == nil {
-		valuesDict = make(map[string]interface{})
+		return nil, fmt.Errorf("failed to decode values yaml to a map: %w", err)
 	}
 
-	var vals Values
-	if err := yaml.Unmarshal(valuesBytes, &vals); err != nil {
-		return nil, errors.Wrap(err, "unable to decode values yaml")
+	vals := new(Values)
+
+	if err := yaml.Unmarshal(valuesBytes, vals); err != nil {
+		return nil, fmt.Errorf("failed to decode values yaml to a struct: %w", err)
 	}
+
+	if os.Getenv("REGION") != "ua" {
+		if externalSystems, ok := valuesDict["external-systems"].(map[string]interface{}); ok {
+			delete(externalSystems, "diia")
+			valuesDict["external-systems"] = externalSystems
+		}
+		delete(valuesDict, "diia")
+	}
+
 	vals.OriginalYaml = valuesDict
 
-	return &vals, nil
+	if os.Getenv("REGION") != "ua" {
+		delete(vals.ExternalSystems, "diia")
+	}
+
+	return vals, nil
 }
 
 func decodeExternalRegsFromValues(valuesDict map[string]interface{}) ([]ExternalRegistration, error) {

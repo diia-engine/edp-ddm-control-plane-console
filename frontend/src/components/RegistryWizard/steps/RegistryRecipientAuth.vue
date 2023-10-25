@@ -8,6 +8,9 @@ import { useForm, useField } from 'vee-validate';
 import * as Yup from 'yup';
 import type { CitizenAuthFlow, PortalSettings } from '@/types/registry';
 import { CitizenAuthType, PORTALS } from '@/types/registry';
+import type { StoredKey } from '@/types/cluster';
+import SelectVue from '@/components/common/Select.vue';
+import { filterKeysByRegistry } from '@/utils/registry';
 
 interface HTMLEvent<T extends EventTarget = HTMLElement> extends Event {
   target: T
@@ -32,22 +35,32 @@ interface FormValues {
   copyFromAuthWidget: boolean,
   signWidgetHeight: number,
   signWidgetUrl: string,
+  keyName: string,
 }
 interface RegistryRecipientAuthProps {
   keycloakSettings: CitizenAuthFlow,
   citizenPortalSettings: PortalSettings,
-  isEnabledPortal: boolean;
+  isEnabledPortal: boolean,
+  digitalSignatureKeys: Record<string, StoredKey> | null
+  region: string;
+  registryName: string;
 }
 const props = defineProps<RegistryRecipientAuthProps>();
 const isSecretExists = props.keycloakSettings?.registryIdGovUa?.clientSecret?.length > 0;
 const isHeightTruthy = (height: string | number | undefined): boolean => !!height && height !== '0';
 const isEnabledPortal = ref(props.isEnabledPortal);
 const portal = ref(props.isEnabledPortal ? '' : PORTALS.citizen);
+const storedKeyItems = computed<string[]>(() => props.digitalSignatureKeys ? filterKeysByRegistry(props.digitalSignatureKeys, props.registryName) : []);
 
 const validationSchema = Yup.object<FormValues>({
   authType: Yup.string()
     .required()
-    .oneOf([CitizenAuthType.platformIdGovUa, CitizenAuthType.widget]),
+    .test('dsKeysNotFound', 'dsKeysNotFound',  (value) => {
+      if (value === CitizenAuthType.registryIdGovUa && storedKeyItems.value.length === 0) {
+        return false;
+      }
+      return true;
+    }),
   widgetUrl: Yup.string()
     .when('authType', {
       is: (value: CitizenAuthType) => value === CitizenAuthType.widget,
@@ -61,7 +74,7 @@ const validationSchema = Yup.object<FormValues>({
   widgetHeight: Yup.number()
   .when('authType', {
     is: (value: CitizenAuthType) => value === CitizenAuthType.widget,
-    then: (schema) => schema.required().min(1, 'required').integer().typeError('wrongFormat'),
+    then: (schema) => schema.required().min(1, 'checkFormat').integer().typeError('wrongFormat').positive(),
   }),
   clientId: Yup.string()
     .when('authType', {
@@ -73,10 +86,15 @@ const validationSchema = Yup.object<FormValues>({
       is: (value: CitizenAuthType) => value === CitizenAuthType.registryIdGovUa && !isSecretExists,
       then: (schema) => schema.required(),
     }),
+  keyName: Yup.string()
+    .when('authType', {
+      is: (value: CitizenAuthType) => value === CitizenAuthType.registryIdGovUa,
+      then: (schema) => schema.required(),
+    }),
   signWidgetHeight: Yup.number()
     .when('copyFromAuthWidget', {
       is: (value: boolean) => !value,
-      then: (schema) => schema.required().min(1, 'required').integer().typeError('wrongFormat'),
+      then: (schema) => schema.required().min(1, 'required').integer().typeError('wrongFormat').positive(),
     }),
   signWidgetUrl: Yup.string()
     .when('copyFromAuthWidget', {
@@ -85,7 +103,7 @@ const validationSchema = Yup.object<FormValues>({
     }),
 });
 const defaultWidget = {
-    url: 'https://eu.iit.com.ua/sign-widget/v20200922/',
+    url: 'https://eu.iit.com.ua/sign-widget/v20240301/',
     height: 720,
 };
 const defaultValues: OutFormValues = {
@@ -96,6 +114,7 @@ const defaultValues: OutFormValues = {
     url: '',
     clientId: '',
     clientSecret: '',
+    keyName: '',
   },
   portals:{
     citizen: {
@@ -106,6 +125,14 @@ const defaultValues: OutFormValues = {
       },
     },
   },
+};
+const getCurrentKeyName = () => {
+  const propsKeyName = props.keycloakSettings?.registryIdGovUa?.keyName;
+  // is stored key exists in available keys
+  if (propsKeyName && props.digitalSignatureKeys?.[propsKeyName]) {
+    return propsKeyName;
+  }
+  return defaultValues.registryIdGovUa.keyName;
 };
 
 const { errors, validate, values, setFieldValue } = useForm<FormValues>({
@@ -118,6 +145,7 @@ const { errors, validate, values, setFieldValue } = useForm<FormValues>({
     idGovUaUrl: props.keycloakSettings?.registryIdGovUa?.url ?? defaultValues.registryIdGovUa.url,
     clientId: props.keycloakSettings?.registryIdGovUa?.clientId ?? defaultValues.registryIdGovUa.clientId,
     secret: defaultValues.registryIdGovUa.clientSecret,
+    keyName: getCurrentKeyName(),
     copyFromAuthWidget: props.citizenPortalSettings?.signWidget?.copyFromAuthWidget || defaultValues.portals.citizen.signWidget.copyFromAuthWidget,
     signWidgetHeight: isHeightTruthy(props.citizenPortalSettings?.signWidget?.height)
       ? props.citizenPortalSettings?.signWidget?.height
@@ -136,6 +164,7 @@ const { value: secret } = useField('secret');
 const { value: copyFromAuthWidget } = useField('copyFromAuthWidget');
 const { value: signWidgetHeight } = useField('signWidgetHeight');
 const { value: signWidgetUrl } = useField('signWidgetUrl');
+const { value: keyName } = useField('keyName');
 
 function validator() {
   return new Promise((resolve) => {
@@ -187,6 +216,7 @@ const preparedValues = computed<OutFormValues>(() => ({
     clientId: values.clientId,
     clientSecret: values.secret,
     url: values.idGovUaUrl,
+    keyName: values.keyName,
   },
   portals: {
     citizen: {
@@ -206,108 +236,118 @@ const preparedValues = computed<OutFormValues>(() => ({
     name="registry-citizen-auth"
     :value="JSON.stringify(preparedValues)"
   />
-  <Typography variant="h3" class="h3">Кабінет отримувача послуг</Typography>
+  <Typography variant="h3" class="h3">{{ $t('components.registryRecipientAuth.title') }}</Typography>
   <input type="hidden" name="excludePortals[]" :value="portal"/>
   <ToggleSwitch
     name="enabledCitizenPortal"
-    label="Розгорнути Кабінет отримувача послуг"
+    :label="$t('components.registryRecipientAuth.fields.enabledCitizenPortal.label')"
     v-model="isEnabledPortal"
     @change="handleEnabledPortalChange"
   />
-  <template v-if="isEnabledPortal">
-    <Typography variant="h5" upper-case class="subheading">Перевірка даних в ЄДР</Typography>
+  <template v-if="isEnabledPortal && region === 'ua'">
+    <Typography variant="h5" upper-case class="subheading">{{ $t('components.registryRecipientAuth.text.verificationDataEDR') }}</Typography>
     <Typography variant="bodyText" class="mb16">
-      Перевірка даних з КЕП користувачів в ЄДР відбувається за умови налаштованої інтеграції поточного реєстру з ЄДР через
-      ШБО Трембіта.
+      {{ $t('components.registryRecipientAuth.text.verificationDataKEP') }}
     </Typography>
     <div class="toggle-switch">
       <input class="switch-input" type="checkbox" id="edr-check-input" name="edr-check-enabled"
             v-model="edrCheckEnabled"/>
       <label for="edr-check-input">Toggle</label>
-      <span>Перевіряти наявність активного запису в ЄДР для бізнес-користувачів</span>
+      <span>{{ $t('components.registryRecipientAuth.text.checkPresenceActiveRecord') }}</span>
     </div>
-    <Typography variant="h5" upper-case class="subheading">тип автентифікації</Typography>
-    <Typography variant="bodyText" class="mb16">Є можливість використовувати власний віджет автентифікації або налаштувати інтеграцію з id.gov.ua.</Typography>
+    <Typography variant="h5" upper-case class="subheading">{{ $t('components.registryRecipientAuth.text.authenticationType') }}</Typography>
+    <Typography variant="bodyText" class="mb16">{{ $t('components.registryRecipientAuth.text.possibleToUseAuthenticationWidget') }}</Typography>
     <div class="rc-form-group" :class="{'error': !!errors.authType}">
-        <label for="rec-auth-type">Вкажіть тип автентифікації</label>
+        <label for="rec-auth-type">{{ $t('components.registryRecipientAuth.text.specifyAuthenticationType') }}</label>
         <select
           name="rec-auth-browser-flow" id="rec-auth-type"
           v-model="authType"
           @change="handleChangeAuthType"
         >
-          <option selected :value="CitizenAuthType.widget">Віджет</option>
-          <option :value="CitizenAuthType.platformIdGovUa">Платформенна інтеграція з id.gov.ua</option>
+          <option selected :value="CitizenAuthType.widget">{{ $t('components.registryRecipientAuth.text.widget') }}</option>
+          <option :value="CitizenAuthType.platformIdGovUa">{{ $t('components.registryRecipientAuth.text.platformIntegration') }}</option>
+          <option :value="CitizenAuthType.registryIdGovUa">{{ $t('components.registryRecipientAuth.text.registryIntegration') }}</option>
         </select>
         <span v-if="!!errors.authType">{{ getErrorMessage(errors.authType) }}</span>
     </div>
     <div v-if="authType === CitizenAuthType.widget">
       <TextField
         required
-        label="Посилання"
+        :label="$t('components.registryRecipientAuth.fields.authURL.label')"
         name="rec-auth-url"
         :error="errors.widgetUrl"
         v-model="widgetUrl"
-        description="URL, повинен починатись з http:// або https://"
+        :description="$t('components.registryRecipientAuth.fields.authURL.description')"
       />
       <TextField
         required
         type="number"
-        label="Висота віджета, px"
+        :label="$t('components.registryRecipientAuth.fields.authWidgetHeight.label')"
         name="rec-auth-widget-height"
         :error="errors.widgetHeight"
         v-model="widgetHeight"
       />
     </div>
 
-    <div v-if="authType === CitizenAuthType.registryIdGovUa">
+    <div v-if="authType === CitizenAuthType.registryIdGovUa && storedKeyItems.length > 0">
       <TextField
         required
-        label="Посилання"
+        :label="$t('components.registryRecipientAuth.fields.govUaURL.label')"
         name="rec-id-gov-ua-url"
         :error="errors.idGovUaUrl"
         v-model="idGovUaUrl"
-        description="URL, повинен починатись з http:// або https://"
+        :description="$t('components.registryRecipientAuth.fields.govUaURL.description')"
       />
       <TextField
         required
-        label="Ідентифікатор клієнта (client_id)"
+        :label="$t('components.registryRecipientAuth.fields.clientID.label')"
         name="rec-auth-client-id"
         v-model="clientId"
         :error="errors.clientId"
       />
       <TextField
         required
-        label="Клієнтський секрет (secret)"
+        :label="$t('components.registryRecipientAuth.fields.clientSecret.label')"
         name="rec-auth-client-secret"
         v-model="secret"
         :error="errors.secret"
         type="password"
+        placeholder="*****"
       />
+      <SelectVue
+        required
+        :label="$t('components.registryRecipientAuth.fields.keyName.label')"
+        :items="storedKeyItems"
+        v-model="keyName"
+        :error="errors.keyName"
+        name="rec-auth-key-name"
+        :description="$t('components.registryRecipientAuth.fields.keyName.description')"
+       />
     </div>
-    <Typography variant="h5" upper-case class="subheading">Віджет підпису документів</Typography>
+    <Typography variant="h5" upper-case class="subheading">{{ $t('components.registryRecipientAuth.text.documentSignatureWidget') }}</Typography>
     <div v-if="authType === CitizenAuthType.widget">
         <div class="toggle-switch">
         <input class="switch-input" type="checkbox" id="sign-widget-copy" name="sign-widget-copy"
               v-model="copyFromAuthWidget" />
         <label for="sign-widget-copy">Toggle</label>
-        <span>Використовувати налаштування віджету автентифікації</span>
+        <span>{{ $t('components.registryRecipientAuth.text.useAuthenticationWidget') }}</span>
       </div>
     </div>
     <TextField
       v-if="!copyFromAuthWidget || authType !== CitizenAuthType.widget"
       root-class="mt16"
       required
-      label="Посилання"
+      :label="$t('components.registryRecipientAuth.fields.signWidgetUrl.label')"
       name="rec-sign-widget-url"
       :error="errors.signWidgetUrl"
       v-model="signWidgetUrl"
-      description="URL, повинен починатись з http:// або https://"
+      :description="$t('components.registryRecipientAuth.fields.signWidgetUrl.description')"
     />
     <TextField
       v-if="!copyFromAuthWidget || authType !== CitizenAuthType.widget"
       required
       type="number"
-      label="Висота віджета, px"
+      :label="$t('components.registryRecipientAuth.fields.signWidgetHeight.label')"
       name="rec-sign-widget-height"
       :error="errors.signWidgetHeight"
       v-model="signWidgetHeight"

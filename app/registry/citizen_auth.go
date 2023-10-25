@@ -1,7 +1,9 @@
 package registry
 
 import (
+	"ddm-admin-console/service/vault"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"time"
@@ -10,9 +12,10 @@ import (
 )
 
 const (
-	keycloakIndex                = "keycloak"
-	RegistryCitizenIdGovUaSecret = "RegistryCitizenIdGovUaSecret"
-	portalsIndex                 = "portals"
+	keycloakIndex                    = "keycloak"
+	registryCitizenClientIdIndex     = "clientId"
+	registryCitizenClientSecretIndex = "clientSecret"
+	portalsIndex                     = "portals"
 )
 
 func (a *App) prepareCitizenAuthSettings(ctx *gin.Context, r *registry, values *Values,
@@ -20,44 +23,58 @@ func (a *App) prepareCitizenAuthSettings(ctx *gin.Context, r *registry, values *
 	valuesChanged := false
 
 	if r.RegistryCitizenAuth != "" {
-		var citizenAuthSettings struct {
+		var requestDataCitizenAuthSettings struct {
 			KeycloakAuthFlowsCitizenAuthFlow
 			Portals Portals `json:"portals"`
 		}
-		citizenAuthSettings.Portals = values.Portals
-		if err := json.Unmarshal([]byte(r.RegistryCitizenAuth), &citizenAuthSettings); err != nil {
+		requestDataCitizenAuthSettings.Portals = values.Portals
+		if err := json.Unmarshal([]byte(r.RegistryCitizenAuth), &requestDataCitizenAuthSettings); err != nil {
 			return false, fmt.Errorf("unable to decode citizen auth settings %w", err)
 		}
-		if citizenAuthSettings.RegistryIdGovUa.ClientSecret != "" {
-			vaultPath := a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", "registry-id-gov-ua-secret", time.Now().Format("20060201T150405Z")))
-			citizenAuthSettings.RegistryIdGovUa.ClientSecret = vaultPath
-			secrets[vaultPath] = map[string]interface{}{
-				RegistryCitizenIdGovUaSecret: values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientSecret,
+		if requestDataCitizenAuthSettings.RegistryIdGovUa.ClientSecret != "" || requestDataCitizenAuthSettings.RegistryIdGovUa.ClientId != "" {
+			idGovUaCredsChanged, oldSecret, err := a.citizenIdGovUASecretChanged(
+				values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientSecret,
+				requestDataCitizenAuthSettings.RegistryIdGovUa.ClientId,
+				requestDataCitizenAuthSettings.RegistryIdGovUa.ClientSecret,
+			)
+			if err != nil {
+				return false, fmt.Errorf("unable to get secret, %w", err)
 			}
-			valuesChanged = true
-		} else {
-			citizenAuthSettings.RegistryIdGovUa.ClientSecret = values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientSecret
+			if idGovUaCredsChanged {
+				var clientSecret string
+				if requestDataCitizenAuthSettings.RegistryIdGovUa.ClientSecret == emptyClientSecret {
+					clientSecret = oldSecret
+				} else {
+					clientSecret = requestDataCitizenAuthSettings.RegistryIdGovUa.ClientSecret
+				}
+				vaultPath := a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", "citizen-id-gov-ua-client-info", time.Now().Format("20060201T150405Z")))
+				secrets[vaultPath] = map[string]any{
+					registryCitizenClientIdIndex:     requestDataCitizenAuthSettings.RegistryIdGovUa.ClientId,
+					registryCitizenClientSecretIndex: clientSecret,
+				}
+				requestDataCitizenAuthSettings.RegistryIdGovUa.ClientSecret = vaultPath
+				requestDataCitizenAuthSettings.RegistryIdGovUa.ClientId = vaultPath
+				valuesChanged = true
+			} else {
+				requestDataCitizenAuthSettings.RegistryIdGovUa.ClientSecret = values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientSecret
+				requestDataCitizenAuthSettings.RegistryIdGovUa.ClientId = values.Keycloak.CitizenAuthFlow.RegistryIdGovUa.ClientId
+			}
 		}
 
 		newCitizenAuthFlow := KeycloakAuthFlowsCitizenAuthFlow{
-			EDRCheck:        citizenAuthSettings.EDRCheck,
-			AuthType:        citizenAuthSettings.AuthType,
-			Widget:          citizenAuthSettings.Widget,
-			RegistryIdGovUa: citizenAuthSettings.RegistryIdGovUa,
+			EDRCheck:        requestDataCitizenAuthSettings.EDRCheck,
+			AuthType:        requestDataCitizenAuthSettings.AuthType,
+			Widget:          requestDataCitizenAuthSettings.Widget,
+			RegistryIdGovUa: requestDataCitizenAuthSettings.RegistryIdGovUa,
 		}
 
 		if !reflect.DeepEqual(newCitizenAuthFlow, values.Keycloak.CitizenAuthFlow) {
-			values.Keycloak.CitizenAuthFlow = KeycloakAuthFlowsCitizenAuthFlow{
-				EDRCheck:        citizenAuthSettings.EDRCheck,
-				AuthType:        citizenAuthSettings.AuthType,
-				Widget:          citizenAuthSettings.Widget,
-				RegistryIdGovUa: citizenAuthSettings.RegistryIdGovUa,
-			}
+			values.Keycloak.CitizenAuthFlow = newCitizenAuthFlow
 			valuesChanged = true
 		}
 
-		if !reflect.DeepEqual(values.Portals.Citizen, citizenAuthSettings.Portals.Citizen) {
-			values.Portals.Citizen = citizenAuthSettings.Portals.Citizen
+		if !reflect.DeepEqual(values.Portals.Citizen, requestDataCitizenAuthSettings.Portals.Citizen) {
+			values.Portals.Citizen = requestDataCitizenAuthSettings.Portals.Citizen
 			valuesChanged = true
 		}
 
@@ -69,4 +86,35 @@ func (a *App) prepareCitizenAuthSettings(ctx *gin.Context, r *registry, values *
 	}
 
 	return false, nil
+}
+
+func (a *App) citizenIdGovUASecretChanged(path string, inputClientId string, inputClientSecret string) (bool, string, error) {
+	data, err := a.Vault.Read(path)
+	if err != nil && !errors.Is(err, vault.ErrSecretIsNil) {
+		return false, "", fmt.Errorf("unable to get secret, %w", err)
+	}
+
+	if errors.Is(err, vault.ErrSecretIsNil) {
+		return true, "", nil
+	}
+
+	clID, ok := data[idGovUASecretClientID]
+	if !ok {
+		return true, "", nil
+	}
+
+	clSecret, ok := data[idGovUASecretClientSecret]
+	if !ok {
+		return true, "", nil
+	}
+	clSecretString, ok := clSecret.(string)
+	if !ok {
+		return true, "", nil
+	}
+
+	if clID != inputClientId || (clSecretString != inputClientSecret && inputClientSecret != emptyClientSecret) {
+		return true, clSecretString, nil
+	}
+
+	return false, "", nil
 }

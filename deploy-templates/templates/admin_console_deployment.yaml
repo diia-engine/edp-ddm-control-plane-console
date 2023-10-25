@@ -24,6 +24,10 @@ spec:
       annotations:
         sidecar.istio.io/inject: 'true'
     spec:
+      volumes:
+        - name: platform-logos
+          configMap:
+            name: {{ (split ":" $.Values.global.logosPath)._1 }}
       containers:
         - env:
             - name: NAMESPACE
@@ -92,14 +96,24 @@ spec:
                   key: "token"
             - name: REGISTRY_DNS_MANUAL_PATH
               value: "ua/platform/1.9.5/admin/registry-management/custom-dns/cp-custom-dns-keycloak.html#external-configuration"
-            {{- if eq $it.registryVersion "1.9.6" }}
+            - name: CLOUD_PROVIDER
+              value: {{ $.Values.cloudProvider }}
+            - name: PLATFORM_NAME
+              value: {{ $.Values.global.platformName }}
+            - name: LANGUAGE
+              value: {{ $.Values.global.language }}
+            - name: PLATFORM_VERSION
+              value: {{ $it.registryVersion | quote }}
+            - name: PREVIOUS_PLATFORM_VERSION
+              value: {{ $it.previousVersion | quote }}
             - name: REGISTRY_VERSION_FILTER
-              value: "<1.9.7"
-            {{- else }}
-            - name: REGISTRY_VERSION_FILTER
-              value: =={{ $it.registryVersion }}
-            {{- end }}
+              value: {{ printf "%s%s" "==" $it.registryVersion }}
+            - name: REGION
+              value: "{{ $.Values.global.region }}"
           image: {{ template "controlPlaneConsole.image" (dict "root" $ "stream" $it.stream "version" $it.consoleVersion) }}
+          volumeMounts:
+            - name: platform-logos
+              mountPath: /go/bin/static/img/logos
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 5

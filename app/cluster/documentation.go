@@ -2,11 +2,8 @@ package cluster
 
 import (
 	"context"
-	"ddm-admin-console/app/registry"
 	"ddm-admin-console/router"
 	"net/http"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -15,25 +12,14 @@ import (
 func (a *App) updateDemoRegistryName(ctx *gin.Context) (router.Response, error) {
 	demoRegistryNameValue := ctx.PostForm("demo-registry-name")
 
-	vals, err := a.Services.Gerrit.GetFileContents(ctx, a.Config.CodebaseName, "master", registry.ValuesLocation)
+	values, err := getValuesFromGit(a.Config.CodebaseName, masterBranch, a.Gerrit)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get values contents")
 	}
-	var valuesDict map[string]interface{}
-	if err := yaml.Unmarshal([]byte(vals), &valuesDict); err != nil {
-		return nil, errors.Wrap(err, "unable to decode values yaml")
-	}
 
-	globalInterface, ok := valuesDict["global"]
-	if !ok {
-		globalInterface = make(map[string]interface{})
-	}
-	globalDict := globalInterface.(map[string]interface{})
+	values.Global.DemoRegistryName = demoRegistryNameValue
 
-	globalDict["demoRegistryName"] = demoRegistryNameValue
-	valuesDict["global"] = globalDict
-
-	if err := a.createValuesMergeRequestCtx(ctx, MRTypeDemoRegistryName, "update cluster demoRegistryName config", valuesDict); err != nil {
+	if err := a.createValuesMergeRequestCtx(ctx, MRTypeDemoRegistryName, "update cluster demoRegistryName config", values); err != nil {
 		return nil, errors.Wrap(err, "unable to create demoRegistryName merge request")
 	}
 

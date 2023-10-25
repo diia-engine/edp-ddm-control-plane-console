@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"ddm-admin-console/router"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,18 +9,19 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
-	"github.com/pkg/errors"
+	"ddm-admin-console/router"
 )
 
-func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{}, error) {
-	content, err := a.Gerrit.GetBranchContent(project, branch, url.PathEscape(ValuesLocation))
+func (a *App) getValuesFromBranch(project, branch string) (map[string]any, error) {
+	content, err := a.Gerrit.GetFileFromBranch(project, branch, url.PathEscape(ValuesLocation))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get project content")
 	}
 
-	var data map[string]interface{}
+	var data map[string]any
 	if err := yaml.Unmarshal([]byte(content), &data); err != nil {
 		return nil, errors.Wrap(err, "unable to decode yaml")
 	}
@@ -29,49 +29,72 @@ func (a *App) GetValuesFromBranch(project, branch string) (map[string]interface{
 	return data, nil
 }
 
-func (a *App) prepareRegistryResources(_ *gin.Context, r *registry, values *Values,
-	_ map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
-
-	globalInterface, ok := values.OriginalYaml[GlobalValuesIndex]
+func (a *App) prepareRegistryResources(
+	_ *gin.Context,
+	newRegistryData *registry,
+	existingData *Values,
+	_ map[string]map[string]any,
+	_ *[]string,
+) (
+	bool,
+	error,
+) {
+	existingGlobalValues, ok := existingData.OriginalYaml[GlobalValuesIndex]
 	if !ok {
-		globalInterface = make(map[string]interface{})
+		existingGlobalValues = make(map[string]any)
 	}
-	globalDict := globalInterface.(map[string]interface{})
+
+	existingGlobalDict, ok := existingGlobalValues.(map[string]any)
+	if !ok {
+		return false, fmt.Errorf("failed to assume registry global type")
+	}
 
 	valuesChanged := false
 
-	if r.Resources != "" {
-		var resources map[string]interface{}
-		if err := json.Unmarshal([]byte(r.Resources), &resources); err != nil {
-			return false, errors.Wrap(err, "unable to decode resources")
+	if newRegistryData.Resources != "" {
+		var newResourcesConfig map[string]any
+
+		if err := json.Unmarshal([]byte(newRegistryData.Resources), &newResourcesConfig); err != nil {
+			return false, fmt.Errorf("failed to decode newResourcesConfig: %w", err)
 		}
 
-		if !reflect.DeepEqual(resources, globalDict[ResourcesIndex]) {
+		existingResourcesConfig, ok := existingGlobalDict[ResourcesIndex].(map[string]any)
+		if !ok {
+			return false, fmt.Errorf("failed to assume resource config type")
+		}
+
+		for resourceName := range existingResourcesConfig {
+			if _, exists := newResourcesConfig[resourceName]; !exists {
+				newResourcesConfig[resourceName] = make(map[struct{}]struct{}) // should be {} in yaml when empty
+			}
+		}
+
+		if !reflect.DeepEqual(newResourcesConfig, existingResourcesConfig) {
 			valuesChanged = true
-			globalDict[ResourcesIndex] = resources
-			values.OriginalYaml[GlobalValuesIndex] = globalDict
+			existingGlobalDict[ResourcesIndex] = newResourcesConfig
+			existingData.OriginalYaml[GlobalValuesIndex] = existingGlobalDict
 		}
 	}
 
-	if r.CrunchyPostgresMaxConnections != "" {
-		maxCon, err := strconv.ParseInt(r.CrunchyPostgresMaxConnections, 10, 32)
+	if newRegistryData.CrunchyPostgresMaxConnections != "" {
+		maxCon, err := strconv.ParseInt(newRegistryData.CrunchyPostgresMaxConnections, 10, 32)
 		if err != nil {
 			return false, fmt.Errorf("unable to parse max connectrions, %w", err)
 		}
 
-		if values.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections != int(maxCon) {
-			values.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections = int(maxCon)
+		if existingData.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections != int(maxCon) {
+			existingData.Global.CrunchyPostgres.CrunchyPostgresPostgresql.CrunchyPostgresPostgresqlParameters.MaxConnections = int(maxCon)
 
-			globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
-			values.OriginalYaml[GlobalValuesIndex] = globalDict
+			existingGlobalDict[CrunchyPostgresIndex] = existingData.Global.CrunchyPostgres
+			existingData.OriginalYaml[GlobalValuesIndex] = existingGlobalDict
 			valuesChanged = true
 		}
 	}
 
-	if r.CrunchyPostgresStorageSize != "" && values.Global.CrunchyPostgres.StorageSize != r.CrunchyPostgresStorageSize {
-		values.Global.CrunchyPostgres.StorageSize = r.CrunchyPostgresStorageSize
-		globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
-		globalDict[CrunchyPostgresIndex] = values.Global.CrunchyPostgres
+	if newRegistryData.CrunchyPostgresStorageSize != "" && existingData.Global.CrunchyPostgres.StorageSize != newRegistryData.CrunchyPostgresStorageSize {
+		existingData.Global.CrunchyPostgres.StorageSize = newRegistryData.CrunchyPostgresStorageSize
+		existingGlobalDict[CrunchyPostgresIndex] = existingData.Global.CrunchyPostgres
+		existingGlobalDict[CrunchyPostgresIndex] = existingData.Global.CrunchyPostgres
 		valuesChanged = true
 	}
 
@@ -84,7 +107,7 @@ func (a *App) preloadTemplateValues(ctx *gin.Context) (rsp router.Response, retE
 		return router.MakeStatusResponse(http.StatusUnprocessableEntity), nil
 	}
 
-	data, err := a.GetValuesFromBranch(template, branch)
+	data, err := a.getValuesFromBranch(template, branch)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get template content")
 	}
