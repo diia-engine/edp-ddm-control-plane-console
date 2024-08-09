@@ -16,7 +16,7 @@ const (
 	idGovUASecretPath         = "officer-id-gov-ua-client-info"
 	idGovUASecretClientID     = "clientId"
 	idGovUASecretClientSecret = "clientSecret"
-	emptyClientSecret         = "*****"
+	emptyClientSecret         = ""
 )
 
 func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *Values,
@@ -78,6 +78,11 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 		}
 
 	}
+	var RecIndividualAccessEnabledBool = r.RecIndividualAccessEnabled == "on"
+	if values.Portals.Officer.IndividualAccessEnabled != RecIndividualAccessEnabledBool {
+		valuesChanged = true
+		values.Portals.Officer.IndividualAccessEnabled = RecIndividualAccessEnabledBool
+	}
 
 	if !valuesChanged {
 		return false, nil
@@ -96,6 +101,7 @@ func (a *App) prepareSupplierAuthConfig(ctx *gin.Context, r *registry, values *V
 	keycloakDict["identityProviders"] = values.Keycloak.IdentityProviders
 
 	values.OriginalYaml["keycloak"] = keycloakDict
+	values.OriginalYaml["portals"] = values.Portals
 
 	return true, nil
 }

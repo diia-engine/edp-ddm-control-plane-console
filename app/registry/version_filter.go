@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 )
@@ -40,16 +41,39 @@ func MakeVersionFilter(pattern string) (*VersionFilter, error) {
 }
 
 func compareFunctions(v *version.Version) map[string]func(o *version.Version) bool {
+	versionString := v.String()
+
+	equalFunc := func(other *version.Version) bool {
+		otherString := other.String()
+
+		return strings.HasPrefix(otherString, versionString)
+	}
+
+	greaterFunc := func(other *version.Version) bool {
+		if equalFunc(other) {
+			return false
+		}
+
+		return v.GreaterThan(other)
+	}
+
+	lessFunc := func(other *version.Version) bool {
+		if equalFunc(other) {
+			return false
+		}
+
+		return v.LessThan(other)
+	}
+
 	return map[string]func(o *version.Version) bool{
-		"==": v.Equal,
-		"<=": v.GreaterThanOrEqual,
-		">=": v.LessThanOrEqual,
-		"<":  v.GreaterThan,
-		">":  v.LessThan,
+		"==": equalFunc,
+		"<":  greaterFunc,
+		">":  lessFunc,
 	}
 }
 
-func (vf *VersionFilter) CodebaseIsVersion(cb *codebase.Codebase) bool {
+// CheckCodebase checks if codebase version matches the filter.
+func (vf *VersionFilter) CheckCodebase(cb *codebase.Codebase) bool {
 	if vf.compareFunc == nil {
 		return true
 	}
@@ -59,24 +83,4 @@ func (vf *VersionFilter) CodebaseIsVersion(cb *codebase.Codebase) bool {
 	}
 
 	return vf.compareFunc(cb.Version)
-}
-
-func (vf *VersionFilter) FilterCodebases(in []codebase.Codebase) []codebase.Codebase {
-	if vf.compareFunc == nil {
-		return in
-	}
-
-	res := make([]codebase.Codebase, 0, len(in))
-
-	for _, cb := range in {
-		if cb.Version == nil {
-			continue
-		}
-
-		if vf.compareFunc(cb.Version) {
-			res = append(res, cb)
-		}
-	}
-
-	return res
 }

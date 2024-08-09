@@ -50,8 +50,7 @@ func IsErrAlreadyExists(err error) bool {
 
 func Make(sch *runtime.Scheme, k8sConfig *rest.Config, namespace string) (*Service, error) {
 	builder := pkgScheme.Builder{GroupVersion: schema.GroupVersion{Group: "v2.edp.epam.com", Version: "v1alpha1"}}
-	builder.Register(&Codebase{}, &CodebaseBranch{}, &CodebaseBranchList{}, &CodebaseList{}, &GitServer{},
-		&GitServerList{})
+	builder.Register(&Codebase{}, &CodebaseBranch{}, &CodebaseBranchList{}, &CodebaseList{})
 
 	if err := builder.AddToScheme(sch); err != nil {
 		return nil, errors.Wrap(err, "error during builder add to scheme")

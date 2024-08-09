@@ -1,6 +1,9 @@
 package registry
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const (
 	DeploymentModeDevelopment = "development"
@@ -23,6 +26,14 @@ type Values struct {
 	OriginalYaml     map[string]interface{}    `yaml:"-" json:"-"`
 	DigitalDocuments DigitalDocuments          `yaml:"digitalDocuments" json:"digitalDocuments"`
 	PublicApi        []PublicAPI               `yaml:"publicApi" json:"publicApi"`
+	Griada           Griada                    `yaml:"griada" json:"griada"`
+}
+
+type Griada struct {
+	Enabled bool   `yaml:"enabled" json:"enabled"`
+	Ip      string `yaml:"ip" json:"ip"`
+	Port    string `yaml:"port" json:"port"`
+	Mask    string `yaml:"mask" json:"mask"`
 }
 
 type DigitalDocuments struct {
@@ -62,11 +73,15 @@ type CrunchyPostgresPostgresqlParameters struct {
 }
 
 type Portals struct {
-	Citizen Portal `yaml:"citizen" json:"citizen"`
-	Officer Portal `yaml:"officer" json:"officer"`
+	Citizen CitizenPortalSettings `yaml:"citizen" json:"citizen"`
+	Officer OfficerPortalSettings `yaml:"officer" json:"officer"`
 }
-
-type Portal struct {
+type OfficerPortalSettings struct {
+	CustomDNS               CustomDNS  `yaml:"customDns" json:"customDns"`
+	SignWidget              SignWidget `yaml:"signWidget" json:"signWidget"`
+	IndividualAccessEnabled bool       `yaml:"individualAccessEnabled" json:"individualAccessEnabled"`
+}
+type CitizenPortalSettings struct {
 	CustomDNS  CustomDNS  `yaml:"customDns" json:"customDns"`
 	SignWidget SignWidget `yaml:"signWidget" json:"signWidget"`
 }
@@ -149,8 +164,17 @@ type SignWidget struct {
 	CopyFromAuthWidget bool   `yaml:"copyFromAuthWidget" json:"copyFromAuthWidget"`
 }
 
+type ExternalEmailSettings struct {
+	Type      string `yaml:"type" json:"type"`
+	Host      string `yaml:"host" json:"host"`
+	Port      int64  `yaml:"port" json:"port"`
+	Address   string `yaml:"address" json:"address"`
+	VaultPath string `yaml:"vaultPath" json:"vaultPath"`
+	VaultKey  string `yaml:"vaultKey" json:"vaultKey"`
+}
+
 type Notifications struct {
-	Email map[string]interface{} `yaml:"email" json:"email"`
+	Email ExternalEmailSettings `yaml:"email" json:"email"`
 }
 
 type ExternalSystem struct {
@@ -180,12 +204,27 @@ func (e ExternalSystem) FaStatus() string {
 }
 
 type Global struct {
-	WhiteListIP     WhiteListIP            `json:"whiteListIP" yaml:"whiteListIP"`
-	Notifications   Notifications          `json:"notifications" yaml:"notifications"`
-	RegistryBackup  RegistryBackup         `yaml:"registryBackup" json:"registryBackup"`
-	DeploymentMode  string                 `yaml:"deploymentMode" json:"deploymentMode"`
-	CrunchyPostgres CrunchyPostgres        `yaml:"crunchyPostgres" json:"crunchyPostgres"`
-	Registry        map[string]interface{} `yaml:"registry" json:"registry"`
+	WhiteListIP      WhiteListIP            `json:"whiteListIP" yaml:"whiteListIP"`
+	Notifications    Notifications          `json:"notifications" yaml:"notifications"`
+	RegistryBackup   RegistryBackup         `yaml:"registryBackup" json:"registryBackup"`
+	DeploymentMode   string                 `yaml:"deploymentMode" json:"deploymentMode"`
+	CrunchyPostgres  CrunchyPostgres        `yaml:"crunchyPostgres" json:"crunchyPostgres"`
+	Registry         map[string]interface{} `yaml:"registry" json:"registry"`
+	ComputeResources ComputeResources       `yaml:"computeResources" json:"computeResources"`
+	ExcludePortals   []string               `yaml:"excludePortals" json:"excludePortals"`
+	GeoServerEnabled bool                   `yaml:"geoServerEnabled" json:"geoServerEnabled"`
+}
+
+type ComputeResources struct {
+	InstanceCount                   json.Number `yaml:"instanceCount,omitempty" json:"instanceCount,omitempty"`
+	AwsInstanceType                 string      `yaml:"awsInstanceType,omitempty" json:"awsInstanceType,omitempty"`
+	AwsSpotInstance                 *bool       `yaml:"awsSpotInstance,omitempty" json:"awsSpotInstance,omitempty"`
+	AwsSpotInstanceMaxPrice         string      `yaml:"awsSpotInstanceMaxPrice,omitempty" json:"awsSpotInstanceMaxPrice,omitempty"`
+	AwsInstanceVolumeType           string      `yaml:"awsInstanceVolumeType,omitempty" json:"awsInstanceVolumeType,omitempty"`
+	InstanceVolumeSize              json.Number `yaml:"instanceVolumeSize,omitempty" json:"instanceVolumeSize,omitempty"`
+	VSphereInstanceCPUCount         json.Number `yaml:"vSphereInstanceCPUCount,omitempty" json:"vSphereInstanceCPUCount,omitempty"`
+	VSphereInstanceCoresPerCPUCount json.Number `yaml:"vSphereInstanceCoresPerCPUCount,omitempty" json:"vSphereInstanceCoresPerCPUCount,omitempty"`
+	VSphereInstanceRAMSize          json.Number `yaml:"vSphereInstanceRAMSize,omitempty" json:"vSphereInstanceRAMSize,omitempty"`
 }
 
 type WhiteListIP struct {

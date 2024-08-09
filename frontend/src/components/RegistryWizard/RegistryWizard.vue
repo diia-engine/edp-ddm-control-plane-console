@@ -13,12 +13,17 @@ import RegistryResources from './steps/RegistryResources.vue';
 import RegistrySmtp from './steps/RegistrySmtp.vue';
 import RegistrySupplierAuth from './steps/RegistrySupplierAuth.vue';
 import RegistryRecipientAuth from './steps/RegistryRecipientAuth.vue';
-import RegistryTemplate from './steps/RegistryTemplate.vue';
 import RegistryTrembita from './steps/RegistryTrembita.vue';
 import RegistryDigitalDocuments from './steps/RegistryDigitalDocuments.vue';
 import KeyData from './steps/KeyData.vue';
 import KeyVerification from "./steps/KeyVerification.vue";
-import type { RegistryWizardTemplateVariables } from '@/types/registry';
+import RegistryGeneral from "./steps/RegistryGeneral.vue";
+import RegistryGeneralEdit from "./steps/RegistryGeneralEdit.vue";
+import ParametersVirtualMachinesAWS from "./steps/ParametersVirtualMachinesAWS.vue";
+import ParametersVirtualMachinesVSphere from "./steps/ParametersVirtualMachinesVSphere.vue";
+import GeoDataSettings from "./steps/GeoDataSettings.vue";
+import RegistryAdminAuth from "./steps/RegistryAdminAuth.vue";
+import { type RegistryWizardTemplateVariables, PlatformStatusType, PORTALS } from '@/types/registry';
 
 export default defineComponent({
     props: {
@@ -41,9 +46,14 @@ export default defineComponent({
       RegistryRecipientAuth,
       KeyData,
       KeyVerification,
-      RegistryTemplate,
       RegistryTrembita,
-      RegistryDigitalDocuments
+      RegistryDigitalDocuments,
+      RegistryGeneral,
+      RegistryGeneralEdit,
+      ParametersVirtualMachinesAWS,
+      ParametersVirtualMachinesVSphere,
+      GeoDataSettings,
+      RegistryAdminAuth,
     },
     watch: {
       formSubmitted() {
@@ -63,9 +73,12 @@ export default defineComponent({
         <div class="wizard-contents">
             <ul>
                 <template v-for="(tab, tabName) in pageRoot.$data.wizard.tabs">
-                    <li :class="{ active: pageRoot.$data.wizard.activeTab == tabName }"
+                    <li :class="{
+                          active: pageRoot.$data.wizard.activeTab == tabName,
+                          disabled: tab.disabled && templateVariables.action === 'create'
+                        }"
                         v-if="tab.visible" v-bind:key="tabName">
-                        <a @click="pageRoot.selectWizardTab(tabName, $event)" href="#">{{ tab.title }}</a>
+                        <a @click.stop.prevent="pageRoot.selectWizardTab(tabName, templateVariables.action)" href="#">{{ tab.title }}</a>
                     </li>
                 </template>
                 <li v-if="templateVariables.hasUpdate">
@@ -81,29 +94,34 @@ export default defineComponent({
 
                 <div v-if="pageRoot.$data.error" class="rc-global-error">{{templateVariables.error}}</div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'general'">
-                    <h2>Загальні налаштування</h2>
-                    <div class="rc-title">
-                        Увага! Назва повинна бути унікальною і її неможливо буде змінити після створення реєстру!
-                    </div>
-                    <div class="rc-form-group"
-                        :class="{ 'error': pageRoot.$data.wizard.tabs.general.requiredError || pageRoot.$data.wizard.tabs.general.existsError || pageRoot.$data.wizard.tabs.general.formatError }">
-                        <label for="name">Назва реєстру</label>
-                        <input :disabled="templateVariables.action === 'edit'" type="text" id="name" name="name" maxlength="12"
-                            v-model="pageRoot.$data.wizard.tabs.general.registryName"
-                            pattern="^[a-z0-9]([-a-z0-9]*[a-z0-9])?([a-z0-9]([-a-z0-9]*[a-z0-9])?)*$" />
-                        <span v-if="pageRoot.$data.wizard.tabs.general.requiredError">Обов’язкове поле</span>
-                        <span v-if="pageRoot.$data.wizard.tabs.general.existsError">Реєстр з такою назвою вже існує</span>
-                        <span v-if="pageRoot.$data.wizard.tabs.general.formatError">Будь-ласка вкажіть назву у відповідному форматі</span>
-                        <p>Допустимі символи: "a-z", "-". Назва не може перевищувати довжину у 12 символів.</p>
-                    </div>
-
-                    <div class="rc-form-group">
-                        <label for="description">Опис</label>
-                        <!-- eslint-disable -->
-                        <textarea rows="3" name="description" id="description" maxlength="250">{{templateVariables.model?.description}}</textarea>
-                        <!-- eslint-enable  -->
-                        <p>Опис може містити офіційну назву реєстру чи його призначення.</p>
-                    </div>
+                  <RegistryGeneral
+                    ref="generalTab"
+                    v-if="templateVariables.action === 'create'"
+                    @preload-template-data="onPreloadTemplateData"
+                    :gerritBranches="templateVariables.gerritBranches"
+                    :registryTemplateName="templateVariables.registryTemplateName"
+                  />
+                  <RegistryGeneralEdit
+                    ref="generalTab"
+                    v-if="templateVariables.action === 'edit'"
+                    :templateVariables="templateVariables"
+                  />
+                </div>
+                <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'parametersVirtualMachines'">
+                  <ParametersVirtualMachinesAWS
+                    v-if="templateVariables.platformStatusType === PlatformStatusType.AWS"
+                    ref="parametersVirtualMachinesTab"
+                    :compute-resources="templateVariables.registryValues?.global.computeResources"
+                    :is-platform-admin="templateVariables.isPlatformAdmin"
+                    :is-edit-action="templateVariables.action === 'edit'"
+                  />
+                  <ParametersVirtualMachinesVSphere
+                    v-if="templateVariables.platformStatusType === PlatformStatusType.VSphere"
+                    ref="parametersVirtualMachinesTab"
+                    :compute-resources="templateVariables.registryValues?.global.computeResources"
+                    :is-platform-admin="templateVariables.isPlatformAdmin"
+                    :is-edit-action="templateVariables.action === 'edit'"
+                  />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'administrators'">
                     <h2>Адміністратори</h2>
@@ -125,10 +143,6 @@ export default defineComponent({
                         <p>Допустимі символи: "0-9", "a-z", "_", "-", "@", ".", ",".</p>
                     </div>
                 </div>
-                <div v-if="templateVariables.action === 'create'" class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'template'">
-                    <RegistryTemplate ref="templateTab" @preload-template-data="onPreloadTemplateData"
-                                      :template-variables="templateVariables as any" />
-                </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'mail'">
                     <RegistrySmtp ref="smtpTab" />
                 </div>
@@ -145,11 +159,23 @@ export default defineComponent({
                       ref="keyVerificationTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'resources'">
-                    <RegistryResources ref="resourcesTab" :template-preloaded-data="templatePreloadedData"
-                    :form-submitted="parentFormSubmitted" :template-variables="templateVariables" />
+                    <RegistryResources
+                      ref="resourcesTab"
+                      :template-preloaded-data="templatePreloadedData"
+                      :form-submitted="parentFormSubmitted"
+                      :template-variables="templateVariables"
+                      :is-edit-action="templateVariables.action === 'edit'"
+                    />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'dns'">
-                    <RegistryDns ref="dnsTab" />
+                    <RegistryDns
+                      ref="dnsTab"
+                      :dns-manual="templateVariables.dnsManual"
+                      :keycloak-hostname="templateVariables.keycloakHostname"
+                      :keycloak-hostnames="templateVariables.keycloakHostnames"
+                      :keycloak-custom-host="templateVariables.keycloakCustomHost"
+                      :portals="templateVariables.registryValues?.portals"
+                    />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'cidr'">
                     <RegistryCidr ref="cidrTab" />
@@ -158,6 +184,8 @@ export default defineComponent({
                     <RegistrySupplierAuth
                         :keycloak-settings="templateVariables.registryValues?.keycloak" 
                         :sign-widget-settings="templateVariables.registryValues?.signWidget"
+                        :officer-portal-settings="templateVariables.registryValues?.portals?.officer"
+                        :is-enabled-portal="!templateVariables.registryValues?.global.excludePortals?.includes(PORTALS.officer)"
                         ref="supplierAuthTab"
                     />
                 </div>
@@ -165,7 +193,19 @@ export default defineComponent({
                     <RegistryRecipientAuth
                         :keycloak-settings="templateVariables.registryValues?.keycloak.citizenAuthFlow"
                         :citizen-portal-settings="templateVariables.registryValues?.portals?.citizen"
+                        :is-enabled-portal="!templateVariables.registryValues?.global.excludePortals?.includes(PORTALS.citizen)"
                         ref="recipientAuthTab"
+                    />
+                </div>
+                <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'adminAuthentication'">
+                    <RegistryAdminAuth
+                      :is-enabled-portal="!templateVariables.registryValues?.global.excludePortals?.includes(PORTALS.admin)"
+                    />
+                </div>
+                <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'geoDataSettings'">
+                    <GeoDataSettings
+                      :enabled="templateVariables.registryValues?.global?.geoServerEnabled"
+                      :is-edit-action="templateVariables.action === 'edit'"
                     />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'digitalDocuments'">

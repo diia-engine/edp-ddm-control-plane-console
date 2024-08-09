@@ -75,10 +75,9 @@ func (a *App) registryUpdate(ctx *gin.Context) (router.Response, error) {
 	}
 
 	r := registry{
-		Name:                registryName,
-		RegistryGitBranch:   cb.Spec.DefaultBranch,
-		RegistryGitTemplate: cb.Spec.Repository.Url,
-		Scenario:            ScenarioKeyNotRequired,
+		Name:              registryName,
+		RegistryGitBranch: cb.Spec.DefaultBranch,
+		Scenario:          ScenarioKeyNotRequired,
 	}
 
 	var ur updateRequest

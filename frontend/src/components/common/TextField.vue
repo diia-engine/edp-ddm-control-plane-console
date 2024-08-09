@@ -14,11 +14,12 @@ interface TextFieldProps {
   placeholder?: HTMLInputElement['placeholder'],
   rootClass?: string,
   allowedCharacters?: string,
+  disabled?: boolean,
 }
 
 const props = defineProps<TextFieldProps>();
 const $emit = defineEmits(['update:modelValue']);
-const { name, label, description, error, modelValue, required, placeholder, rootClass, allowedCharacters } = toRefs(props);
+const { name, label, description, error, modelValue, required, placeholder, rootClass, allowedCharacters, disabled } = toRefs(props);
 
 watch(modelValue, (value) => {
   const charactersRegexp = allowedCharacters?.value;
@@ -48,6 +49,7 @@ export default {
       {{ label }} <b v-if="required" class="red-star">*</b>
     </label>
     <input
+      :disabled="disabled"
       :name="name"
       :aria-label="name"
       :placeholder="placeholder"
@@ -142,6 +144,10 @@ export default {
 
 .form-input-group-error-description {
   max-width: 464px;
+}
+
+.form-input-group input:disabled {
+  color: $disabled-text-color,
 }
 </style>
 

@@ -39,6 +39,7 @@ export default {
             this.$emit('hideCheckClusterDeleteKeycloakDNS');
         },
         deleteClusterKeycloakDNS(host: string) {
+            window.localStorage.setItem('mr-scroll', 'true');
             this.$emit('deleteClusterKeycloakDNS', host);
         },
         hideClusterCheckKeycloakDNS() {
@@ -96,10 +97,12 @@ export default {
             <div class="cluster-default-kc-dns-value">
                 <span>{{ h.host }}</span>
                 <div>
-                    <a href="#" @click.stop.prevent="editClusterKeycloakDNSHost(h.host, h.certificatePath)"><i
-                            class="fa-solid fa-pen"></i></a>
-                    <a href="#" @click.stop.prevent="checkClusterDeleteKeycloakDNS(h.host)"><i
-                            class="fa-solid fa-trash"></i></a>
+                    <a href="#" @click.stop.prevent="editClusterKeycloakDNSHost(h.host, h.certificatePath)">
+                      <img title="Редагувати" alt="pencil" src="@/assets/img/pencil.png" />
+                    </a>
+                    <a href="#" @click.stop.prevent="checkClusterDeleteKeycloakDNS(h.host)">
+                      <img title="Видалити" class="img-trash" alt="trash" src="@/assets/img/trash.png" />
+                    </a>
                 </div>
             </div>
         </div>
@@ -113,7 +116,7 @@ export default {
 
         <input type="hidden" name="hostnames" v-model="clusterSettings.keycloak.submitInput" />
         <div class="rc-form-group">
-            <button type="submit" name="submit" :disabled="disabled">Підтвердити</button>
+            <button onclick="window.localStorage.setItem('mr-scroll', 'true');" type="submit" name="submit" :disabled="disabled">Підтвердити</button>
         </div>
     </form>
 
@@ -196,7 +199,7 @@ export default {
             <div class="popup-footer active">
                 <a href="#" id="cidr-cancel" class="hide-popup"
                     @click.stop.prevent="hideClusterKeycloakDNSForm">відмінити</a>
-                <button value="submit" name="cidr-apply" :disabled="disableClusterKeycloakDNS"
+                <button value="submit" name="cidr-apply" onclick="window.localStorage.setItem('mr-scroll', 'true');" :disabled="disableClusterKeycloakDNS"
                     type="submit">Підтвердити</button>
             </div>
         </form>

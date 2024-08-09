@@ -40,10 +40,10 @@ const getStatus = (status: string, enabled: boolean = true): string => {
     return "Помилка";
   }
   if (enabled === false) {
-      return "Заблокований";
+      return "Інтеграція не налаштована";
   }
 
-  return "Активний";
+  return "Інтеграція налаштована";
 };
 
 function showPublicApiEditReg(e: any, publicApi?: PublicApi) {
@@ -103,7 +103,7 @@ function disablePublicAccessReg(registry: string, name: string, e: any) {
     <table class="rg-info-table rg-info-table-config">
       <thead>
         <tr>
-          <th>Статус</th>
+          <th>Налаштовано</th>
           <th>Назва</th>
           <th>URL</th>
           <th></th>
@@ -176,6 +176,21 @@ function disablePublicAccessReg(registry: string, name: string, e: any) {
 .rg-public-api-actions.inactive a {
     cursor: not-allowed;
     color: #BFBFBF;
+}
+
+.link-grant-access a:hover {
+  text-decoration: none;
+}
+.link-grant-access a {
+  padding: 8px 10px 8px 10px;
+  border-radius: 5px;
+  display: flex;
+  align-items: baseline;
+  width: 170px;
+  transition: 0.5s;
+}
+.link-grant-access a:hover {
+  background: #E6F3FA;
 }
 
 </style>

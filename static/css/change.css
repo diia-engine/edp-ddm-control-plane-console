@@ -33,3 +33,7 @@
     align-items: center;
     height: 100%;
 }
+
+.change-action-status h1 {
+    font-family: 'Oswald', sans-serif;
+}

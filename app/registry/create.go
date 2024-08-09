@@ -25,6 +25,7 @@ import (
 	"github.com/pkg/errors"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/strings/slices"
 )
 
 const (
@@ -62,6 +63,9 @@ func (a *App) createUpdateRegistryProcessors() []func(ctx *gin.Context, r *regis
 		a.prepareCitizenAuthSettings,
 		a.prepareTrembitaIPList,
 		a.prepareDigitalDocuments,
+		a.prepareGriada,
+		a.prepareComputeResources,
+		a.prepareExcludePortals,
 	}
 }
 
@@ -88,13 +92,13 @@ func (a *App) registryNameAvailable(ctx *gin.Context) (rsp router.Response, retE
 	_, err := a.Codebase.Get(name)
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
-			return router.MakeStatusResponse(http.StatusNotFound), nil
+			return router.MakeJSONResponse(http.StatusOK, gin.H{"registryNameAvailable": true}), nil
 		}
 
 		return nil, errors.Wrap(err, "unable to check codebase existance")
 	}
 
-	return router.MakeStatusResponse(http.StatusOK), nil
+	return router.MakeJSONResponse(http.StatusOK, gin.H{"registryNameAvailable": false}), nil
 }
 
 func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, retErr error) {
@@ -102,7 +106,7 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to list gerrit projects")
 	}
-	prjs = a.filterProjects(prjs)
+	prjs = a.filterProjects(prjs, a.Config.RegistryTemplateName)
 
 	userCtx := router.ContextWithUserAccessToken(ctx)
 	k8sService, err := a.Services.K8S.ServiceForContext(userCtx)
@@ -124,10 +128,7 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 		return nil, errors.Wrap(err, "unable to get dns manual")
 	}
 
-	gerritBranches, err := formatGerritProjectBranches(prjs)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to format gerrit project branches")
-	}
+	gerritBranches := formatGerritProjectBranches(prjs)
 
 	keycloakHostname, err := LoadKeycloakDefaultHostname(ctx, a.KeycloakDefaultHostname, a.EDPComponent)
 	if err != nil {
@@ -140,16 +141,19 @@ func (a *App) createRegistryGet(ctx *gin.Context) (response router.Response, ret
 	}
 
 	responseParams := gin.H{
-		"dnsManual":         dnsManual,
-		"page":              "registry",
-		"gerritProjects":    prjs,
-		"gerritBranches":    gerritBranches,
-		"model":             registry{KeyDeviceType: KeyDeviceTypeFile},
-		"smtpConfig":        "{}",
-		"action":            "create",
-		"registryData":      "{}",
-		"keycloakHostname":  keycloakHostname,
-		"keycloakHostnames": keycloakHostnames,
+		"dnsManual":            dnsManual,
+		"page":                 "registry",
+		"gerritProjects":       prjs,
+		"gerritBranches":       gerritBranches,
+		"model":                registry{KeyDeviceType: KeyDeviceTypeFile},
+		"smtpConfig":           "{}",
+		"action":               "create",
+		"registryData":         "{}",
+		"keycloakHostname":     keycloakHostname,
+		"keycloakHostnames":    keycloakHostnames,
+		"registryTemplateName": a.Config.RegistryTemplateName,
+		"platformStatusType":   a.Config.CloudProvider,
+		"registryVersion":      ctx.Request.URL.Query().Get("version"),
 	}
 
 	templateArgs, templateErr := json.Marshal(responseParams)
@@ -204,10 +208,10 @@ func headsCount(refs []string) int {
 	return cnt
 }
 
-func (a *App) filterProjects(projects []gerrit.GerritProject) []gerrit.GerritProject {
+func (a *App) filterProjects(projects []gerrit.GerritProject, prjName string) []gerrit.GerritProject {
 	filteredProjects := make([]gerrit.GerritProject, 0, 4)
 	for _, prj := range projects {
-		if strings.Contains(prj.Spec.Name, a.Config.GerritRegistryPrefix) {
+		if prj.Spec.Name == prjName {
 			if headsCount(prj.Status.Branches) > 1 {
 				var branches []string
 				for _, br := range prj.Status.Branches {
@@ -225,25 +229,17 @@ func (a *App) filterProjects(projects []gerrit.GerritProject) []gerrit.GerritPro
 	return filteredProjects
 }
 
-func formatGerritProjectBranches(projects []gerrit.GerritProject) (string, error) {
-	res := make(map[string][]string)
+func formatGerritProjectBranches(projects []gerrit.GerritProject) []string {
+	var branches []string
 	for _, p := range projects {
-		var branches []string
 		for _, b := range p.Status.Branches {
 			idx := strings.Index(b, "heads/")
-			if idx != -1 {
+			if idx != -1 && !slices.Contains(branches, b[idx+6:]) {
 				branches = append(branches, b[idx+6:])
 			}
 		}
-		res[p.Spec.Name] = branches
 	}
-
-	bts, err := json.Marshal(res)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to encode project branches")
-	}
-
-	return string(bts), nil
+	return branches
 }
 
 func GetINITemplateContent(path string) (string, error) {
@@ -282,10 +278,6 @@ func (a *App) createRegistryPost(ctx *gin.Context) (response router.Response, re
 		return nil, errors.Wrap(err, "unable to parse form")
 	}
 
-	if err := a.validateCreateRegistryGitTemplate(ctx, &r); err != nil {
-		return nil, errors.Wrap(err, "unable to validate create registry git template")
-	}
-
 	if err := a.createRegistry(userCtx, ctx, &r, cbService, k8sService); err != nil {
 		return nil, errors.Wrap(err, "unable to create registry")
 	}
@@ -305,26 +297,6 @@ func (a *App) checkCreateAccess(userK8sService k8s.ServiceInterface) error {
 	return nil
 }
 
-func (a *App) validateCreateRegistryGitTemplate(ctx context.Context, r *registry) error {
-	prjs, err := a.Services.Gerrit.GetProjects(ctx)
-	if err != nil {
-		return errors.Wrap(err, "unable to list gerrit projects")
-	}
-	prjs = a.filterProjects(prjs)
-
-	for _, prj := range prjs {
-		if prj.Spec.Name == r.RegistryGitTemplate {
-			for _, br := range prj.Status.Branches {
-				if br == fmt.Sprintf("refs/heads/%s", r.RegistryGitBranch) {
-					return nil
-				}
-			}
-		}
-	}
-
-	return errors.New("wrong registry template selected")
-}
-
 func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *registry,
 	cbService codebase.ServiceInterface, k8sService k8s.ServiceInterface) error {
 	_, err := cbService.Get(r.Name)
@@ -335,7 +307,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unknown error")
 	}
 
-	values, err := GetValuesFromGit(r.RegistryGitTemplate, r.RegistryGitBranch, a.Gerrit)
+	values, err := GetValuesFromGit(a.Config.RegistryTemplateName, r.RegistryGitBranch, a.Gerrit)
 	if err != nil {
 		return errors.Wrap(err, "unable to load values from template")
 	}
@@ -359,6 +331,8 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 		return errors.Wrap(err, "unable to prepare registry keys")
 	}
 
+	a.prepareValuesGlobal(r, values)
+
 	if err := CacheRepoFiles(a.TempFolder, r.Name, repoFiles, a.Cache); err != nil {
 		return fmt.Errorf("unable to cache repo file, %w", err)
 	}
@@ -378,7 +352,7 @@ func (a *App) createRegistry(ctx context.Context, ginContext *gin.Context, r *re
 	}
 
 	cb.Annotations = map[string]string{
-		AnnotationTemplateName:    r.RegistryGitTemplate,
+		AnnotationTemplateName:    a.Config.RegistryTemplateName,
 		AnnotationCreatorUsername: ginContext.GetString(router.UserNameSessionKey),
 		AnnotationCreatorEmail:    ginContext.GetString(router.UserEmailSessionKey),
 		AnnotationValues:          valuesEncoded,
@@ -535,31 +509,29 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 		valuesChanged = true
 
 		certFile, _, err := ginContext.Request.FormFile("officer-ssl")
-		if err != nil {
-			return false, errors.Wrap(err, "unable to get officer ssl certificate")
+		if err == nil {
+			certData, err := ioutil.ReadAll(certFile)
+			if err != nil {
+				return false, errors.Wrap(err, "unable to read officer ssl data")
+			}
+
+			pemInfo, err := DecodePEM(certData)
+			if err != nil {
+				return false, validator.ValidationErrors([]validator.FieldError{
+					router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
+			}
+
+			secretPath := strings.ReplaceAll(a.Config.VaultOfficerSSLPath, "{registry}", r.Name)
+			secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameOfficer)
+
+			if _, ok := secretData[secretPath]; !ok {
+				secretData[secretPath] = make(map[string]interface{})
+			}
+
+			secretData[secretPath][VaultKeyCACert] = pemInfo.CACert
+			secretData[secretPath][VaultKeyCert] = pemInfo.Cert
+			secretData[secretPath][VaultKeyPK] = pemInfo.PrivateKey
 		}
-
-		certData, err := ioutil.ReadAll(certFile)
-		if err != nil {
-			return false, errors.Wrap(err, "unable to read officer ssl data")
-		}
-
-		pemInfo, err := DecodePEM(certData)
-		if err != nil {
-			return false, validator.ValidationErrors([]validator.FieldError{
-				router.MakeFieldError("DNSNameOfficer", "pem-decode-error")})
-		}
-
-		secretPath := strings.ReplaceAll(a.Config.VaultOfficerSSLPath, "{registry}", r.Name)
-		secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameOfficer)
-
-		if _, ok := secretData[secretPath]; !ok {
-			secretData[secretPath] = make(map[string]interface{})
-		}
-
-		secretData[secretPath][VaultKeyCACert] = pemInfo.CACert
-		secretData[secretPath][VaultKeyCert] = pemInfo.Cert
-		secretData[secretPath][VaultKeyPK] = pemInfo.PrivateKey
 	}
 
 	if r.DNSNameCitizenEnabled == "" && _values.Portals.Citizen.CustomDNS.Enabled {
@@ -570,31 +542,29 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 		valuesChanged = true
 
 		certFile, _, err := ginContext.Request.FormFile("citizen-ssl")
-		if err != nil {
-			return false, errors.Wrap(err, "unable to get citizen ssl certificate")
+		if err == nil {
+			certData, err := ioutil.ReadAll(certFile)
+			if err != nil {
+				return false, errors.Wrap(err, "unable to read citizen ssl data")
+			}
+
+			pemInfo, err := DecodePEM(certData)
+			if err != nil {
+				return false, validator.ValidationErrors([]validator.FieldError{
+					router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
+			}
+
+			secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
+			secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameCitizen)
+
+			if _, ok := secretData[secretPath]; !ok {
+				secretData[secretPath] = make(map[string]interface{})
+			}
+
+			secretData[secretPath][VaultKeyCACert] = pemInfo.CACert
+			secretData[secretPath][VaultKeyCert] = pemInfo.Cert
+			secretData[secretPath][VaultKeyPK] = pemInfo.PrivateKey
 		}
-
-		certData, err := ioutil.ReadAll(certFile)
-		if err != nil {
-			return false, errors.Wrap(err, "unable to read citizen ssl data")
-		}
-
-		pemInfo, err := DecodePEM(certData)
-		if err != nil {
-			return false, validator.ValidationErrors([]validator.FieldError{
-				router.MakeFieldError("DNSNameCitizen", "pem-decode-error")})
-		}
-
-		secretPath := strings.ReplaceAll(a.Config.VaultCitizenSSLPath, "{registry}", r.Name)
-		secretPath = strings.ReplaceAll(secretPath, "{host}", r.DNSNameCitizen)
-
-		if _, ok := secretData[secretPath]; !ok {
-			secretData[secretPath] = make(map[string]interface{})
-		}
-
-		secretData[secretPath][VaultKeyCACert] = pemInfo.CACert
-		secretData[secretPath][VaultKeyCert] = pemInfo.Cert
-		secretData[secretPath][VaultKeyPK] = pemInfo.PrivateKey
 	}
 
 	if valuesChanged {
@@ -603,12 +573,27 @@ func (a *App) prepareDNSConfig(ginContext *gin.Context, r *registry, _values *Va
 
 	return valuesChanged, nil
 }
+func (a *App) isSmtpPasswordSet(path string) bool {
+	data, err := a.Vault.Read(path)
+	if err != nil && !errors.Is(err, vault.ErrSecretIsNil) {
+		return false
+	}
+	password, ok := data[a.Config.VaultRegistrySMTPPwdSecretKey]
+	if !ok {
+		return false
+	}
+	if password == "" {
+		return false
+	}
+	return true
+}
 
 func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Values,
 	secretData map[string]map[string]interface{}, mrActions *[]string) (bool, error) {
 	values := _values.OriginalYaml
 
-	email := make(map[string]interface{})
+	var email ExternalEmailSettings
+	var vaultPath string
 
 	if r.MailServerType == SMTPTypeExternal {
 		var smptOptsDict map[string]string
@@ -617,17 +602,21 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 		}
 
 		pwd, ok := smptOptsDict["password"]
-		if !ok {
+		passwordExist := a.isSmtpPasswordSet(_values.Global.Notifications.Email.VaultPath)
+		if !ok && !passwordExist {
 			return false, errors.New("no password in mail server opts")
 		}
+		if pwd != "" {
+			vaultPath = a.vaultRegistryPathKey(r.Name, fmt.Sprintf("%s-%s", "smtp", time.Now().Format("20060201T150405Z")))
+			if _, ok := secretData[vaultPath]; !ok {
+				secretData[vaultPath] = make(map[string]interface{})
+			}
 
-		vaultPath := a.vaultRegistryPathKey(r.Name, "smtp")
-
-		if _, ok := secretData[vaultPath]; !ok {
-			secretData[vaultPath] = make(map[string]interface{})
+			secretData[vaultPath][a.Config.VaultRegistrySMTPPwdSecretKey] = pwd
+		} else {
+			vaultPath = _values.Global.Notifications.Email.VaultPath
 		}
 
-		secretData[vaultPath][a.Config.VaultRegistrySMTPPwdSecretKey] = pwd
 		//TODO: remove password from dict
 
 		port, err := strconv.ParseInt(smptOptsDict["port"], 10, 32)
@@ -635,18 +624,17 @@ func (a *App) prepareMailServerConfig(_ *gin.Context, r *registry, _values *Valu
 			return false, errors.Wrapf(err, "wrong smtp port value: %s", smptOptsDict["port"])
 		}
 
-		email = map[string]interface{}{
-			"type":      "external",
-			"host":      smptOptsDict["host"],
-			"port":      port,
-			"address":   smptOptsDict["address"],
-			"password":  smptOptsDict["password"],
-			"vaultPath": a.vaultRegistryPath(r.Name),
-			"vaultKey":  a.Config.VaultRegistrySMTPPwdSecretKey,
+		email = ExternalEmailSettings{
+			Type:      "external",
+			Host:      smptOptsDict["host"],
+			Port:      port,
+			Address:   smptOptsDict["address"],
+			VaultPath: vaultPath,
+			VaultKey:  a.Config.VaultRegistrySMTPPwdSecretKey,
 		}
 	} else {
-		email = map[string]interface{}{
-			"type": "internal",
+		email = ExternalEmailSettings{
+			Type: "internal",
 		}
 	}
 
@@ -731,4 +719,17 @@ func (a *App) prepareRegistryCodebase(r *registry) *codebase.Codebase {
 func branchProvisioner(branch string) string {
 	return "default-" + strings.Replace(
 		strings.ToLower(branch), ".", "-", -1)
+}
+
+func (a *App) prepareValuesGlobal(r *registry, values *Values) {
+	globalInterface, ok := values.OriginalYaml[GlobalValuesIndex]
+	if !ok {
+		globalInterface = make(map[string]interface{})
+	}
+	globalDict := globalInterface.(map[string]interface{})
+
+	globalDict["deploymentMode"] = r.DeploymentMode
+	globalDict["geoServerEnabled"] = r.GeoServerEnabled == "on"
+
+	values.OriginalYaml[GlobalValuesIndex] = globalDict
 }

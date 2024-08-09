@@ -4,6 +4,7 @@ import (
 	"ddm-admin-console/service/codebase"
 	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
+	"ddm-admin-console/service/gitserver"
 	"ddm-admin-console/service/jenkins"
 	"ddm-admin-console/service/k8s"
 	"ddm-admin-console/service/keycloak"
@@ -28,7 +29,6 @@ type Settings struct {
 	BackupSecretName                      string `envconfig:"BACKUP_SECRET_NAME" default:"backup-credential"`
 	GinMode                               string `envconfig:"GIN_MODE"`
 	Timezone                              string `envconfig:"TIMEZONE" default:"Europe/Kiev"`
-	RegistryRepoPrefix                    string `envconfig:"REGISTRY_REPO_PREFIX" default:"registry-tenant-template-"`
 	RegistryRepoHost                      string `envconfig:"REGISTRY_REPO_HOST"`
 	RegistryHardwareKeyINITemplatePath    string `envconfig:"REGISTRY_HW_KEY_INI_TPL_PATH" default:"osplm.ini"`
 	RootGerritName                        string `envconfig:"ROOT_GERRIT_NAME" default:"gerrit"`
@@ -69,6 +69,8 @@ type Settings struct {
 	WiremockAddr                          string `envconfig:"WIREMOCK_ADDR" default:"http://wiremock.{NAME_REGISTRY}:9021/"`
 	BackupBucketAccessKeyID               string `envconfig:"ACCESS_KEY_ID" default:"accessKeyId"`
 	BackupBucketSecretAccessKey           string `envconfig:"SECRET_ACCESS_KEY" default:"secretAccessKey"`
+	RegistryTemplateName                  string `envconfig:"REGISTRY_TEMPLATE_NAME"`
+	CloudProvider                         string `envconfig:"CLOUD_PROVIDER"`
 }
 
 type Services struct {
@@ -77,6 +79,7 @@ type Services struct {
 	K8S          k8s.ServiceInterface
 	OpenShift    openshift.ServiceInterface
 	Gerrit       gerrit.ServiceInterface
+	GitServer    gitserver.ServiceInterface
 	Jenkins      jenkins.ServiceInterface
 	Keycloak     keycloak.ServiceInterface
 	Vault        vault.ServiceInterface

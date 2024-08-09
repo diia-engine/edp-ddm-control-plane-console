@@ -20,7 +20,6 @@ type registry struct {
 	AdminsChanged                 string   `form:"admins-changed"`
 	SignKeyIssuer                 string   `form:"sign-key-issuer" binding:"required_if=KeyDeviceType file Scenario key-required"`
 	SignKeyPwd                    string   `form:"sign-key-pwd" binding:"required_if=KeyDeviceType file Scenario key-required"`
-	RegistryGitTemplate           string   `form:"registry-git-template" binding:"required"`
 	RegistryGitBranch             string   `form:"registry-git-branch" binding:"required"`
 	KeyDeviceType                 string   `form:"key-device-type" binding:"oneof=file hardware"`
 	RemoteType                    string   `form:"remote-type" binding:"required_if=KeyDeviceType hardware Scenario key-required"`
@@ -55,6 +54,7 @@ type registry struct {
 	SupAuthClientSecret           string   `form:"sup-auth-client-secret"`
 	BackupScheduleEnabled         string   `form:"backup-schedule-enabled"`
 	SelfRegistration              string   `form:"self-registration-enabled"`
+	RecIndividualAccessEnabled    string   `form:"rec-individual-access-enabled"`
 	CronSchedule                  string   `form:"cron-schedule"`
 	CronScheduleDays              string   `form:"cron-schedule-days"`
 	KeycloakCustomHostname        string   `form:"keycloak-custom-hostname"`
@@ -70,6 +70,10 @@ type registry struct {
 	KeyDataChanged                string   `form:"key-data-changed"`
 	KeyVerificationChanged        string   `form:"key-verification-changed"`
 	RegistryCitizenAuth           string   `form:"registry-citizen-auth"`
+	DeploymentMode                string   `form:"deployment-mode" json:"deploymentMode"`
+	ComputeResources              string   `form:"compute-resources" json:"computeResources"`
+	ExcludePortals                []string `form:"excludePortals[]" json:"excludePortals"`
+	GeoServerEnabled              string   `form:"geoServerEnabled" json:"geoServerEnabled"`
 }
 
 func (r *registry) KeysRequired() bool {

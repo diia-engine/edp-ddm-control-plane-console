@@ -34,4 +34,8 @@ const cssProps = computed(() => ({'background-color': color?.value ?? '#FFFBE6'}
   margin-bottom: 12px;
   text-transform: uppercase;
 }
+
+.banner-body {
+  white-space: pre-line;
+}
 </style>

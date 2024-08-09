@@ -8,6 +8,7 @@ import (
 	"ddm-admin-console/service/jenkins"
 	"ddm-admin-console/service/k8s"
 	"ddm-admin-console/service/keycloak"
+	"ddm-admin-console/service/openshift"
 	"ddm-admin-console/service/permissions"
 	"ddm-admin-console/service/vault"
 	"fmt"
@@ -19,7 +20,6 @@ import (
 )
 
 type Config struct {
-	GerritRegistryPrefix            string
 	GerritRegistryHost              string
 	HardwareINITemplatePath         string
 	EnableBranchProvisioners        bool
@@ -41,6 +41,8 @@ type Config struct {
 	WiremockAddr                    string
 	BackupBucketAccessKeyID         string
 	BackupBucketSecretAccessKey     string
+	RegistryTemplateName            string
+	CloudProvider                   string
 }
 
 type Services struct {
@@ -53,6 +55,7 @@ type Services struct {
 	Vault        vault.ServiceInterface
 	Cache        *cache.Cache //TODO: replace with interface
 	Perms        permissions.ServiceInterface
+	OpenShift    openshift.ServiceInterface
 }
 
 type App struct {

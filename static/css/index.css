@@ -12064,7 +12064,7 @@ div#kubernetes-component {
 }
 
 .popup-footer.active button {
-    background: #D35D47;
+    background: #6DA300;
     cursor: pointer;
 }
 
@@ -12477,6 +12477,14 @@ p.error {
     background: #E6F3FA;
 }
 
+.wizard-contents li.active a {
+  color: #008ACE;
+}
+
+.wizard-contents li.disabled a {
+  color: rgba(0, 0, 0, 0.25);
+}
+
 .wizard-body {
     border-left: 1px solid #000000;
     /*padding-top: 16px;*/
@@ -12576,14 +12584,6 @@ p.error {
     color: #9e9e9e;
 }
 
-.dns-inputs label:last-of-type {
-    margin-top: 8px;
-}
-
-.dns-inputs label {
-    text-transform: uppercase;
-}
-
 .text-input-label {
     font-size: 16px;
     font-weight: 700;
@@ -12615,6 +12615,11 @@ p.error {
     display: block;
     border-radius: 24px;
     position: relative;
+    transition: 0.3s;
+}
+
+.toggle-switch label:hover {
+    background: #464547;
 }
 
 .toggle-switch label:after {
@@ -12631,6 +12636,10 @@ p.error {
 
 .toggle-switch input:checked + label {
     background: #008ACE;
+}
+
+.toggle-switch input:checked + label:hover {
+    background: #00689B;
 }
 
 .toggle-switch input:checked + label:after {
@@ -12864,6 +12873,13 @@ p.error {
     color: #D35D47;
     margin-left: 20px;
 }
+
+
+.cluster-default-kc-dns-value a > .img-trash {
+    /*color: #D35D47;*/
+    margin-left: 20px;
+}
+
 .tabs {
     display: flex;
     margin-top: 32px;
@@ -12872,7 +12888,8 @@ p.error {
 
 .tabs .tab {
     font-family: 'Oswald';
-    color: #008ACE;
+    /*color: #008ACE;*/
+    color: #00000080;
     font-size: 18px;
     line-height: 24px;
     text-transform: uppercase;
@@ -12884,6 +12901,7 @@ p.error {
 
 .tabs .active {
     border-bottom: 2px solid #008ACE;
+    color: #008ACE;
 }
 
 .list-item {

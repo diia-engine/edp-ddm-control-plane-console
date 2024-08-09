@@ -1,4 +1,7 @@
 import type { ExternalReg } from '@/types/registry';
+import transform from 'lodash/transform';
+import isEqual from 'lodash/isEqual';
+import isObject from 'lodash/isObject';
 
 export const getExtStatus = (status: string, enabled: boolean) => {
   if (!enabled) {
@@ -16,4 +19,16 @@ if (e.External) {
 }
 
 return "internal-registry";
+};
+
+export const jsonDiff = (object: any, base: any): string[] => {
+	function changes(object: any, base: { [x: string]: any; }) {
+		return transform(object, function(result: { [x: string]: any; }, value: any, key: string | number) {
+			if (!isEqual(value, base[key])) {
+				result[key] = (isObject(value) && isObject(base[key])) ? changes(value, base[key]) : value;
+			}
+		});
+	}
+
+	return Object.keys(changes(object, base));
 };

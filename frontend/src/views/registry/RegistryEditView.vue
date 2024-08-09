@@ -14,13 +14,12 @@ export default defineComponent({
 <template>
     <div class="registry registry-create" id="registry-form">
         <div class="registry-header">
-            <a href="/admin/registry/overview" class="registry-add">
+            <a href="/admin/registry/overview" onclick="window.history.back(); return false;" class="registry-add">
                 <img alt="add registry" src="@/assets/img/action-back.png" />
                 <span>НАЗАД</span>
             </a>
         </div>
         <h1>Редагувати реєстр "{{templateVariables.registry.metadata.name}}"</h1>
-        <div class="registry-description">Можлива зміна опису реєстру. Змінити назву неможливо.</div>
 
         <RegistryWizard ref="wizard" :form-submitted="registryFormSubmitted"/>
 

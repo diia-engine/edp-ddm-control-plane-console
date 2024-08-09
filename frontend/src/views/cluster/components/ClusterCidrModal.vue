@@ -60,7 +60,7 @@ export default {
       <div class="popup-footer active">
         <a href="#" id="cidr-cancel" class="hide-popup" @click="hideCIDRForm">відмінити</a>
         <button value="submit" name="cidr-apply" type="submit"
-                :disabled="disabled && !cidrFormatError">Підтвердити</button>
+                :disabled="disabled && !cidrFormatError" onclick="window.localStorage.setItem('mr-scroll', 'true');">Підтвердити</button>
       </div>
     </form>
   </div>

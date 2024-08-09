@@ -3,9 +3,9 @@
     <div class="registry registry-create" id="registry-form">
         <div class="registry-header">
             {{if .registryName}}
-            <a href="{{ .BasePath }}/admin/registry/view/{{.registryName}}" class="registry-add">
+            <a href="{{ .BasePath }}/admin/registry/view/{{.registryName}}" onclick="window.history.back();" class="registry-add">
             {{else}}
-                <a href="/admin/cluster/management" class="registry-add">
+                <a href="/admin/cluster/management" onclick="window.history.back();" class="registry-add">
             {{end}}
                 <img alt="add registry" src="{{ .BasePath }}/static/img/action-back.png" />
                 <span>НАЗАД</span>

@@ -1,6 +1,5 @@
 /* eslint-disable no-prototype-builtins */
 import { defineComponent } from 'vue';
-import axios from 'axios';
 import $ from 'jquery';
 
 export default defineComponent({
@@ -9,14 +8,10 @@ export default defineComponent({
     'decodeResourcesEnvVars',
     'wizardEditSubmit',
     'wizardNext',
-    'dnsPreloadDataFromValues',
     'wizardPrev',
     'selectWizardTab',
     'wizardTabChanged',
     'wizardEmptyValidation',
-    'wizardGeneralValidation',
-    'wizardDNSValidation',
-    'wizardCheckPEMFiles',
     'checkObjectFieldsEmpty',
     'wizardAdministratorsValidation',
     'wizardTemplateValidation',
@@ -27,7 +22,6 @@ export default defineComponent({
     'removeResourceCat',
     'encodeRegistryResources',
     'registryFormSubmit',
-    'prepareDNSConfig',
     'loadAdmins',
     'showAdminForm',
     'hideAdminForm',
@@ -63,7 +57,6 @@ export default defineComponent({
       if (childRefs.wizardAction.value === "edit") {
         const registryData = JSON.parse(childRefs.registryData.value);
         this.wizard.tabs.general.registryName = registryData.name;
-        this.wizard.tabs.template.visible = false;
         this.wizard.tabs.confirmation.visible = false;
         this.adminsChanged = false;
         this.cidrChanged = false;
@@ -72,7 +65,6 @@ export default defineComponent({
 
     if (this.templateVariables.registryValues) {
       this.registryValues = this.templateVariables.registryValues;
-      this.dnsPreloadDataFromValues();
     }
     if (childRefs.hasOwnProperty("registryUpdate")) {
       this.wizard.tabs.update.visible = true;
@@ -113,67 +105,116 @@ export default defineComponent({
           general: {
             title: "Загальні",
             validated: false,
-            registryName: "",
-            requiredError: false,
-            existsError: false,
-            formatError: false,
-            validator: this.wizardGeneralValidation,
             visible: true,
+            validatorRef: 'generalTab',
+            disabled: false,
           },
-          administrators: { title: "Адміністратори", validated: false, requiredError: false,
-            validator: this.wizardAdministratorsValidation, visible: true, },
-          template: {
-            title: "Шаблон реєстру",
-            validatorRef: 'templateTab',
-            visible: true
+          administrators: {
+            title: "Адміністратори",
+            validated: false,
+             requiredError: false,
+            validator: this.wizardAdministratorsValidation,
+            visible: true,
+            disabled: true
           },
-          mail: { title: "Поштовий сервер", validated: false, beginValidation: false, validator: this.wizardMailValidation, visible: true, },
+          mail: {
+            title: "Поштовий сервер",
+            validated: false,
+            beginValidation: false,
+            validator: this.wizardMailValidation,
+            visible: true,
+            disabled: true
+          },
           key: {
             title: "Дані про ключ",
             visible: true,
             validatorRef: 'keyDataTab',
+            disabled: true
           },
           keyVerification: {
             title: 'Дані для перевірки підписів',
             visible: true,
             validatorRef: 'keyVerificationTab',
+            disabled: true
+          },
+          parametersVirtualMachines: {
+            title: "Параметри віртуальних машин",
+            visible: true,
+            validatorRef: 'parametersVirtualMachinesTab',
+            disabled: true
           },
           resources: {
-            title: "Ресурси реєстру", visible: true, validatorRef: 'resourcesTab',
+            title: "Ресурси реєстру",
+            visible: true, 
+            validatorRef: 'resourcesTab',
+            disabled: true
           },
-          dns: { title: "DNS", validated: false, data: { officer: "", citizen: "", }, beginValidation: false, formatError: { officer: false, citizen: false, }, requiredError: { officer: false, citizen: false, }, typeError: { officer: false, citizen: false, }, editVisible: { officer: false, citizen: false }, validator: this.wizardDNSValidation, visible: true, preloadValues: {} },
-          cidr: { title: "Обмеження доступу", validated: true, visible: true, },
+          dns: {
+            title: "DNS",
+            disabled: true,
+            visible: true,
+            validatorRef: 'dnsTab',
+          },
+          cidr: {
+            title: "Обмеження доступу",
+            validated: true,
+            visible: true,
+            disabled: true
+          },
           supplierAuthentication: {
-            title: "Автентифікація надавачів послуг",
+            title: "Кабінет надавача послуг",
             validatorRef: 'supplierAuthTab',
             visible: true,
+            disabled: true
           },
           recipientAuthentication: {
-            title: 'Автентифікація отримувачів послуг',
+            title: 'Кабінет отримувача послуг',
             validatorRef: 'recipientAuthTab',
             visible: true,
+            disabled: true
+          },
+          adminAuthentication: {
+            title: 'Кабінет адміністратора регламенту',
+            visible: true,
+            disabled: true
+          },
+          geoDataSettings: {
+            title: 'Підсистема управління геоданими',
+            visible: true,
+            disabled: true
           },
           digitalDocuments: {
             title: "Цифрові документи",
             visible: true,
             validatorRef: 'digitalDocumentsTab',
+            disabled: true
           },
           backupSchedule: {
             title: "Резервне копіювання",
             validatorRef: 'backupScheduleTab',
             visible: true,
+            disabled: true
           },
           trembita: {
             title: "ШБО Трембіта",
             validatorRef: 'trembitaTab',
             visible: true,
+            disabled: true
           },
-          confirmation: { title: "Підтвердження", validated: true, visible: true, }
+          confirmation: {
+            title: "Підтвердження",
+            validated: true,
+            visible: true,
+            disabled: true
+          }
         },
       },
     } as any;
   },
   methods: {
+    goBack() {
+      window.history.back();
+    },
     getChildrenRefs() {
       const wizardRefs = this.$refs.wizard?.$refs || {};
       return {
@@ -187,6 +228,8 @@ export default defineComponent({
         ...(wizardRefs.recipientAuthTab?.$refs || {}),
         ...(wizardRefs.backupScheduleTab?.$refs || {}),
         ...(wizardRefs.digitalDocumentsTab?.$refs || {}),
+        ...(wizardRefs.generalTab?.$refs || {}),
+        ...(wizardRefs.parametersVirtualMachinesTab?.$refs || {}),
       };
     },
     wizardEditSubmit(event: any) {
@@ -197,6 +240,7 @@ export default defineComponent({
         this.disabled = true;
         this.registryFormSubmit(event);
         this.$nextTick(() => {
+          window.localStorage.setItem("mr-scroll", "true");
           childRefs.registryWizardForm.submit();
         });
       }).catch(() => {});
@@ -209,19 +253,9 @@ export default defineComponent({
           const wizard = this.wizard;
           this.callValidator(tab).then(function () {
             wizard.activeTab = tabKeys[i + 1];
+            wizard.tabs[wizard.activeTab].disabled = false;
           });
           break;
-        }
-      }
-    },
-    dnsPreloadDataFromValues() {
-      if (this.registryValues && this.registryValues.hasOwnProperty("portals")) {
-        for (const p in this.registryValues.portals) {
-          if (this.registryValues.portals[p].hasOwnProperty("customDns")) {
-            this.wizard.tabs.dns.editVisible[p] = this.registryValues.portals[p].customDns.enabled;
-            this.wizard.tabs.dns.data[p] = this.registryValues.portals[p].customDns.host;
-            this.wizard.tabs.dns.preloadValues[p] = this.registryValues.portals[p].customDns.host;
-          }
         }
       }
     },
@@ -229,11 +263,8 @@ export default defineComponent({
       const tabKeys = Object.keys(this.wizard.tabs);
       for (let i = 0; i < tabKeys.length; i++) {
         if (tabKeys[i] === this.wizard.activeTab) {
-          const tab = this.wizard.tabs[tabKeys[i]];
-          const wizard = this.wizard;
-          this.callValidator(tab).then(function () {
-            wizard.activeTab = tabKeys[i - 1];
-          });
+          this.wizard.activeTab = tabKeys[i - 1];
+          this.wizard.tabs[tabKeys[i]].disabled = true;
           break;
         }
       }
@@ -249,124 +280,28 @@ export default defineComponent({
 
       return this.wizardEmptyValidation(tab);
     },
-    selectWizardTab(tabName: string, e: any) {
-      e.preventDefault();
-      const tab = this.wizard.tabs[this.wizard.activeTab];
-      const wizard = this.wizard;
-      this.callValidator(tab).then(function () {
-        if (wizard.registryAction === "create") {
-          for (const k in wizard.tabs) {
-            if (!wizard.tabs[k].validated) {
-              return;
-            }
-            if (k === tabName) {
-              break;
-            }
-          }
-        }
-        wizard.activeTab = tabName;
-      });
-    },
-    wizardEmptyValidation(tab: string) {
-      return new Promise < void  > ((resolve) => {
-        resolve();
-      });
-    },
-    wizardGeneralValidation(tab: any) {
-      return new Promise < void  > ((resolve) => {
-        tab.requiredError = false;
-        tab.formatError = false;
-        tab.existsError = false;
-        tab.validated = false;
-        if (tab.registryName === "") {
-          tab.requiredError = true;
-          return;
-        }
-        if (tab.registryName.length < 3) {
-          tab.formatError = true;
-          return;
-        }
-        if (!/^[a-z0-9]([-a-z0-9]*[a-z0-9])?([a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/.test(tab.registryName)) {
-          tab.formatError = true;
-          return;
-        }
-        if (this.wizard.registryAction === "edit") {
-          tab.validated = true;
-          resolve();
-          return;
-        }
-        axios.get(`/admin/registry/check/${tab.registryName}`)
-          .then(function (response) {
-            tab.existsError = true;
-          })
-          .catch(function (error) {
-            tab.validated = true;
-            resolve();
-          });
-      });
-    },
-    wizardDNSValidation(tab: any) {
-      const childRefs = this.getChildrenRefs();
-      return new Promise < void  > ((resolve) => {
-        tab.beginValidation = true;
-        tab.validated = false;
-        let validationFailed = false;
-        const filesToCheck = [];
-        for (const k in this.wizard.tabs.dns.data) {
-          this.wizard.tabs.dns.formatError[k] = false;
-          this.wizard.tabs.dns.requiredError[k] = false;
-          this.wizard.tabs.dns.typeError[k] = false;
-          const fileInput = childRefs[`${k}SSL`];
-          if (this.wizard.tabs.dns.data[k] !== "") {
-            if (!/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9-]*[A-Za-z0-9])$/.test(this.wizard.tabs.dns.data[k])) {
-              this.wizard.tabs.dns.formatError[k] = true;
-              validationFailed = true;
-            }
-            if (fileInput.files.length === 0 &&
-              (!this.wizard.tabs.dns.preloadValues.hasOwnProperty(k) || this.wizard.tabs.dns.preloadValues[k] !== this.wizard.tabs.dns.data[k])) {
-              this.wizard.tabs.dns.requiredError[k] = true;
-              validationFailed = true;
-            }
-            else if (fileInput.files.length > 0) {
-              filesToCheck.push({ name: k, file: fileInput.files[0] });
-            }
-          }
-          else if (fileInput.files.length > 0) {
-            this.wizard.tabs.dns.formatError[k] = true;
-            validationFailed = true;
-          }
-        }
-        if (validationFailed) {
-          return;
-        }
-        if (filesToCheck.length > 0) {
-          this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
-          return;
-        }
-        tab.validated = true;
-        tab.beginValidation = false;
-        resolve();
-      });
-    },
-    wizardCheckPEMFiles(filesToCheck: Array<any>, resolve: () => void, tab: any) {
-      if (filesToCheck.length === 0) {
-        tab.validated = true;
-        tab.beginValidation = false;
-        resolve();
+    selectWizardTab(tabName: string, action: string) {
+      if (action === 'edit') {
+        const tab = this.wizard.tabs[this.wizard.activeTab];
+        this.callValidator(tab).then(() => {
+          this.wizard.activeTab = tabName;
+        });
         return;
       }
-      const f = filesToCheck.pop();
-      const formData = new FormData();
-      formData.append("file", f?.file || '');
-
-      axios.post("/admin/registry/check-pem", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
+      let disabled = false;
+      this.wizard.activeTab = tabName;
+      for (const key in this.wizard.tabs) {
+        if (key === tabName) {
+          disabled = true;
+          this.wizard.tabs[key].disabled = false;
+        } else {
+          this.wizard.tabs[key].disabled = disabled;
         }
-      }).then((rsp) => {
-        this.wizardCheckPEMFiles(filesToCheck, resolve, tab);
-      }).catch((error) => {
-        this.wizard.tabs.dns.typeError[f.name] = true;
+      }
+    },
+    wizardEmptyValidation() {
+      return new Promise < void  > ((resolve) => {
+        resolve();
       });
     },
     wizardAdministratorsValidation(tab: any) {
@@ -406,20 +341,8 @@ export default defineComponent({
         e.preventDefault();
         return;
       }
-      this.prepareDNSConfig();
       this.mailServerOpts = JSON.stringify(this.externalSMTPOpts);
       this.registryFormSubmitted = true;
-    },
-    prepareDNSConfig() {
-      const childRefs = this.getChildrenRefs();
-      for (const k in this.wizard.tabs.dns.data) {
-        const fileInput = childRefs[`${k}SSL`];
-        if (this.wizard.tabs.dns.editVisible[k] &&
-          this.wizard.tabs.dns.data[k] === this.wizard.tabs.dns.preloadValues[k] &&
-          fileInput.files.length === 0) {
-          this.wizard.tabs.dns.data[k] = "";
-        }
-      }
     },
     loadAdmins(admins: string) {
       if (!this.adminsLoaded) {

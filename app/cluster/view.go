@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"ddm-admin-console/app/registry"
+	edpcomponent "ddm-admin-console/service/edp_component"
 	"ddm-admin-console/service/gerrit"
 	"encoding/json"
 	"fmt"
@@ -61,6 +62,11 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		return nil, fmt.Errorf("unable to get cluster values, %w", err)
 	}
 
+	categories, err := a.Services.EDPComponent.GetAllCategoryPlatform(userCtx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get edp components categories")
+	}
+
 	adminsStr, err := a.displayAdmins(clusterValues)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get admins")
@@ -81,7 +87,13 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		return nil, errors.Wrap(err, "unable to get cluster gerrit project")
 	}
 
+	hasUpdate, _, _, err := registry.HasUpdate(userCtx, a.Services.Gerrit, cb, registry.MRTargetClusterUpdate)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check for updates")
+	}
+
 	rspParams := gin.H{
+		"hasUpdate":        hasUpdate,
 		"branches":         branches,
 		"codebase":         cb,
 		"jenkinsURL":       jenkinsComponent.Spec.Url,
@@ -93,6 +105,10 @@ func (a *App) view(ctx *gin.Context) (router.Response, error) {
 		"version":          a.getClusterVersion(clusterProject.Status.Branches, emrs),
 		"mergeRequests":    emrs,
 	}
+
+	rspParams["platformOperationalComponents"] = categories[edpcomponent.PlatformOperationalZone]
+	rspParams["platformAdministrationComponents"] = categories[edpcomponent.PlatformAdministrationZone]
+	rspParams["platformCentralComponents"] = categories[edpcomponent.PlatformCentralZone]
 
 	templateArgs, err := json.Marshal(rspParams)
 	if err != nil {

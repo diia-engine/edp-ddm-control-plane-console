@@ -1,98 +1,10 @@
 {{ define "registry/list.html" }}
     {{template "header" .}}
-    <link rel="stylesheet" type="text/css" href="{{.BasePath}}/static/css/datatables.custom.css" />
 
-    <div class="registry" id="tooltip">
-        <div class="registry-header">
-            <h1>Реєстри</h1>
-            {{if .allowedToCreate}}
-            <a href="{{ .BasePath }}/admin/registry/create" class="registry-add">
-                <img alt="add registry" src="{{ .BasePath }}/static/img/plus.png" />
-                <span>Створити новий</span>
-            </a>
-            {{end}}
-        </div>
-        <div class="registry-description">Перелік реєстрів та їх статусів.</div>
-        <div class="registry-table-wrap">
-            <table id="registry-table" class="registry-table row-border">
-                <thead>
-                    <tr>
-                        <th>Статус</th>
-                        <th>Назва</th>
-                        <th>Версія</th>
-                        <th>Опис</th>
-                        <th>Час створення</th>
-                        <th></th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range $key, $registry := .registries}}
-                    <tr>
-                        <td>
-                            {{if $registry.Codebase.ForegroundDeletion}}
-                                <img title="Видалення"
-                                     src="{{ $.BasePath }}/static/img/action-delete.png" alt="delete registry" />
-                            {{else}}
-                                <img title="{{ i18n $registry.Codebase.LocaleStatus }}"
-                                     src="{{ $.BasePath }}/static/img/status-{{$registry.Codebase.StrStatus}}.png"
-                                     alt="{{ i18n $registry.Codebase.LocaleStatus}}" />
-                            {{end}}
+    <div id="template-args" style="display: none;" data-args="{{ .templateArgs }}"></div>
+    <div id="app"></div>
 
-                        </td>
-                        <td>
-                            {{if $registry.Available }}
-                                <a href="{{ $.BasePath }}/admin/registry/view/{{$registry.Codebase.Name}}{{if $registry.Codebase.Version}}?version={{ majorVersion $registry.Codebase.Version.Core.Original }}{{end}}">
-                                    {{$registry.Codebase.Name}}
-                                </a>
-                            {{else}}
-                                {{$registry.Codebase.Name}}
-                            {{end}}
-                        </td>
-                        <td>
-                            {{$registry.Codebase.Spec.DefaultBranch}}
-                        </td>
-                        <td>
-                            {{$registry.Codebase.Description}}
-                        </td>
-                        <td>
-                            {{ $registry.Codebase.CreatedAtTimezone $.timezone }}
-                        </td>
-                        <td>
-                            {{if $registry.CanUpdate}}
-                            {{if $registry.Available}}
-                            <a href="{{ $.BasePath }}/admin/registry/edit/{{$registry.Codebase.Name}}{{if $registry.Codebase.Version}}?version={{ majorVersion $registry.Codebase.Version.Core.Original }}{{end}}">
-                                <img title="Редагувати" src="{{ $.BasePath }}/static/img/action-edit.png" alt="edit registry" />
-                            </a>
-                            {{end}}
-                            {{end}}
-                        </td>
-                        <td>
-                            {{if $registry.CanDelete}}
-                            {{if $registry.Codebase.CanBeDeleted}}
-                            {{if $registry.Available}}
-                            <a href="#" class="delete-registry"
-                               data-name="{{$registry.Codebase.Name}}">
-                                <img title="Видалити" src="{{ $.BasePath }}/static/img/action-delete.png" alt="delete registry" />
-                            </a>
-                            {{end}}
-                            {{end}}
-                            {{end}}
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {{template "delete-block" .}}
     {{template  "scripts" .}}
-    <script type="text/javascript" src="{{.BasePath}}/static/js/moment.min.js"></script>
-    <script type="text/javascript" src="{{.BasePath}}/static/js/jquery.dataTables-1.12.1.min.js"></script>
-    <script type="text/javascript" src="{{.BasePath}}/static/js/registry.js"></script>
-    <script type="text/javascript" src="{{ .BasePath }}/static/js/jquery-ui.min.js"></script>
     {{template "footer" .}}
-        
 {{ end }}
 

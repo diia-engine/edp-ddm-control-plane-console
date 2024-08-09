@@ -6,6 +6,7 @@ import UpdateRegistry from '@/views/registry/UpdateView.vue';
 import RegistryView from '@/views/registry/RegistryView.vue';
 import EditCluster from '@/views/cluster/EditView.vue';
 import ManagementView from '@/views/cluster/ManagementView.vue';
+import RegistryList from '@/views/registry/RegistryList.vue';
 const ChangeView = () => import('@/views/ChangeView.vue');
 
 const router = createRouter({
@@ -45,6 +46,11 @@ const router = createRouter({
       path: '/admin/registry/create',
       name: 'registry-create',
       component: RegistryCreateView
+    },
+    {
+      path: '/admin/registry/overview',
+      name: 'registry-overview',
+      component: RegistryList
     },
     {
       path: '/admin/change/:change',

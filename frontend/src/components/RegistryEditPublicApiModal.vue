@@ -120,6 +120,7 @@ const submit = handleSubmit(() => {
           'Content-Type': 'multipart/form-data'
       }
     }).then(() => {
+      window.localStorage.setItem("mr-scroll", "true");
       window.location.assign(`/admin/registry/view/${registry.value}`);
     }).catch(({ response }: AxiosError<any>) => {
       setErrors(response?.data.errors);

@@ -223,7 +223,7 @@ function onSubmit() {
     </div>
 
     <div class="rc-form-group">
-      <button type="submit" name="submit">Підтвердити</button>
+      <button type="submit" name="submit" onclick="window.localStorage.setItem('mr-scroll', 'true');">Підтвердити</button>
     </div>
   </form>
 </template>

@@ -517,7 +517,7 @@ export default {
         createCIDR() {
             let cidrVal = String(this.editCidr).toLowerCase();
             if (cidrVal !== '0.0.0.0/0' && !cidrVal.
-                match(/^([01]?\d\d?|2[0-4]\d|25[0-5])(?:\.(?:[01]?\d\d?|2[0-4]\d|25[0-5])){3}(?:\/[0-2]\d|\/3[0-2])?$/)) {
+                match(/^([01]?\d\d?|2[0-4]\d|25[0-5])(?:\.(?:[01]?\d\d?|2[0-4]\d|25[0-5])){3}\/(?:[0-9]|[0-2]\d|3[0-2])$/)) {
                 this.cidrFormatError = true;
                 return;
             }
@@ -815,6 +815,10 @@ export default {
                 this.adminCIDRValue.value = JSON.stringify(this.adminCIDR);
             }
         }
+
+        if (window.location.hash === '#upgrade') {
+          this.clusterSettings.activeTab = 'platformUpdate';
+        }
     },
     computed: {
         customHosts() {
@@ -830,7 +834,7 @@ export default {
         <input type="hidden" ref="adminsDataRef" :value="adminsData" />
         <input type="hidden" id="preload-cidr" ref="cidrEditConfig" :value="cidrConfig" />
         <div class="registry-header">
-            <a href="/admin/cluster/management" class="registry-add">
+            <a href="/admin/cluster/management" onclick="window.history.back(); return false;" class="registry-add">
                 <img alt="add registry" src="@/assets/img/action-back.png" />
                 <span>НАЗАД</span>
             </a>

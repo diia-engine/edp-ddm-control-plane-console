@@ -65,7 +65,7 @@ export default defineComponent({
       <div class="rc-form-group"
             :class="{'error': pageRoot.$data.externalSMTPOpts.password == '' && pageRoot.$data.wizard.tabs.mail.beginValidation}">
           <label for="smtp-password">Пароль</label>
-          <input type="password" id="smtp-password" v-model="pageRoot.$data.externalSMTPOpts.password" />
+          <input placeholder="******" type="password" id="smtp-password" v-model="pageRoot.$data.externalSMTPOpts.password" />
           <span v-if="pageRoot.$data.externalSMTPOpts.password == '' && pageRoot.$data.wizard.tabs.mail.beginValidation">Обов’язкове поле</span>
       </div>
   </div>

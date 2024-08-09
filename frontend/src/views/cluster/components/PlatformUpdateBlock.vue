@@ -40,7 +40,7 @@ export default {
             </span>
         </div>
         <div class="rc-form-group">
-            <button type="submit" name="submit" :disabled="disabled">Підтвердити</button>
+            <button type="submit" name="submit" onclick="window.localStorage.setItem('mr-scroll', 'true');" :disabled="disabled">Підтвердити</button>
         </div>
     </form>
 </template>

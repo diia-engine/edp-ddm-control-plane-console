@@ -16,6 +16,7 @@ export default {
 
         formData.append("reg-name", this.publicApiName || '');
         axios.post(`/admin/registry/public-api-delete/${this.registry}`, formData).then(() => {
+          window.localStorage.setItem("mr-scroll", "true");
           window.location.assign(`/admin/registry/view/${this.registry}`);
         });
       },

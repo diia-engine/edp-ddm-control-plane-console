@@ -65,7 +65,7 @@ export default defineComponent({
       </div>
 
         <div class="rc-form-group">
-            <button type="submit" name="submit" :disabled="disabled">Підтвердити</button>
+            <button type="submit" name="submit" :disabled="disabled" onclick="window.localStorage.setItem('mr-scroll', 'true');">Підтвердити</button>
         </div>
     </form>
 </template>

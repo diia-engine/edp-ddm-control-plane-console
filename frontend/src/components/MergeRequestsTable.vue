@@ -29,6 +29,9 @@ export default {
     onViewClick(url: string) {
       this.$emit('onViewClick', url);
     },
+    mrRefreshClick() {
+      window.localStorage.setItem("mr-scroll", "true");
+    },
   },
   mounted() {
     $("#mr-table").DataTable({
@@ -86,7 +89,7 @@ export default {
               <td>{{ inPlatform ? getMergeRequestPlatformAction($al) : getMergeRequestAction($al) }}</td>
               <td class="mr-status">
                 {{ getMergeRequestStatus($al) }}
-                <a title="Оновити" class="mr-refresh" href="" v-if="mrIsInProgress($al)"><i class="fa-solid fa-arrow-rotate-right"></i></a>
+                <a title="Оновити" class="mr-refresh" href="" @click="mrRefreshClick" v-if="mrIsInProgress($al)"><i class="fa-solid fa-arrow-rotate-right"></i></a>
               </td>
               <td class="mr-actions">
                   <i v-if="!inPlatform && !mrAvailable && $al.status.value === 'NEW'" title="Реєстр в процесі оновлення" class="fa-solid fa-lock"></i>

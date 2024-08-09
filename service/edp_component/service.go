@@ -23,10 +23,13 @@ const (
 	RegistryOperationalZone    = "registry-operational-zone"
 	RegistryAdministrationZone = "registry-administration-zone"
 	PlatformOperationalZone    = "platform-operational-zone"
+	CentralZone                = "central-zone"
 	PlatformAdministrationZone = "platform-administration-zone"
+	PlatformCentralZone        = "platform-central-zone"
 	CPCDisplayName             = "control-plane-console/display-name"
 	CPCDescription             = "control-plane-console/description"
 	CPCDisplayVisible          = "control-plane-console/display-visible"
+	CPCPlatformOnly            = "control-plane-console/platform-only"
 	CPCDisplayOrder            = "control-plane-console/display-order"
 	CPCOperationalZone         = "control-plane-console/operational-zone"
 )
@@ -55,12 +58,13 @@ func Make(s *runtime.Scheme, k8sConfig *rest.Config, namespace string) (*Service
 
 func PrepareComponentItem(component EDPComponent) EDPComponentItem {
 	return EDPComponentItem{
-		Type:        component.Spec.Type,
-		Url:         component.Spec.Url,
-		Icon:        component.Spec.Icon,
-		Title:       component.ObjectMeta.Annotations[CPCDisplayName],
-		Description: component.ObjectMeta.Annotations[CPCDescription],
-		Visible:     component.ObjectMeta.Annotations[CPCDisplayVisible],
+		Type:         component.Spec.Type,
+		Url:          component.Spec.Url,
+		Icon:         component.Spec.Icon,
+		Title:        component.ObjectMeta.Annotations[CPCDisplayName],
+		Description:  component.ObjectMeta.Annotations[CPCDescription],
+		Visible:      component.ObjectMeta.Annotations[CPCDisplayVisible],
+		PlatformOnly: component.ObjectMeta.Annotations[CPCPlatformOnly] != "",
 	}
 }
 
@@ -74,6 +78,26 @@ func (s *Service) SortComponents(components []EDPComponent) []EDPComponent {
 func (s *Service) GetAll(ctx context.Context, onlyVisible bool) ([]EDPComponent, error) {
 	var lst EDPComponentList
 	if err := s.k8sClient.List(ctx, &lst, &client.ListOptions{Namespace: s.namespace}); err != nil {
+		return nil, errors.Wrap(err, "unable to list edp component")
+	}
+
+	if !onlyVisible {
+		return lst.Items, nil
+	}
+
+	items := make([]EDPComponent, 0, len(lst.Items))
+	for _, v := range lst.Items {
+		if v.Spec.Visible {
+			items = append(items, v)
+		}
+	}
+
+	return items, nil
+}
+
+func (s *Service) GetFromAllNamespaces(ctx context.Context, onlyVisible bool) ([]EDPComponent, error) {
+	var lst EDPComponentList
+	if err := s.k8sClient.List(ctx, &lst, &client.ListOptions{}); err != nil {
 		return nil, errors.Wrap(err, "unable to list edp component")
 	}
 
@@ -109,6 +133,39 @@ func (s *Service) GetAllNamespace(ctx context.Context, ns string, onlyVisible bo
 	}
 
 	return items, nil
+}
+
+func (s *Service) GetAllCategoryPlatform(ctx context.Context) (map[string][]EDPComponentItem, error) {
+	categories := make(map[string][]EDPComponentItem)
+	platformComponents, err := s.GetAll(ctx, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to list platform edp component")
+	}
+
+	userManagementComponents, err := s.GetAllNamespace(ctx, "user-management", true)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to list user management ccomponents")
+	}
+
+	platformComponents = append(platformComponents, userManagementComponents...)
+
+	for _, val := range s.SortComponents(platformComponents) {
+		var objectMetaAnnotations = val.ObjectMeta.Annotations
+		if objectMetaAnnotations[CPCOperationalZone] == PlatformOperationalZone {
+			categories[PlatformOperationalZone] = append(categories[PlatformOperationalZone], PrepareComponentItem(val))
+		}
+
+		if objectMetaAnnotations[CPCOperationalZone] == PlatformAdministrationZone {
+			categories[PlatformAdministrationZone] = append(categories[PlatformAdministrationZone], PrepareComponentItem(val))
+		}
+
+		if objectMetaAnnotations[CPCOperationalZone] == CentralZone {
+			categories[PlatformCentralZone] = append(categories[PlatformCentralZone], PrepareComponentItem(val))
+		}
+	}
+
+	return categories, nil
+
 }
 
 func (s *Service) GetAllCategory(ctx context.Context, ns string) (map[string][]EDPComponentItem, error) {

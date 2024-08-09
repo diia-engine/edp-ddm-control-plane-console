@@ -40,6 +40,13 @@ func InitServices(cnf *config.Settings) *config.Services {
 		},
 		FullName: "mock",
 	}, nil)
+	openShift.On("GetInfrastructureCluster", mock.Anything).Return(&openshift.ClusterInfrastructure{
+		Status: openshift.ClusterStatus{
+			PlatformStatus: openshift.Status{
+				Type: "AWS",
+			},
+		},
+	})
 
 	pms := mockPermissions.ServiceInterface{}
 	pms.On("DeleteTokenContext", mock.Anything).Return(nil)
@@ -226,12 +233,12 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 				},
 				StorageSize: "10Gi",
 			},
-			Notifications: registry.Notifications{Email: map[string]interface{}{
-				"type": registry.SMTPTypePlatform,
+			Notifications: registry.Notifications{Email: registry.ExternalEmailSettings{
+				Type: registry.SMTPTypePlatform,
 			}},
 		},
 		Portals: registry.Portals{
-			Officer: registry.Portal{
+			Officer: registry.OfficerPortalSettings{
 				CustomDNS: registry.CustomDNS{Enabled: true, Host: "officer.com"},
 			},
 		},
@@ -292,10 +299,10 @@ func initMockGerrit(cnf *config.Settings) *mockGerrit.ServiceInterface {
 				CertificatePath: "/foo2/bar/com",
 			},
 		}},
-        Velero: cluster.Velero{Backup: cluster.BackupSchedule{Nexus: cluster.ScheduleItem{
-            Schedule:      "30 10 * * *",
-            ExpiresInDays: 5,
-        }}},
+		Velero: cluster.Velero{Backup: cluster.BackupSchedule{Nexus: cluster.ScheduleItem{
+			Schedule:      "30 10 * * *",
+			ExpiresInDays: 5,
+		}}},
 	}
 	bts, err := yaml.Marshal(mockClusterValues)
 	if err != nil {

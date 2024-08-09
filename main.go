@@ -2,24 +2,6 @@ package main
 
 import (
 	"context"
-	"ddm-admin-console/app/cluster"
-	"ddm-admin-console/app/dashboard"
-	"ddm-admin-console/app/registry"
-	oauth "ddm-admin-console/auth"
-	"ddm-admin-console/config"
-	codebaseController "ddm-admin-console/controller/codebase"
-	mergeRequestController "ddm-admin-console/controller/merge_request"
-	"ddm-admin-console/mocks"
-	"ddm-admin-console/router"
-	"ddm-admin-console/service/codebase"
-	edpComponent "ddm-admin-console/service/edp_component"
-	"ddm-admin-console/service/gerrit"
-	"ddm-admin-console/service/jenkins"
-	"ddm-admin-console/service/k8s"
-	"ddm-admin-console/service/keycloak"
-	"ddm-admin-console/service/openshift"
-	"ddm-admin-console/service/permissions"
-	"ddm-admin-console/service/vault"
 	"encoding/gob"
 	"flag"
 	"fmt"
@@ -47,6 +29,26 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"ddm-admin-console/app/cluster"
+	"ddm-admin-console/app/dashboard"
+	"ddm-admin-console/app/registry"
+	oauth "ddm-admin-console/auth"
+	"ddm-admin-console/config"
+	codebaseController "ddm-admin-console/controller/codebase"
+	mergeRequestController "ddm-admin-console/controller/merge_request"
+	"ddm-admin-console/mocks"
+	"ddm-admin-console/router"
+	"ddm-admin-console/service/codebase"
+	edpComponent "ddm-admin-console/service/edp_component"
+	"ddm-admin-console/service/gerrit"
+	"ddm-admin-console/service/gitserver"
+	"ddm-admin-console/service/jenkins"
+	"ddm-admin-console/service/k8s"
+	"ddm-admin-console/service/keycloak"
+	"ddm-admin-console/service/openshift"
+	"ddm-admin-console/service/permissions"
+	"ddm-admin-console/service/vault"
 )
 
 var (
@@ -214,6 +216,11 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 		return nil, fmt.Errorf("unable to create gerrit service, %w", err)
 	}
 
+	serviceItems.GitServer, err = gitserver.New(sch, restConf, appConf.Namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gitServer service: %w", err)
+	}
+
 	serviceItems.Keycloak, err = keycloak.Make(sch, restConf, appConf.UsersNamespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create keycloak service, %w", err)
@@ -241,8 +248,13 @@ func initServices(sch *runtime.Scheme, restConf *rest.Config, appConf *config.Se
 	return &serviceItems, nil
 }
 
-func initControllers(sch *runtime.Scheme, namespace string, logger *zap.Logger, cnf *config.Settings,
-	services *config.Services) error {
+func initControllers(
+	sch *runtime.Scheme,
+	namespace string,
+	logger *zap.Logger,
+	cnf *config.Settings,
+	services *config.Services,
+) error {
 	if cnf.Mock != "" {
 		return nil
 	}
@@ -265,8 +277,8 @@ func initControllers(sch *runtime.Scheme, namespace string, logger *zap.Logger, 
 		return fmt.Errorf("unable to init codebase controller, %w", err)
 	}
 
-	if err := mergeRequestController.Make(mgr, l, cnf, services.Gerrit, services.Codebase, services.Jenkins,
-		services.Cache); err != nil {
+	if err := mergeRequestController.Make(mgr, l, cnf, services.Gerrit,
+		services.Codebase, services.GitServer, services.Jenkins, services.Cache); err != nil {
 		return fmt.Errorf("unable to init merge request controller, %w", err)
 	}
 

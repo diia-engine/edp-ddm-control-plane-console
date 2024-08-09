@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import Typography from '@/components/common/Typography.vue';
 import FileField from '@/components/common/FileField.vue';
+import isEqual from 'lodash/isEqual';
+import cloneDeep from 'lodash/cloneDeep';
 </script>
 
 <script lang="ts">
@@ -35,24 +37,25 @@ export default defineComponent({
     },
     hardwareDataChanged() {
       this.renderINITemplate();
-      this.changed = true;
     },
     onKey6FileSelected(){
       this.key6FileSelected = true;
       this.key6Error = '';
-      this.changed = true;
     },
     onKey6FileReset(){
       this.key6FileSelected = false;
     },
     validator() {
       return new Promise<void>((resolve, reject) => {
-        if (this.registryAction === "edit" && !this.changed) {
+        if (this.registryAction === "edit" && !this.key6FileSelected && this.isDataChanged) {
+          this.changed = false;
+          this.beginValidation = false;
+          this.key6Error = '';
           resolve();
           return true;
         }
         this.renderINITemplate();
-        this.validated = false;
+        this.changed = true;
         this.beginValidation = true;
         this.key6Error = '';
         let validationFailed = false;
@@ -88,7 +91,6 @@ export default defineComponent({
         }
 
         this.beginValidation = false;
-        this.validated = true;
         resolve();
         return true;
       });
@@ -96,7 +98,6 @@ export default defineComponent({
   },
   data() {
     return {
-      validated: false,
       changed: false,
       allowedKeys: [{ issuer: "", serial: "", removable: false }],
       beginValidation: false,
@@ -114,12 +115,34 @@ export default defineComponent({
         remoteKeyHost: "",
         remoteKeyMask: "",
         iniConfig: "",
-      }, fileData: {
+      },
+      fileData: {
         signKeyIssuer: "",
         signKeyPWD: "",
-      }
+      },
+      defaultData: {} as Record<string, unknown>,
     };
   },
+  mounted() {
+    this.defaultData = {
+      hardware: cloneDeep(this.$data.hardwareData),
+      file: cloneDeep(this.$data.fileData),
+      allowedKeys: cloneDeep(this.$data.allowedKeys),
+    };
+  },
+  computed: {
+    isDataChanged(): boolean {
+      let isEqualDeviceData = isEqual(this.defaultData.file, this.$data.fileData);
+      if (this.deviceType === 'hardware') {
+        isEqualDeviceData = isEqual(this.defaultData.hardware, this.$data.hardwareData);
+      }
+
+      return (
+        isEqualDeviceData &&
+        isEqual(this.defaultData.allowedKeys, this.$data.allowedKeys)
+      );
+    },
+  }
 });
 </script>
 
@@ -151,15 +174,13 @@ export default defineComponent({
 </style>
 
 <template>
-  <div class="form-group">
-    <Typography variant="h3">Дані про ключ</Typography>
-  </div>
+  <h2>Дані про ключ</h2>
   <Typography variant="bodyText" class="key-data-page-description">{{ pageDescription }}</Typography>
 
   <input type="checkbox" style="display: none;" v-model="changed" name="key-data-changed" />
   <div class="rc-form-group">
     <label for="key-device-type">Тип носія</label>
-    <select @change="changed = true;" v-model="deviceType" id="key-device-type"
+    <select v-model="deviceType" id="key-device-type"
             name="key-device-type">
       <option value="file">Файловий носій</option>
       <option value="hardware">Апаратний носій</option>
@@ -242,14 +263,14 @@ export default defineComponent({
     <div class="rc-form-group"
          :class="{ 'error': fileData.signKeyIssuer === '' && beginValidation }">
       <label for="sign-key-issuer">АЦСК, що видав ключ</label>
-      <input @change="changed = true;" type="text" id="sign-key-issuer" name="sign-key-issuer"
+      <input type="text" id="sign-key-issuer" name="sign-key-issuer"
              v-model="fileData.signKeyIssuer" />
       <span v-if="fileData.signKeyIssuer === '' && beginValidation">Обов’язкове поле</span>
     </div>
     <div class="rc-form-group"
          :class="{ 'error': fileData.signKeyPWD === '' && beginValidation }">
       <label for="sign-key-pwd">Пароль до файлового ключа</label>
-      <input @change="changed = true;" type="password" id="sign-key-pwd" name="sign-key-pwd"
+      <input type="password" id="sign-key-pwd" name="sign-key-pwd"
              v-model="fileData.signKeyPWD" />
       <span v-if="fileData.signKeyPWD === '' && beginValidation">Обов’язкове поле</span>
     </div>
@@ -263,10 +284,10 @@ export default defineComponent({
     </a>
     <div class="allowed-keys-row" v-for="(ak, index) in allowedKeys" :key="index"
          :class="{ 'error': beginValidation && (ak.serial === '' || ak.issuer === '') }">
-      <input @change="changed = true;" name="allowed-keys-issuer[]" v-model="ak.issuer"
+      <input name="allowed-keys-issuer[]" v-model="ak.issuer"
              class="allowed-keys-input allowed-keys-issuer" aria-label="key issuer" placeholder="Емітент ключа"
              type="text" />
-      <input @change="changed = true;" name="allowed-keys-serial[]"
+      <input name="allowed-keys-serial[]"
              class="allowed-keys-input allowed-keys-serial" v-model="ak.serial" aria-label="key serial"
              placeholder="Серійний номер ключа" type="text" />
       <button v-if="ak.removable" class="allowed-keys-remove-btn" type="button"

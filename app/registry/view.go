@@ -104,6 +104,11 @@ func (a *App) viewRegistryProcessFunctions(mrs []gerrit.GerritMergeRequest) []fu
 func (a *App) viewGetMasterJobStatus(ctx context.Context, reg *codebase.Codebase, _ *Values, viewParams gin.H) error {
 	status, _, err := a.Jenkins.GetJobStatus(ctx, fmt.Sprintf("%s/view/MASTER/job/MASTER-Build-%s", reg.Name, reg.Name))
 	if err != nil {
+		if strings.Contains(err.Error(), "404") {
+			viewParams["mrAvailable"] = true
+			return nil
+		}
+
 		return fmt.Errorf("unable to get job status, %w", err)
 	}
 

@@ -26,7 +26,7 @@ export default {
 <template>
     <div class="registry registry-create" id="registry-form">
         <div class="registry-header">
-            <a href="/admin/registry/overview" class="registry-add">
+            <a href="/admin/registry/overview" onclick="window.history.back(); return false;" class="registry-add">
                 <img alt="add registry" src="@/assets/img/action-back.png" />
                 <span>НАЗАД</span>
             </a>

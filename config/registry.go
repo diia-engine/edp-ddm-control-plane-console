@@ -13,7 +13,6 @@ func (cnf *Settings) RegistryConfig() registry.Config {
 		ClusterCodebaseName:             cnf.ClusterCodebaseName,
 		Timezone:                        cnf.Timezone,
 		GerritRegistryHost:              cnf.RegistryRepoHost,
-		GerritRegistryPrefix:            cnf.RegistryRepoPrefix,
 		HardwareINITemplatePath:         cnf.RegistryHardwareKeyINITemplatePath,
 		VaultRegistrySMTPPwdSecretKey:   cnf.VaultRegistrySMTPPwdSecretKey,
 		VaultRegistrySecretPathTemplate: cnf.VaultRegistrySecretPathTemplate,
@@ -28,6 +27,8 @@ func (cnf *Settings) RegistryConfig() registry.Config {
 		WiremockAddr:                    cnf.WiremockAddr,
 		BackupBucketAccessKeyID:         cnf.BackupBucketAccessKeyID,
 		BackupBucketSecretAccessKey:     cnf.BackupBucketSecretAccessKey,
+		RegistryTemplateName:            cnf.RegistryTemplateName,
+		CloudProvider:                   cnf.CloudProvider,
 	}
 }
 
@@ -42,5 +43,6 @@ func (s *Services) RegistryServices() registry.Services {
 		Vault:        s.Vault,
 		Cache:        s.Cache,
 		Perms:        s.PermService,
+		OpenShift:    s.OpenShift,
 	}
 }

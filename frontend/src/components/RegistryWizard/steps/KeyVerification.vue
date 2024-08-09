@@ -85,9 +85,7 @@ export default defineComponent({
 </style>
 
 <template>
-  <div class="form-group">
-    <Typography variant="h3">Дані для перевірки підписів</Typography>
-  </div>
+  <h2>Дані для перевірки підписів</h2>
   <Typography variant="bodyText" class="key-sign-page-description">{{ pageDescription }}</Typography>
 
   <input type="checkbox" style="display: none;" v-model="changed" name="key-verification-changed" />

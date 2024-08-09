@@ -50,7 +50,15 @@ export default defineComponent({
                 formShow: false,
             },
             backdropShow: false,
-            accordion: 'general',
+            accordion: {
+              general: true,
+              trembitaClient: false,
+              externalSystem: false,
+              externalAccess: false,
+              publicAccess: false,
+              configuration: false,
+              mergeRequests: false,
+            },
             mrView: false,
             externalKey: false,
             systemToShowKey: '',
@@ -84,7 +92,8 @@ export default defineComponent({
 
             let statuses = $(".mr-status");
             for (let i = 0; i < statuses.length; i++) {
-                if ($(statuses[i]).html().trim() === "NEW") {
+                const statusHtml = $(statuses[i]).html().trim();
+                if (statusHtml === "NEW" || statusHtml.indexOf('mr-refresh') !== -1) {
                     return true;
                 }
             }
@@ -106,7 +115,7 @@ export default defineComponent({
         showOpenMRForm() {
             this.backdropShow = true;
             this.mergeRequest.formShow = true;
-            this.accordion = 'merge-requests';
+            this.accordion.mergeRequests = true;
             //todo: load data
 
             $("body").css("overflow", "hidden");
@@ -251,6 +260,7 @@ export default defineComponent({
             $("body").css("overflow", "hidden");
         },
         addExternalReg(e: any) {
+            let validationFailure = false;
             let names = $(".ereg-name");
 
             if (this.internalRegistryReg) {
@@ -260,22 +270,31 @@ export default defineComponent({
                     if (($(names[i]) as any).html().trim() === selected) {
                         this.accessGrantError = `Доступ з таким ім'ям "${selected}" вже існує. Для вирішення конфлікту імен перестворіть доступ до зовнішньої системи з іншим ім'ям, а потім надайте доступ реєстру платформи: "${selected}` as unknown as boolean;
                         e.preventDefault();
+                        validationFailure = true;
                     }
                 }
             }
 
-            let inputName = ($("#ex-system") as any).val().trim() as never;
+            if (!this.internalRegistryReg) {
+              let inputName = ($("#ex-system") as any).val().trim() as never;
 
-            if (this.externalRegAvailableRegistriesNames.includes(inputName)) {
+              if (this.externalRegAvailableRegistriesNames.includes(inputName)) {
                 this.accessGrantError = `Доступ з таким ім'ям системи/або платформи "${inputName}" вже існує, оберіть інше ім'я` as unknown as boolean;
                 e.preventDefault();
+                validationFailure = true;
+              }
+
+              for (let i = 0; i < names.length; i++) {
+                if ($(names[i]).html().trim() === inputName) {
+                  this.accessGrantError = `Доступ з таким ім'ям системи/або платформи "${inputName}" вже існує, оберіть інше ім'я` as unknown as boolean;
+                  e.preventDefault();
+                  validationFailure = true;
+                }
+              }
             }
 
-            for (let i = 0; i < names.length; i++) {
-                if ($(names[i]).html().trim() === inputName) {
-                    this.accessGrantError = `Доступ з таким ім'ям системи/або платформи "${inputName}" вже існує, оберіть інше ім'я` as unknown as boolean;
-                    e.preventDefault();
-                }
+            if (!validationFailure) {
+              window.localStorage.setItem("mr-scroll", "true");
             }
         },
         hideExternalReg(e: any) {
@@ -430,6 +449,7 @@ export default defineComponent({
         },
 
         deleteTrembitaClientLink() {
+            window.localStorage.setItem("mr-scroll", "true");
             return `/admin/registry/trembita-client-delete/${this.registryName}?trembita-client=${this.trembitaClient.registryName}`;
         },
         showTrembitaClientForm(registry: string, e: any) {
@@ -585,9 +605,11 @@ export default defineComponent({
                 }
             }
 
-            if (this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
-                this.trembitaClient.data.auth['secret'] === '') {
+            if ((this.trembitaClient.data.auth.type === 'AUTH_TOKEN' &&
+                this.trembitaClient.data.auth['secret'] === '') ||
+                !this.trembitaClient.registryName) {
                 e.preventDefault();
+                return;
             }
 
             if (this.trembitaClient.registryCreation) {
@@ -599,9 +621,12 @@ export default defineComponent({
                         this.trembitaClient.registryNameExists = true;
                     })
                     .catch(function () {
+                        window.localStorage.setItem("mr-scroll", "true");
                         $("#trembita-client-form").submit();
                     });
             }
+
+            window.localStorage.setItem("mr-scroll", "true");
 
         },
         trembitaFormSecretFocus() {
@@ -643,21 +668,15 @@ export default defineComponent({
             this.externalSystem.startValidation = true;
             this.externalSystem.urlValidationFailed = false;
 
-            if (!this.externalSystem.registryName) {
+            if (!this.externalSystem.registryName || !this.externalSystem.data.url) {
                 e.preventDefault();
                 return;
             }
 
             // eslint-disable-next-line no-prototype-builtins
-            if (this.externalSystem.data.url.hasOwnProperty('url') && this.externalSystem.data.url !== '' && !this.isURL(this.externalSystem.data.url)) {
+            if (!this.isURL(this.externalSystem.data.url)) {
                 e.preventDefault();
                 this.externalSystem.urlValidationFailed = true;
-                return;
-            }
-
-            // eslint-disable-next-line no-prototype-builtins
-            if (this.externalSystem.data.url.hasOwnProperty('url') && this.externalSystem.data.url === "") {
-                e.preventDefault();
                 return;
             }
 
@@ -694,8 +713,11 @@ export default defineComponent({
                     })
                     .catch(function () {
                         $("#external-system-form").submit();
+                        window.localStorage.setItem("mr-scroll", "true");
                     });
             }
+
+            window.localStorage.setItem("mr-scroll", "true");
         },
         externalSystemFormAction() {
             if (this.externalSystem.registryNameEditable) {
@@ -718,6 +740,7 @@ export default defineComponent({
 
         },
         deleteExternalSystemLink() {
+            window.localStorage.setItem("mr-scroll", "true");
             return `/admin/registry/external-system-delete/${this.registryName}?external-system=${this.externalSystem.registryName}`;
         },
         changeExternalSystemAuthType() {
@@ -755,6 +778,16 @@ export default defineComponent({
 
         this.externalSystem = this.externalSystemDefaults();
         this.trembitaClient = this.trembitaClientDefaults();
+
+        const scroll = window.localStorage.getItem("mr-scroll");
+        if (scroll) {
+          this.accordion.mergeRequests = true;
+          window.localStorage.removeItem("mr-scroll");
+          this.$nextTick(() => {
+            document.getElementById('merge-requests-body')?.scrollIntoView({
+              behavior: "smooth", block: "end", inline: "nearest" });
+          });
+        }
     },
     components: { MergeRequestsTable, PublicApiBlock },
 });
@@ -763,6 +796,27 @@ export default defineComponent({
 <style scoped>
   .form-checkbox-checkmark {
     margin: 0;
+  }
+
+  .rg-info-block-header:hover {
+    background: #00689B;
+  }
+  .rg-info-block-header {
+    transition: 0.5s;
+  }
+  .link-grant-access a:hover {
+    text-decoration: none;
+  }
+  .link-grant-access a {
+    padding: 8px 10px 8px 10px;
+    border-radius: 5px;
+    display: flex;
+    align-items: baseline;
+    width: 170px;
+    transition: 0.5s;
+  }
+  .link-grant-access a:hover {
+    background: #E6F3FA;
   }
 </style>
 
@@ -789,7 +843,7 @@ export default defineComponent({
         <input type="hidden" :value="registry.metadata.name" ref="registryName" />
         <input type="hidden" :value="externalRegAvailableRegistriesJSON" ref="externalRegistries" />
         <div class="registry-header">
-            <a href="/admin/registry/overview" class="registry-add">
+            <a href="/admin/registry/overview" onclick="window.history.back(); return false;" class="registry-add">
                 <img alt="add registry" src="@/assets/img/action-back.png" />
                 <span>НАЗАД</span>
             </a>
@@ -823,14 +877,14 @@ export default defineComponent({
         </div>
         <div class="box" v-show="isActiveTab('info')">
             <div class="rg-info-block">
-                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'general' }"
-                    @click="accordion = 'general'">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.general }"
+                    @click="accordion.general = !accordion.general">
                     <span>Загальна інформація</span>
-                    <i class="fa-solid"
-                        :class="{ 'fa-caret-up': accordion == 'general', 'fa-caret-down': accordion != 'general' }">
-                    </i>
+
+                    <img v-if="accordion.general" src="@/assets/img/action-toggle.png" alt="toggle block" />
+                    <img v-if="!accordion.general" src="@/assets/img/down.png" alt="toggle block" />
                 </div>
-                <div class="rg-info-block-body" v-show="accordion == 'general'">
+                <div class="rg-info-block-body" v-show="accordion.general">
                     <div class="rg-info-line-horizontal">
                         <span>Назва</span>
                         <span>{{ registry.metadata.name }}</span>
@@ -890,17 +944,18 @@ export default defineComponent({
                 </div>
             </div>
             <div class="rg-info-block">
-                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'trembita-client' }"
-                    @click="accordion = 'trembita-client'">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.trembitaClient }"
+                    @click="accordion.trembitaClient = !accordion.trembitaClient">
                     <span>налаштування взаємодії з реєстрами через Трембіту</span>
-                    <i class="fa-solid"
-                        :class="{ 'fa-caret-up': accordion == 'trembita-client', 'fa-caret-down': accordion != 'trembita-client' }"></i>
+                  <img v-if="accordion.trembitaClient" src="@/assets/img/action-toggle.png" alt="toggle block" />
+                  <img v-if="!accordion.trembitaClient" src="@/assets/img/down.png" alt="toggle block" />
+
                 </div>
-                <div class="rg-info-block-body" v-show="accordion == 'trembita-client'">
+                <div class="rg-info-block-body" v-show="accordion.trembitaClient">
                     <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
-                                <th>Статус</th>
+                                <th>Налаштовано</th>
                                 <th>Назва</th>
                                 <th>Рівень</th>
                                 <th>Протокол інтеграції</th>
@@ -911,7 +966,8 @@ export default defineComponent({
                         <tbody>
                             <tr v-for="($al, $index) in values.trembita.registries" :key="$index">
                                 <td>
-                                    <i :class="`fa-solid fa-${getIconName($al.url)}`"></i>
+                                    <img v-if="$al.url" alt="status ok" src="@/assets/img/status-ok.png" title="Інтеграція налаштована" />
+                                    <img v-if="!$al.url" alt="status minus" src="@/assets/img/minus.png" title="Інтеграція не налаштована" />
                                 </td>
                                 <td>{{ $index }}</td>
                                 <td>{{ getType($al.type) }}</td>
@@ -919,13 +975,14 @@ export default defineComponent({
                                 <td>{{ getAuth($al.auth) }}</td>
                                 <td>
                                     <div class="trembita-actions">
-                                        <a href="#" @click="showTrembitaClientForm(String($index), $event)">
-                                            <i class="fa-solid fa-pen"></i>
+                                        <a title="Редагувати" class="icon-action-pencil" href="#" @click="showTrembitaClientForm(String($index), $event)">
+                                            <img alt="pencil" src="@/assets/img/pencil.png" />
                                         </a>
-                                        <a :title="`${$al.type == 'platform' ? 'Система недоступна для видалення' : ''}`"
+                                        <a class="icon-action-trash" :title="`${$al.type == 'platform' ? 'Система недоступна для видалення' : 'Видалити'}`"
                                             href="#" @click="showDeleteTrembitaClientForm($index, $al.type, $event)">
-                                            <i class="fa-solid fa-trash registry-trash"
-                                                :class="{ inactive: $al.type == 'platform' }"></i>
+                                            <img alt="trash" v-if="$al.type != 'platform'" src="@/assets/img/trash.png" />
+                                            <img alt="trash" v-if="$al.type == 'platform'" src="@/assets/img/trash-inactive.png" />
+
                                         </a>
                                     </div>
 
@@ -1197,17 +1254,18 @@ export default defineComponent({
                 </div>
             </div>
             <div class="rg-info-block">
-                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'external-systems' }"
-                    @click="accordion = 'external-systems'">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.externalSystem }"
+                    @click="accordion.externalSystem = !accordion.externalSystem">
                     <span>налаштування взаємодії з іншими системами</span>
-                    <i class="fa-solid"
-                        :class="{ 'fa-caret-up': accordion == 'external-systems', 'fa-caret-down': accordion != 'external-systems' }"></i>
+                  <img v-if="accordion.externalSystem" src="@/assets/img/action-toggle.png" alt="toggle block" />
+                  <img v-if="!accordion.externalSystem" src="@/assets/img/down.png" alt="toggle block" />
+
                 </div>
-                <div class="rg-info-block-body" v-show="accordion == 'external-systems'">
+                <div class="rg-info-block-body" v-show="accordion.externalSystem">
                     <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
-                                <th>Статус</th>
+                                <th>Налаштовано</th>
                                 <th>Назва</th>
                                 <th>Рівень</th>
                                 <th>Протокол інтеграції</th>
@@ -1218,7 +1276,8 @@ export default defineComponent({
                         <tbody>
                             <tr v-for="($al, $index) in values.externalSystems" :key="$index">
                                 <td>
-                                    <i :class="`fa-solid fa-${getIconName($al.url)}`"></i>
+                                  <img v-if="$al.url" alt="status ok" src="@/assets/img/status-ok.png" title="Інтеграція налаштована" />
+                                  <img v-if="!$al.url" alt="status minus" src="@/assets/img/minus.png" title="Інтеграція не налаштована" />
                                 </td>
                                 <td>{{ $index }}</td>
                                 <td>{{ getType($al.type) }}</td>
@@ -1226,14 +1285,14 @@ export default defineComponent({
                                 <td>{{ getAuth($al.auth) }}</td>
                                 <td>
                                     <div class="trembita-actions">
-                                        <a href="#" @click="showExternalSystemForm(String($index), $event)">
-                                            <i class="fa-solid fa-pen"></i>
+                                        <a href="#" title="Редагувати" @click="showExternalSystemForm(String($index), $event)">
+                                          <img alt="pencil" src="@/assets/img/pencil.png" />
                                         </a>
-                                        <a :title="`${$al.type == 'platform' ? 'Система недоступна для видалення' : ''}`"
+                                        <a :title="`${$al.type == 'platform' ? 'Система недоступна для видалення' : 'Видалити'}`"
                                             href="#"
                                             @click="showDeleteExternalSystemForm(String($index), String($al.type), $event)">
-                                            <i class="fa-solid fa-trash registry-trash"
-                                                :class="{ inactive: $al.type == 'platform' }"></i>
+                                            <img alt="trash" v-if="$al.type != 'platform'" src="@/assets/img/trash.png" />
+                                            <img alt="trash" v-if="$al.type == 'platform'" src="@/assets/img/trash-inactive.png" />
                                         </a>
                                     </div>
                                 </td>
@@ -1242,7 +1301,7 @@ export default defineComponent({
                         </tbody>
                     </table>
                     <div class="link-grant-access">
-                        <a class="" href="#" @click="showExternalSystemForm('', $event)">
+                        <a style="width:270px;" class="" href="#" @click="showExternalSystemForm('', $event)">
                             <img alt="Додати зовнішню систему" src="@/assets/img/plus.png" />
                             <span>Додати зовнішню систему</span>
                         </a>
@@ -1432,17 +1491,18 @@ export default defineComponent({
             </div>
 
             <div class="rg-info-block">
-                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'external-access' }"
-                    @click="accordion = 'external-access'">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.externalAccess }"
+                    @click="accordion.externalAccess = !accordion.externalAccess">
                     <span>Доступ для реєстрів платформи та зовнішніх систем</span>
-                    <i class="fa-solid"
-                        :class="{ 'fa-caret-up': accordion == 'external-access', 'fa-caret-down': accordion != 'external-access' }"></i>
+                  <img v-if="accordion.externalAccess" src="@/assets/img/action-toggle.png" alt="toggle block" />
+                  <img v-if="!accordion.externalAccess" src="@/assets/img/down.png" alt="toggle block" />
+
                 </div>
-                <div class="rg-info-block-body" v-show="accordion == 'external-access'">
+                <div class="rg-info-block-body" v-show="accordion.externalAccess">
                     <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
-                                <th>Статус</th>
+                                <th>Налаштовано</th>
                                 <th>Назва</th>
                                 <th>Тип системи</th>
                                 <th></th>
@@ -1509,25 +1569,27 @@ export default defineComponent({
             </form>
 
             <div class="rg-info-block">
-                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'public-access' }"
-                    @click="accordion = 'public-access'">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.publicAccess }"
+                    @click="accordion.publicAccess = !accordion.publicAccess">
                     <span>Публічний доступ</span>
-                    <i class="fa-solid"
-                        :class="{ 'fa-caret-up': accordion == 'public-access', 'fa-caret-down': accordion != 'public-access' }"></i>
+                  <img v-if="accordion.publicAccess" src="@/assets/img/action-toggle.png" alt="toggle block" />
+                  <img v-if="!accordion.publicAccess" src="@/assets/img/down.png" alt="toggle block" />
+
                 </div>
-                <div v-show="accordion == 'public-access'">
+                <div v-show="accordion.publicAccess">
                     <PublicApiBlock :publicApi="publicApi" :registry="registry.metadata.name" :checkOpenedMR="checkOpenedMR"/>
                 </div>
             </div>
 
             <div class="rg-info-block" v-if="branches && branches.length">
-                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'configuration' }"
-                    @click="accordion = 'configuration'">
+                <div class="rg-info-block-header" :class="{ 'border-bottom': !accordion.configuration }"
+                    @click="accordion.configuration = !accordion.configuration">
                     <span>Конфігурація</span>
-                    <i class="fa-solid"
-                        :class="{ 'fa-caret-up': accordion == 'configuration', 'fa-caret-down': accordion != 'configuration' }"></i>
+
+                  <img v-if="accordion.configuration" src="@/assets/img/action-toggle.png" alt="toggle block" />
+                  <img v-if="!accordion.configuration" src="@/assets/img/down.png" alt="toggle block" />
                 </div>
-                <div class="rg-info-block-body" v-show="accordion == 'configuration'">
+                <div class="rg-info-block-body" v-show="accordion.configuration">
                     <table class="rg-info-table rg-info-table-config">
                         <thead>
                             <tr>
@@ -1571,14 +1633,14 @@ export default defineComponent({
                 </div>
             </div>
             <div class="rg-info-block">
-                <div class="rg-info-block-header" :class="{ 'border-bottom': accordion != 'merge-requests' }"
-                    @click="accordion = 'merge-requests'">
+                <div id="merge-requests-header" class="rg-info-block-header" :class="{ 'border-bottom': !accordion.mergeRequests }"
+                    @click="accordion.mergeRequests = !accordion.mergeRequests">
                     <span>Запити на оновлення</span>
-                    <i class="fa-solid"
-                        :class="{ 'fa-caret-up': accordion == 'merge-requests', 'fa-caret-down': accordion != 'merge-requests' }">
-                    </i>
+                  <img v-if="accordion.mergeRequests" src="@/assets/img/action-toggle.png" alt="toggle block" />
+                  <img v-if="!accordion.mergeRequests" src="@/assets/img/down.png" alt="toggle block" />
+
                 </div>
-                <div class="rg-info-block-body mr-block-table" v-show="accordion == 'merge-requests'">
+                <div id="merge-requests-body" class="rg-info-block-body mr-block-table" v-show="accordion.mergeRequests">
                     <template v-if="mergeRequests && mergeRequests.length">
                         <MergeRequestsTable :merge-requests="mergeRequests" @onViewClick="showMrView" :mr-available="mrAvailable"></MergeRequestsTable>
                     </template>
@@ -1598,17 +1660,20 @@ export default defineComponent({
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
-                            <div class="list-item" v-for="$ec in registryAdministrationComponents" :key="$ec.Url">
-                                <img :src="`data:image/svg+xml;base64,${$ec.Icon}`" :alt="`${$ec.Type} logo`"
-                                    class="item-image" />
-                                <div class="item-content">
-                                    <a target="_blank" :href="$ec.Url">
-                                        {{ $ec.Title }}
-                                        <img src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
-                                    </a>
-                                    <div class="description">{{ $ec.Description }}</div>
-                                </div>
+                          <template v-for="$ec in registryAdministrationComponents" :key="$ec.Url">
+                            <div class="list-item" v-if="!$ec.PlatformOnly">
+                              <img :src="`data:image/svg+xml;base64,${$ec.Icon}`" :alt="`${$ec.Type} logo`"
+                                  class="item-image" />
+                              <div class="item-content">
+                                  <a target="_blank" :href="$ec.Url" :class="{ disabled: $ec.Visible == 'false' }">
+                                      {{ $ec.Title }}
+                                      <span v-if="$ec.Visible == 'false'">(вимкнено)</span>
+                                      <img v-else src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
+                                  </a>
+                                  <div class="description">{{ $ec.Description }}</div>
+                              </div>
                             </div>
+                          </template>
                         </div>
                     </div>
                 </div>
@@ -1620,18 +1685,20 @@ export default defineComponent({
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
-                            <div class="list-item" v-for="$ec in registryOperationalComponents" :key="$ec.Url">
-                                <img :src="`data:image/svg+xml;base64,${$ec.Icon}`" :alt="`${$ec.Type} logo`"
-                                    class="item-image" />
-                                <div class="item-content">
-                                    <a target="_blank" :href="$ec.Url" :class="{ disabled: $ec.Visible == 'false' }">
-                                        {{ $ec.Title }}
-                                        <span v-if="$ec.Visible == 'false'">(вимкнено)</span>
-                                        <img v-else src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
-                                    </a>
-                                    <div class="description">{{ $ec.Description }}</div>
-                                </div>
+                          <template v-for="$ec in registryOperationalComponents" :key="$ec.Url">
+                            <div class="list-item" v-if="!$ec.PlatformOnly">
+                              <img :src="`data:image/svg+xml;base64,${$ec.Icon}`" :alt="`${$ec.Type} logo`"
+                                  class="item-image" />
+                              <div class="item-content">
+                                <a target="_blank" :href="$ec.Url" :class="{ disabled: $ec.Visible == 'false' }">
+                                    {{ $ec.Title }}
+                                    <span v-if="$ec.Visible == 'false'">(вимкнено)</span>
+                                    <img v-else src="@/assets/img/action-link.png" :alt="`${$ec.Type} link`">
+                                </a>
+                                <div class="description">{{ $ec.Description }}</div>
+                              </div>
                             </div>
+                          </template>
                         </div>
                     </div>
                 </div>
@@ -1644,7 +1711,8 @@ export default defineComponent({
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
-                            <div class="list-item" v-for="$ec in platformAdministrationComponents" :key="$ec.Url">
+                          <template v-for="$ec in platformAdministrationComponents" :key="$ec.Url">
+                            <div class="list-item" v-if="!$ec.PlatformOnly">
                                 <img :src="`data:image/svg+xml;base64,${$ec.Icon}`" :alt="`${$ec.Type} logo`"
                                     class="item-image" />
                                 <div class="item-content">
@@ -1655,6 +1723,7 @@ export default defineComponent({
                                     <div class="description">{{ $ec.Description }}</div>
                                 </div>
                             </div>
+                          </template>
                         </div>
                     </div>
                 </div>
@@ -1666,7 +1735,8 @@ export default defineComponent({
                     </div>
                     <div class="rg-info-block-body mr-block-table">
                         <div class="dashboard-panel registry-dashboard-panel">
-                            <div class="list-item" v-for="$ec in platformOperationalComponents" :key="$ec.Url">
+                          <template v-for="$ec in platformOperationalComponents" :key="$ec.Url">
+                            <div class="list-item" v-if="!$ec.PlatformOnly">
                                 <img :src="`data:image/svg+xml;base64,${$ec.Icon}`" :alt="`${$ec.Type} logo`"
                                     class="item-image" />
                                 <div class="item-content">
@@ -1677,6 +1747,7 @@ export default defineComponent({
                                     <div class="description">{{ $ec.Description }}</div>
                                 </div>
                             </div>
+                          </template>
                         </div>
                     </div>
                 </div>

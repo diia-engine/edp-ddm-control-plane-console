@@ -33,6 +33,10 @@ export interface RegistryTemplateVariables {
   jenkinsURL: string;
   mrAvailable: string;
   registryVersion: string;
+  allowedToCreate: boolean;
+  registries: any;
+  page: string;
+  gerritBranches: string[];
 }
 
 export interface RegistryAdmin {
@@ -49,7 +53,14 @@ export interface PortalSettings {
     copyFromAuthWidget: boolean,
     url: string,
     height: number,
+  },
+  customDns?: {
+    enabled: boolean,
+    host: string
   }
+}
+export interface OfficerPortalSettings extends PortalSettings {
+  individualAccessEnabled: boolean,
 }
 
 export enum CitizenAuthType {
@@ -92,7 +103,23 @@ export interface RegistryWizardTemplateVariables {
       maxTotalFileSize: string
     }
     externalSystems: any
-    global: any
+    global: {
+      registryBackup: {
+        enabled: boolean;
+        schedule: string;
+        expiresInDays: string;
+        obc: {
+          cronExpression: string;
+          backupBucket: string;
+          endpoint: string;
+        }
+      }
+      computeResources: ComputeResources,
+      deploymentMode: string,
+      registry: any,
+      excludePortals: string[],
+      geoServerEnabled: boolean,
+    }
     keycloak: {
       authFlows: {
         officerAuthFlow: {
@@ -105,6 +132,7 @@ export interface RegistryWizardTemplateVariables {
         idGovUa: {
           clientId: string
           url: string
+          secretKey: string
         }
       }
       realms: {
@@ -116,6 +144,7 @@ export interface RegistryWizardTemplateVariables {
     }
     portals: {
       citizen: PortalSettings
+      officer: OfficerPortalSettings,
     }
     signWidget: {
       url: string
@@ -124,6 +153,11 @@ export interface RegistryWizardTemplateVariables {
   }
   smtpConfig: string
   updateBranches: any[]
+  gerritBranches: string[]
+  registryTemplateName: string
+  platformStatusType: PlatformStatusType
+  isPlatformAdmin: boolean
+  defaultRegistryValues: any
 }
 
 export interface PublicApiLimits {
@@ -135,7 +169,91 @@ export interface PublicApiLimits {
   year?: string,
 }
 
+export enum PlatformStatusType {
+ AWS = 'AWS',
+ VSphere = 'VSphere'
+}
+
+export type ComputeResources = {
+  instanceCount: number;
+  awsInstanceType: string;
+  awsSpotInstance: boolean;
+  awsSpotInstanceMaxPrice: number;
+  awsInstanceVolumeType: string;
+  instanceVolumeSize: number;
+  vSphereInstanceCPUCount: number;
+  vSphereInstanceCoresPerCPUCount: number;
+  vSphereInstanceRAMSize: number;
+}
 export enum OfficerAuthType {
   widget = 'dso-officer-auth-flow',
   registryIdGovUa = 'id-gov-ua-officer-redirector',
+}
+
+export interface RegistryResource {
+  name: REGISTRY_COMPONENTS;
+  config: {
+    istio: {
+      sidecar: {
+        enabled: boolean;
+        resources: {
+          requests: {
+            cpu: string;
+            memory: string;
+          };
+          limits: {
+            cpu: string;
+            memory: string;
+          };
+        };
+      };
+    };
+    container: {
+      resources: {
+        requests: {
+          cpu: string;
+          memory: string;
+        };
+        limits: {
+          cpu: string;
+          memory: string;
+        };
+      };
+      envVars: Array<{
+        name: string;
+        value: string;
+      }>;
+    };
+    hpa?: {
+      enabled: boolean;
+      maxReplicas: number;
+      minReplicas: number;
+    };
+    datasource?: {
+      maxPoolSize: number;
+    };
+    replicas?: number;
+    enabled?: boolean;
+  };
+}
+
+export enum REGISTRY_COMPONENTS {
+  bpms = 'bpms',
+  digitalDocumentService = 'digitalDocumentService',
+  digitalSignatureOps = 'digitalSignatureOps',
+  geoServer = 'geoServer',
+  kafkaApi = 'kafkaApi',
+  kong = 'kong',
+  redis = 'redis',
+  restApi = 'restApi',
+  sentinel = 'sentinel',
+  soapApi = 'soapApi',
+  userProcessManagement = 'userProcessManagement',
+  userTaskManagement = 'userTaskManagement',
+}
+
+export enum PORTALS {
+  citizen = 'citizen', 
+  officer = 'officer', 
+  admin   = 'admin',
 }

@@ -16,6 +16,11 @@ spec:
             version:
               exact: {{ $it.registryVersion }}
         - uri:
+            regex: '\/[^/]+\/registry\/[^/]+'
+          queryParams:
+            version:
+              exact: {{ $it.registryVersion }}
+        - uri:
             exact: '/assets/index.css'
           queryParams:
             version:

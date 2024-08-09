@@ -1,8 +1,8 @@
 <script setup lang="ts">
 const emit = defineEmits(['onClick']);
 
-const onClick = () => {
-  emit('onClick');
+const onClick = (e: Event) => {
+  emit('onClick', e);
 };
 </script>
 

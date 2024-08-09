@@ -80,25 +80,33 @@ func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, _c *
 	return nil
 }
 
-func ProcessRegistryVersion(ctx context.Context, versionFilter *registry.VersionFilter, cb *codebaseService.Codebase,
-	gr gerritService.ServiceInterface) (bool, error) {
+func ProcessRegistryVersion(
+	ctx context.Context,
+	versionFilter *registry.VersionFilter,
+	cb *codebaseService.Codebase,
+	gr gerritService.ServiceInterface,
+) (
+	bool,
+	error,
+) {
 	cbs := []codebaseService.Codebase{*cb}
+
 	if err := registry.LoadRegistryVersions(ctx, gr, cbs); err != nil {
 		return false, fmt.Errorf("unable to load registry version, %w", err)
 	}
 
-	if cbs[0].Version.Original() == "0" {
+	registryVersionCodebase := cbs[0]
+
+	if registryVersionCodebase.Version.Original() == "0" {
 		clusterProject, err := gr.GetProject(ctx, cb.Name)
 		if err != nil {
 			return false, fmt.Errorf("unable to get cluster gerrit project, %w", err)
 		}
 
-		cbs[0].Version = registry.LowestVersion(registry.UpdateBranches(clusterProject.Status.Branches))
+		registryVersionCodebase.Version = registry.LowestVersion(registry.UpdateBranches(clusterProject.Status.Branches))
 	}
 
-	cbs = versionFilter.FilterCodebases(cbs)
-
-	return len(cbs) > 0, nil
+	return versionFilter.CheckCodebase(&registryVersionCodebase), nil
 }
 
 func GerritSSHURL(cnf *config.Settings) string {

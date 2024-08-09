@@ -38,6 +38,18 @@ type User struct {
 	FullName string   `json:"fullName"`
 }
 
+type Status struct {
+	Type string `json:"type"`
+}
+
+type ClusterStatus struct {
+	PlatformStatus Status `json:"platformStatus"`
+}
+
+type ClusterInfrastructure struct {
+	Status ClusterStatus `json:"status"`
+}
+
 func (s *Service) GetMe(ctx context.Context) (*User, error) {
 	accessToken := ctx.Value("access-token")
 	if accessToken == nil {
@@ -55,4 +67,20 @@ func (s *Service) GetMe(ctx context.Context) (*User, error) {
 	}
 
 	return &u, nil
+}
+
+func (s *Service) GetInfrastructureCluster(ctx context.Context) (*ClusterInfrastructure, error) {
+	accessToken := ctx.Value("access-token")
+	if accessToken == nil {
+		return nil, errors.New("no access token in context")
+	}
+
+	var result ClusterInfrastructure
+
+	_, err := s.restyClient.R().SetAuthToken(accessToken.(string)).SetResult(&result).Get("/apis/config.openshift.io/v1/infrastructures/cluster")
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get infrastructures of cluster")
+	}
+
+	return &result, nil
 }

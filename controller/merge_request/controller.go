@@ -2,14 +2,6 @@ package merge_request
 
 import (
 	"context"
-	"ddm-admin-console/app/registry"
-	"ddm-admin-console/config"
-	"ddm-admin-console/controller"
-	"ddm-admin-console/controller/codebase"
-	codebaseSvc "ddm-admin-console/service/codebase"
-	gerritService "ddm-admin-console/service/gerrit"
-	"ddm-admin-console/service/git"
-	"ddm-admin-console/service/jenkins"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,31 +24,51 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"ddm-admin-console/app/registry"
+	"ddm-admin-console/config"
+	"ddm-admin-console/controller"
+	"ddm-admin-console/controller/codebase"
+	codebaseSvc "ddm-admin-console/service/codebase"
+	gerritService "ddm-admin-console/service/gerrit"
+	"ddm-admin-console/service/git"
+	"ddm-admin-console/service/gitserver"
+	"ddm-admin-console/service/jenkins"
 )
 
 type Controller struct {
-	logger          controller.Logger
-	mgr             ctrl.Manager
-	k8sClient       client.Client
-	cnf             *config.Settings
-	gerrit          gerritService.ServiceInterface
-	appCache        *cache.Cache
-	codebaseService codebaseSvc.ServiceInterface
-	jenkinsService  jenkins.ServiceInterface
-	versionFilter   *registry.VersionFilter
+	logger           controller.Logger
+	mgr              ctrl.Manager
+	k8sClient        client.Client
+	cnf              *config.Settings
+	gerrit           gerritService.ServiceInterface
+	appCache         *cache.Cache
+	codebaseService  codebaseSvc.ServiceInterface
+	gitServerService gitserver.ServiceInterface
+	jenkinsService   jenkins.ServiceInterface
+	versionFilter    *registry.VersionFilter
 }
 
-func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerrit gerritService.ServiceInterface,
-	cbService codebaseSvc.ServiceInterface, jenkinsService jenkins.ServiceInterface, appCache *cache.Cache) error {
+func Make(
+	mgr ctrl.Manager,
+	logger controller.Logger,
+	cnf *config.Settings,
+	gerrit gerritService.ServiceInterface,
+	cbService codebaseSvc.ServiceInterface,
+	gitServerService gitserver.ServiceInterface,
+	jenkinsService jenkins.ServiceInterface,
+	appCache *cache.Cache,
+) error {
 	c := Controller{
-		mgr:             mgr,
-		logger:          logger,
-		k8sClient:       mgr.GetClient(),
-		cnf:             cnf,
-		gerrit:          gerrit,
-		appCache:        appCache,
-		codebaseService: cbService,
-		jenkinsService:  jenkinsService,
+		mgr:              mgr,
+		logger:           logger,
+		k8sClient:        mgr.GetClient(),
+		cnf:              cnf,
+		gerrit:           gerrit,
+		appCache:         appCache,
+		codebaseService:  cbService,
+		gitServerService: gitServerService,
+		jenkinsService:   jenkinsService,
 	}
 
 	vf, err := registry.MakeVersionFilter(cnf.RegistryVersionFilter)
@@ -66,10 +78,19 @@ func Make(mgr ctrl.Manager, logger controller.Logger, cnf *config.Settings, gerr
 	c.versionFilter = vf
 
 	if err := ctrl.NewControllerManagedBy(mgr).
-		For(&gerritService.GerritMergeRequest{}, builder.WithPredicates(predicate.Funcs{
-			UpdateFunc: isSpecUpdated})).WithOptions(k8sController.Options{
-		MaxConcurrentReconciles: 1,
-	}).
+		For(
+			&gerritService.GerritMergeRequest{},
+			builder.WithPredicates(
+				predicate.Funcs{
+					UpdateFunc: isSpecUpdated,
+				},
+			),
+		).
+		WithOptions(
+			k8sController.Options{
+				MaxConcurrentReconciles: 1,
+			},
+		).
 		Complete(&c); err != nil {
 		return fmt.Errorf("unable to create controller, err: %w", err)
 	}
@@ -195,8 +216,11 @@ func (c *Controller) checkBuildJobStatus(ctx context.Context, instance *gerritSe
 	return nil
 }
 
-func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerritService.GerritMergeRequest,
-	cb *codebaseSvc.Codebase) error {
+func (c *Controller) triggerJobProvisioner(
+	ctx context.Context,
+	instance *gerritService.GerritMergeRequest,
+	cb *codebaseSvc.Codebase,
+) error {
 	if instance.Status.Value != gerritService.StatusMerged {
 		return nil
 	}
@@ -226,8 +250,16 @@ func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerrit
 		return fmt.Errorf("project has no job provisioning")
 	}
 
-	if err := c.jenkinsService.CreateJobBuildRun(ctx, fmt.Sprintf("backup-schedule-%d", time.Now().Unix()),
-		fmt.Sprintf("/job-provisions/job/ci/job/%s", *cb.Spec.JobProvisioning), map[string]string{
+	gitServer, err := c.gitServerService.Get(cb.Spec.GitServer)
+	if err != nil {
+		return fmt.Errorf("failed to get gitService CR: %w", err)
+	}
+
+	if err := c.jenkinsService.CreateJobBuildRun(
+		ctx,
+		fmt.Sprintf("backup-schedule-%d", time.Now().Unix()),
+		fmt.Sprintf("/job-provisions/job/ci/job/%s", *cb.Spec.JobProvisioning),
+		map[string]string{
 			"NAME":                     cb.Name,
 			"TYPE":                     cb.Spec.Type,
 			"BUILD_TOOL":               cb.Spec.BuildTool,
@@ -235,9 +267,10 @@ func (c *Controller) triggerJobProvisioner(ctx context.Context, instance *gerrit
 			"GIT_SERVER_CR_NAME":       cb.Spec.GitServer,
 			"GIT_SERVER_CR_VERSION":    "v2",
 			"GIT_CREDENTIALS_ID":       "gerrit-ciuser-sshkey",
-			"REPOSITORY_PATH":          fmt.Sprintf("ssh://jenkins@gerrit:31000/%s", cb.Name),
+			"REPOSITORY_PATH":          fmt.Sprintf("ssh://%s@gerrit:31000/%s", gitServer.Spec.GitUser, cb.Name),
 			"JIRA_INTEGRATION_ENABLED": "false",
-		}); err != nil {
+		},
+	); err != nil {
 		return fmt.Errorf("unable to create job build run")
 	}
 

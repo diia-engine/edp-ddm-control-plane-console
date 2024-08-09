@@ -47,6 +47,8 @@ spec:
               value: "https://gerrit-{{ template "edp.hostnameSuffix" $ }}"
             - name: REGISTRY_REPO_PREFIX
               value: "registry-tenant-template-"
+            - name: REGISTRY_TEMPLATE_NAME
+              value: "templates/registry-tenant-template"
             - name: JENKINS_GLOBAL_LINK
               value: "https://jenkins-{{ template "edp.hostnameSuffix" $ }}"
             - name: AUTH_ENABLED
@@ -90,9 +92,14 @@ spec:
                   key: "token"
             - name: REGISTRY_DNS_MANUAL_PATH
               value: "ua/platform/1.9.5/admin/registry-management/custom-dns/cp-custom-dns-keycloak.html#external-configuration"
-            {{- if not $it.latest }}
+            - name: CLOUD_PROVIDER
+              value: {{ $.Values.cloudProvider }}
+            {{- if eq $it.registryVersion "1.9.6" }}
             - name: REGISTRY_VERSION_FILTER
-              value: "<1"
+              value: "<1.9.7"
+            {{- else }}
+            - name: REGISTRY_VERSION_FILTER
+              value: =={{ $it.registryVersion }}
             {{- end }}
           image: {{ template "controlPlaneConsole.image" (dict "root" $ "stream" $it.stream "version" $it.consoleVersion) }}
           imagePullPolicy: IfNotPresent

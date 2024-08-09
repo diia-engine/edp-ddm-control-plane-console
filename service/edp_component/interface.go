@@ -7,4 +7,5 @@ type ServiceInterface interface {
 	GetAllNamespace(ctx context.Context, ns string, onlyVisible bool) ([]EDPComponent, error)
 	Get(ctx context.Context, name string) (*EDPComponent, error)
 	GetAllCategory(ctx context.Context, ns string) (map[string][]EDPComponentItem, error)
+	GetAllCategoryPlatform(ctx context.Context) (map[string][]EDPComponentItem, error)
 }
