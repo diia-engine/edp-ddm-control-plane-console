@@ -18,6 +18,7 @@
   "components": {
     "layout": {
       "appNameVersion": "Web interface for managing the Platform and registries. Version",
+      "globalModeMessage": "Platform is working in Read-Only mode for the Global region.",
       "actions": {
         "back": "Back",
         "logout": "Logout"
@@ -667,20 +668,6 @@
           }
         }
       }
-    },
-    "registryCsp": {
-      "title": "CSP Settings",
-      "desc": "Content Security Policy (CSP) settings for the registry.",
-      "connectSrc": "Allowed sources for loading resources (connect-src)",
-      "modal": {
-        "addConnectSrcTitle": "Add allowed source",
-        "fields": {
-          "source": {
-            "label": "Source",
-            "description": "For example: \"https://example.com\" or \"'self'\". For more information, see the Content Security Policy documentation."
-          }
-        }
-      }
     }
   },
   "pages": {
@@ -966,8 +953,7 @@
         "digitalDocuments": "Digital documents",
         "backup": "Backup",
         "trembita": "Secure exchange gateway",
-        "confirmation": "Confirmation",
-        "registryCSP": "CSP"
+        "confirmation": "Confirmation"
       },
       "rateLimitField": {
         "second": "per second",

@@ -191,8 +191,7 @@ interface Global {
     registry: any,
     excludePortals: string[],
     geoServerEnabled: boolean,
-    language: keyof typeof LANGUAGES,
-    connectSourceList: string[],
+    language: keyof typeof LANGUAGES
 }
 
 export interface PublicApiLimits {

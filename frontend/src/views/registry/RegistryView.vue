@@ -87,6 +87,7 @@ export default defineComponent({
             activeTab: 'info',
             externalRegAvailableRegistriesNames: [],
             registrySelected: false,
+            isGlobal: (inject('ENVIRONMENT_VARIABLES') as EnvVariables)?.region === 'global',
         };
     },
     methods: {
@@ -823,6 +824,11 @@ export default defineComponent({
   .link-grant-access a:hover {
     background: #E6F3FA;
   }
+  .disabled-link {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.5;
+  }
 </style>
 
 <template>
@@ -865,7 +871,7 @@ export default defineComponent({
                         </a>
                     </template>
                     <a :href="`/admin/registry/edit/${registry.metadata.name}?version=${registryVersion}`" @click="checkForOpenMRs"
-                        class="registry-add">
+                        :class="['registry-add', isGlobal && 'disabled-link']">
                         <img alt="add registry" src="@/assets/img/action-edit.png" />
                         <span>{{ $t('actions.edit') }}</span>
                     </a>

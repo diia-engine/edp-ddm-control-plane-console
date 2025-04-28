@@ -66,7 +66,6 @@ func (a *App) createUpdateRegistryProcessors() []processorFunction {
 	return []processorFunction{
 		a.prepareDNSConfig,
 		a.prepareCIDRConfig,
-		a.prepareRegistryCspConfig,
 		a.prepareMailServerConfig,
 		a.prepareAdminsConfig,
 		a.prepareRegistryResources,
@@ -482,29 +481,6 @@ func (a *App) prepareCIDRConfig(ctx *gin.Context, r *registry, _values *Values,
 	globalDict[WhiteListIPIndex] = _values.Global.WhiteListIP
 	_values.OriginalYaml[GlobalValuesIndex] = globalDict
 
-	return true, nil
-}
-
-func (a *App) prepareRegistryCspConfig(ctx *gin.Context, r *registry, _values *Values,
-	_ map[string]map[string]interface{}, _ *[]string,
-) (bool, error) {
-	if ctx.PostForm("action") == "edit" && ctx.PostForm("csp-changed") == "" {
-		return false, nil
-	}
-	globalInterface, ok := _values.OriginalYaml[GlobalValuesIndex]
-	if !ok {
-		globalInterface = make(map[string]interface{})
-	}
-	globalDict := globalInterface.(map[string]interface{})
-
-	var cspSources []string
-
-	if err := json.Unmarshal([]byte(r.RegistryCsp), &cspSources); err != nil {
-		return false, errors.Wrap(err, "unable to decode csp config")
-	}
-
-	globalDict[CspConnectSourcesIndex] = cspSources
-	_values.OriginalYaml[GlobalValuesIndex] = globalDict
 	return true, nil
 }
 

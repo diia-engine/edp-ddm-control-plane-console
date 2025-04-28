@@ -1,6 +1,7 @@
 FROM golang:1.21-alpine
 
-RUN apk update && apk add ca-certificates git openssh-client
+# hadolint ignore=DL3018
+RUN apk update && apk add --no-cache ca-certificates git openssh-client
 
 ENV USER_UID=1001 \
     USER_NAME=admin-console \
@@ -22,7 +23,7 @@ RUN mkdir /home/admin-console/.ssh && chown ${USER_NAME}:${USER_NAME} /home/admi
 COPY ssh-config.txt /home/admin-console/.ssh/config
 RUN chown ${USER_NAME}:${USER_NAME} /home/admin-console/.ssh/config && chmod 700 /home/admin-console/.ssh/config
 USER ${USER_UID}
-RUN git config --global user.email "admin@localhost"
-RUN git config --global user.name "admin"
+RUN git config --global user.email "admin@localhost" \
+    && git config --global user.name "admin"
 COPY control-plane-console .
 CMD ["/go/bin/control-plane-console"]

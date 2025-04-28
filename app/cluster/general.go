@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"context"
+	utils "ddm-admin-console/app/utils"
 	"ddm-admin-console/router"
 	"fmt"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 
 func (a *App) updateGeneral(ctx *gin.Context) (router.Response, error) {
 	platformNameValue := ctx.PostForm("platform-name")
-	mainValue := ctx.PostForm("main")
+	base64LogoSvg := ctx.PostForm("main")
 	faviconValue := ctx.PostForm("favicon")
 	languageValue := ctx.PostForm("language")
 
@@ -31,7 +32,12 @@ func (a *App) updateGeneral(ctx *gin.Context) (router.Response, error) {
 	values.Global.LogosPath = fmt.Sprintf("configmap:platform-logos-%s", timeStamp)
 	values.Global.Language = languageValue
 
-	if err := a.createConfigMapImages(ctx, mainValue, faviconValue, timeStamp); err != nil {
+	sanitizedBase64LogoSvg, err := utils.SanitizeBase64SVG(base64LogoSvg)
+	if err != nil {
+		return nil, fmt.Errorf("unable to sanitize logo svg, %w", err)
+	}
+
+	if err := a.createConfigMapImages(ctx, sanitizedBase64LogoSvg, faviconValue, timeStamp); err != nil {
 		return nil, fmt.Errorf("unable to update images, %w", err)
 	}
 

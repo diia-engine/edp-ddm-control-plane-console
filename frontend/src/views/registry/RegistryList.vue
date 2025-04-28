@@ -2,6 +2,7 @@
 import { defineComponent, inject } from 'vue';
 
 import type { RegistryTemplateVariables } from '@/types/registry';
+import type { EnvVariables } from '@/types/common';
 import $ from 'jquery';
 import 'datatables.net-dt';
 import { getImageUrl, getFormattedDate, getStatusTitle } from '@/utils';
@@ -13,6 +14,8 @@ import '@/assets/datatables.custom.css';
 export default defineComponent({
   setup() {
     const variables = inject('TEMPLATE_VARIABLES') as RegistryTemplateVariables;
+    const envVariables = inject('ENVIRONMENT_VARIABLES') as EnvVariables;
+
     const allowedToCreate = variables?.allowedToCreate;
     const registries = variables?.registries;
     const page = variables?.page;
@@ -30,12 +33,13 @@ export default defineComponent({
       getImageUrl,
       getFormattedDate,
       getStatusTitle,
+      isGlobal: envVariables?.region === 'global',
     };
   },
   data() {
     return {
       showModalCreateRegistry: false,
-        versionTemplate: (this.platformVersion || "").toString(),
+      versionTemplate: (this.platformVersion || "").toString(),
     };
   },
   components: {
@@ -103,6 +107,9 @@ export default defineComponent({
       window.location.href = `/admin/registry/create?version=${this.versionTemplate}`;
     },
     handleCreateRegistry() {
+      if (this.isGlobal)  {
+        return;
+      }
       if (this.gerritBranches?.some(b => b.includes(this.previousVersion))) {
         this.showModalCreateRegistry = true;
         return;
@@ -212,7 +219,7 @@ export default defineComponent({
   <div class="registry" id="tooltip">
     <div class="registry-header">
       <h1>{{ $t('pages.registryList.title') }}</h1>
-      <a href="#" class="registry-add" v-if="allowedToCreate" @click="handleCreateRegistry">
+      <a href="#" :class="['registry-add', isGlobal && 'disabled-link']" v-if="allowedToCreate" @click="handleCreateRegistry">
         <img alt="add registry" src="@/assets/img/plus.png" />
         <span>{{ $t('pages.registryList.actions.createNew') }}</span>
       </a>
@@ -273,6 +280,7 @@ export default defineComponent({
               <a
                 v-if="$registry.CanUpdate && isAvailable($registry)"
                 :href="getUrl($registry, 'edit')"
+                :class="[isGlobal && 'disabled-link']"
               >
                 <img
                   :title="$t('pages.registryList.actions.registryEdit')"
@@ -289,7 +297,7 @@ export default defineComponent({
                   isAvailable($registry)
                 "
                 href="#"
-                class="delete-registry"
+                :class="['delete-registry', isGlobal && 'disabled-link']"
                 :data-name="$registry.Codebase.metadata.name"
               >
                 <img
@@ -369,5 +377,10 @@ export default defineComponent({
 
 .mt24 {
   margin-top: 24px;
+}
+.disabled-link {
+  pointer-events: none;
+  cursor: default;
+  opacity: 0.5;
 }
 </style>

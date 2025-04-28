@@ -12,7 +12,6 @@ const (
 	CrunchyPostgresIndex      = "crunchyPostgres"
 	PortalsIndex              = "portals"
 	WhiteListIPIndex          = "whiteListIP"
-	CspConnectSourcesIndex    = "connectSourceList"
 	NotificationsIndex        = "notifications"
 )
 
@@ -209,18 +208,17 @@ func (e ExternalSystem) FaStatus() string {
 }
 
 type Global struct {
-	WhiteListIP       WhiteListIP            `json:"whiteListIP" yaml:"whiteListIP"`
-	Notifications     Notifications          `json:"notifications" yaml:"notifications"`
-	RegistryBackup    RegistryBackup         `yaml:"registryBackup" json:"registryBackup"`
-	DeploymentMode    string                 `yaml:"deploymentMode" json:"deploymentMode"`
-	CrunchyPostgres   CrunchyPostgres        `yaml:"crunchyPostgres" json:"crunchyPostgres"`
-	Registry          map[string]interface{} `yaml:"registry" json:"registry"`
-	ComputeResources  ComputeResources       `yaml:"computeResources" json:"computeResources"`
-	ExcludePortals    []string               `yaml:"excludePortals" json:"excludePortals"`
-	GeoServerEnabled  bool                   `yaml:"geoServerEnabled" json:"geoServerEnabled"`
-	Language          string                 `yaml:"language" json:"language"`
-	Region            string                 `yaml:"region" json:"region"`
-	CspConnectSources []string               `yaml:"connectSourceList" json:"connectSourceList"`
+	WhiteListIP      WhiteListIP            `json:"whiteListIP" yaml:"whiteListIP"`
+	Notifications    Notifications          `json:"notifications" yaml:"notifications"`
+	RegistryBackup   RegistryBackup         `yaml:"registryBackup" json:"registryBackup"`
+	DeploymentMode   string                 `yaml:"deploymentMode" json:"deploymentMode"`
+	CrunchyPostgres  CrunchyPostgres        `yaml:"crunchyPostgres" json:"crunchyPostgres"`
+	Registry         map[string]interface{} `yaml:"registry" json:"registry"`
+	ComputeResources ComputeResources       `yaml:"computeResources" json:"computeResources"`
+	ExcludePortals   []string               `yaml:"excludePortals" json:"excludePortals"`
+	GeoServerEnabled bool                   `yaml:"geoServerEnabled" json:"geoServerEnabled"`
+	Language         string                 `yaml:"language" json:"language"`
+	Region           string                 `yaml:"region" json:"region"`
 }
 
 type ComputeResources struct {

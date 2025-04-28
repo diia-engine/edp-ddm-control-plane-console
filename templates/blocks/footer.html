@@ -4,7 +4,9 @@
 <link rel="stylesheet" href="{{ .BasePath }}/static/css/header_footer.css">
 <footer class="edp-footer">
     <div class="copy">
-        <p>{{ i18n "components.layout.appNameVersion" }} <b>{{.consoleVersion}}</b></p>
+        <p>
+            {{ i18n "components.layout.appNameVersion" }} <b>{{.consoleVersion}}</b>{{if eq .region "global"}}  |  {{i18n "components.layout.globalModeMessage"}} {{end}}
+        </p>
     </div>
 </footer>
 </main>

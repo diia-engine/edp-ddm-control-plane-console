@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { toRefs, watch } from 'vue';
+import { computed, toRefs, watch } from 'vue';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { useField, useForm } from 'vee-validate';
 import TextField from '@/components/common/TextField.vue';
 import Banner from '@/components/common/Banner.vue';
 import Typography from '@/components/common/Typography.vue';
-import { getErrorMessage } from '@/utils';
+import { getErrorMessage, semVerComparator } from '@/utils';
 import LocalizationSettings from './components/LocalizationSettings.vue';
 import type { LANGUAGES } from '@/constants/registry';
 
@@ -26,6 +26,16 @@ const emit = defineEmits(['preloadTemplateData', 'onChooseGerritBranch']);
 const props = defineProps<RegistryGeneralCreateProps>();
 const { gerritBranches, registryTemplateName } = toRefs(props);
 
+const uniqBranches = computed(() => {
+  const branches = gerritBranches.value;
+  const branchesGroups = [
+  ...new Set(branches.map((v) => v.split('.').slice(0, 3).join('.'))),
+];
+  return branchesGroups.map((g) => {
+    return branches.filter((b) => b.startsWith(g)).sort(semVerComparator).reverse()[0];
+  });
+});
+
 const validationSchema = Yup.object<FormValues>({
   registryName: Yup.string()
     .required()
@@ -41,7 +51,8 @@ const getLongBranchName = (short: string | undefined) => {
   if (!short) {
     return '';
   }
-  return gerritBranches.value.find((long) => long.startsWith(short)) ?? '';
+  const sortedBranches = [...gerritBranches.value].sort(semVerComparator).reverse();
+  return sortedBranches.find((long) => long.startsWith(short)) ?? '';
 };
 
 const { errors, validate, setErrors } = useForm<FormValues>({
@@ -108,7 +119,7 @@ defineExpose({
     </div>
     <select v-else name="registry-git-branch" v-model="registryGerritBranch">
       <option value="" disabled selected>{{ $t('components.registryGeneral.text.chooseTemplateVersion') }}</option>
-      <option v-for="branch in gerritBranches" v-bind:key="branch">
+      <option v-for="branch in uniqBranches" v-bind:key="branch">
         {{ branch }}
       </option>
     </select>

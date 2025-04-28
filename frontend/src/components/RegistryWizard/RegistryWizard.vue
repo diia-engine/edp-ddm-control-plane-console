@@ -26,7 +26,6 @@ import GeoDataSettings from "./steps/GeoDataSettings.vue";
 import RegistryAdminAuth from "./steps/RegistryAdminAuth.vue";
 import { type RegistryWizardTemplateVariables, PlatformStatusType, PORTALS} from '@/types/registry';
 import type { EnvVariables } from '@/types/common';
-import RegistryCSP from './steps/RegistryCSP.vue';
 
 export default defineComponent({
     props: {
@@ -45,7 +44,6 @@ export default defineComponent({
       RegistryResources,
       RegistryDns,
       RegistryCidr,
-      RegistryCSP,
       RegistrySupplierAuth,
       RegistryBackupSchedule,
       RegistryRecipientAuth,
@@ -197,9 +195,6 @@ export default defineComponent({
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'cidr'">
                     <RegistryCidr ref="cidrTab" />
-                </div>
-                <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'csp'">
-                    <RegistryCSP ref="cspTab" />
                 </div>
                 <div class="wizard-tab" v-show="pageRoot.$data.wizard.activeTab == 'supplierAuthentication'">
                     <RegistrySupplierAuth

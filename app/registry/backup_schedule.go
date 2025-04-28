@@ -63,6 +63,8 @@ func (a *App) prepareBackupSchedule(ctx *gin.Context, r *registry, values *Value
 				a.Config.BackupBucketAccessKeyID:     r.OBCLogin,
 				a.Config.BackupBucketSecretAccessKey: r.OBCPassword,
 			}
+		} else {
+			values.Global.RegistryBackup.OBC.Credentials = ""
 		}
 
 		globalDict[registryBackupIndex] = values.Global.RegistryBackup

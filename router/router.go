@@ -10,6 +10,7 @@ import (
 )
 
 var ConsoleVersion = "0"
+var Region = ""
 
 type Logger interface {
 	Error(msg string, fields ...zap.Field)
@@ -61,6 +62,7 @@ func MakeJSONResponse(code int, data interface{}) Response {
 
 func MakeHTMLResponse(code int, viewTemplate string, params gin.H) Response {
 	params["consoleVersion"] = ConsoleVersion
+	params["region"] = Region
 
 	return &HTMLResponse{
 		StatusResponse: StatusResponse{

@@ -18,6 +18,7 @@
   "components": {
     "layout": {
       "appNameVersion": "Вебінтерфейс управління Платформою та реєстрами версії",
+      "globalModeMessage": "Платформа працює в режимі Read-Only для глобального регіону.",
       "actions": {
         "back": "Назад",
         "logout": "Вихід"
@@ -666,20 +667,6 @@
           }
         }
       }
-    },
-    "registryCsp": {
-      "title": "Налаштування CSP",
-      "desc": "Налаштування Політики Безпеки Контенту (CSP) для реєстру.",
-      "connectSrc": "Дозволені джерела для завантаження ресурсів (connect-src)",
-      "modal": {
-        "addConnectSrcTitle": "Додати дозволене джерело",
-        "fields": {
-          "source": {
-            "label": "Джерело",
-            "description": "Наприклад: \"https://example.com\" або \"'self'\". Для отримання додаткової інформації перегляньте документацію CSP."
-          }
-        }
-      }
     }
   },
   "pages": {
@@ -965,8 +952,7 @@
         "digitalDocuments": "Цифрові документи",
         "backup": "Резервне копіювання",
         "trembita": "ШБО Трембіта",
-        "confirmation": "Підтвердження",
-        "registryCSP": "CSP"
+        "confirmation": "Підтвердження"
       },
       "rateLimitField": {
         "second": "за секунду",

@@ -32,3 +32,22 @@ export const getGerritURL = (url: string): string => {
 export const getJenkinsURL = (url: string, codebaseName: string, branchName: string): string => {
     return `${url}/job/${codebaseName}/view/${branchName.toLocaleUpperCase()}`;
 };
+
+export const semVerComparator = (a: string, b: string): number => {
+  // Split the version strings into arrays of numbers
+  const versionA = a.split('.').map(Number);
+  const versionB = b.split('.').map(Number);
+
+  // Compare each segment of the version
+  for (let i = 0; i < Math.max(versionA.length, versionB.length); i++) {
+    const partA = versionA[i] || 0; // Default to 0 if the part does not exist
+    const partB = versionB[i] || 0; // Default to 0 if the part does not exist
+
+    if (partA !== partB) {
+      return partA - partB; // Compare numerically
+    }
+  }
+
+  // If all parts are equal, the versions are identical
+  return 0;
+};

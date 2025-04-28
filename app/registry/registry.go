@@ -48,8 +48,6 @@ type registry struct {
 	CIDRCitizen                   string   `form:"citizen-cidr"`
 	CIDRAdmin                     string   `form:"admin-cidr"`
 	CIDRChanged                   string   `form:"cidr-changed"`
-	CspChanged                    string   `form:"csp-changed"`
-	RegistryCsp                   string   `form:"registry-csp"`
 	Resources                     string   `form:"resources"`
 	SupAuthBrowserFlow            string   `form:"sup-auth-browser-flow"`
 	SupAuthURL                    string   `form:"sup-auth-url"`

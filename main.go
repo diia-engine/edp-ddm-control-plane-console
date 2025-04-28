@@ -33,6 +33,7 @@ import (
 	"ddm-admin-console/app/cluster"
 	"ddm-admin-console/app/dashboard"
 	"ddm-admin-console/app/registry"
+	utils "ddm-admin-console/app/utils"
 	oauth "ddm-admin-console/auth"
 	"ddm-admin-console/config"
 	codebaseController "ddm-admin-console/controller/codebase"
@@ -95,6 +96,7 @@ func main() {
 	)
 
 	router.ConsoleVersion = buildInfo.Version
+	router.Region = envVariables["region"].(string)
 	logger.Info("init gin router")
 	gin.SetMode(cnf.GinMode)
 	r := gin.New()
@@ -349,8 +351,8 @@ func initApps(logger *zap.Logger, cnf *config.Settings, r *gin.Engine, buildTime
 	}
 
 	favicon := string(logoFavicon)
-	logoMainSvg := template.HTML(decodedBytes)
-	appRouter := router.Make(r, logger, buildTime, appName, logoMainSvg, favicon)
+	logoMainSvg := utils.SanitizeSvg(string(decodedBytes))
+	appRouter := router.Make(r, logger, buildTime, appName, template.HTML(logoMainSvg), favicon)
 
 	sch := runtime.NewScheme()
 

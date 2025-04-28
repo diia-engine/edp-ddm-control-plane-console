@@ -30,6 +30,9 @@ ci:
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="${LDFLAGS}" -o ${BUILD_DIR}
 
+.PHONY: test
+test:
+	go test -v -cover ./...
 .PHONY: deps
 deps:
 	go mod tidy

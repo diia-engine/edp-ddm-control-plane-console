@@ -45,6 +45,7 @@ import $ from 'jquery';
 import { LANGUAGES } from '@/constants/cluster';
 import { getFormattedDate, getGerritURL, getImageUrl, getJenkinsURL, getStatusTitle } from '@/utils';
 import MergeRequestsTable from '@/components/MergeRequestsTable.vue';
+import type { EnvVariables } from '@/types/common';
 
 export default defineComponent({
     data() {
@@ -58,6 +59,7 @@ export default defineComponent({
               configuration: false,
               mergeRequests: false,
             },
+            isGlobal: (inject('ENVIRONMENT_VARIABLES') as EnvVariables)?.region === 'global',
         };
     },
     methods: {
@@ -117,6 +119,11 @@ export default defineComponent({
   .rg-info-block-header {
     transition: 0.5s;
   }
+  .disabled-link {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.5;
+  }
 </style>
 
 <template>
@@ -131,7 +138,7 @@ export default defineComponent({
                 <span>{{ $t('actions.refresh') }}</span>
               </a>
             </template>
-            <a v-if="canUpdateCluster" href="/admin/cluster/edit" class="registry-add">
+            <a v-if="canUpdateCluster" href="/admin/cluster/edit" :class="['registry-add', isGlobal && 'disabled-link']">
                 <img alt="add registry" src="@/assets/img/action-edit.png" />
                 <span>{{ $t('actions.edit') }}</span>
             </a>

@@ -178,12 +178,6 @@ export default defineComponent({
             visible: true,
             disabled: true
           },
-          csp: {
-            title: this.$t('domains.registry.editMixin.registryCSP'),
-            validated: true,
-            visible: true,
-            disabled: true
-          },
           supplierAuthentication: {
             title: this.$t('domains.registry.editMixin.supplierAuthentication'),
             validatorRef: 'supplierAuthTab',

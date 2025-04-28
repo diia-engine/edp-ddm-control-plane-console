@@ -26,7 +26,6 @@ export default defineComponent({
       listOfCategoryNames: [] as Array<string>,
     });
     const crunchyPostgres = ref({
-      maxConnections: '',
       storageSize: '',
     });
     const diffRegistryResourcesAndDefaultResources = ref<string[]>([]);
@@ -109,6 +108,12 @@ export default defineComponent({
             }),
           })
       ),
+      maxConnections: Yup.number()
+        .required()
+        .min(1)
+        .max(4089)
+        .integer()
+        .typeError('maxConnectionsMustBeInteger'),
     });
 
     const { errors, validate } = useForm({
@@ -118,6 +123,7 @@ export default defineComponent({
     const { value: registryResourcesForm } = useField<RegistryResource[]>(
       'registryResourcesForm'
     );
+    const { value: maxConnections } = useField('maxConnections', { validateOnValueUpdate: false, validateOnMount: false });
     registryResourcesForm.value = [];
 
     function validator() {
@@ -135,6 +141,7 @@ export default defineComponent({
       validator,
       registryResources,
       crunchyPostgres,
+      maxConnections,
       diffRegistryResourcesAndDefaultResources,
       registryResourcesForm,
       defaultEmptyResource,
@@ -270,7 +277,7 @@ export default defineComponent({
     preloadRegistryResources(values: any) {
       const crunchyPostgres = values?.global?.crunchyPostgres;
       if (crunchyPostgres) {
-        this.crunchyPostgres.maxConnections =
+        this.maxConnections =
           crunchyPostgres.postgresql?.parameters?.max_connections;
         this.crunchyPostgres.storageSize = crunchyPostgres.storageSize;
       }
@@ -393,9 +400,13 @@ export default defineComponent({
     <div class="rc-form-group crunchy-postgres">
       <Typography variant="h3" class="mb24">Crunchy Postgres</Typography>
       <TextField
+        type="number"
+        required
         label="Max Connections"
         name="crunchy-postgres-max-connections"
-        v-model="crunchyPostgres.maxConnections"
+        v-model="maxConnections"
+        :error="errors['maxConnections']"
+        description="Allowed value is from 1 to 4089"
       />
       <TextField
         label="Storage Size"
